@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 26abad6c9a7f1924d878c422bb753296
+timeCreated: 1500401354
+licenseType: Free
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences:
+  - grassFloor: {fileID: 21300000, guid: cb38f0d36f1ccbf4ebae02ec9203773a, type: 3}
+  - floor2: {fileID: 21300000, guid: 12ef7cbdfe0e143fa858a324456c8979, type: 3}
+  - empty: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
+  - map: {instanceID: 0}
+  - hud: {instanceID: 0}
+  - unit: {instanceID: 0}
+  executionOrder: 200
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
