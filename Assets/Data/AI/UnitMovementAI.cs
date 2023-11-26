@@ -17,15 +17,15 @@ public class UnitMovementAI:Action<Node<Tile>>{
     }
     void initialiseGraph()
     {
-        for (int x = 0; x < Map.Instance.width; x++)
+        for (int x = 0; x < Map.Instance.Width; x++)
         {
-            for (int y = 0; y < Map.Instance.hieght; y++)
+            for (int y = 0; y < Map.Instance.Height; y++)
             {
                 for (int a = -1; a <= 1; a++)
                 {
                     for (int b = -1; b <= 1; b++)
                     {
-                        if (Map.Instance.inMap(x + a, y + b) && (a != 0 || b != 0))
+                        if (Map.Instance.getTile(x+a, y+b).Walkable)//.inMap(x + a, y + b) && (a != 0 || b != 0))
                         {
                             Node<Tile> endNode = makeNode(x, y, a, b);
                             if (unit.canMove(endNode))
@@ -139,7 +139,7 @@ public class UnitMovementAI:Action<Node<Tile>>{
     }
     public override int maxSearchSize()
     {
-        return Map.Instance.width * Map.Instance.width * 9;
+        return Map.Instance.Width * Map.Instance.Width * 9;
     }
     public override Path<Node<Tile>>[] getActions(Node<Tile>  node, float currentCost)
     {
@@ -155,7 +155,8 @@ public class UnitMovementAI:Action<Node<Tile>>{
                     multiplier++;
                     int x = multiplier * startX;
                     int y = multiplier * startY;
-                    if (Map.Instance.inMap(node.data.position.x + x, node.data.position.y + y) && (x != 0 || y != 0))
+                    if (Map.Instance.getTile(node.data.position.x + x, node.data.position.y + y).Walkable && (x != 0 || y != 0)) 
+                        //inMap(node.data.position.x + x, node.data.position.y + y) && (x != 0 || y != 0))
                     {
                         Path<Node<Tile>> path = makeEdge(node, x, y, multiplier, currentCost);
                         if (path.state.data != null)

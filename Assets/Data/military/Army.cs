@@ -63,14 +63,6 @@ public class Army : MonoBehaviour {
             Master.Instance.unitArmy.Add(unit, this);
         }
     }
-    public void addUnit(ModelType unit, Vector2 pos, Vector2 size, Vector2 direction)
-    {
-        Unit unitObj = gameObject.AddComponent<Unit>().
-            create((int)pos.x, (int)pos.y, this, unit, (int)size.x, (int)size.y)
-            as Unit;
-        units.Add(unitObj);
-        Master.Instance.unitArmy.Add(unitObj, this);
-    }
     // Update is called once per frame
     void Update () {
 		

@@ -1,64 +1,31 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-public struct ModelType
+
+public class Model : MonoBehaviour, SelectionData
 {
-    public string prefabName, name;
-    public bool character, caster;
-    public UnitType unitType;
-    public float movementSpeed;
-    public CombatStats combatStats;
-}
-public class Model : Section
-{
-    //Unit unit;
-    public GameObject self;
+    public Vector2 position;
+    Unit unit;
+    //public GameObject self;
     string animState = "idle";
     Tile wayPoint;
     bool moving;
     public Vector2 destination, direction, offset, rotatedOffset;
-    public Model create(Vector2 offset, Unit unit, string prefabName)
+    public void Init(int x, int y, Vector2 offset, Unit unit)
     {
-        this.offset = offset;
-        rotatedOffset = offset;
-        position = offset;//new Vector2(x + this.offset.x, y + this.offset.x);
-        
-        this.map = Map.Instance;
-        this.unit = unit;
-        map.getTile(position).unit = unit;
-        //game object
-        self = Instantiate(Resources.Load(prefabName)) as GameObject;
-        self.transform.position = position;
-        self.transform.eulerAngles = new Vector3(self.transform.eulerAngles.x, self.transform.eulerAngles.y, -45f);
-        self.name = "Unit " + position;
-        if (offset.x == 0 && offset.y == 0) { self.name = "Banner" + position; }
-        return this;
-    }
-    public Model create(int x, int y, Vector2 offset, Unit unit, string prefabName)
-    {
-        this.offset = offset;
-        rotatedOffset = offset;
-        position = unit.position + offset;//new Vector2(x + this.offset.x, y + this.offset.x);
-        this.map = Map.Instance;
-        this.unit = unit;
-        map.getTile(position).unit = unit;
-        //game object
-        self = Instantiate(Resources.Load(prefabName)) as GameObject;
-        self.transform.position = position;
-        self.transform.eulerAngles = new Vector3(self.transform.eulerAngles.x, self.transform.eulerAngles.y, -45f);
-        self.name = "Unit " + position;
-        if (offset.x == 0 && offset.y == 0) { self.name = "Banner" + position; }
-        return this;
-    }
-    public override string getDetails()
-    {
-        return "(Unit at x " + position.x + ", y" + position.y + ")";
+        this.offset= offset;
+        rotatedOffset= offset;
+        position=unit.position + offset;
+        this.unit= unit;
+        transform.position = position;
+        transform.eulerAngles = new Vector3(gameObject.transform.eulerAngles.x, gameObject.transform.eulerAngles.y, -45f);
+        if (offset.x == 0 && offset.y == 0) { gameObject.name = "Banner" + position; }
     }
     void Update()
     {
-        map.getTile((int)position.x, (int)position.y).unit = null;
+        Map.Instance.getTile((int)position.x, (int)position.y).unit = null;
         movementUpdate();
-        map.getTile((int)position.x, (int)position.y).unit = unit;
+        Map.Instance.getTile((int)position.x, (int)position.y).unit = unit;
 
     }
     //
@@ -73,9 +40,9 @@ public class Model : Section
         else if (direction.x == -1) { facing += "W"; }
         else if (direction.x == 1) { facing += "E"; }
         if (direction == null || direction == Vector2.zero) { facing = animState + "SC"; }
-        if (self.gameObject.GetComponent<Animator>() != null && facing != animState)
+        if (gameObject.gameObject.GetComponent<Animator>() != null && facing != animState)
         {
-            Animator anim = self.gameObject.GetComponent<Animator>();
+            Animator anim = gameObject.gameObject.GetComponent<Animator>();
             anim.Play(facing, -1);
         }
     }
@@ -111,8 +78,8 @@ public class Model : Section
     {
         animState = "death";
         setAnimation();
-        self.layer = LayerMask.NameToLayer("Terrain");
-        Destroy(self);
+        gameObject.layer = LayerMask.NameToLayer("Terrain");
+        Destroy(gameObject);
         Destroy(this);
     }
     public void attack()
@@ -125,7 +92,7 @@ public class Model : Section
         destination = new Vector2(waypoint.x + rotatedOffset.x, waypoint.y + rotatedOffset.y);
         //print(destination);
         moving = true;
-        wayPoint = map.getTile(waypoint+rotatedOffset);
+        wayPoint = Map.Instance.getTile(waypoint+rotatedOffset);
         //print(destination + " " + wayPoint.getDetails());
         animState = "walk";
         setAnimation();
@@ -142,8 +109,8 @@ public class Model : Section
     }
     void walk()
     {
-        position = Vector2.MoveTowards((Vector2)self.transform.position, destination, unit.moveSpeed * Time.deltaTime);
-        self.transform.position = position;
+        position = Vector2.MoveTowards((Vector2)gameObject.transform.position, destination, unit.Stats.MoveSpeed * Time.deltaTime);
+        gameObject.transform.position = position;
         if (position.x == destination.x && position.y == destination.y)
         {
             moving = false;
@@ -232,13 +199,18 @@ public class Model : Section
     public bool MoveEdge(Node<Tile> edge)
     {
         Vector2 edgePosition = edge.position + rotate(edge.direction);
-        if (map.getTile(edgePosition) == null) return false;
-        return map.getTile(edgePosition).tileIsWalkable(unit);
+        if (Map.Instance.getTile(edgePosition) == null) return false;
+        return Map.Instance.getTile(edgePosition).Walkable;
     }
     public bool MoveEdge(Edge<Tile> edge)
     {
         Vector2 edgePosition = edge.node.data.position + rotate(edge.direction);
-        if (map.getTile(edgePosition) == null) return false;
-        return map.getTile(edgePosition).tileIsWalkable(unit);
+        if (Map.Instance.getTile(edgePosition) == null) return false;
+        return Map.Instance.getTile(edgePosition).Walkable;
+    }
+
+    public string GetData()
+    {
+        return "(Unit at x " + position.x + ", y" + position.y + ")";
     }
 }

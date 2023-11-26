@@ -77,20 +77,11 @@ public class CombatEngine: MonoBehaviour{
             Destroy(this);
         }
     }
-    public static void rangedAttacked(Vector2 position, int attacks, Stats.RangedWeapon projectile)
-    {
-
-    }
-    static void bombardAttack(Vector2 position, int attacks, Stats.RangedWeapon projectile)
-    {
-
-    }
     static int combat(int attacks, Unit attacker, Unit defender)
     {
         int casualties = 0;
-        casualties = combat(attacker.typeOfModel.combatStats.weaponSkill, (2 * defender.typeOfModel.combatStats.weaponSkill) / 3, attacks);
-        casualties = combat(attacker.typeOfModel.combatStats.strength, defender.typeOfModel.combatStats.toughness, casualties);
-        casualties -= save(attacker.typeOfModel.combatStats.armour, casualties);
+        casualties = combat(attacker.Stats.WeaponSkill, (2 * defender.Stats.WeaponSkill) / 3, attacks);
+        casualties = combat(attacker.Stats.AttackStrength, defender.Stats.Defence, casualties);
         return casualties;
     }
     //
@@ -128,7 +119,7 @@ public class CombatEngine: MonoBehaviour{
             return fight.Front;
         }
         testTile = unit1.models[unit1.models.Count - 1].position - unit1.direction;
-        if (Map.Instance.getTile(testTile) == unit2)
+        if (Map.Instance.getTile(testTile).unit == unit2)
         {
             return fight.Rear;
         }

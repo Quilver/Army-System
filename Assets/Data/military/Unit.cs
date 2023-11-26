@@ -1,122 +1,114 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-public enum UnitType
+
+public class Unit : MonoBehaviour
 {
-    Infantry, Cavalry, Monsters, Collosuss
-}
-public class Unit:MonoBehaviour{
-    //unit details
-    Army army;
+    [SerializeField] Army army;
+    public Army Controller { get { return army; } } 
     public List<Model> models;
-    public ModelType typeOfModel;
-    int width;
-    int numberOfModels = 24;
-    //movement
+    [SerializeField] UnitType type;
+    public UnitStats Stats { get { return type.Stats; } }    
+    [SerializeField] int UnitSize;
+    [SerializeField] int UnitWidth;
+    #region Movement
+    public Vector2 position, direction;
     Vector2 destination;
-    public Vector2 direction, position;
-    Vector3 targetRotation;
-    public float moveSpeed, rotateSpeed;
     public bool rotating, moving, strafing;
     Tile wayPoint;
     UnitMovementAI movementAI;
-    //combat
-    public bool inCombat, routing;
-    float leaderShipPenalty, combatLeadershipPenalty, deathsPenalty;
-    //
-    public Unit create(int x, int y, Army army, ModelType modelType, int width, int models)
+    #endregion
+    public bool inCombat;
+    private void Start()
     {
-        gameObject.name = modelType.name;
-        this.army = army;
+        create();
+    }
+    public void create()
+    {
+        gameObject.name = type.UnitName;
         //movement
-        position = new Vector2(x, y);
-        Map.Instance.getTile(x, y).unit = this;
+        position = new Vector2(transform.position.x, transform.position.y);
+        Debug.Log(Map.Instance);
+        Map.Instance.getTile((int)position.x, (int)position.y).unit = this;
         rotating = false;
         moving = false;
         strafing = false;
-        moveSpeed = modelType.movementSpeed;
         //model initialisation
-        this.width = width;
-        numberOfModels = models;
-        typeOfModel = modelType;
         populateModels();
         updateCollider();
         //movement ai
         movementAI = new UnitMovementAI(this);
-        return this;
+    }
+    public void updateCollider()
+    {
+        if(models.Count== 0) return;    
+        UnitSize = models.Count;
+        if (UnitSize < UnitWidth)
+        {
+            UnitWidth = UnitSize;
+        }
+        BoxCollider2D box = gameObject.GetComponent<BoxCollider2D>();
+        box.size = new Vector2(UnitWidth, Mathf.Ceil(UnitSize / (UnitWidth + 0f)));
+        box.offset = new Vector2(0, Mathf.Ceil(UnitSize / (UnitWidth * 2f)) - 0.5f);
+        gameObject.transform.position = position;
+        gameObject.transform.rotation = Quaternion.AngleAxis(CombatEngine.AngleBetweenVector2(position, models[0].position) - 180, Vector3.forward);
     }
     void populateModels()
     {
         //populate unit with models
         models = new List<Model>();
-        int count = numberOfModels;
-        if (width > numberOfModels) { width = numberOfModels; }
-        int xOffset = width / 2;
-        int yOffset = (int)Mathf.Ceil((numberOfModels * 1.0f) / width);
+        int count = UnitSize;
+        if (UnitWidth > UnitSize) { UnitWidth = UnitSize; }
+        int xOffset = UnitWidth / 2;
+        int yOffset = (int)Mathf.Ceil((UnitSize * 1.0f) / UnitWidth);
         //Add models to unit
         for (int y = 0; y < yOffset; y++)
         {
-            for  (int x = -xOffset; x < width - xOffset; x++)
+            for (int x = -xOffset; x < UnitWidth - xOffset; x++)
             {
                 if (count <= 0) { break; }
                 Vector2 offset = new Vector2(x, y);
-                models.Add(gameObject.AddComponent<Model>().create((int)position.x, (int)position.y, offset, this, typeOfModel.prefabName) as Model);
-                models[models.Count - 1].hideFlags = HideFlags.HideInInspector;
+                var model = Instantiate(type.Visual).GetComponent<Model>();
+                model.Init((int)position.x, (int)position.y, offset, this);
+                models.Add(model);
                 count--;
             }
         }
     }
     public string getDetails()
     {
-        string details = typeOfModel.name + " at (x " + (int)position.x + ", y" + (int)position.y + ")";
-        details += "\nNumber of models " + numberOfModels;
-        details += "\nMovement speed " + typeOfModel.movementSpeed;
-        details += "\nLeadership " + typeOfModel.combatStats.leadership;
-        details += "\nHit points " + typeOfModel.combatStats.wounds;
-        details += "\nEndurance " + typeOfModel.combatStats.toughness;
-        details += "\nArmour " + typeOfModel.combatStats.armour;
-        details += "\nMelee skill " + typeOfModel.combatStats.weaponSkill;
-        details += "\nStrength " + typeOfModel.combatStats.strength;
+        string details = type.UnitName + " at X:" + (int)position.x + ", Y:" + (int)position.y + "";
+        details += "\nNumber of models: " + UnitSize;
+        details += "\nMovement speed " + type.Stats.MoveSpeed;
+        details += "\nAttack Speed " + type.Stats.Speed;
+        details += "\nWeapon Skill " + type.Stats.WeaponSkill;
+        details += "\nStrength " + type.Stats.AttackStrength;
+        details += "\nDefence " + type.Stats.Defence;
         return details;
-    } 
-
-    // Update is called once per frame
-    public void Update () {
+    }
+    public void Update()
+    {
         movementUpdate();
         updateCollider();
-        updateLeadership();
     }
-    public void order(Section section)
+    public void order(SelectionData section)
     {
         //Debug.Log("Recieved order");
         if (section == null) { return; }
-        else if(section.unit != null)// && army.enemies.Contains(section.unit.army))
+        else if (section as Unit != null)// && army.enemies.Contains(section.unit.army))
         {
-            movementAI.getRoute(section.unit as Unit);
+            movementAI.getRoute(section as Unit);
         }
         else if (section.GetType() == typeof(Tile))
         {
             movementAI.getRoute(section as Tile);
         }
-        
+
     }
-    //combat
-    public void updateCollider()
+    public void deaths(int numberOfDeaths)
     {
-        numberOfModels = models.Count;
-        if(numberOfModels < width)
-        {
-            width = numberOfModels;
-        }
-        BoxCollider2D box = gameObject.GetComponent<BoxCollider2D>();
-        box.size = new Vector2(width, Mathf.Ceil(numberOfModels / (width + 0f)));
-        box.offset = new Vector2(0, Mathf.Ceil(numberOfModels / (width * 2f)) - 0.5f);
-        gameObject.transform.position = position;
-        gameObject.transform.rotation = Quaternion.AngleAxis(CombatEngine.AngleBetweenVector2(position, models[0].position) - 180, Vector3.forward);
-    }
-    public void deaths(int numberOfDeaths) {
-        if(models==null || models.Count == 0) { return; }
-        if(models.Count <= numberOfDeaths)
+        if (models == null || models.Count == 0) { return; }
+        if (models.Count <= numberOfDeaths)
         {
             //print(gameObject.name + " has been removed");
             foreach (Model model in models)
@@ -149,8 +141,9 @@ public class Unit:MonoBehaviour{
             }
         }
     }
-    void OnCollisionEnter2D(Collision2D col) {
-       if(col.gameObject.tag == "Regiment" && col.gameObject.GetComponent<Unit>() != null)
+    void OnCollisionEnter2D(Collision2D col)
+    {
+        if (col.gameObject.tag == "Regiment" && col.gameObject.GetComponent<Unit>() != null)
         {
             //print("Collided with unit");
             Unit u = col.gameObject.GetComponent<Unit>() as Unit;
@@ -166,16 +159,12 @@ public class Unit:MonoBehaviour{
             }
         }
     }
-    void updateLeadership()
-    {
-
-    }
     public bool adjacentTile(Vector2 position)
     {
         bool adjacent = false;
-        foreach(Model model in models)
+        foreach (Model model in models)
         {
-            if(1 >= Mathf.Abs(model.position.x - position.x) && 1 >= Mathf.Abs(model.position.y - position.y))
+            if (1 >= Mathf.Abs(model.position.x - position.x) && 1 >= Mathf.Abs(model.position.y - position.y))
             {
                 adjacent = true;
                 break;
@@ -188,19 +177,20 @@ public class Unit:MonoBehaviour{
         CombatEngine.fight fight = CombatEngine.fight.Flank;
         bool setAngle = false;
         int contacts = 0;
-        foreach(Model model in models)
+        foreach (Model model in models)
         {
-            if( obj.GetComponent<BoxCollider2D>().IsTouching(model.self.GetComponent<BoxCollider2D>()))
+            if (obj.GetComponent<BoxCollider2D>().IsTouching(model.gameObject.GetComponent<BoxCollider2D>()))
             {
                 contacts++;
-                Vector2 pos = (Vector2)model.self.transform.position;
+                Vector2 pos = (Vector2)model.gameObject.transform.position;
                 pos.x = Mathf.Round(pos.x);
                 pos.y = Mathf.Round(pos.y);
                 if (!setAngle)
                 {
                     string names = "";
                     names += (pos + direction) + " ";
-                    if(Map.Instance.getTile(pos + direction).unit != null) {
+                    if (Map.Instance.getTile(pos + direction).unit != null)
+                    {
                         names += "Front " + Map.Instance.getTile(pos + direction).unit.gameObject.name;
                     }
                     names += ", ";
@@ -211,16 +201,17 @@ public class Unit:MonoBehaviour{
                     }
                     print(gameObject.name + ": " + pos + " (" + names + ") " + obj.name);
                 }
-                if (setAngle) {
+                if (setAngle)
+                {
                     continue;
                 }
-                else if (Map.Instance.getTile(pos + direction).unit != null && 
+                else if (Map.Instance.getTile(pos + direction).unit != null &&
                     Map.Instance.getTile(pos + direction).unit.gameObject == obj)
                 {
                     setAngle = true;
                     fight = CombatEngine.fight.Front;
                 }
-                else if (Map.Instance.getTile(pos - direction).unit != null && 
+                else if (Map.Instance.getTile(pos - direction).unit != null &&
                     Map.Instance.getTile(pos - direction).unit.gameObject == obj)
                 {
                     setAngle = true;
@@ -229,12 +220,12 @@ public class Unit:MonoBehaviour{
                 else
                 {
                     setAngle = true;
-                    fight = CombatEngine.fight.Flank ;
+                    fight = CombatEngine.fight.Flank;
                 }
             }
         }
         //print(gameObject.name + " " + direction + " " + fight);
-        
+
         return new CombatEngine.AngleOfAttack { contacts = contacts, f = fight };
     }
     public Vector2 getCenterPoint()
@@ -243,22 +234,22 @@ public class Unit:MonoBehaviour{
     }
     public int rankBonus()
     {
-        int rank = numberOfModels / width;
-        if(rank > 3) { rank = 3; }
+        int rank = UnitSize / UnitWidth;
+        if (rank > 3) { rank = 3; }
         return rank + 1;
     }
-    //pathfinding
+    #region Pathfinding
     void movementUpdate()
     {
         if (inCombat) { return; }
         movementAI.validateRoute();
-        if(movementAI.route != null && movementAI.route.waypoints !=null && movementAI.route.waypoints.Count > 0 && wayPoint == null)
+        if (movementAI.route != null && movementAI.route.waypoints != null && movementAI.route.waypoints.Count > 0 && wayPoint == null)
         {
             Path<Node<Tile>> altWayPoint = movementAI.followPath();
             wayPoint = altWayPoint.state.data;
             destination = new Vector2(wayPoint.position.x, wayPoint.position.y);
             Vector2 altDir = destination - position;
-            if(altDir.x != 0)
+            if (altDir.x != 0)
                 altDir.x /= Mathf.Abs(altDir.x);
             if (altDir.y != 0)
                 altDir.y /= Mathf.Abs(altDir.y);
@@ -291,7 +282,7 @@ public class Unit:MonoBehaviour{
             }
             return;
         }
-        else {  }
+        else { }
         foreach (Model model in models)
         {
             if (!model.move())
@@ -310,8 +301,8 @@ public class Unit:MonoBehaviour{
                 model.moveOrder(destination);
             }
         }
-        position = Vector2.MoveTowards(position, destination, moveSpeed * Time.deltaTime);
-        if(position.x ==destination.x && position.y == destination.y)
+        position = Vector2.MoveTowards(position, destination, type.Stats.MoveSpeed * Time.deltaTime);
+        if (position.x == destination.x && position.y == destination.y)
         {
             moving = false;
         }
@@ -325,7 +316,7 @@ public class Unit:MonoBehaviour{
                 model.moveOrder(destination);
             }
         }
-        position = Vector2.MoveTowards(position, destination, moveSpeed * Time.deltaTime / 5.0f);
+        position = Vector2.MoveTowards(position, destination, type.Stats.MoveSpeed * Time.deltaTime / 5.0f);
         if (position.x == destination.x && position.y == destination.y)
         {
             strafing = false;
@@ -361,4 +352,6 @@ public class Unit:MonoBehaviour{
         }
         return true;
     }
+    #endregion
+
 }
