@@ -95,8 +95,9 @@ public class Unit : MonoBehaviour
     {
         //Debug.Log("Recieved order");
         if (section == null) { return; }
-        else if (section as Unit != null)// && army.enemies.Contains(section.unit.army))
+        else if (section as Unit != null)
         {
+            Debug.Log("Moving to unit");
             movementAI.getRoute(section as Unit);
         }
         else if (section.GetType() == typeof(Tile))
@@ -141,17 +142,14 @@ public class Unit : MonoBehaviour
             }
         }
     }
-    void OnCollisionEnter2D(Collision2D col)
+    private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (col.gameObject.tag == "Regiment" && col.gameObject.GetComponent<Unit>() != null)
+        if (collision.gameObject.tag == "Regiment")// && col.gameObject.GetComponent<Unit>() != null)
         {
-            //print("Collided with unit");
-            Unit u = col.gameObject.GetComponent<Unit>() as Unit;
+            print("Collided with unit");
+            Unit u = collision.gameObject.GetComponent<Unit>() as Unit;
             KeyValuePair<Unit, Unit> pa = new KeyValuePair<Unit, Unit>(this, u);
-            //print("Collision between two units");
-            //print(getDetails());
-            //print(u.getDetails());
-            if (!Master.Instance.battles.ContainsKey(new KeyValuePair<Unit, Unit>(u, this)) && !Master.Instance.battles.ContainsKey(pa))// && army.enemies.Contains(u.army))
+            if (!Master.Instance.battles.ContainsKey(new KeyValuePair<Unit, Unit>(u, this)) && !Master.Instance.battles.ContainsKey(pa))
             {
                 //print("Entered combat");
                 inCombat = true;

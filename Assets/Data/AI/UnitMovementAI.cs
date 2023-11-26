@@ -7,40 +7,23 @@ public class UnitMovementAI:Action<Node<Tile>>{
     Unit unit, targetUnit;
     Tile target;
     int updateCount = 0;
-    Dictionary<Node<Tile>, bool> canMove = new Dictionary<Node<Tile>, bool>();
+    Dictionary<Node<Tile>, bool> _canMove = new Dictionary<Node<Tile>, bool>();
     public aStar<Node<Tile>> route;
     //setup
     public UnitMovementAI(Unit unit)
     {
         this.unit = unit;
-        initialiseGraph();
+        _canMove = new Dictionary<Node<Tile>, bool>();
     }
-    void initialiseGraph()
+    
+    public bool CanMove(Node<Tile> node)
     {
-        for (int x = 0; x < Map.Instance.Width; x++)
-        {
-            for (int y = 0; y < Map.Instance.Height; y++)
-            {
-                for (int a = -1; a <= 1; a++)
-                {
-                    for (int b = -1; b <= 1; b++)
-                    {
-                        if (Map.Instance.getTile(x+a, y+b).Walkable)//.inMap(x + a, y + b) && (a != 0 || b != 0))
-                        {
-                            Node<Tile> endNode = makeNode(x, y, a, b);
-                            if (unit.canMove(endNode))
-                            {
-                                canMove.Add(endNode, true);
-                            }
-                            else
-                            {
-                                canMove.Add(endNode, false);
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        if (_canMove.ContainsKey(node)) return _canMove[node];
+        bool walkable = Map.Instance.getTile((int)node.position.x, (int)node.position.y).Walkable;
+        var pos = node.position + node.direction;
+        walkable = walkable && Map.Instance.getTile((int)pos.x, (int)pos.y).Walkable;
+        _canMove.Add(node, walkable);
+        return _canMove[node];
     }
     //route making methods
     public void getRoute(Tile goal)
@@ -61,7 +44,7 @@ public class UnitMovementAI:Action<Node<Tile>>{
             {
                 end.direction.x = startX;
                 end.direction.y = startY;
-                if (canMove.ContainsKey(end) && canMove[end])
+                if (CanMove(end))
                 {
                     route.createRoute(end);
                     return;
@@ -220,7 +203,7 @@ public class UnitMovementAI:Action<Node<Tile>>{
             path.state.data = null;
         }
         //if strafe doesn't work, returns null
-        if (!canMove.ContainsKey(path.state) || !canMove[path.state] || !unit.canMove(path.state))
+        if (!CanMove(path.state) || !unit.canMove(path.state))
         {
             path.state.data = null;
         }

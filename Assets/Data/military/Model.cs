@@ -18,7 +18,6 @@ public class Model : MonoBehaviour, SelectionData
         position=unit.position + offset;
         this.unit= unit;
         transform.position = position;
-        transform.eulerAngles = new Vector3(gameObject.transform.eulerAngles.x, gameObject.transform.eulerAngles.y, -45f);
         if (offset.x == 0 && offset.y == 0) { gameObject.name = "Banner" + position; }
     }
     void Update()

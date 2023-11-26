@@ -13,10 +13,7 @@ public class Map: MonoBehaviour{
     TileData groundTile, waterTile, EmptyTile, MountainTile;
     Dictionary<Vector2Int, Tile> tiles;
     public Dictionary<Tile, Unit> get_unit;
-    //public int[,] til;
     public static Map Instance { get; set; }
-    //public int width = 150;
-    //public int hieght = 100;
     void Awake()
     {
         Init();
@@ -67,14 +64,5 @@ public class Map: MonoBehaviour{
     }
     public int Width { get { return groundSource.size.x; } }
     public int Height { get { return groundSource.size.y;} }
-    /*
-    public bool inMap(float x, float y)
-    {
-        return (x >= 0 && x < width) && (y >= 0 && y < hieght);
-    }
-    public bool inMap(Vector2 position)
-    {
-        return (position.x >= 0 && position.x < width) && (position.y >= 0 && position.y < hieght);
-    }
-    */
+    
 }
