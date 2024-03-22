@@ -7,7 +7,17 @@ public class UnitPositionR : MonoBehaviour
 	#region Properties
 	UnitR unit;
 	PositionR position;
-	int numberOfFiles;
+
+	public int numberOfFiles;
+	public int UnitWidth
+	{
+		get
+		{
+			if (unit.models != null && unit.models.Count < numberOfFiles)
+				numberOfFiles = unit.models.Count;
+			return numberOfFiles;
+		}
+	}
 	#endregion
 	public int DistanceFromTile(Vector2Int position)
 	{

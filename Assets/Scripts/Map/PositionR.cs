@@ -97,6 +97,23 @@ public struct PositionR
         }
         return moves;
     }
+    public static List<Pathfinding.Path<PositionR>> GetMoves(Pathfinding.Path<PositionR> path, int advanceCost=1,
+        int wheelCost = 4, int strafeCost = 12)
+    {
+        var nodes = path.state.GetMoves();
+        List<Pathfinding.Path<PositionR>> paths = new List<Pathfinding.Path<PositionR>>();
+        foreach (var node in nodes)
+        {
+            Pathfinding.Path<PositionR> newPath = new Pathfinding.Path<PositionR>();
+            newPath.state = node;
+            newPath.weight = path.weight;
+            if (node.location == path.state.location) newPath.weight += wheelCost;
+            else if (node.location - node.direction == path.state.location) newPath.weight += advanceCost;
+            else newPath.weight += strafeCost;
+            paths.Add(newPath);
+        }
+        return paths;
+    }
     public override bool Equals(object obj)
     {
         if(obj is PositionR)
