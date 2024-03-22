@@ -11,7 +11,7 @@ public class UnitEditor : Editor
         Unit myScript = (Unit)target;
         if (GUILayout.Button("Generate Models"))
         {
-            myScript.SetRotation();
+            myScript.unitMovementHandler.SetRotation();
             myScript.UpdateVisual();
         }
 

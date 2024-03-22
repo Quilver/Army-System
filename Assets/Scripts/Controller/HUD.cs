@@ -35,7 +35,7 @@ public class HUD : MonoBehaviour {
         }
         else
         {
-            return section.GetData();
+            return section.ToString();
         }
     }
 }

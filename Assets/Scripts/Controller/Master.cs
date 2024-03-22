@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Master : MonoBehaviour {
     public static Master Instance;
-    public List<Combats> combats;
+    public Combats combats;
     public Dictionary<Unit, Army> unitArmy;
     [SerializeField] Army player, enemy1;
 	// Use this for initialization
@@ -17,7 +17,7 @@ public class Master : MonoBehaviour {
         {
             Instance = this;
         }
-        combats = new List<Combats>();
+        combats = new Combats();
         unitArmy = new Dictionary<Unit, Army>();
         
     }

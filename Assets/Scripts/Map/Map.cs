@@ -40,6 +40,10 @@ public class Map: MonoBehaviour{
         tiles.Add(pos, new Tile(pos, tileData));
         return tiles[pos];
     }
+    public Tile getTile(Vector2Int pos)
+    {
+        return getTile(pos.x, pos.y);
+    }
     public Tile getTile(Vector2 pos)
     {
         return getTile((int)pos.x, (int)pos.y);
@@ -61,6 +65,23 @@ public class Map: MonoBehaviour{
     public void SetTile(Vector2 position, Unit unit)
     {
         throw new NotImplementedException();
+    }
+    public int NearestUnitDistance(Vector2Int postion, Unit mover, Unit enemy = null)
+    {
+        List<Unit> unitsToIgnore = new List<Unit>();
+        unitsToIgnore.Add(mover);
+        if(enemy != null)unitsToIgnore.Add(enemy);
+        int distance = int.MaxValue;
+        
+        foreach (var unit in Master.Instance.unitArmy.Keys)
+        {
+            if (unitsToIgnore.Contains(unit)) continue;
+            unitsToIgnore.Add(unit);
+            float dist = unit.unitMovementHandler.DistanceFromTile(postion);
+            if (dist < distance)
+                distance = (int)dist;
+        }
+        return distance;
     }
     public int Width { get { return groundSource.size.x; } }
     public int Height { get { return groundSource.size.y;} }

@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 [System.Serializable]
 public class Tile: SelectionData
 {
@@ -22,17 +23,26 @@ public class Tile: SelectionData
         _tileData = tileData;
         unit = null;
     }
-    public bool Walkable(Unit unit)
+    public bool Walkable(Unit unit, Unit target = null)
     {
         bool walkable = _tileData.Walkable;
-        bool occupied = this.unit!= null && unit != this.unit;
+        bool occupied = this.unit!= null;
+        if (this.unit == unit || this.unit == target) occupied = false;
         return walkable && !occupied;
     }
     //public bool Walkable { get { return _tileData.Walkable; } }
     public int WalkCost { get { return _tileData.WalkCost; } }
 
+    public override string ToString()
+    {
+        string start = "Tile -> (X:" + pos.x + ", Y:" + pos.y + ", ";
+        if (_tileData.Walkable)
+            start += "Walkable)";
+        else start += "Unmoveable)";
+        return start;
+    }
     public string GetData()
     {
-        return "Tile X:" + pos.x + ", Y:" + pos.y + "\n Walkable: " + _tileData.Walkable.ToString();
+        return ToString();
     }
 }
