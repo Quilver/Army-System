@@ -1,9 +1,11 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+[System.Serializable]
 public struct PositionR 
 {
+    #region Static
     public static List<CardinalDirections> AdjacentDirections(CardinalDirections direction)
     {
         var directions = new List<CardinalDirections>();
@@ -68,15 +70,95 @@ public struct PositionR
         Debug.LogError("Unknown Cardinal direction");
         return new Vector2Int(0, 0);
     }
+    public static Vector2Int Rotate(PositionR direction, Vector2Int position, bool inverted = false)
+    {
+        PositionR pos = new(position, direction._direction);
+        if (!inverted)
+        {
+            var matrix = pos.UnitDirection;
+            Vector2Int x = pos.location.x * matrix.Item1;
+            Vector2Int y = pos.location.y * matrix.Item2;
+            return x + y;
+        }
+        else
+        {
+            Tuple<Vector2Int, Vector2Int> matrix = PositionR.Inverse(direction._direction);
+            Vector2Int x = pos.location.x * matrix.Item1;
+            Vector2Int y = pos.location.y * matrix.Item2;
+            //half offset if NW,NE,SW,SE
+            if (direction.direction.x != 0 && direction.direction.y != 0)
+                return (x + y) / 2;
+            return x + y;
+        }
+    }
+    internal static Tuple<Vector2Int, Vector2Int> Inverse(CardinalDirections cardinalDirection)
+    {
+        Tuple<Vector2Int, Vector2Int> coords = new(Vector2Int.zero, Vector2Int.zero);
+        switch (cardinalDirection)
+        {
+            case CardinalDirections.N:
+                return Tuple.Create(new Vector2Int(1, 0), new Vector2Int(0, 1));
+            case CardinalDirections.NE:
+                return Tuple.Create(new Vector2Int(1, 1), new Vector2Int(-1, 1));
+            case CardinalDirections.NW:
+                return Tuple.Create(new Vector2Int(1, -1), new Vector2Int(1, 1));
+            case CardinalDirections.W:
+                return Tuple.Create(new Vector2Int(0, 1), new Vector2Int(-1, 0));
+            case CardinalDirections.SW:
+                return Tuple.Create(new Vector2Int(-1, -1), new Vector2Int(1, -1));
+            case CardinalDirections.S:
+                return Tuple.Create(new Vector2Int(-1, 0), new Vector2Int(0, -1));
+            case CardinalDirections.SE:
+                return Tuple.Create(new Vector2Int(-1, 1), new Vector2Int(-1, -1));
+            case CardinalDirections.E:
+                return Tuple.Create(new Vector2Int(0, 1), new Vector2Int(-1, 0));
+        }
+        Debug.LogError("Invalid Direction");
+        return coords;
+    }
+    #endregion
+    #region Properties
     Vector2Int location;
     public Vector2Int Location
     {
         get { return location; }
+        set { location = value; }
     }
+    [SerializeField]
     CardinalDirections _direction;
     public Vector2Int direction
     {
         get { return ConvertToCoordinates(_direction); }
+    }
+    #endregion
+
+    public Tuple<Vector2Int, Vector2Int> UnitDirection
+    {
+        get
+        {
+            Tuple<Vector2Int, Vector2Int> coords = new(Vector2Int.zero, Vector2Int.zero);
+            switch (_direction)
+            {
+                case CardinalDirections.N:
+                    return Tuple.Create( new Vector2Int(1,0), new Vector2Int(0,-1));
+                case CardinalDirections.NE:
+                    return Tuple.Create(new Vector2Int(1, -1), new Vector2Int(-1, -1));
+                case CardinalDirections.NW:
+                    return Tuple.Create(new Vector2Int(1, 1), new Vector2Int(1, -1));
+                case CardinalDirections.W:
+                    return Tuple.Create(new Vector2Int(0, 1), new Vector2Int(1, 0));
+                case CardinalDirections.SW:
+                    return Tuple.Create(new Vector2Int(-1, 1), new Vector2Int(1, 1));
+                case CardinalDirections.S:
+                    return Tuple.Create(new Vector2Int(-1, 0), new Vector2Int(0, 1));
+                case CardinalDirections.SE:
+                    return Tuple.Create(new Vector2Int(-1, -1), new Vector2Int(-1, 1));
+                case CardinalDirections.E:
+                    return Tuple.Create(new Vector2Int(0, -1), new Vector2Int(-1, 0));
+            }
+            Debug.LogError("Invalid Direction");
+            return coords;
+        }
     }
     public PositionR(Vector2Int location, CardinalDirections direction)
     {
@@ -85,26 +167,25 @@ public struct PositionR
     }
     public List<PositionR> GetMoves()
     {
-        List<PositionR> moves = new List<PositionR>();
+        List<PositionR> moves = new();
         foreach (var directions in AdjacentDirections(_direction))
         {
             moves.Add(new PositionR(location, directions));
         }
         foreach (var pos in System.Enum.GetValues(typeof(CardinalDirections)))
         {
-            Debug.Log(pos.ToString());
             moves.Add(new PositionR(location + ConvertToCoordinates((CardinalDirections)pos), _direction));
         }
         return moves;
     }
-    public static List<Pathfinding.Path<PositionR>> GetMoves(Pathfinding.Path<PositionR> path, int advanceCost=1,
-        int wheelCost = 4, int strafeCost = 12)
+    public static List<Pathfinding.WeightedNode<PositionR>> GetMoves(Pathfinding.WeightedNode<PositionR> path, int advanceCost=1,
+        int wheelCost = 2, int strafeCost = 20)
     {
         var nodes = path.state.GetMoves();
-        List<Pathfinding.Path<PositionR>> paths = new List<Pathfinding.Path<PositionR>>();
+        List<Pathfinding.WeightedNode<PositionR>> paths = new List<Pathfinding.WeightedNode<PositionR>>();
         foreach (var node in nodes)
         {
-            Pathfinding.Path<PositionR> newPath = new Pathfinding.Path<PositionR>();
+            Pathfinding.WeightedNode<PositionR> newPath = new Pathfinding.WeightedNode<PositionR>();
             newPath.state = node;
             newPath.weight = path.weight;
             if (node.location == path.state.location) newPath.weight += wheelCost;
@@ -122,5 +203,9 @@ public struct PositionR
             return positionRother._direction == _direction && positionRother.location ==location;
         }
         return false;
+    }
+    public override string ToString()
+    {
+        return _direction.ToString() + " " + location;
     }
 }

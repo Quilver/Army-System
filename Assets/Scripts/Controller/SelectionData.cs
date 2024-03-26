@@ -4,5 +4,6 @@ using UnityEngine;
 
 public interface SelectionData 
 {
-    public string GetData();
+    public Vector2Int GetPosition();
+    
 }

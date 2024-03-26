@@ -2,17 +2,17 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
-[CustomEditor(typeof(Unit))]
+[CustomEditor(typeof(UnitR))]
 public class UnitEditor : Editor
 {
     public override void OnInspectorGUI()
     {
         base.OnInspectorGUI();
-        Unit myScript = (Unit)target;
+        UnitR myScript = (UnitR)target;
         if (GUILayout.Button("Generate Models"))
         {
-            myScript.unitMovementHandler.SetRotation();
-            myScript.UpdateVisual();
+            //myScript.unitMovementHandler.SetRotation();
+            //myScript.UpdateVisual();
         }
 
     }

@@ -12,7 +12,6 @@ public class Map: MonoBehaviour{
     [SerializeField]
     TileData groundTile, waterTile, EmptyTile, MountainTile;
     Dictionary<Vector2Int, Tile> tiles;
-    public Dictionary<Tile, Unit> get_unit;
     public static Map Instance { get; set; }
     void Awake()
     {
@@ -61,27 +60,6 @@ public class Map: MonoBehaviour{
     {
         return GetTileD((int)position.x, (int)position.y);
         
-    }
-    public void SetTile(Vector2 position, Unit unit)
-    {
-        throw new NotImplementedException();
-    }
-    public int NearestUnitDistance(Vector2Int postion, Unit mover, Unit enemy = null)
-    {
-        List<Unit> unitsToIgnore = new List<Unit>();
-        unitsToIgnore.Add(mover);
-        if(enemy != null)unitsToIgnore.Add(enemy);
-        int distance = int.MaxValue;
-        
-        foreach (var unit in Master.Instance.unitArmy.Keys)
-        {
-            if (unitsToIgnore.Contains(unit)) continue;
-            unitsToIgnore.Add(unit);
-            float dist = unit.unitMovementHandler.DistanceFromTile(postion);
-            if (dist < distance)
-                distance = (int)dist;
-        }
-        return distance;
     }
     public int Width { get { return groundSource.size.x; } }
     public int Height { get { return groundSource.size.y;} }

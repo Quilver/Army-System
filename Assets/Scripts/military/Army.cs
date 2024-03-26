@@ -4,14 +4,9 @@ using UnityEngine;
 
 public class Army : MonoBehaviour {
     [SerializeField]
-    List<Unit> units;
+    List<UnitR> units;
     public List<Army> enemies, allies, non_aligned;
     public Controller controller;
-    public enum Faction
-    {
-        Undead, 
-        Human
-    }
     public enum Controller
     {
         Player,
@@ -24,6 +19,13 @@ public class Army : MonoBehaviour {
         Enemy,
         Non_aligned
     }
+    private void Start()
+    {
+        foreach (var unit in units)
+        {
+            Master.Instance.unitArmy.Add(unit, this);
+        }
+    }
     public Army create( Controller type)
     {
         //assigns if the army is controlled by the player or computer
@@ -33,7 +35,7 @@ public class Army : MonoBehaviour {
         allies = new List<Army>();
         non_aligned = new List<Army>();
         //
-        units = new List<Unit>();
+        units = new List<UnitR>();
         return this;
     }
     public void addArmy(Army army, Allaince side)
@@ -56,7 +58,7 @@ public class Army : MonoBehaviour {
             }
         }
     }
-    public void addUnit(Unit unit)
+    public void addUnit(UnitR unit)
     {
         if (!units.Contains(unit))
         {

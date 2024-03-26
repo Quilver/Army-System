@@ -20,9 +20,9 @@ public class HUD : MonoBehaviour {
     private void DrawUnitBar()
     {
         string description = "";
-        foreach (Unit unit in player.selectedUnits)
+        foreach (UnitR unit in player.selectedUnits)
         {
-            description += unit.getDetails();
+            description += unit.ToString();
             description += "\n";
         }
         unitDetail.text = description;

@@ -7,9 +7,9 @@ public class UnitR : MonoBehaviour
 {
 	#region Properties
 	[SerializeField]
-	UnitStatsR stats;
+	public UnitStatsR stats;
 	[SerializeField]
-	UnitState state;
+	public UnitState state;
 	[SerializeField]
 	UnitPositionR movement;
     public UnitPositionR Movement
@@ -24,44 +24,73 @@ public class UnitR : MonoBehaviour
     #region Initialise
     private void Start()
     {
+        movement.unitSetter= this;
+        movement.position.Location = new Vector2Int((int)transform.position.x, (int)transform.position.y);
         transform.position = new Vector3((int)transform.position.x, (int)transform.position.y, (int)transform.position.z);
         PopulateModels();
+        time = stats.AttackSpeed;
     }
     void PopulateModels()
     {
-        if (movement.numberOfFiles > _startingUnitSize) movement.numberOfFiles = _startingUnitSize;
+        if (movement._unitWidth > _startingUnitSize) movement._unitWidth = _startingUnitSize;
+        int width = movement._unitWidth;
         models = new List<ModelR>();
-        int xOffset = movement.UnitWidth / 2;
-        int yOffset = (int)Mathf.Ceil((_startingUnitSize * 1.0f) / movement.UnitWidth);
+        int xOffset = width / 2;
+        int yOffset = (int)Mathf.Ceil((_startingUnitSize * 1.0f) / width);
         GameObject parent = new GameObject(gameObject.name);
         for (int y = 0; y < yOffset; y++)
         {
-            for (int x = -xOffset; x < movement.UnitWidth - xOffset; x++)
+            for (int x = 0; x < width; x++)
             {
-                if (_startingUnitSize <= 0) { break; }
-                Vector2 offset = new Vector2(x, y);
-                var model = Instantiate(type.Visual, parent.transform).GetComponent<Model>();
-                model.Init((int)transform.position.x, (int)transform.position.y, offset, this, models.Count - 1);
+                int Xoffset = x/2;
+                if (x % 2 == 0) Xoffset = -Xoffset;
+                else Xoffset += 1;
+                Vector2Int offset = new Vector2Int(Xoffset, y);
+                var model = Instantiate(_modelPrefab, parent.transform).GetComponent<ModelR>();
+                model.Init(offset, this, models.Count - 1);
                 models.Add(model);
-                count--;
             }
         }
     }
     #endregion
     #region Update
-
-    #endregion
-    #region Movement
-    public void MoveTo(Vector2Int position)
+    float time;
+    private void Update()
     {
-
-    }
-    public void MoveTo(UnitR target)
-    {
-
+        if (state == UnitState.Fighting)
+            Fighting();
+        movement.UpdateMovement();
     }
     #endregion
     #region Combat and death
-
+    public void Fighting()
+    {
+        time -= Time.deltaTime;
+        if (time < 0)
+        {
+            time = 10f/stats.AttackSpeed;
+            Master.Instance.MakeAttack(this);
+        }
+    }
+    public void Die(int deaths)
+    {
+        for (int i = 0; i < deaths; i++)
+        {
+            if (models.Count == 0)
+            {
+                Die();
+                return;
+            }
+            Destroy(models[models.Count - 1].gameObject);
+            models.RemoveAt(models.Count - 1);
+            
+        }
+    }
+    void Die()
+    {
+        if (this == null) return;
+        Master.Instance.RemoveCombat(this, true);
+        Destroy(gameObject);
+    }
     #endregion
 }

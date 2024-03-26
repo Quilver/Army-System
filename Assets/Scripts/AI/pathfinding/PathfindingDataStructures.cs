@@ -4,80 +4,11 @@ using System.Collections.Generic;
 using UnityEngine;
 namespace Pathfinding
 {
-    public struct Path<State>
+    public struct WeightedNode<State>
     {
         public State state;
         public float weight;
     };
-    public struct Node<T>
-    {
-        //public Edge<T>[] paths;
-        public Vector2 direction, position;
-        public T data;
-        public Tuple<Vector2, Vector2> GetData()
-        {
-            return new Tuple<Vector2, Vector2>(direction, position);
-        }
-        public override bool Equals(object obj)
-        {
-            return this == ((Node<T>)obj);
-        }
-        public override int GetHashCode()
-        {
-            return base.GetHashCode();
-        }
-        public static bool operator ==(Node<T> s1, Node<T> s2)
-        {
-            return s1.direction == s2.direction
-                && s1.position == s2.position;
-        }
-        public static bool operator !=(Node<T> s1, Node<T> s2)
-        {
-            return s1.direction != s2.direction
-                || s1.position != s2.position;
-        }
-    }
-    public struct TileAndDirection
-    {
-        public Vector2Int direction, position;
-        public Tile tile;
-        static List<Vector2Int> directions;
-        public static List<Vector2Int> Directions
-        {
-            get
-            {
-                if (directions == null)
-                {
-                    directions = new List<Vector2Int>();
-                    directions.Add(new Vector2Int(-1, -1));
-                    directions.Add(new Vector2Int(-1, 0));
-                    directions.Add(new Vector2Int(-1, 1));
-                    directions.Add(new Vector2Int(0, -1));
-                    directions.Add(new Vector2Int(0, 1));
-                    directions.Add(new Vector2Int(1, -1));
-                    directions.Add(new Vector2Int(1, 0));
-                    directions.Add(new Vector2Int(1, 1));
-                }
-                return directions;
-            }
-        }
-    }
-    public struct Route
-    {
-        public bool Succesful;
-        public Stack<Node<Tile>> path;
-        public Route(Node<Tile> goal, bool reached)
-        {
-            path = new Stack<Node<Tile>>();
-            Succesful = reached;
-        }
-    }
-    public class Edge<T>
-    {
-        public Node<T> node;
-        public int weight;
-        public Vector2 direction;
-    }
     public class MinHeap<T>
     {
         public class N

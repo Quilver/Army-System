@@ -6,8 +6,8 @@ public class Tile: SelectionData
     TileData _tileData;
     Vector2Int pos;
     public Vector2Int position { get { return pos; } }
-    Unit _unit;
-    public Unit unit { 
+    UnitR _unit;
+    public UnitR unit { 
         get { return _unit; }
         set { 
             if(_unit == null || value == null)_unit = value;
@@ -23,10 +23,10 @@ public class Tile: SelectionData
         _tileData = tileData;
         unit = null;
     }
-    public bool Walkable(Unit unit, Unit target = null)
+    public bool Walkable(UnitR unit, UnitR target = null)
     {
         bool walkable = _tileData.Walkable;
-        bool occupied = this.unit!= null;
+        bool occupied = this.unit != null;
         if (this.unit == unit || this.unit == target) occupied = false;
         return walkable && !occupied;
     }
@@ -39,10 +39,12 @@ public class Tile: SelectionData
         if (_tileData.Walkable)
             start += "Walkable)";
         else start += "Unmoveable)";
+        if(unit != null) start+= ": " + unit.ToString();
         return start;
     }
-    public string GetData()
+
+    public Vector2Int GetPosition()
     {
-        return ToString();
+        return pos; 
     }
 }

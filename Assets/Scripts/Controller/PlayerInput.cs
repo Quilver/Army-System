@@ -6,7 +6,8 @@ public class PlayerInput : MonoBehaviour {
     [SerializeField] Army playerArmy;
     public static PlayerInput Instance { get; protected set; }
     public SelectionData selectedObject, hoverObject;
-    public List<Unit> selectedUnits;
+    public List<UnitR> selectedUnits;
+    UnitR selectedUnit;
     Map map;
     float targetOrtho;
     [SerializeField] Transform cursor;
@@ -71,9 +72,13 @@ public class PlayerInput : MonoBehaviour {
             if(selectedObject != null && selectedObject is Tile)
                 if((selectedObject as Tile).unit!= null)
                     selectedUnits.Add((selectedObject as Tile).unit);
-            if (selectedObject != null && (selectedObject as Unit) != null)
+            if (selectedObject != null && (selectedObject as UnitR) != null)
             {
-                selectedUnits.Add((selectedObject as Unit));
+                selectedUnits.Add((selectedObject as UnitR));
+            }
+            if (selectedObject != null)
+            {
+                selectedUnit = Map.Instance.getTile(selectedObject.GetPosition()).unit;
             }
         }
         else if (Input.GetMouseButtonDown(1))
@@ -93,13 +98,6 @@ public class PlayerInput : MonoBehaviour {
     }
     void giveOrder()
     {
-        //print("Giving order");
-        foreach (Unit unit in selectedUnits)
-        {
-            if(unit.Controller == playerArmy)
-            {
-                unit.order(hoverObject);
-            }
-        }
+        if(selectedUnit!= null) { selectedUnit.Movement.MoveTo(hoverObject.GetPosition()); }
     }
 }
