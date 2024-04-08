@@ -6,7 +6,6 @@ public class Master : MonoBehaviour {
     public static Master Instance;
     public Dictionary<UnitR, Army> unitArmy;
     [SerializeField] Army player, enemy1;
-    List<Combats> combats;
     Dictionary<UnitR, List<UnitR>> combatFinder;
     void Awake () {
         if(Instance != null)
@@ -18,18 +17,15 @@ public class Master : MonoBehaviour {
             Instance = this;
         }
         unitArmy = new Dictionary<UnitR, Army>();
-        combats= new ();
         combatFinder = new();
     }
 	public void AddCombat(UnitR attacker, UnitR defender)
     {
-        Combats combat = new Combats (attacker, defender);
-        combats.Add(combat);
-        AddCombat(attacker, defender, combat);
-        AddCombat(defender, attacker, combat);
+        AddUnitCombat(attacker, defender);
+        AddUnitCombat(defender, attacker);
 
     }
-    void AddCombat(UnitR unit, UnitR unit2, Combats combat)
+    void AddUnitCombat(UnitR unit, UnitR unit2)
     {
         if(!combatFinder.ContainsKey(unit)) {
             combatFinder.Add(unit, new());
@@ -58,7 +54,7 @@ public class Master : MonoBehaviour {
         {
             //Debug.Log(unit + " attacking " + combatFinder[unit][i]);    
             var enemy = combatFinder[unit][i];
-            enemy.Die(4);
+            enemy.Die(unit.weapon.Attack(enemy));
         }
     }
 }

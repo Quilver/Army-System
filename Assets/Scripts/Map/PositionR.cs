@@ -130,6 +130,34 @@ public struct PositionR
     {
         get { return ConvertToCoordinates(_direction); }
     }
+    
+    public float Rotation
+    {
+        get
+        {
+            switch (_direction)
+            {
+                case CardinalDirections.N:
+                    return 0;
+                case CardinalDirections.NE:
+                    return -45;
+                case CardinalDirections.NW:
+                    return 45;
+                case CardinalDirections.W:
+                    return 90;
+                case CardinalDirections.SW:
+                    return 135;
+                case CardinalDirections.S:
+                    return 180;
+                case CardinalDirections.SE:
+                    return -135;
+                case CardinalDirections.E:
+                    return -90;
+            }
+            Debug.LogError("Unknown Cardinal direction");
+            return 0;
+        }
+    }
     #endregion
 
     public Tuple<Vector2Int, Vector2Int> UnitDirection
@@ -178,8 +206,9 @@ public struct PositionR
         }
         return moves;
     }
+    
     public static List<Pathfinding.WeightedNode<PositionR>> GetMoves(Pathfinding.WeightedNode<PositionR> path, int advanceCost=1,
-        int wheelCost = 2, int strafeCost = 20)
+        int wheelCost = 3, int strafeCost = 10)
     {
         var nodes = path.state.GetMoves();
         List<Pathfinding.WeightedNode<PositionR>> paths = new List<Pathfinding.WeightedNode<PositionR>>();

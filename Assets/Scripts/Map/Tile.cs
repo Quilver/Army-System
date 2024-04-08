@@ -13,7 +13,7 @@ public class Tile: SelectionData
             if(_unit == null || value == null)_unit = value;
             if(value != _unit)
             {
-                Debug.LogError("Trying to place 2 units on the same Tile");
+                Debug.LogError("Trying to place " + value.ToString() + " on to " + _unit.ToString() + "on the same Tile");
             }
         }
     }
