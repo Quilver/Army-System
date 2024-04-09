@@ -1,20 +1,35 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEditor;
-//www[UnityEditor.InitializeOnLoad]
-//[ExecuteInEditMode]
 public class ChargeSizer : MonoBehaviour
 {
     UnitR unit;
     [SerializeField]
-    List<UnitR> enemies;
-    // Start is called before the first frame update
+    List<UnitR> unitRList;
+    public bool UnitAhead
+    {
+        get
+        {
+            return unitRList.Count> 0;
+        }
+    }
+    public List<UnitR> Enemies
+    {
+        get
+        {
+            var enemies = new List<UnitR>();
+            foreach (var unit in unitRList)
+            {
+                if(Master.Instance.unitArmy[this.unit].Enemies.Contains(unit))
+                    enemies.Add(unit);
+            }
+            return enemies;
+        }
+    }
     void Start()
     {
-        //UnityEditor.EditorApplication.update += SetBoxEditorVersion;
         unit = GetComponentInParent<UnitR>();
-        enemies = new List<UnitR>();
+        unitRList = new List<UnitR>();
     }
 
     // Update is called once per frame
@@ -73,7 +88,7 @@ public class ChargeSizer : MonoBehaviour
         if (unit == null) { return; }
         if(this.unit != unit)
         {
-            enemies.Add(unit);
+            unitRList.Add(unit);
         }
     }
     private void OnTriggerExit2D(Collider2D collision)
@@ -82,7 +97,7 @@ public class ChargeSizer : MonoBehaviour
         if (unit == null) { return; }
         if (this.unit != unit)
         {
-           // enemies.Remove(unit);
+            unitRList.Remove(unit);
         }
     }
 }

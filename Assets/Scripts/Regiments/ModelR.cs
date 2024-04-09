@@ -68,8 +68,7 @@ public class ModelR : MonoBehaviour, SelectionData
     }
     void UpdateMovement()
     {
-        if (unit != null && unit.state == UnitState.Fighting) { animator.Play("Attack"); }
-        else if (Moving)
+        if (Moving)
         {
             animator.Play("Move");
             animator.SetFloat("X", ModelPosition.x - transform.position.x);
@@ -77,6 +76,7 @@ public class ModelR : MonoBehaviour, SelectionData
             transform.position = Vector2.MoveTowards((Vector2)transform.position, ModelPosition, unit.stats.Speed* Time.deltaTime);
             var t = TileStandingOn;
         }
+        else if (unit != null && unit.state == UnitState.Fighting) { animator.Play("Attack"); }
         else
         {
             animator.Play("Idle");

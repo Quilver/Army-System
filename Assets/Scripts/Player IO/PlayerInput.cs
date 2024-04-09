@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class PlayerInput : MonoBehaviour {
     [SerializeField] Army playerArmy;
@@ -32,6 +33,8 @@ public class PlayerInput : MonoBehaviour {
         getMouseHover();
         selectItem();
         moveCamera();
+        if (Input.GetKeyDown("escape"))
+            SceneManager.LoadScene(0);
     }
     [SerializeField]
     float cameraSpeed = 5;

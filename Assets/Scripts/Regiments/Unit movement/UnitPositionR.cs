@@ -8,11 +8,8 @@ public class UnitPositionR
 {
 	#region Properties
 	UnitR unit;
-	public UnitR unitSetter {
-		set { unit = value; }
-	}
 	public PositionR position;
-
+	ChargeSizer charge;
 	int _unitWidth;
 	public int UnitWidth
 	{
@@ -35,10 +32,11 @@ public class UnitPositionR
 		this.unit= unit;
 		this._unitWidth = Width;
 		position.Location = new Vector2Int((int)unit.transform.position.x, (int)unit.transform.position.y);
+		charge = unit.GetComponentInChildren<ChargeSizer>();
 	}
 	#endregion
 	#region Helper Functions
-	bool OverlappingWithUnit(PositionR pos, int avoidBy = 1, UnitR target = null)
+	bool OverlappingWithUnit(PositionR pos, int avoidBy, UnitR target = null)
 	{
 		float angle = pos.Rotation;
 		Vector2 size = new(UnitWidth + avoidBy, Ranks + avoidBy);
@@ -69,40 +67,7 @@ public class UnitPositionR
 		}
 		return true;
 	}
-	public List<UnitR> ChargeTargets()
-	{
-		List<UnitR> enemiesInCombat= new List<UnitR>();
-        float angle = position.Rotation;
-        Vector2 size = new(UnitWidth, (unit.Movement.Ranks - 1) / 2f + 1);
-        if (angle % 10 != 0)
-        {
-            size *= 1.25f;
-            size.x += 0.25f;
-        }
-        Vector2 rotatedOffset = Quaternion.Euler(0, 0, angle) * 
-			new Vector3(-(unit.Movement.UnitWidth % 2 - 1) / 2f, size.y);
-		var overlaps = Physics2D.OverlapBoxAll(rotatedOffset + position.Location, size, position.Rotation, 1 << 6);
-		foreach (var collider in overlaps)
-		{
-			var target = collider.GetComponentInParent<UnitR>();
-			if (Master.Instance.unitArmy[target] != Master.Instance.unitArmy[unit])
-				enemiesInCombat.Add(target);
-		}
-		return enemiesInCombat;
-	}
-	UnitR UnitAhead()
-	{
-		for(int i= 0; i < UnitWidth; i++)
-		{
-			var model = unit.models[i];
-			var forward1 = Map.Instance.getTile(model.ModelPosition + position.direction).unit;
-            var forward2 = Map.Instance.getTile(model.ModelPosition + position.direction*2).unit;
-			if (forward1 != null && unit != forward1) return forward1;
-            if (forward2 != null && unit != forward2) return forward2;
-        }
-		return null;
-	}
-    #endregion
+	#endregion
     #region Movement
     UnitMoveState moveState;
 	[SerializeField]
@@ -130,12 +95,11 @@ public class UnitPositionR
 	}
 	void UpdatePath()
 	{
-		if(UnitAhead() != null && Master.Instance.unitArmy[unit] != Master.Instance.unitArmy[UnitAhead()])
+		if(charge.UnitAhead && charge.Enemies.Count > 0)
 		{
-            Debug.Log("Charge");
-            Master.Instance.AddCombat(unit, UnitAhead());
-			waypoints = null;
-			return;
+            Master.Instance.AddCombat(unit, charge.Enemies[0]);
+            waypoints = null;
+            return;
         }
 		if (!(bufferTarget is null))
 		{
@@ -152,11 +116,9 @@ public class UnitPositionR
 			return;
 		}
 		if(!CanMoveOn(waypoints.Peek(), 0)){
-			
 			waypoints = null;
             return;
 		}
-
         position = waypoints.Pop();
 	}
 	#endregion
