@@ -100,4 +100,8 @@ public class UnitR : MonoBehaviour
         Destroy(this.gameObject);
     }
     #endregion
+    public override string ToString()
+    {
+        return base.ToString() + " " + stats.ToString();
+    }
 }

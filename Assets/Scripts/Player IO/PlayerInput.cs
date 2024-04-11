@@ -6,12 +6,17 @@ using UnityEngine.SceneManagement;
 public class PlayerInput : MonoBehaviour {
     [SerializeField] Army playerArmy;
     public static PlayerInput Instance { get; protected set; }
-    public SelectionData selectedObject, hoverObject;
-    public List<UnitR> selectedUnits;
-    UnitR selectedUnit;
-    Map map;
+    //public SelectionData selectedObject, hoverObject;
+    public UnitR selectedUnit, hoverUnit;
     float targetOrtho;
     [SerializeField] Transform cursor;
+    public Vector2Int Cursor
+    {
+        get
+        {
+            return new((int)cursor.position.x, (int)cursor.position.y);
+        }
+    }
     // Use this for initialization
     void Start() {
         if (Instance != null)
@@ -22,25 +27,22 @@ public class PlayerInput : MonoBehaviour {
         {
             Instance = this;
         }
-        selectedObject = null;
         targetOrtho = Camera.main.orthographicSize;
-        //startPosition = new Vector3();
-        //currentPosition = new Vector3();
     }
 	
 	// Update is called once per frame
 	void Update () {
-        getMouseHover();
-        selectItem();
-        moveCamera();
-        if (Input.GetKeyDown("escape"))
+        GetMouseHover();
+        SelectItem();
+        MoveCamera();
+        if (Input.GetKeyDown(KeyCode.Escape))
             SceneManager.LoadScene(0);
     }
     [SerializeField]
     float cameraSpeed = 5;
     [SerializeField]
     float zoomSpeed = 3;
-    void moveCamera()
+    void MoveCamera()
     {
         //move camera
         float xAxisValue = Input.GetAxis("Horizontal");
@@ -65,48 +67,32 @@ public class PlayerInput : MonoBehaviour {
 
         Camera.main.orthographicSize = Mathf.MoveTowards(Camera.main.orthographicSize, targetOrtho, smoothSpeed * Time.deltaTime);
     }
-    void selectItem()
+    void SelectItem()
     {
         if (Input.GetMouseButtonDown(0))
         {
-            //print(hoverObject);
-            selectedObject = hoverObject;
-            selectedUnits.Clear();
-            if(selectedObject != null && selectedObject is Tile)
-                if((selectedObject as Tile).unit!= null)
-                    selectedUnits.Add((selectedObject as Tile).unit);
-            if (selectedObject != null && (selectedObject as UnitR) != null)
-            {
-                selectedUnits.Add((selectedObject as UnitR));
-            }
-            if (selectedObject != null)
-            {
-                selectedUnit = Map.Instance.getTile(selectedObject.GetPosition()).unit;
-            }
+            selectedUnit = hoverUnit;
         }
         else if (Input.GetMouseButtonDown(1))
         {
-            //print("Right click to order");
-            giveOrder();
+            GiveOrder();
         }
     }
-    void getMouseHover()
+    void GetMouseHover()
     {
         Vector3 worldPosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         worldPosition.x = (int)worldPosition.x;
         worldPosition.y = (int)worldPosition.y;
         worldPosition.z = 0;
         cursor.position = worldPosition;
-        hoverObject= Map.Instance.getTile(worldPosition);
-        
         var coll = Physics2D.OverlapCircle(worldPosition, 0.6f, 1 << 6);
         if (coll != null)
-            hoverObject = Map.Instance.getTile(coll.GetComponentInParent<UnitR>().Movement.position.Location);
+            hoverUnit = coll.GetComponentInParent<UnitR>();
     }
-    void giveOrder()
+    void GiveOrder()
     {
         if(selectedUnit!= null && Master.Instance.unitArmy[selectedUnit].controller == Army.Controller.Player) { 
-            selectedUnit.Movement.MoveTo(hoverObject.GetPosition()); 
+            selectedUnit.Movement.MoveTo(Cursor); 
         }
     }
 }

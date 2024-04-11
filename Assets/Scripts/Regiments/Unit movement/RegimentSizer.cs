@@ -1,5 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
 using UnityEngine;
 
 public class RegimentSizer : MonoBehaviour
@@ -25,36 +27,76 @@ public class RegimentSizer : MonoBehaviour
             return new Vector3(x,y); 
         }
     }
+
+
     public void SetBox(int width, int Size)
     {
-        unit = GetComponent<UnitR>();
-        int ranks = (int)Mathf.Round((Size * 1.0f) / width);
         float angle = GetComponentInParent<UnitR>().Movement.position.Rotation;
-        Vector3 size = new(width, ranks);
-        if (angle % 10 != 0)
-        {
-            size *= 1.25f;
-            size.x += 0.25f;
-        }
-        Vector2 midpoint = new(-(width % 2 - 1) / 2f, -(ranks - 1) / 2f);
+        int ranks = Mathf.CeilToInt((Size *1f)/width);
+        Vector3 size = GetSize(width, ranks);
+
+        Vector2 midpoint = MidPoint(width, (int)size.y);//new(-(width % 2 - 1) / 2f, -(ranks - 1) / 2f);
         transform.localPosition = midpoint;
         transform.localScale = size;
         transform.parent.rotation= Quaternion.Euler(0, 0, angle);
     }
+    public bool CanBeOn(PositionR pos, float avoidBy, int width, int ranks, UnitR target = null)
+    {
+        float angle = pos.Rotation;
+        Vector2 size = GetSize(width, ranks, avoidBy);
+        var midPoint = MidPoint(new Vector2(width, ranks), angle);
+        //checks against other units
+        var overlaps = Physics2D.OverlapBoxAll(midPoint + pos.Location, size, pos.Rotation, 1 << 6);
+        foreach (var collider2D in overlaps)
+        {
+            var clipping = collider2D.GetComponentInParent<UnitR>();
+            if (clipping != unit && clipping != target)
+                return true;
+        }
+        overlaps = Physics2D.OverlapBoxAll(midPoint + pos.Location, size, pos.Rotation, 1 << 8);
+        //checks against terrain
+        if (overlaps.Length != 0)
+            return true;
+        return false;
+    }
     void SetBox()
     {
+        if (unit.models.Count == 0) return;
         //get values
         float angle = unit.Movement.position.Rotation;
-        Vector3 size = new(unit.Movement.UnitWidth, unit.Movement.Ranks);
-        if (angle % 10 != 0)
-        {
-            size *= 1.25f;
-            size.x += 0.25f;
-        }
-        Vector2 rotatedOffset = Quaternion.Euler(0, 0, angle) * Midpoint;
+        Vector3 size = GetSize(unit.Movement.UnitWidth, unit.Movement.Ranks);
+        var midpoint = MidPoint(size, angle);
+        //Vector2 rotatedOffset = Quaternion.Euler(0, 0, angle) * Midpoint;
+        Vector2 pos = unit.models[0].transform.position;
         //set value
-        transform.position = rotatedOffset + unit.Movement.position.Location;
+        transform.position = midpoint+ pos;// unit.Movement.position.Location;
         transform.localScale = size;
         transform.rotation = Quaternion.Euler(0, 0, angle);
     }
+    #region HelperFunctions
+    Vector2 GetSize(int width, int ranks)
+    {
+        return new(width,ranks);
+    }
+    Vector2 GetSize(int width, int size, float avoidBy)
+    {
+        int ranks = Mathf.CeilToInt(size / (float)width);
+        Vector2 Size = new(width,ranks);
+        Size.x += avoidBy;
+        Size.y -= 0.1f;
+        return Size;
+    }
+    Vector2 MidPoint(Vector2 size, float angle)
+    {
+        Vector2 offset = MidPoint((int)size.x, (int)size.y);
+        offset = Quaternion.Euler(0,0, angle) * offset;
+        return offset;
+    }
+    Vector2 MidPoint(int width, int ranks)
+    {
+        float xOffset = -(width % 2 - 1) / 2f;
+        float yOffset = -(ranks - 1) / 2f;
+        return new(xOffset, yOffset);
+    }
+    #endregion
 }

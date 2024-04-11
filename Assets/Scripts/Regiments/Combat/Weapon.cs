@@ -5,7 +5,7 @@ using UnityEngine;
 [System.Serializable]
 public class Weapon
 {
-    UnitR unit;
+    readonly UnitR unit;
     public Weapon(UnitR unit) { this.unit = unit; }
     int Attacks
     {
@@ -19,13 +19,7 @@ public class Weapon
     }
     bool Flanking (UnitR target)
     {
-        foreach (var model in target.models)
-        {
-            UnitR unitAhead1 = Map.Instance.getTile(model.ModelPosition + target.Movement.position.direction).unit;
-            UnitR unitAhead2 = Map.Instance.getTile(model.ModelPosition + target.Movement.position.direction * 2).unit;
-            if (unitAhead1 == unit || unitAhead2 == unit) return false;
-        }
-        return true;
+        return !target.Movement.InCombatWith(target.Movement.position, unit);
     }
     int RelativeSkill(UnitR target)
     {

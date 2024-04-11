@@ -7,20 +7,14 @@ namespace Pathfinding
     public class Waypoint
     {
         Vector2Int _targetTile;
-        UnitR _targetUnit;
+        readonly UnitR _targetUnit;
         public Waypoint(Vector2Int tile)
         {
             _targetTile = tile;
-            _targetUnit = Map.Instance.getTile(tile).unit;
         }
-        public Vector2Int Target
+        public Waypoint(UnitR target)
         {
-            get
-            {
-                if(_targetUnit == null)
-                    return _targetTile;
-                return _targetUnit.Movement.position.Location;
-            }
+            _targetUnit = target;
         }
         public Stack<PositionR> GetPath(UnitPositionR unit)
         {
@@ -42,6 +36,15 @@ namespace Pathfinding
         {
             return !(a == b);
         }
+        public override bool Equals(object obj)
+        {
+            return base.Equals(obj);
+        }
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
+        }
+
     }
     public struct WeightedNode<State>
     {

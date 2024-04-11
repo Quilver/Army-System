@@ -2,48 +2,39 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ModelR : MonoBehaviour, SelectionData
+public class ModelR : MonoBehaviour//, SelectionData
 {
     #region Properties
     public UnitR unit;
     Animator animator;
+    [SerializeField]
     Vector2Int offset;
-    public Vector2Int ModelPosition
+    public Vector2 ModelPosition
     {
         get
         {
             return GetPosition(unit.Movement.position);
         }
     }
-    public Vector2Int GetPosition(PositionR position)
+    Vector2 GetPosition(PositionR position)
     {
+        Vector3 delta = new(offset.x, -offset.y);
+        Vector2 rotatedPosition = Quaternion.Euler(0, 0, position.Rotation) * delta;
+        return rotatedPosition+position.Location;
+        /*
         Vector2Int pos = position.Location;
         Vector2Int x = position.UnitDirection.Item1 * offset.x;
         Vector2Int y = position.UnitDirection.Item2 * offset.y;
         pos += x + y;
         return pos;
+        */
     }
     public bool Moving
     {
         get
         {
-            Vector3 currentPosition = new Vector3(ModelPosition.x, ModelPosition.y);
+            Vector3 currentPosition = new(ModelPosition.x, ModelPosition.y);
             return transform.position != currentPosition;
-        }
-    }
-    
-    Tile _tile;
-    public Tile TileStandingOn{
-        get
-        {
-            TileStandingOn = Map.Instance.getTile(transform.position);
-            return _tile;
-        }
-        private set
-        {
-            _tile.unit = null;
-            _tile = value;
-            _tile.unit = unit;
         }
     }
     #endregion
@@ -54,17 +45,11 @@ public class ModelR : MonoBehaviour, SelectionData
         this.offset = offset;
         transform.position = new Vector3(ModelPosition.x, ModelPosition.y);
         animator = GetComponent<Animator>();
-        _tile = Map.Instance.getTile(ModelPosition);
-        _tile.unit = owner;
         enabled= true;
     }
     void Update()
     {
         UpdateMovement();
-    }
-    private void OnDestroy()
-    {
-        Map.Instance.getTile(transform.position).unit = null;
     }
     void UpdateMovement()
     {
@@ -74,19 +59,13 @@ public class ModelR : MonoBehaviour, SelectionData
             animator.SetFloat("X", ModelPosition.x - transform.position.x);
             animator.SetFloat("Y", ModelPosition.y - transform.position.y);
             transform.position = Vector2.MoveTowards((Vector2)transform.position, ModelPosition, unit.stats.Speed* Time.deltaTime);
-            var t = TileStandingOn;
         }
         else if (unit != null && unit.state == UnitState.Fighting) { animator.Play("Attack"); }
         else
         {
             animator.Play("Idle");
-            animator.SetFloat("X", unit.Movement.position.direction.x);
-            animator.SetFloat("Y", unit.Movement.position.direction.y);
+            animator.SetFloat("X", unit.Movement.position.Direction.x);
+            animator.SetFloat("Y", unit.Movement.position.Direction.y);
         }
-    }
-    
-    public Vector2Int GetPosition()
-    {
-        return TileStandingOn.position;
     }
 }

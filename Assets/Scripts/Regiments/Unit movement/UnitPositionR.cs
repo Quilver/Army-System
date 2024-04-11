@@ -9,6 +9,7 @@ public class UnitPositionR
 	#region Properties
 	UnitR unit;
 	public PositionR position;
+	RegimentSizer unitBody;
 	ChargeSizer charge;
 	int _unitWidth;
 	public int UnitWidth
@@ -24,7 +25,7 @@ public class UnitPositionR
 	{
 		get
 		{
-			return (int)Mathf.Round((unit.models.Count * 1.0f) / UnitWidth);
+			return Mathf.CeilToInt((unit.models.Count * 1.0f) / UnitWidth);
 		}
 	}
 	public void Init(UnitR unit, int Width)
@@ -33,44 +34,25 @@ public class UnitPositionR
 		this._unitWidth = Width;
 		position.Location = new Vector2Int((int)unit.transform.position.x, (int)unit.transform.position.y);
 		charge = unit.GetComponentInChildren<ChargeSizer>();
+		unitBody=unit.GetComponentInChildren<RegimentSizer>();
 	}
 	#endregion
 	#region Helper Functions
-	bool OverlappingWithUnit(PositionR pos, int avoidBy, UnitR target = null)
+	public bool CanMoveOn(PositionR positionR, float avoidBy = 1, UnitR target = null)
 	{
-		float angle = pos.Rotation;
-		Vector2 size = new(UnitWidth + avoidBy, Ranks + avoidBy);
-		if (angle % 10 != 0)
-		{
-			size *= 1.25f;
-			size.x += 0.25f;
-		}
-		var midPoint = new Vector3(-(UnitWidth % 2 - 1) / 2f, -(Ranks - 1) / 2f);
-		var rotatedOffset = Quaternion.Euler(0, 0, angle) * midPoint;
-		var overlaps = Physics2D.OverlapBoxAll((Vector2)rotatedOffset + pos.Location, size, pos.Rotation, 1 << 6);
-		foreach (var collider2D in overlaps)
-		{
-			var clipping = collider2D.GetComponentInParent<UnitR>();
-			if (clipping != unit && clipping != target)
-				return true;
-		}
-		return false;
-	}
-	public bool CanMoveOn(PositionR positionR, int avoidBy = 2, UnitR target = null)
-	{
-		if (OverlappingWithUnit(positionR, avoidBy, target))
+		if (unitBody.CanBeOn(positionR, avoidBy, UnitWidth, Ranks, target))
 			return false;
-		foreach (var model in unit.models)
-		{
-			if (!Map.Instance.getTile(model.GetPosition(positionR)).Walkable(unit, target))
-				return false;
-		}
-		return true;
+		else
+			return true;
+	}
+	public bool InCombatWith(PositionR positionR, UnitR target)
+	{
+		List<UnitR> targets = charge.TargetsAt(positionR);
+		return targets.Contains(target);
 	}
 	#endregion
     #region Movement
-    UnitMoveState moveState;
-	[SerializeField]
+    [SerializeField]
 	Stack<PositionR> waypoints;
 	Pathfinding.Waypoint currentTarget, bufferTarget =null;
 	//movement Buffer
@@ -101,7 +83,7 @@ public class UnitPositionR
             waypoints = null;
             return;
         }
-		if (!(bufferTarget is null))
+		if (bufferTarget != null)
 		{
 			currentTarget = bufferTarget;
 			bufferTarget = null;

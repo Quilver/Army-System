@@ -14,28 +14,16 @@ public class HUD : MonoBehaviour {
     }
     private void DrawTileBar()
     {
-        string description = getString(player.hoverObject);
+        string description = player.Cursor.ToString();
+        if (player.hoverUnit != null)
+            description += "\n"+player.hoverUnit.ToString();
         mousePos.text = description;
     }
     private void DrawUnitBar()
     {
-        string description = "";
-        foreach (UnitR unit in player.selectedUnits)
-        {
-            description += unit.ToString();
-            description += "\n";
-        }
-        unitDetail.text = description;
-    }
-    string getString(SelectionData section)
-    {
-        if (section == null)
-        {
-            return "";
-        }
+        if(player.selectedUnit!=null)
+            unitDetail.text = player.selectedUnit.ToString();
         else
-        {
-            return section.ToString();
-        }
+            unitDetail.text= string.Empty;
     }
 }

@@ -70,52 +70,6 @@ public struct PositionR
         Debug.LogError("Unknown Cardinal direction");
         return new Vector2Int(0, 0);
     }
-    public static Vector2Int Rotate(PositionR direction, Vector2Int position, bool inverted = false)
-    {
-        PositionR pos = new(position, direction._direction);
-        if (!inverted)
-        {
-            var matrix = pos.UnitDirection;
-            Vector2Int x = pos.location.x * matrix.Item1;
-            Vector2Int y = pos.location.y * matrix.Item2;
-            return x + y;
-        }
-        else
-        {
-            Tuple<Vector2Int, Vector2Int> matrix = PositionR.Inverse(direction._direction);
-            Vector2Int x = pos.location.x * matrix.Item1;
-            Vector2Int y = pos.location.y * matrix.Item2;
-            //half offset if NW,NE,SW,SE
-            if (direction.direction.x != 0 && direction.direction.y != 0)
-                return (x + y) / 2;
-            return x + y;
-        }
-    }
-    internal static Tuple<Vector2Int, Vector2Int> Inverse(CardinalDirections cardinalDirection)
-    {
-        Tuple<Vector2Int, Vector2Int> coords = new(Vector2Int.zero, Vector2Int.zero);
-        switch (cardinalDirection)
-        {
-            case CardinalDirections.N:
-                return Tuple.Create(new Vector2Int(1, 0), new Vector2Int(0, 1));
-            case CardinalDirections.NE:
-                return Tuple.Create(new Vector2Int(1, 1), new Vector2Int(-1, 1));
-            case CardinalDirections.NW:
-                return Tuple.Create(new Vector2Int(1, -1), new Vector2Int(1, 1));
-            case CardinalDirections.W:
-                return Tuple.Create(new Vector2Int(0, 1), new Vector2Int(-1, 0));
-            case CardinalDirections.SW:
-                return Tuple.Create(new Vector2Int(-1, -1), new Vector2Int(1, -1));
-            case CardinalDirections.S:
-                return Tuple.Create(new Vector2Int(-1, 0), new Vector2Int(0, -1));
-            case CardinalDirections.SE:
-                return Tuple.Create(new Vector2Int(-1, 1), new Vector2Int(-1, -1));
-            case CardinalDirections.E:
-                return Tuple.Create(new Vector2Int(0, 1), new Vector2Int(-1, 0));
-        }
-        Debug.LogError("Invalid Direction");
-        return coords;
-    }
     #endregion
     #region Properties
     Vector2Int location;
@@ -126,7 +80,7 @@ public struct PositionR
     }
     [SerializeField]
     CardinalDirections _direction;
-    public Vector2Int direction
+    public Vector2Int Direction
     {
         get { return ConvertToCoordinates(_direction); }
     }
@@ -211,14 +165,14 @@ public struct PositionR
         int wheelCost = 3, int strafeCost = 10)
     {
         var nodes = path.state.GetMoves();
-        List<Pathfinding.WeightedNode<PositionR>> paths = new List<Pathfinding.WeightedNode<PositionR>>();
+        List<Pathfinding.WeightedNode<PositionR>> paths = new();
         foreach (var node in nodes)
         {
-            Pathfinding.WeightedNode<PositionR> newPath = new Pathfinding.WeightedNode<PositionR>();
+            Pathfinding.WeightedNode<PositionR> newPath = new();
             newPath.state = node;
             newPath.weight = path.weight;
             if (node.location == path.state.location) newPath.weight += wheelCost;
-            else if (node.location - node.direction == path.state.location) newPath.weight += advanceCost;
+            else if (node.location - node.Direction == path.state.location) newPath.weight += advanceCost;
             else newPath.weight += strafeCost;
             paths.Add(newPath);
         }
@@ -237,4 +191,9 @@ public struct PositionR
     {
         return _direction.ToString() + " " + location;
     }
+    public override int GetHashCode()
+    {
+        return base.GetHashCode();
+    }
+    
 }

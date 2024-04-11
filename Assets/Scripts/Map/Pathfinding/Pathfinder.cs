@@ -9,9 +9,8 @@ namespace Pathfinding
     {
         public static Stack<PositionR> Search(UnitPositionR unit, PositionR start, Vector2Int goal, int searchLimit = 250)
         {
-            MinHeap<WeightedNode<PositionR>> openSet = new MinHeap<WeightedNode<PositionR>>(searchLimit * 10);
-            Dictionary<PositionR, PositionR> CameFrom = new Dictionary<PositionR, PositionR>();
-            List<PositionR> visited = new List<PositionR>();
+            MinHeap<WeightedNode<PositionR>> openSet = new(searchLimit * 10);
+            Dictionary<PositionR, PositionR> CameFrom = new();
             openSet.insert(MakePath(start, 0), 0);
             CameFrom.Add(start, start);
             WeightedNode<PositionR> bestPath = MakePath(start, int.MaxValue);
@@ -40,9 +39,8 @@ namespace Pathfinding
 
         public static Stack<PositionR> Search(UnitPositionR unit, PositionR start, UnitR goal, int searchLimit = 250)
         {
-            MinHeap<WeightedNode<PositionR>> openSet = new MinHeap<WeightedNode<PositionR>>(searchLimit * 10);
-            Dictionary<PositionR, PositionR> CameFrom = new Dictionary<PositionR, PositionR>();
-            List<PositionR> visited = new List<PositionR>();
+            MinHeap<WeightedNode<PositionR>> openSet = new(searchLimit * 10);
+            Dictionary<PositionR, PositionR> CameFrom = new();
             openSet.insert(MakePath(start, 0), 0);
             CameFrom.Add(start, start);
             WeightedNode<PositionR> bestPath = MakePath(start, int.MaxValue);
@@ -51,7 +49,7 @@ namespace Pathfinding
                 searchLimit--;
                 WeightedNode<PositionR> node = openSet.extractMin();
                 if (!unit.CanMoveOn(node.state, 1, goal)) continue;
-                if (ReachedGoal(node.state, goal))
+                if (ReachedGoal(unit, node.state, goal))
                 {
                     return GenerateRoute(node.state, CameFrom, start);
                 }//reached goal
@@ -72,9 +70,9 @@ namespace Pathfinding
         {
             return node.Location == goal;
         }
-        static bool ReachedGoal(PositionR node, UnitR target)
+        static bool ReachedGoal(UnitPositionR unit, PositionR node, UnitR target)
         {
-            return Map.Instance.getTile(node.Location).unit == target;
+            return unit.InCombatWith(node, target);//Map.Instance.GetTile(node.Location).unit == target;
         }
         static WeightedNode<PositionR> MakePath(PositionR node, int cost)
         {
@@ -92,9 +90,9 @@ namespace Pathfinding
         }
         static Stack<PositionR> GenerateRoute(PositionR node, Dictionary<PositionR, PositionR> CameFrom, PositionR start)
         {
-            Stack<PositionR> waypoints = new Stack<PositionR>();
+            Stack<PositionR> waypoints = new();
             string route = start.ToString() + " ->Route: ";
-            List<string> nodes = new List<string>();
+            List<string> nodes = new();
             while (CameFrom.ContainsKey(node))
             {
                 waypoints.Push(node);

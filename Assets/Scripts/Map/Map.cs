@@ -5,7 +5,6 @@ using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEngine.Tilemaps;
 using UnityEngine.UIElements;
-//using Random;
 public class Map: MonoBehaviour{
     [SerializeField]
     Tilemap groundSource, waterSource, terrainSource;
@@ -30,8 +29,8 @@ public class Map: MonoBehaviour{
         }
         tiles= new Dictionary<Vector2Int, Tile>();
     }
-    public Tile getTile(int x, int y) {
-        Vector2Int pos = new Vector2Int(x, y);
+    public Tile GetTile(int x, int y) {
+        Vector2Int pos = new(x, y);
         if(tiles.ContainsKey(pos))
             return tiles[pos];
         TileData tileData = GetTileD(x, y);
@@ -39,13 +38,13 @@ public class Map: MonoBehaviour{
         tiles.Add(pos, new Tile(pos, tileData));
         return tiles[pos];
     }
-    public Tile getTile(Vector2Int pos)
+    public Tile GetTile(Vector2Int pos)
     {
-        return getTile(pos.x, pos.y);
+        return GetTile(pos.x, pos.y);
     }
-    public Tile getTile(Vector2 pos)
+    public Tile GetTile(Vector2 pos)
     {
-        return getTile((int)pos.x, (int)pos.y);
+        return GetTile((int)pos.x, (int)pos.y);
     }
     TileData GetTileD(int x, int y) {
         if (terrainSource.GetTile(new Vector3Int(x, y, 0)) != null)
@@ -56,12 +55,5 @@ public class Map: MonoBehaviour{
             return waterTile;
         return EmptyTile;
     }
-    TileData GetTileD(Vector2 position)
-    {
-        return GetTileD((int)position.x, (int)position.y);
-        
-    }
-    public int Width { get { return groundSource.size.x; } }
-    public int Height { get { return groundSource.size.y;} }
     
 }
