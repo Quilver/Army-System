@@ -114,34 +114,6 @@ public struct PositionR
     }
     #endregion
 
-    public Tuple<Vector2Int, Vector2Int> UnitDirection
-    {
-        get
-        {
-            Tuple<Vector2Int, Vector2Int> coords = new(Vector2Int.zero, Vector2Int.zero);
-            switch (_direction)
-            {
-                case CardinalDirections.N:
-                    return Tuple.Create( new Vector2Int(1,0), new Vector2Int(0,-1));
-                case CardinalDirections.NE:
-                    return Tuple.Create(new Vector2Int(1, -1), new Vector2Int(-1, -1));
-                case CardinalDirections.NW:
-                    return Tuple.Create(new Vector2Int(1, 1), new Vector2Int(1, -1));
-                case CardinalDirections.W:
-                    return Tuple.Create(new Vector2Int(0, 1), new Vector2Int(1, 0));
-                case CardinalDirections.SW:
-                    return Tuple.Create(new Vector2Int(-1, 1), new Vector2Int(1, 1));
-                case CardinalDirections.S:
-                    return Tuple.Create(new Vector2Int(-1, 0), new Vector2Int(0, 1));
-                case CardinalDirections.SE:
-                    return Tuple.Create(new Vector2Int(-1, -1), new Vector2Int(-1, 1));
-                case CardinalDirections.E:
-                    return Tuple.Create(new Vector2Int(0, -1), new Vector2Int(-1, 0));
-            }
-            Debug.LogError("Invalid Direction");
-            return coords;
-        }
-    }
     public PositionR(Vector2Int location, CardinalDirections direction)
     {
         this.location = location;
@@ -162,7 +134,7 @@ public struct PositionR
     }
     
     public static List<Pathfinding.WeightedNode<PositionR>> GetMoves(Pathfinding.WeightedNode<PositionR> path, int advanceCost=1,
-        int wheelCost = 3, int strafeCost = 10)
+        int wheelCost = 3, int strafeCost = 12)
     {
         var nodes = path.state.GetMoves();
         List<Pathfinding.WeightedNode<PositionR>> paths = new();

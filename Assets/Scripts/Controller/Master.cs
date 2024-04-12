@@ -7,6 +7,7 @@ public class Master : MonoBehaviour {
     public Dictionary<UnitR, Army> unitArmy;
     [SerializeField] Army player, enemy1;
     Dictionary<UnitR, List<UnitR>> combatFinder;
+    HashSet<HashSet<UnitR>> combatList;
     void Awake () {
         if(Instance != null)
         {
@@ -18,6 +19,29 @@ public class Master : MonoBehaviour {
         }
         unitArmy = new Dictionary<UnitR, Army>();
         combatFinder = new();
+        combatList = new();
+    }
+    public void CreateCombat(UnitR attacker, UnitR defender)
+    {
+        HashSet<UnitR> fight = new();
+        fight.Add(attacker);
+        fight.Add(defender);
+        if (combatList.Contains(fight))
+            return;
+        combatList.Add(fight);
+        attacker.state = UnitState.Fighting;
+        defender.state = UnitState.Fighting;
+    }
+    public void EndCombat(UnitR attacker, UnitR defender)
+    {
+        HashSet<UnitR> fight = new();
+        fight.Add(attacker);
+        fight.Add(defender);
+        if (!combatList.Contains(fight))
+            return;
+        attacker.state = UnitState.Idle;
+        defender.state = UnitState.Idle;
+        combatList.Remove(fight);
     }
 	public void AddCombat(UnitR attacker, UnitR defender)
     {

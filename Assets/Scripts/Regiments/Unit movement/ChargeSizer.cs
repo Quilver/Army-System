@@ -71,6 +71,7 @@ public class ChargeSizer : MonoBehaviour
         if(this.unit != unit)
         {
             unitRList.Add(unit);
+            Master.Instance.CreateCombat(this.unit, unit);
         }
     }
     private void OnTriggerExit2D(Collider2D collision)
@@ -80,6 +81,7 @@ public class ChargeSizer : MonoBehaviour
         if (this.unit != unit)
         {
             unitRList.Remove(unit);
+            Master.Instance.EndCombat(this.unit, unit);
         }
     }
     public List<UnitR> TargetsAt(PositionR position)

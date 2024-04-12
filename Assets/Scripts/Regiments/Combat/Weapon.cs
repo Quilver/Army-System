@@ -40,4 +40,21 @@ public class Weapon
         if (Flanking(target)) damage += RollDamage(Attacks, RelativeSkill(target));
         return damage;
     }
+    float _time;
+    int _counter;
+    public void StartCombat()
+    {
+        _time = 0;
+        _counter = 0;
+        
+    }
+    public void UpdateCombat()
+    {
+        _time += Time.deltaTime;
+        
+    }
+    void DetermineAttack()
+    {
+
+    }
 }

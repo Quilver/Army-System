@@ -21,13 +21,6 @@ public class ModelR : MonoBehaviour//, SelectionData
         Vector3 delta = new(offset.x, -offset.y);
         Vector2 rotatedPosition = Quaternion.Euler(0, 0, position.Rotation) * delta;
         return rotatedPosition+position.Location;
-        /*
-        Vector2Int pos = position.Location;
-        Vector2Int x = position.UnitDirection.Item1 * offset.x;
-        Vector2Int y = position.UnitDirection.Item2 * offset.y;
-        pos += x + y;
-        return pos;
-        */
     }
     public bool Moving
     {

@@ -33,6 +33,7 @@ public class UnitR : MonoBehaviour
         //movement.position.Location = new Vector2Int((int)transform.position.x, (int)transform.position.y);
         transform.position = new Vector3((int)transform.position.x, (int)transform.position.y, (int)transform.position.z);
         PopulateModels(size.StartingSize, size.UnitWidth);
+        _maxUnitSize =size.StartingSize;
         Destroy(size);
         time = 0;
         weapon= new Weapon(this);
@@ -42,9 +43,8 @@ public class UnitR : MonoBehaviour
         int _startingUnitSize = size;
         if (width > _startingUnitSize) width = _startingUnitSize;
         models = new List<ModelR>();
-        int xOffset = width / 2;
         int yOffset = (int)Mathf.Ceil((_startingUnitSize * 1.0f) / width);
-        GameObject parent = new GameObject(gameObject.name);
+        GameObject parent = new(gameObject.name);
         for (int y = 0; y < yOffset; y++)
         {
             for (int x = 0; x < width; x++)
@@ -52,7 +52,7 @@ public class UnitR : MonoBehaviour
                 int Xoffset = x/2;
                 if (x % 2 == 0) Xoffset = -Xoffset;
                 else Xoffset += 1;
-                Vector2Int offset = new Vector2Int(Xoffset, y);
+                Vector2Int offset = new(Xoffset, y);
                 var model = Instantiate(_modelPrefab, parent.transform).GetComponent<ModelR>();
                 model.Init(offset, this, models.Count - 1);
                 models.Add(model);
@@ -70,6 +70,14 @@ public class UnitR : MonoBehaviour
     }
     #endregion
     #region Combat and death
+    int _maxUnitSize;
+    public bool Wounded
+    {
+        get
+        {
+            return models.Count <= _maxUnitSize/2;
+        }
+    }
     public void Fighting()
     {
         time -= Time.deltaTime;
