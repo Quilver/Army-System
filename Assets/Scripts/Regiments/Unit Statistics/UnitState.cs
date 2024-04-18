@@ -7,8 +7,10 @@ public struct UnitStatsR
 {
     [SerializeField, Range(1,10)]
     int _speed;
+    [SerializeField, Range(1, 20)]
+    int _defence;
     [Range(1,10)]
-    public int AttackSpeed, Power, Defence;
+    public int Power;
     public float Speed
     {
         get
@@ -16,16 +18,22 @@ public struct UnitStatsR
             return _speed / 2.5f;
         }
     }
-    public UnitStatsR(int speed, int power, int defence, int AttackSpeed)
+    public float Defence
     {
-        this.AttackSpeed = AttackSpeed;
+        get
+        {
+            return _defence;
+        }
+    }
+    public UnitStatsR(int speed, int power, int defence)
+    {
         this._speed = speed;
         this.Power = power;
-        this.Defence = defence;
+        this._defence = defence;
     }
     public override string ToString()
     {
-        return "Stats->Sp:" + Speed + ", Pwr:" + Power + ", D:" + Defence;
+        return "\nSpeed:" + _speed + "\nPower:" + Power + "\nDefence:" + Defence;
     }
 }
 

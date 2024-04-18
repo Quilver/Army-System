@@ -20,7 +20,7 @@ public class ChargeSizer : MonoBehaviour
             var enemies = new List<UnitR>();
             foreach (var unit in unitRList)
             {
-                if(Master.Instance.unitArmy[this.unit].Enemies.Contains(unit))
+                if(Battle.Instance.unitArmy[this.unit].Enemies.Contains(unit))
                     enemies.Add(unit);
             }
             return enemies;
@@ -54,7 +54,7 @@ public class ChargeSizer : MonoBehaviour
     {
         if (unit.models.Count == 0) return;
         //get values
-        float angle = unit.Movement.position.Rotation;
+        float angle = Angle;//unit.Movement.position.Rotation;
         Vector3 size = GetSize(unit.Movement.UnitWidth);//new(unit.Movement.UnitWidth, 1 + Midpoint.y/2);
         Vector2 position = MidPoint(unit.Movement.UnitWidth, unit.Movement.Ranks, angle);
         //Vector2 rotatedOffset = Quaternion.Euler(0, 0, angle) * Offset(size.y);
@@ -71,7 +71,7 @@ public class ChargeSizer : MonoBehaviour
         if(this.unit != unit)
         {
             unitRList.Add(unit);
-            Master.Instance.CreateCombat(this.unit, unit);
+            Battle.Instance.CreateCombat(this.unit, unit);
         }
     }
     private void OnTriggerExit2D(Collider2D collision)
@@ -81,7 +81,7 @@ public class ChargeSizer : MonoBehaviour
         if (this.unit != unit)
         {
             unitRList.Remove(unit);
-            Master.Instance.EndCombat(this.unit, unit);
+            Battle.Instance.EndCombat(this.unit, unit);
         }
     }
     public List<UnitR> TargetsAt(PositionR position)
@@ -99,7 +99,7 @@ public class ChargeSizer : MonoBehaviour
         return targets;
     }
     #region Helper functions
-    const float meleeRange = 1;
+    const float meleeRange = 0.6f;
     Vector2 GetSize(int width)
     {
         return new(width, meleeRange);
@@ -113,8 +113,33 @@ public class ChargeSizer : MonoBehaviour
     Vector2 MidPoint(int width, int ranks)
     {
         float xOffset = -(width % 2 - 1) / 2f;
-        float yOffset = meleeRange;
+        float yOffset = meleeRange/2 + 0.5f;
         return new(xOffset, yOffset);
+    }
+    float Angle
+    {
+        get
+        {
+            if (unit.models.Count <= 1)
+                return 0;
+            Vector3 center = unit.models[0].transform.position;
+            Vector3 right = RightMostUnit - center;
+
+            return Vector2.SignedAngle(Vector2.up, right) + 90; //Vector3.Angle(Vector3.zero, right);
+        }
+    }
+    Vector3 RightMostUnit
+    {
+        get
+        {
+            int width = unit.Movement.UnitWidth;
+            int index;
+            if (width % 2 == 0)
+                index = width - 1;
+            else
+                index = width - 2;
+            return unit.models[index].transform.position;
+        }
     }
     #endregion
 }

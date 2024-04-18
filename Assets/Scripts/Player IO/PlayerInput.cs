@@ -8,6 +8,8 @@ public class PlayerInput : MonoBehaviour {
     public static PlayerInput Instance { get; protected set; }
     //public SelectionData selectedObject, hoverObject;
     public UnitR selectedUnit, hoverUnit;
+    [SerializeField]
+    Vector2 MinimumCameraBounds, MaxCameraBounds;
     float targetOrtho;
     [SerializeField] Transform cursor;
     public Vector2Int Cursor
@@ -29,9 +31,17 @@ public class PlayerInput : MonoBehaviour {
         }
         targetOrtho = Camera.main.orthographicSize;
     }
-	
-	// Update is called once per frame
-	void Update () {
+    private void OnDrawGizmos()
+    {
+        Gizmos.color = new(255, 0, 0, 50);
+        Vector3 center = (MinimumCameraBounds + MaxCameraBounds)/2;
+        Vector3 size = MaxCameraBounds - MinimumCameraBounds;
+        size.x = Mathf.Abs(size.x);
+        size.y = Mathf.Abs(size.y);
+        Gizmos.DrawWireCube(center, size);
+    }
+    // Update is called once per frame
+    void Update () {
         GetMouseHover();
         SelectItem();
         MoveCamera();
@@ -49,10 +59,10 @@ public class PlayerInput : MonoBehaviour {
         float yAxisValue = Input.GetAxis("Vertical");
         float xDir = (xAxisValue) * cameraSpeed * Time.deltaTime;
         float yDir = (yAxisValue) * cameraSpeed * Time.deltaTime;
-        if (Camera.main != null)
+        var camera = Camera.main;
+        if (camera != null)
         {
-            Camera.main.transform.position = new Vector3(Camera.main.transform.position.x + xDir, Camera.main.transform.position.y + yDir, Camera.main.transform.position.z);
-            //Camera.main.transform.Translate(new Vector3(xAxisValue*0.6f, yAxisValue*0.6f, 0));
+            camera.transform.position = new Vector3(camera.transform.position.x + xDir, camera.transform.position.y + yDir, camera.transform.position.z);
         }
         //zoom camera
         float smoothSpeed = 10f;// 2.0f;
@@ -64,8 +74,24 @@ public class PlayerInput : MonoBehaviour {
             targetOrtho -= scroll * zoomSpeed;
             targetOrtho = Mathf.Clamp(targetOrtho, minOrtho, maxOrtho);
         }
-
-        Camera.main.orthographicSize = Mathf.MoveTowards(Camera.main.orthographicSize, targetOrtho, smoothSpeed * Time.deltaTime);
+        ClampCamera();
+        camera.orthographicSize = Mathf.MoveTowards(camera.orthographicSize, targetOrtho, smoothSpeed * Time.deltaTime);
+    }
+    void ClampCamera()
+    {
+        var camera = Camera.main;
+        float screenHeightInUnits = camera.orthographicSize;// * 2;
+        float screenWidthInUnits = screenHeightInUnits * Screen.width / Screen.height;
+        Vector3 position= camera.transform.position;
+        if(position.x < MinimumCameraBounds.x+screenWidthInUnits)
+            position.x = MinimumCameraBounds.x + screenWidthInUnits;
+        else if (position.x > MaxCameraBounds.x - screenWidthInUnits)
+            position.x = MaxCameraBounds.x - screenWidthInUnits;
+        if (position.y < MinimumCameraBounds.y + screenHeightInUnits)
+            position.y = MinimumCameraBounds.y+ screenHeightInUnits;
+        else if (position.y > MaxCameraBounds.y - screenHeightInUnits)
+            position.y = MaxCameraBounds.y - screenHeightInUnits;
+        camera.transform.position = position;   
     }
     void SelectItem()
     {
@@ -91,7 +117,7 @@ public class PlayerInput : MonoBehaviour {
     }
     void GiveOrder()
     {
-        if(selectedUnit!= null && Master.Instance.unitArmy[selectedUnit].controller == Army.Controller.Player) { 
+        if(selectedUnit!= null && Battle.Instance.unitArmy[selectedUnit].controller == Army.Controller.Player) { 
             selectedUnit.Movement.MoveTo(Cursor); 
         }
     }

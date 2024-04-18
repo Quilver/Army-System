@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+#region Enemy Behaviours
 public class LinkedAggro : MonoBehaviour
 {
     [SerializeField]
@@ -35,3 +35,5 @@ public class LinkedAggro : MonoBehaviour
         }
     }
 }
+#endregion
+

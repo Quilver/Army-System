@@ -58,13 +58,13 @@ public class UnitPositionR
 	//movement Buffer
 	public void MoveTo(Vector2Int position)
 	{
-		if (unit.state == UnitState.Fighting) return;
+		if (unit.State == UnitState.Fighting) return;
 		bufferTarget = new(position);
-		unit.state = UnitState.Moving;
+		unit.State = UnitState.Moving;
     }
 	public void UpdateMovement()
 	{
-		if (unit.state != UnitState.Moving) return;
+		if (unit.State != UnitState.Moving) return;
 
 		if(AtPoint())
 			UpdatePath();
@@ -79,10 +79,11 @@ public class UnitPositionR
 	{
 		if(charge.UnitAhead && charge.Enemies.Count > 0)
 		{
-            Master.Instance.AddCombat(unit, charge.Enemies[0]);
+            //Master.Instance.AddCombat(unit, charge.Enemies[0]);
             waypoints = null;
             return;
         }
+
 		if (bufferTarget != null)
 		{
 			currentTarget = bufferTarget;
@@ -93,7 +94,7 @@ public class UnitPositionR
 			waypoints= currentTarget.GetPath(this);
 		if(waypoints == null || waypoints.Count == 0)
 		{
-			unit.state = UnitState.Idle;
+			unit.State = UnitState.Idle;
 			currentTarget= null;
 			return;
 		}

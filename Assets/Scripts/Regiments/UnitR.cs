@@ -7,10 +7,18 @@ using UnityEngine;
 public class UnitR : MonoBehaviour
 {
 	#region Properties
-	[SerializeField]
 	public UnitStatsR stats;
-	[SerializeField]
-	public UnitState state;
+    [SerializeField]
+    UnitState _state;
+	public UnitState State
+    {
+        get { return _state; }
+        set {
+            if(_state == UnitState.Fighting && value == UnitState.Idle)
+                foreach(var model in models) model.STOPPED = false;
+            _state = value; 
+        }
+    }
 	[SerializeField]
 	UnitPositionR movement;
     public Weapon weapon;
@@ -27,15 +35,13 @@ public class UnitR : MonoBehaviour
     #region Initialise
     private void Start()
     {
+        _state = UnitState.Idle;
         var size = GetComponent<UnitSize>();
-        //movement.unitSetter= this;
         movement.Init(this, size.UnitWidth);
-        //movement.position.Location = new Vector2Int((int)transform.position.x, (int)transform.position.y);
         transform.position = new Vector3((int)transform.position.x, (int)transform.position.y, (int)transform.position.z);
         PopulateModels(size.StartingSize, size.UnitWidth);
         _maxUnitSize =size.StartingSize;
         Destroy(size);
-        time = 0;
         weapon= new Weapon(this);
     }
     void PopulateModels(int size, int width)
@@ -61,30 +67,22 @@ public class UnitR : MonoBehaviour
     }
     #endregion
     #region Update
-    float time;
     private void Update()
     {
-        if (state == UnitState.Fighting)
-            Fighting();
         movement.UpdateMovement();
+        if (models.Count == 0) Die();
     }
     #endregion
     #region Combat and death
     int _maxUnitSize;
+    public void STOP() {
+        foreach (var model in models) model.STOPPED = true;
+    }
     public bool Wounded
     {
         get
         {
             return models.Count <= _maxUnitSize/2;
-        }
-    }
-    public void Fighting()
-    {
-        time -= Time.deltaTime;
-        if (time < 0)
-        {
-            time = 10f/stats.AttackSpeed;
-            Master.Instance.MakeAttack(this);
         }
     }
     public void Die(int deaths)
@@ -93,7 +91,7 @@ public class UnitR : MonoBehaviour
         {
             if (models.Count == 0)
             {
-                Die();
+                //Die();
                 return;
             }
             Destroy(models[models.Count - 1].gameObject);
@@ -104,7 +102,7 @@ public class UnitR : MonoBehaviour
     void Die()
     {
         if (this == null) return;
-        Master.Instance.RemoveCombat(this, true);
+        //Battle.Instance.EndCombat(this);
         Destroy(this.gameObject);
     }
     #endregion

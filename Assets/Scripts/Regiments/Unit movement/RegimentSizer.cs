@@ -19,26 +19,17 @@ public class RegimentSizer : MonoBehaviour
         transform.parent.position = Vector3.zero;
         SetBox();
     }
-    Vector3 Midpoint
-    {
-        get {
-            float x = -(unit.Movement.UnitWidth % 2 - 1) / 2f;
-            float y = -(unit.Movement.Ranks - 1) / 2f;
-            return new Vector3(x,y); 
-        }
-    }
-
-
+    #region Box setter
     public void SetBox(int width, int Size)
     {
         float angle = GetComponentInParent<UnitR>().Movement.position.Rotation;
-        int ranks = Mathf.CeilToInt((Size *1f)/width);
+        int ranks = Mathf.CeilToInt((Size * 1f) / width);
         Vector3 size = GetSize(width, ranks);
 
         Vector2 midpoint = MidPoint(width, (int)size.y);//new(-(width % 2 - 1) / 2f, -(ranks - 1) / 2f);
         transform.localPosition = midpoint;
         transform.localScale = size;
-        transform.parent.rotation= Quaternion.Euler(0, 0, angle);
+        transform.parent.rotation = Quaternion.Euler(0, 0, angle);
     }
     public bool CanBeOn(PositionR pos, float avoidBy, int width, int ranks, UnitR target = null)
     {
@@ -63,16 +54,18 @@ public class RegimentSizer : MonoBehaviour
     {
         if (unit.models.Count == 0) return;
         //get values
-        float angle = unit.Movement.position.Rotation;
+        float angle = Angle; // unit.Movement.position.Rotation;
         Vector3 size = GetSize(unit.Movement.UnitWidth, unit.Movement.Ranks);
         var midpoint = MidPoint(size, angle);
         //Vector2 rotatedOffset = Quaternion.Euler(0, 0, angle) * Midpoint;
         Vector2 pos = unit.models[0].transform.position;
         //set value
-        transform.position = midpoint+ pos;// unit.Movement.position.Location;
+        transform.position = midpoint + pos;// unit.Movement.position.Location;
         transform.localScale = size;
         transform.rotation = Quaternion.Euler(0, 0, angle);
     }
+    #endregion
+
     #region HelperFunctions
     Vector2 GetSize(int width, int ranks)
     {
@@ -97,6 +90,31 @@ public class RegimentSizer : MonoBehaviour
         float xOffset = -(width % 2 - 1) / 2f;
         float yOffset = -(ranks - 1) / 2f;
         return new(xOffset, yOffset);
+    }
+    float Angle
+    {
+        get
+        {
+            if(unit.models.Count <= 1)
+                return 0;
+            Vector3 center = unit.models[0].transform.position;
+            Vector3 right = RightMostUnit - center;
+            
+            return Vector2.SignedAngle(Vector2.up, right) + 90; //Vector3.Angle(Vector3.zero, right);
+        }
+    }
+    Vector3 RightMostUnit
+    {
+        get
+        {
+            int width = unit.Movement.UnitWidth;
+            int index;
+            if (width % 2 == 0)
+                index = width - 1;
+            else
+                index = width - 2;
+            return unit.models[index].transform.position;
+        }
     }
     #endregion
 }

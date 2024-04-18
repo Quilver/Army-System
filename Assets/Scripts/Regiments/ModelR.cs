@@ -6,6 +6,7 @@ public class ModelR : MonoBehaviour//, SelectionData
 {
     #region Properties
     public UnitR unit;
+    public bool STOPPED = false;
     Animator animator;
     [SerializeField]
     Vector2Int offset;
@@ -42,7 +43,8 @@ public class ModelR : MonoBehaviour//, SelectionData
     }
     void Update()
     {
-        UpdateMovement();
+        if(!STOPPED)
+            UpdateMovement();
     }
     void UpdateMovement()
     {
@@ -53,7 +55,7 @@ public class ModelR : MonoBehaviour//, SelectionData
             animator.SetFloat("Y", ModelPosition.y - transform.position.y);
             transform.position = Vector2.MoveTowards((Vector2)transform.position, ModelPosition, unit.stats.Speed* Time.deltaTime);
         }
-        else if (unit != null && unit.state == UnitState.Fighting) { animator.Play("Attack"); }
+        else if (unit != null && unit.State == UnitState.Fighting) { animator.Play("Attack"); }
         else
         {
             animator.Play("Idle");

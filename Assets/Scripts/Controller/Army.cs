@@ -38,7 +38,7 @@ public class Army : MonoBehaviour {
     {
         foreach (var unit in units)
         {
-            Master.Instance.unitArmy.Add(unit, this);
+            Battle.Instance.unitArmy.Add(unit, this);
         }
     }
     public Army create( Controller type)
@@ -78,7 +78,7 @@ public class Army : MonoBehaviour {
         if (!units.Contains(unit))
         {
             units.Add(unit);
-            Master.Instance.unitArmy.Add(unit, this);
+            Battle.Instance.unitArmy.Add(unit, this);
         }
     }
     // Update is called once per frame

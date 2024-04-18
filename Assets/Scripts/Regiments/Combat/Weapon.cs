@@ -1,60 +1,61 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
-using Unity.Mathematics;
+using System.Linq;
 using UnityEngine;
 [System.Serializable]
 public class Weapon
 {
     readonly UnitR unit;
     public Weapon(UnitR unit) { this.unit = unit; }
-    int Attacks
-    {
-        get
-        {
-            if (unit.models.Count < 6) { return 4; }
-            else if (unit.models.Count < 10) { return 6; }
-            else if (unit.models.Count < 16) { return 8; }
-            else return 10;
-        }
-    }
     bool Flanking (UnitR target)
     {
         return !target.Movement.InCombatWith(target.Movement.position, unit);
     }
-    int RelativeSkill(UnitR target)
-    {
-        int relative = unit.stats.Power - target.stats.Defence;
-        return relative;
+    float WoundedModifier {
+        get {
+            if (unit.Wounded)
+                return 0.5f;
+            else
+                return 1;
+        }
     }
-    int RollDamage(int attacks, int skillDifference)
-    {
-        int roll1 = UnityEngine.Random.Range(0, attacks);
-        int roll2 = UnityEngine.Random.Range(0, attacks);
-        if (skillDifference > 0) return math.max(roll1, roll2);
-        else if (skillDifference < 0) return math.min(roll1, roll2);
-        else return (roll1 + roll2) / 2;
-    }
-    public int Attack (UnitR target)
-    {
-        var damage = RollDamage(Attacks, RelativeSkill(target));
-        if (Flanking(target)) damage += RollDamage(Attacks, RelativeSkill(target));
-        return damage;
-    }
-    float _time;
-    int _counter;
+    
+    float _time, _damageDone, _damageModifier;
+    UnitR _target;
+    float TIMECYCLE = 6;
     public void StartCombat()
     {
-        _time = 0;
-        _counter = 0;
-        
+        _damageDone = 0;
+        _target = null;
+        DetermineAttack();
     }
-    public void UpdateCombat()
+    public void UpdateCombat(HashSet<UnitR> enemy)
     {
         _time += Time.deltaTime;
-        
+        if (_time > TIMECYCLE) DetermineAttack();
+        if (_target == null)
+            DetermineTarget(enemy);
+        _damageDone += Time.deltaTime * WoundedModifier;
+        float flankBonus = 1;
+        if (Flanking(_target))
+            flankBonus = 3;
+        if (_damageDone * _damageModifier * flankBonus >= _target.stats.Defence)
+        {
+            _target.Die(1);
+            DetermineTarget(enemy);
+            _damageDone= 0;
+        }
+    }
+    void DetermineTarget(HashSet<UnitR> enemy)
+    {
+        if(enemy.Count == 0) Debug.LogError(unit.ToString() + " has no enemies");
+        var enemies = enemy.ToList();
+        _target = enemies[UnityEngine.Random.Range(0, enemies.Count)];
     }
     void DetermineAttack()
     {
-
+        _time = 0;
+        _damageModifier = UnityEngine.Random.Range(0.8f, 1.2f);
     }
 }

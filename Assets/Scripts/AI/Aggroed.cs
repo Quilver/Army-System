@@ -2,7 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+#region Enemy Behaviours
 public class Aggroed : MonoBehaviour
 {
     UnitR _unit;
@@ -27,7 +27,7 @@ public class Aggroed : MonoBehaviour
     {
         int distance =int.MaxValue;
         UnitR closestUnit=null;
-        foreach (var enemy in Master.Instance.unitArmy[_unit].Enemies)
+        foreach (var enemy in Battle.Instance.unitArmy[_unit].Enemies)
         {
             int dist = DistanceFromUnit(enemy);
             if(dist < distance)
@@ -59,3 +59,4 @@ public class Aggroed : MonoBehaviour
             enemy = null;
     }
 }
+#endregion

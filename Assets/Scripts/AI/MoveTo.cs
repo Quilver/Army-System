@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+#region Enemy Behaviours
 public class MoveTo : MonoBehaviour
 {
     [SerializeField]
@@ -17,7 +17,9 @@ public class MoveTo : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if(_unit.state == UnitState.Idle)
+        if(_unit.State == UnitState.Idle)
             _unit.Movement.MoveTo(targetPosition);
     }
 }
+#endregion
+
