@@ -99,7 +99,7 @@ public class ChargeSizer : MonoBehaviour
         return targets;
     }
     #region Helper functions
-    const float meleeRange = 0.6f;
+    const float meleeRange = 1.0f;
     Vector2 GetSize(int width)
     {
         return new(width, meleeRange);

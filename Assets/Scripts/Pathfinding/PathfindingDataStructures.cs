@@ -6,9 +6,9 @@ namespace Pathfinding
 {
     public class Waypoint
     {
-        Vector2Int _targetTile;
+        Vector2 _targetTile;
         readonly UnitR _targetUnit;
-        public Waypoint(Vector2Int tile)
+        public Waypoint(Vector2 tile)
         {
             _targetTile = tile;
         }

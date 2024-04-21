@@ -56,7 +56,7 @@ public class UnitPositionR
 	Stack<PositionR> waypoints;
 	Pathfinding.Waypoint currentTarget, bufferTarget =null;
 	//movement Buffer
-	public void MoveTo(Vector2Int position)
+	public void MoveTo(Vector2 position)
 	{
 		if (unit.State == UnitState.Fighting) return;
 		bufferTarget = new(position);

@@ -72,8 +72,8 @@ public struct PositionR
     }
     #endregion
     #region Properties
-    Vector2Int location;
-    public Vector2Int Location
+    Vector2 location;
+    public Vector2 Location
     {
         get { return location; }
         set { location = value; }
@@ -114,7 +114,7 @@ public struct PositionR
     }
     #endregion
 
-    public PositionR(Vector2Int location, CardinalDirections direction)
+    public PositionR(Vector2 location, CardinalDirections direction)
     {
         this.location = location;
         this._direction = direction;
@@ -128,11 +128,13 @@ public struct PositionR
         }
         foreach (var pos in System.Enum.GetValues(typeof(CardinalDirections)))
         {
-            moves.Add(new PositionR(location + ConvertToCoordinates((CardinalDirections)pos), _direction));
+            var p = new PositionR(location + ConvertToCoordinates((CardinalDirections)pos), _direction);
+            if (p.Rotation % 2 != Rotation % 2)
+                continue;
+            moves.Add(p);
         }
         return moves;
     }
-    
     public static List<Pathfinding.WeightedNode<PositionR>> GetMoves(Pathfinding.WeightedNode<PositionR> path, int advanceCost=1,
         int wheelCost = 3, int strafeCost = 12)
     {
@@ -144,7 +146,10 @@ public struct PositionR
             newPath.state = node;
             newPath.weight = path.weight;
             if (node.location == path.state.location) newPath.weight += wheelCost;
-            else if (node.location - node.Direction == path.state.location) newPath.weight += advanceCost;
+            else if (node.location - node.Direction == path.state.location) {
+                newPath.weight += advanceCost;
+                newPath.state.location -= newPath.state.Direction / 2;
+            } 
             else newPath.weight += strafeCost;
             paths.Add(newPath);
         }

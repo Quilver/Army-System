@@ -18,18 +18,18 @@ public class Aggroed : MonoBehaviour
         _unit = GetComponent<UnitR>();
 
     }
-    int DistanceFromUnit(UnitR unit)
+    float DistanceFromUnit(UnitR unit)
     {
         var pos = unit.Movement.position.Location - _unit.Movement.position.Location;
-        return Math.Max(Math.Abs(pos.x), Math.Abs(pos.y));
+        return Mathf.Max(Mathf.Abs(pos.x), Mathf.Abs(pos.y));
     }
     UnitR GetNearestUnit()
     {
-        int distance =int.MaxValue;
+        float distance =float.MaxValue;
         UnitR closestUnit=null;
         foreach (var enemy in Battle.Instance.unitArmy[_unit].Enemies)
         {
-            int dist = DistanceFromUnit(enemy);
+            float dist = DistanceFromUnit(enemy);
             if(dist < distance)
             {
                 distance = dist;
