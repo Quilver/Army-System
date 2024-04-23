@@ -119,6 +119,11 @@ public struct PositionR
         this.location = location;
         this._direction = direction;
     }
+    public PositionR(PositionR position, Vector2 offset)
+    {
+        this.location = position.location+offset;
+        this._direction = position._direction;
+    }
     public List<PositionR> GetMoves()
     {
         List<PositionR> moves = new();

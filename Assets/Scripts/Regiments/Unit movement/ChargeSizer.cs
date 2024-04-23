@@ -121,7 +121,7 @@ public class ChargeSizer : MonoBehaviour
         get
         {
             if (unit.models.Count <= 1)
-                return 0;
+                return unit.Movement.position.Rotation;
             Vector3 center = unit.models[0].transform.position;
             Vector3 right = RightMostUnit - center;
 

@@ -64,8 +64,9 @@ public class UnitPositionR
     }
 	public void UpdateMovement()
 	{
-		if (unit.State != UnitState.Moving) return;
-
+		if(unit.models.Count == 0) return;
+        else if (unit.State == UnitState.Fighting) Pursuit();
+        else if (unit.State != UnitState.Moving) return;
 		if(AtPoint())
 			UpdatePath();
 	}
@@ -103,6 +104,18 @@ public class UnitPositionR
             return;
 		}
         position = waypoints.Pop();
+	}
+	void Pursuit()
+	{
+		position.Location = unit.models[0].transform.position;
+		if (unitBody.Clipping) return;
+		if (!charge.UnitAhead) return;
+		Vector2 dir = position.Direction;
+		PositionR advancePos = new(position, dir * 0.1f);
+		if (CanMoveOn(advancePos, 2f, null))
+			position = advancePos;
+		//else
+		//	position.Location -= dir * 0.1f;
 	}
 	#endregion
 }

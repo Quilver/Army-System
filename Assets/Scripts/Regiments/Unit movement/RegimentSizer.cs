@@ -7,17 +7,38 @@ using UnityEngine;
 public class RegimentSizer : MonoBehaviour
 {
     UnitR unit;
+    [SerializeField]
+    List<GameObject> enemies;
     // Start is called before the first frame update
     void Start()
     {
         unit = GetComponentInParent<UnitR>();
-        
+        enemies = new();
     }
     // Update is called once per frame
     void Update()
     {
         transform.parent.position = Vector3.zero;
         SetBox();
+    }
+    public bool Clipping
+    {
+        get
+        {
+            return enemies.Count > 0;
+        }
+    }
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        var box = collision.gameObject.GetComponent<RegimentSizer>();
+        if (box == null) return;
+        enemies.Add(box.gameObject);
+    }
+    private void OnTriggerExit2D(Collider2D collision)
+    {
+        var box = collision.gameObject.GetComponent<RegimentSizer>();
+        if (box == null) return;
+        enemies.Remove(box.gameObject);
     }
     #region Box setter
     public void SetBox(int width, int Size)
