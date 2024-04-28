@@ -14,7 +14,7 @@ public class HUD : MonoBehaviour {
     }
     private void DrawTileBar()
     {
-        string description = player.Cursor.ToString();
+        string description = player.MouseHighlight.ToString();
         if (player.hoverUnit != null)
             description += "\n"+player.hoverUnit.ToString();
         mousePos.text = description;

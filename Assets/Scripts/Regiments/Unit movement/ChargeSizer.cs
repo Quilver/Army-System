@@ -52,13 +52,13 @@ public class ChargeSizer : MonoBehaviour
     }
     void SetBox()
     {
-        if (unit.models.Count == 0) return;
+        if (unit.ModelsRemaining == 0) return;
         //get values
         float angle = Angle;//unit.Movement.position.Rotation;
         Vector3 size = GetSize(unit.Movement.UnitWidth);//new(unit.Movement.UnitWidth, 1 + Midpoint.y/2);
         Vector2 position = MidPoint(unit.Movement.UnitWidth, unit.Movement.Ranks, angle);
         //Vector2 rotatedOffset = Quaternion.Euler(0, 0, angle) * Offset(size.y);
-        Vector2 pos = unit.models[0].transform.position;
+        Vector2 pos = unit.LeadModelPosition;
         //set value
         transform.position = position + pos;
         transform.localScale = size;
@@ -84,9 +84,9 @@ public class ChargeSizer : MonoBehaviour
             Battle.Instance.EndCombat(this.unit, unit);
         }
     }
-    public List<UnitR> TargetsAt(PositionR position)
+    public List<UnitInterface> TargetsAt(PositionR position)
     {
-        List<UnitR> targets = new();
+        List<UnitInterface> targets = new();
         float angle = position.Rotation;
         Vector3 size = GetSize(unit.Movement.UnitWidth);
         Vector2 rotatedPos = MidPoint(unit.Movement.UnitWidth, unit.Movement.Ranks, angle);
@@ -120,25 +120,12 @@ public class ChargeSizer : MonoBehaviour
     {
         get
         {
-            if (unit.models.Count <= 1)
+            if (unit.ModelsRemaining <= 1)
                 return unit.Movement.position.Rotation;
-            Vector3 center = unit.models[0].transform.position;
-            Vector3 right = RightMostUnit - center;
+            Vector3 center = unit.LeadModelPosition;
+            Vector3 right = unit.RightMostModelPosition - center;
 
             return Vector2.SignedAngle(Vector2.up, right) + 90; //Vector3.Angle(Vector3.zero, right);
-        }
-    }
-    Vector3 RightMostUnit
-    {
-        get
-        {
-            int width = unit.Movement.UnitWidth;
-            int index;
-            if (width % 2 == 0)
-                index = width - 1;
-            else
-                index = width - 2;
-            return unit.models[index].transform.position;
         }
     }
     #endregion

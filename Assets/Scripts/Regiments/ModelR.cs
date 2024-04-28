@@ -53,7 +53,7 @@ public class ModelR : MonoBehaviour//, SelectionData
             animator.Play("Move");
             animator.SetFloat("X", ModelPosition.x - transform.position.x);
             animator.SetFloat("Y", ModelPosition.y - transform.position.y);
-            transform.position = Vector2.MoveTowards((Vector2)transform.position, ModelPosition, unit.stats.Speed* Time.deltaTime);
+            transform.position = Vector2.MoveTowards((Vector2)transform.position, ModelPosition, unit.StatsR.Speed* Time.deltaTime);
         }
         else if (unit != null && unit.State == UnitState.Fighting) { animator.Play("Attack"); }
         else

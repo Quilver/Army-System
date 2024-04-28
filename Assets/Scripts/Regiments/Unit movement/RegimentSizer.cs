@@ -71,15 +71,18 @@ public class RegimentSizer : MonoBehaviour
             return true;
         return false;
     }
+    [SerializeField]
+    Vector2 _size;
     void SetBox()
     {
-        if (unit.models.Count == 0) return;
+        if (unit.ModelsRemaining == 0) return;
         //get values
         float angle = Angle; // unit.Movement.position.Rotation;
         Vector3 size = GetSize(unit.Movement.UnitWidth, unit.Movement.Ranks);
+        
         var midpoint = MidPoint(size, angle);
-        //Vector2 rotatedOffset = Quaternion.Euler(0, 0, angle) * Midpoint;
-        Vector2 pos = unit.models[0].transform.position;
+        Vector2 pos = unit.LeadModelPosition;
+        _size = midpoint;
         //set value
         transform.position = midpoint + pos;// unit.Movement.position.Location;
         transform.localScale = size;
@@ -116,25 +119,11 @@ public class RegimentSizer : MonoBehaviour
     {
         get
         {
-            if(unit.models.Count <= 1)
+            if(unit.ModelsRemaining <= 1)
                 return 0;
-            Vector3 center = unit.models[0].transform.position;
-            Vector3 right = RightMostUnit - center;
-            
+            Vector3 center = unit.LeadModelPosition;
+            Vector3 right = unit.RightMostModelPosition - center;
             return Vector2.SignedAngle(Vector2.up, right) + 90; //Vector3.Angle(Vector3.zero, right);
-        }
-    }
-    Vector3 RightMostUnit
-    {
-        get
-        {
-            int width = unit.Movement.UnitWidth;
-            int index;
-            if (width % 2 == 0)
-                index = width - 1;
-            else
-                index = width - 2;
-            return unit.models[index].transform.position;
         }
     }
     #endregion

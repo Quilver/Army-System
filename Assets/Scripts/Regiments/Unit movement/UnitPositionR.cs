@@ -6,8 +6,8 @@ using UnityEngine;
 [System.Serializable]
 public class UnitPositionR
 {
-	#region Properties
-	UnitR unit;
+    #region Properties
+    UnitInterface unit;
 	public PositionR position;
 	RegimentSizer unitBody;
 	ChargeSizer charge;
@@ -16,8 +16,8 @@ public class UnitPositionR
 	{
 		get
 		{
-			if (unit.models != null && unit.models.Count < _unitWidth)
-				_unitWidth = unit.models.Count;
+			if (unit.ModelsRemaining < _unitWidth)
+				_unitWidth = unit.ModelsRemaining;
 			return _unitWidth;
 		}
 	}
@@ -25,7 +25,7 @@ public class UnitPositionR
 	{
 		get
 		{
-			return Mathf.CeilToInt((unit.models.Count * 1.0f) / UnitWidth);
+			return Mathf.CeilToInt((unit.ModelsRemaining * 1.0f) / UnitWidth);
 		}
 	}
 	public void Init(UnitR unit, int Width)
@@ -45,9 +45,9 @@ public class UnitPositionR
 		else
 			return true;
 	}
-	public bool InCombatWith(PositionR positionR, UnitR target)
+	public bool InCombatWith(PositionR positionR, UnitInterface target)
 	{
-		List<UnitR> targets = charge.TargetsAt(positionR);
+		List<UnitInterface> targets = charge.TargetsAt(positionR);
 		return targets.Contains(target);
 	}
 	#endregion
@@ -64,17 +64,11 @@ public class UnitPositionR
     }
 	public void UpdateMovement()
 	{
-		if(unit.models.Count == 0) return;
+		if(unit.ModelsRemaining == 0) return;
         else if (unit.State == UnitState.Fighting) Pursuit();
         else if (unit.State != UnitState.Moving) return;
-		if(AtPoint())
+		if(!unit.ModelsAreMoving)
 			UpdatePath();
-	}
-	bool AtPoint()
-	{
-		foreach (var model in unit.models)
-			if(model.Moving)return false;
-		return true;
 	}
 	void UpdatePath()
 	{
@@ -107,7 +101,7 @@ public class UnitPositionR
 	}
 	void Pursuit()
 	{
-		position.Location = unit.models[0].transform.position;
+		position.Location = unit.LeadModelPosition;
 		if (unitBody.Clipping) return;
 		if (!charge.UnitAhead) return;
 		Vector2 dir = position.Direction;

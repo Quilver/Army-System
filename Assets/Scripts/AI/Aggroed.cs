@@ -5,7 +5,7 @@ using UnityEngine;
 #region Enemy Behaviours
 public class Aggroed : MonoBehaviour
 {
-    UnitR _unit;
+    UnitInterface _unit;
     [SerializeField]
     float thinkingSpeed;
     [SerializeField]

@@ -6,9 +6,9 @@ using UnityEngine;
 [System.Serializable]
 public class Weapon
 {
-    readonly UnitR unit;
-    public Weapon(UnitR unit) { this.unit = unit; }
-    bool Flanking (UnitR target)
+    readonly UnitInterface unit;
+    public Weapon(UnitInterface unit) { this.unit = unit; }
+    bool Flanking (UnitInterface target)
     {
         return !target.Movement.InCombatWith(target.Movement.position, unit);
     }
@@ -22,7 +22,7 @@ public class Weapon
     }
     
     float _time, _damageDone, _damageModifier;
-    UnitR _target;
+    UnitInterface _target;
     float TIMECYCLE = 6;
     public void StartCombat()
     {
@@ -30,7 +30,7 @@ public class Weapon
         _target = null;
         DetermineAttack();
     }
-    public void UpdateCombat(HashSet<UnitR> enemy)
+    public void UpdateCombat(HashSet<UnitInterface> enemy)
     {
         _time += Time.deltaTime;
         if (_time > TIMECYCLE) DetermineAttack();
@@ -40,14 +40,14 @@ public class Weapon
         float flankBonus = 1;
         if (Flanking(_target))
             flankBonus = 3;
-        if (_damageDone * _damageModifier * flankBonus >= _target.stats.Defence)
+        if (_damageDone * _damageModifier * flankBonus >= _target.StatsR.Defence)
         {
-            _target.Die(1);
+            _target.TakeDamage(1);
             DetermineTarget(enemy);
             _damageDone= 0;
         }
     }
-    void DetermineTarget(HashSet<UnitR> enemy)
+    void DetermineTarget(HashSet<UnitInterface> enemy)
     {
         if(enemy.Count == 0) Debug.LogError(unit.ToString() + " has no enemies");
         var enemies = enemy.ToList();

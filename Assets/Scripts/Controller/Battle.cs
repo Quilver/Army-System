@@ -4,9 +4,9 @@ using UnityEngine;
 
 public class Battle : MonoBehaviour {
     public static Battle Instance;
-    public Dictionary<UnitR, Army> unitArmy;
+    public Dictionary<UnitInterface, Army> unitArmy;
     [SerializeField] Army player, enemy1;
-    Dictionary<UnitR, HashSet<UnitR>> combatList;
+    Dictionary<UnitInterface, HashSet<UnitInterface>> combatList;
     void Awake () {
         if(Instance != null)
         {
@@ -16,7 +16,7 @@ public class Battle : MonoBehaviour {
         {
             Instance = this;
         }
-        unitArmy = new Dictionary<UnitR, Army>();
+        unitArmy = new Dictionary<UnitInterface, Army>();
         combatList = new();
     }
     public bool Enemies(UnitR unit1, UnitR unit2)
@@ -29,14 +29,14 @@ public class Battle : MonoBehaviour {
         if (!combatList.ContainsKey(attacker))
         {
             combatList.Add(attacker, new());
-            attacker.weapon.StartCombat();
+            attacker.Melee.StartCombat();
         }
         else if (combatList[attacker].Contains(defender))
             return;
         if (!combatList.ContainsKey(defender))
         {
             combatList.Add(defender, new());
-            defender.weapon.StartCombat();
+            defender.Melee.StartCombat();
         }
         else if (combatList[defender].Contains(attacker))
             return;
@@ -69,12 +69,12 @@ public class Battle : MonoBehaviour {
         }
         
     }
-    HashSet<UnitR> slainUnits=new();
-    public void EndCombat(UnitR fighter)
+    HashSet<UnitInterface> slainUnits=new();
+    public void EndCombat(UnitInterface fighter)
     {
         slainUnits.Add(fighter);
     }
-    void UpdateForDeadUnits(UnitR fighter)
+    void UpdateForDeadUnits(UnitInterface fighter)
     {
         if (!combatList.ContainsKey(fighter))
             return;
@@ -105,11 +105,11 @@ public class Battle : MonoBehaviour {
                 combatList.Remove(attacker.Key);
                 continue;
             }
-            attacker.Key.weapon.UpdateCombat(attacker.Value);
+            attacker.Key.Melee.UpdateCombat(attacker.Value);
         }
         foreach (var unit in combatList)
         {
-            if (unit.Key.models.Count == 0)
+            if (unit.Key.ModelsRemaining == 0)
                 slainUnits.Add(unit.Key);
         }
         foreach (var deadUnit in slainUnits)

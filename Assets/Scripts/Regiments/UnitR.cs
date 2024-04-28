@@ -4,10 +4,14 @@ using System.Collections.Generic;
 using System.Drawing;
 using UnityEngine;
 
-public class UnitR : MonoBehaviour
+public class UnitR : MonoBehaviour, UnitInterface
 {
-	#region Properties
-	public UnitStatsR stats;
+    #region Properties
+    [SerializeField]
+	UnitStatsR stats;
+    public UnitStatsR StatsR { 
+        get { return stats; }
+    }
     [SerializeField]
     UnitState _state;
 	public UnitState State
@@ -21,16 +25,66 @@ public class UnitR : MonoBehaviour
     }
 	[SerializeField]
 	UnitPositionR movement;
-    public Weapon weapon;
+    Weapon weapon;
+    public Weapon Melee { 
+        get { return weapon; }
+    }
     public UnitPositionR Movement
     {
         get { 
             return movement; 
         }
     }
-	public List<ModelR> models;
+	List<ModelR> models;
     [SerializeField] GameObject _modelPrefab;
-    [SerializeField]
+    #endregion
+    #region Model information
+    public Vector3 LeadModelPosition
+    {
+        get
+        {
+            return models[0].transform.position;
+        }
+    }
+    public Vector3 RightMostModelPosition
+    {
+        get
+        {
+            if(models.Count== 0) return Vector3.zero;
+            else if(Movement.UnitWidth == 1) return models[0].transform.position;
+            else if(Movement.UnitWidth % 2 == 0) return models[Movement.UnitWidth - 1].transform.position;
+            else return models[Movement.UnitWidth-2].transform.position;
+        }
+    }
+    public Vector3 LeftMostModelPosition
+    {
+        get
+        {
+            if (models.Count == 0) return Vector3.zero;
+            else if (models.Count == 1) return models[0].transform.position;
+            else if (Movement.UnitWidth % 2 == 0) return models[Movement.UnitWidth - 2].transform.position;
+            else return models[Movement.UnitWidth - 1].transform.position;
+        }
+    }
+    public bool ModelsAreMoving
+    {
+        get
+        {
+            for (int i = models.Count - 1; i >= 0; i--)
+            {
+                if (models[i].Moving)
+                    return true;
+            }
+            return false;
+        }
+    }
+    public int ModelsRemaining
+    {
+        get {
+            if (models == null) return 0;
+            return models.Count; 
+        }
+    }
     #endregion
     #region Initialise
     private void Start()
@@ -85,9 +139,9 @@ public class UnitR : MonoBehaviour
             return models.Count <= _maxUnitSize/2;
         }
     }
-    public void Die(int deaths)
+    public void TakeDamage(int damage)
     {
-        for (int i = 0; i < deaths; i++)
+        for (int i = 0; i < damage; i++)
         {
             if (models.Count == 0)
             {
@@ -96,7 +150,7 @@ public class UnitR : MonoBehaviour
             }
             Destroy(models[models.Count - 1].gameObject);
             models.RemoveAt(models.Count - 1);
-            
+
         }
     }
     void Die()
@@ -110,4 +164,6 @@ public class UnitR : MonoBehaviour
     {
         return base.ToString() + " " + stats.ToString();
     }
+
+    
 }
