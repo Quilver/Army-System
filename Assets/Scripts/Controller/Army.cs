@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Army : MonoBehaviour {
     [SerializeField]
-    List<UnitR> units;
+    public List<UnitR> units;
     public List<Army> enemies, allies, non_aligned;
     public Controller controller;
     public enum Controller

@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
+
 namespace PlayerControls
 {
     public class CameraControls : MonoBehaviour
@@ -18,9 +20,28 @@ namespace PlayerControls
         float minOrtho = 5.0f;
         [SerializeField, Range(10, 30)]
         float maxOrtho = 20.0f;
-        void Start()
+        Player inputs;
+        void Awake()
         {
             targetOrtho = Camera.main.orthographicSize;
+            inputs = new Player();
+        }
+        private void OnEnable()
+        {
+            inputs.Enable();
+            inputs.CameraControls.Zoom.performed += ZoomCamera;
+            inputs.CameraControls.Zoom.canceled += ZoomCamera;
+            inputs.CameraControls.MoveCamera.performed += MoveCamera;
+            inputs.CameraControls.MoveCamera.canceled += MoveCamera;
+
+        }
+        private void OnDisable()
+        {
+            inputs.Disable();
+            inputs.CameraControls.Zoom.performed -= ZoomCamera;
+            inputs.CameraControls.Zoom.canceled -= ZoomCamera;
+            inputs.CameraControls.MoveCamera.performed -= MoveCamera;
+            inputs.CameraControls.MoveCamera.canceled -= MoveCamera;
         }
         private void OnDrawGizmos()
         {
@@ -31,32 +52,32 @@ namespace PlayerControls
             size.y = Mathf.Abs(size.y);
             Gizmos.DrawWireCube(center, size);
         }
-        // Update is called once per frame
+        float scroll;
+        void ZoomCamera(InputAction.CallbackContext context)
+        {
+            scroll = context.ReadValue<float>();
+        }
+        Vector2 direction= Vector2.zero;
+        void MoveCamera(InputAction.CallbackContext context)
+        {
+            direction = context.ReadValue<Vector2>();
+            direction = direction.normalized * cameraSpeed;
+        }
         void Update()
         {
-            MoveCamera();
+            UpdateCamera();
+            //MoveCamera();
         }
-        void MoveCamera()
+        void UpdateCamera()
         {
-            //move camera
-            float xAxisValue = Input.GetAxis("Horizontal");
-            float yAxisValue = Input.GetAxis("Vertical");
-            float xDir = (xAxisValue) * cameraSpeed * Time.deltaTime;
-            float yDir = (yAxisValue) * cameraSpeed * Time.deltaTime;
-            var camera = Camera.main;
-            if (camera != null)
-            {
-                camera.transform.position = new Vector3(camera.transform.position.x + xDir, camera.transform.position.y + yDir, camera.transform.position.z);
-            }
-            //zoom camera
-            float scroll = Input.GetAxis("Mouse ScrollWheel");
-            if (scroll != 0.0f)
+            Camera.main.transform.position += (Vector3)direction * Time.unscaledDeltaTime;
+            if(scroll != 0)
             {
                 targetOrtho -= scroll * zoomSpeed;
                 targetOrtho = Mathf.Clamp(targetOrtho, minOrtho, maxOrtho);
+                Camera.main.orthographicSize = Mathf.MoveTowards(Camera.main.orthographicSize, targetOrtho, smoothSpeed * Time.unscaledDeltaTime);
             }
             ClampCamera();
-            camera.orthographicSize = Mathf.MoveTowards(camera.orthographicSize, targetOrtho, smoothSpeed * Time.deltaTime);
         }
         void ClampCamera()
         {
