@@ -6,7 +6,7 @@ namespace Campaign
     public interface IDataPersistance
     {
         void LoadData(CampaignData data);
-        void SaveData(ref CampaignData data);
+        void SaveData(CampaignData data);
 
     }
 }

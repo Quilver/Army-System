@@ -4,7 +4,7 @@ using UnityEngine;
 namespace BattlePrep
 {
     [System.Serializable]
-    public class BuyOrders 
+    public struct BuyOrders 
     {
         public string orderInfo;
         [Range(10, 1000)]

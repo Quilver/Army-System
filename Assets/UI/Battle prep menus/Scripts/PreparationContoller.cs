@@ -1,3 +1,4 @@
+using BattleFlowControl;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
@@ -11,96 +12,51 @@ namespace BattlePrep
     {
         [SerializeField]
         PreparationData preparationData;
-        #region Resources
-        [SerializeField, Header("Resources")]
-        TextMeshProUGUI Prestige;
+        public static PreparationData Data
+        {
+            get; private set;
+        }
+        private void Awake()
+        {
+            Data = preparationData;
+            BattleReport.statWrappers = new();
+        }
         [SerializeField]
-        TextMeshProUGUI Gold;
-        #endregion
-        #region Briefing Tab
-        [SerializeField, Header("Briefing")]
-        Image briefingButton;
+        BriefingTab briefingTab;
         [SerializeField]
-        RectTransform briefing;
+        UnitSelectionTab unitSelectionTab;
         [SerializeField]
-        Image briefingImage;
+        SellTab SellTab;
+        [SerializeField]
+        BuyTab buyTab;
+        [SerializeField]
+        Color selectColor, deSelectColor;
+        void Deselect()
+        {
+            briefingTab.Select(deSelectColor, false);
+            unitSelectionTab.Select(deSelectColor, false);
+            buyTab.Select(deSelectColor, false);
+            SellTab.Select(deSelectColor, false);
+        }
         public void SwapToBriefing()
         {
-            briefingButton.color= new(1,1,1,0.5f);
-            briefing.gameObject.SetActive(true);
-            briefingImage.gameObject.SetActive(true);
-            UnSwapToUnitSelection();
-            UnSwapToBuys();
-            UnSwapToSells();
+            Deselect();
+            briefingTab.Select(selectColor, true);
         }
-        void UnSwapToBriefing()
-        {
-            briefingButton.color = new(0.5f, 0.5f, 0.5f, 0.5f);
-            briefing.gameObject.SetActive(false);
-            briefingImage.gameObject.SetActive(false);
-        }
-        #endregion
-        #region Unit selection Tab
-        [SerializeField, Header("Unit Selection")]
-        Image UnitSelectionButton;
-        [SerializeField]
-        RectTransform unitSelection;
         public void SwapToUnitSelection()
         {
-            UnitSelectionButton.color = new(1, 1, 1, 0.5f);
-            unitSelection.gameObject.SetActive(true);
-            UnSwapToBriefing();
-            UnSwapToBuys();
-            UnSwapToSells();
+            Deselect();
+            unitSelectionTab.Select(selectColor, true);
         }
-        void UnSwapToUnitSelection()
-        {
-            UnitSelectionButton.color = new(0.5f, 0.5f, 0.5f, 0.5f);
-            unitSelection.gameObject.SetActive(false);
-        }
-        #endregion
-        #region Buy Tab
-        [SerializeField, Header("Buys")]
-        Image BuyButton;
-        [SerializeField]
-        RectTransform buys;
         public void SwapToBuys()
         {
-            BuyButton.color = new(1, 1, 1, 0.5f);
-            buys.gameObject.SetActive(true);
-            UnSwapToBriefing();
-            UnSwapToUnitSelection();
-            UnSwapToSells();
+            Deselect();
+            SellTab.Select(selectColor, true);
         }
-        void UnSwapToBuys()
-        {
-            BuyButton.color = new(0.5f, 0.5f, 0.5f, 0.5f);
-            buys.gameObject.SetActive(false);
-        }
-        #endregion
-        #region Sell Tab
-        [SerializeField, Header("Sells")]
-        Image SellButton;
-        [SerializeField]
-        RectTransform sells;
         public void SwapToSells()
         {
-            SellButton.color = new(1, 1, 1, 0.5f);
-            sells.gameObject.SetActive(true);
-            UnSwapToBriefing();
-            UnSwapToUnitSelection();
-            UnSwapToBuys();
-        }
-        void UnSwapToSells()
-        {
-            SellButton.color = new(0.5f, 0.5f, 0.5f, 0.5f);
-            sells.gameObject.SetActive(false);
-        }
-        #endregion
-        // Start is called before the first frame update
-        void Start()
-        {
-
+            Deselect();
+            buyTab.Select(selectColor, true);
         }
         [SerializeField]
         int CurrentLevel = 1;

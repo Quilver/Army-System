@@ -1,3 +1,4 @@
+using Campaign;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -7,8 +8,12 @@ namespace BattleFlowControl
 {
     public class EndBattle : MonoBehaviour
     {
+        public float timeTaken;
+        public int kills, deaths;
         [SerializeField]
         List<AchievementSystem.Achievments> Achievements;
+        [SerializeField]
+        List<Campaign.StatWrapper> statWrappers;
         // Start is called before the first frame update
         void Awake()
         {
@@ -31,6 +36,7 @@ namespace BattleFlowControl
                 Victory();
             }
         }
+        
         void Victory()
         {
             SceneManager.LoadScene(2);

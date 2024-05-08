@@ -5,7 +5,7 @@ using UnityEngine;
 namespace BattlePrep
 {
     [System.Serializable]
-    public class SellOrders
+    public struct SellOrders
     {
         public string orderInfo;
         [Range(1, 100)]
@@ -14,6 +14,8 @@ namespace BattlePrep
         public int interestRate;
         [Range(10, 1000)]
         public int gold;
+        [Range(1, 7)]
+        public int timeLeft;
         [TextArea(1, 5)]
         public string orderDetails;
         public BuyOrders Buy()
@@ -23,6 +25,7 @@ namespace BattlePrep
             buy.orderDetails= orderDetails;
             float percent = interestRate / 100f;
             buy.Cost = (int) percent * gold;
+            buy.TimeLeft = timeLeft;
             return buy;
         }
     }

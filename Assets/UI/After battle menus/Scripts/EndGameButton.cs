@@ -9,8 +9,8 @@ namespace EndGameUI
     {
         public void Click()
         {
-            Campaign.CampaignDataManager.instance.data.CurrentLevel++;
-            if (SceneManager.sceneCountInBuildSettings + 3 > Campaign.CampaignDataManager.instance.data.CurrentLevel)
+            Campaign.CampaignDataManager.Data.CurrentLevel++;
+            if (SceneManager.sceneCountInBuildSettings + 3 > Campaign.CampaignDataManager.Data.CurrentLevel)
                 SceneManager.LoadScene(1);
             else
                 Debug.Log("Game over");

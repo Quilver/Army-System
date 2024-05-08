@@ -88,9 +88,10 @@ public class Weapon
         var enemies = enemy.ToList();
         _target = enemies[UnityEngine.Random.Range(0, enemies.Count)];
     }
+
     void DetermineAttack()
     {
         _time = 0;
-        _damageModifier = UnityEngine.Random.Range(0.8f, 1.2f) * regimentStats.AttackPower.BaseStat;
+        _damageModifier = UnityEngine.Random.Range(0.75f, 0.125f) * regimentStats.AttackPower.BaseStat;
     }
 }

@@ -8,11 +8,11 @@ namespace BattlePrep
     public class PreparationData : ScriptableObject
     {
         [SerializeField, TextArea(5, 15)]
-        string briefing;
+        public string briefing;
         [SerializeField]
-        List<UnitCard> units;
+        public Sprite image;
         [SerializeField]
-        List<BuyOrders> buyOrders;
+        public List<SellOrders> buyOrders;
 
     }
 }

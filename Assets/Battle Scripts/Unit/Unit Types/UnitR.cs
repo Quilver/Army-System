@@ -101,7 +101,6 @@ public class UnitR : MonoBehaviour, UnitInterface
     #region Initialise
     private void Start()
     {
-        unitStats.LoadStats();
         _state = UnitState.Idle;
         var size = GetComponent<UnitSize>();
         movement.Init(this, size.UnitWidth);

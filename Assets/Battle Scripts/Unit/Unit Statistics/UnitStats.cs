@@ -12,14 +12,14 @@ namespace StatSystem
         LevelTable levelTable;
         //List<int> ExperienceToReachLevel;
         [SerializeField, Min(0)]
-        int startingExperience;
+        int experience;
         public int CurrentLevel
         {
             get
             {
                 for (int i = 1; i < levelTable.ExperienceToReachLevel.Count; i++)
                 {
-                    if (levelTable.ExperienceToReachLevel[i] > startingExperience)
+                    if (levelTable.ExperienceToReachLevel[i] > experience)
                         return i;
                 }
                 return levelTable.ExperienceToReachLevel.Count;
@@ -28,7 +28,7 @@ namespace StatSystem
         public void AddXP(int XP)
         {
             var currentLevel=CurrentLevel;
-            startingExperience += XP;
+            experience += XP;
             for (int i = 0; i < CurrentLevel - currentLevel; i++)
             {
                 LevelUp();
@@ -44,22 +44,24 @@ namespace StatSystem
                 levelBonuses[stat.StatType]++;
             }
         }
-        public void SaveStats()
-        {
-            //save current experience
-            //save bonus stats from level ups
-        }
-        public void LoadStats()
-        {
-            levelBonuses = new();
-            foreach (var stat in Stats())
-            {
-                //levelBonuses.Add(stat.StatType, 0);
-            }
-        }
+        
         protected Dictionary<string, int> levelBonuses;
         public abstract List<Stat> Stats();
-        
+        public float FractionToNextLevel()
+        {
+            if (levelTable.ExperienceToReachLevel.Count == CurrentLevel)
+                return 1;
+            int exp = experience - levelTable.ExperienceToReachLevel[CurrentLevel-1];
+            int expToNextLevel = levelTable.ExperienceToReachLevel[CurrentLevel] - levelTable.ExperienceToReachLevel[CurrentLevel - 1];
+            return ((float)exp)/ ((float)expToNextLevel);
+        }
+        public string StatString()
+        {
+            string stats = "| ";
+            foreach (var stat in Stats())
+                stats += stat.StatType + ": " + stat.BaseStat + " | ";
+            return stats;
+        }
         public override string ToString()
         {
             string stats = UnitName + " Level: " + CurrentLevel + "\n";

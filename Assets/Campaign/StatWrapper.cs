@@ -8,8 +8,15 @@ namespace Campaign
     {
         [SerializeField, HideInInspector]
         int XP = 0;
+        [Range(5, 50)]
+        public int CostToField = 10;
         public StatSystem.UnitStats statBase;
+        [SerializeField]
         SerializableDictionary<string, StatSystem.Stat> statsGained;
+        public void Update()
+        {
+
+        }
     }
     [System.Serializable]
     class SerializableDictionary<TKey, TValue>: Dictionary<TKey, TValue>, ISerializationCallbackReceiver
@@ -32,7 +39,7 @@ namespace Campaign
 
         public void OnBeforeSerialize()
         {
-            keys.Clear(); values.Clear();
+            keys=new(); values=new();
             foreach (var pair in this)
             {
                 keys.Add(pair.Key);
