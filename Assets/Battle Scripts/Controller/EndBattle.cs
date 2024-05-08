@@ -18,11 +18,17 @@ namespace BattleFlowControl
         void Awake()
         {
             Init();
+            
         }
         protected virtual void Init()
         {
             Notifications.InitEvents();
             Notifications.ArmyDestroyed += GameOver;
+            BattleReport.Reset();
+            BattleReport.timeTaken = Time.time;
+            Notifications.MeleeDamage += KillCounter;
+            Notifications.RangedDamage += KillCounter;
+
         }
         void GameOver(Army army)
         {
@@ -36,9 +42,16 @@ namespace BattleFlowControl
                 Victory();
             }
         }
-        
+        void KillCounter(UnitInterface attacker, UnitInterface defender, int damage)
+        {
+            if(Battle.Instance.player == Battle.Instance.unitArmy[attacker])
+                BattleReport.kills += damage;
+            else
+                BattleReport.deaths+= damage;
+        }
         void Victory()
         {
+            BattleReport.timeTaken = Time.time - BattleReport.timeTaken;
             SceneManager.LoadScene(2);
         }
     }
