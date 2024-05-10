@@ -30,6 +30,10 @@ public class Army : MonoBehaviour {
     }
     
     HashSet<UnitInterface> _units;
+    public List<UnitInterface> Units
+    {
+        get { return _units.ToList(); }
+    }
     void Initiliase()
     {
         _units= new HashSet<UnitInterface>();

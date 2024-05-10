@@ -1,4 +1,5 @@
 using Campaign;
+using StatSystem;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -19,6 +20,19 @@ namespace BattleFlowControl
         {
             Init();
             
+        }
+        public Dictionary<UnitStats, StatWrapper> units;
+        private void Start()
+        {
+            units = new();
+            BattleReport.statWrappers = new();
+            foreach (var unit in Battle.Instance.player.Units)
+            {
+                StatWrapper wrapper = new();
+                wrapper.statBase = Instantiate(unit.UnitStats);
+                this.units.Add(unit.UnitStats, wrapper);
+                BattleReport.statWrappers.Add(wrapper);
+            }
         }
         protected virtual void Init()
         {
