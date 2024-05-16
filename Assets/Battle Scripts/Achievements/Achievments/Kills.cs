@@ -1,18 +1,29 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
-public class Kills : MonoBehaviour
+namespace AchievementSystem
 {
-    // Start is called before the first frame update
-    void Start()
+    [CreateAssetMenu(menuName = "Achievements/Kills")]
+    public class Kills : Achievments
     {
-        
-    }
+        [SerializeField, Range(1, 10)]
+        int XPperKill;
 
-    // Update is called once per frame
-    void Update()
-    {
-        
+        public override string Description => throw new System.NotImplementedException();
+
+        public override bool Achieved()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override void Initialise()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override void Reward()
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

@@ -56,7 +56,7 @@ public class ModelR : MonoBehaviour//, SelectionData
             animator.Play("Move");
             animator.SetFloat("X", ModelPosition.x - transform.position.x);
             animator.SetFloat("Y", ModelPosition.y - transform.position.y);
-            float unitSpeed = ((StatSystem.IMovementStats)unit.UnitStats).MoveSpeed / 3;
+            float unitSpeed = ((StatSystem.IMovementStats)unit.UnitStats).Speed;
             transform.position = Vector2.MoveTowards((Vector2)transform.position, ModelPosition, unitSpeed * Time.deltaTime);
         }
         else if (unit != null && unit.State == UnitState.Fighting) { animator.Play("Attack"); }

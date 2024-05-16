@@ -1,3 +1,4 @@
+using MyNamespace;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -92,6 +93,8 @@ public class Weapon
     void DetermineAttack()
     {
         _time = 0;
-        _damageModifier = UnityEngine.Random.Range(0.75f, 0.125f) * regimentStats.AttackPower.BaseStat;
+        float min = 1;
+        float max = 1.5f;
+        _damageModifier = UnityEngine.Random.Range(min, max) * ((ICombatStats)regimentStats).AttackSpeed;
     }
 }

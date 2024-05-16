@@ -40,6 +40,7 @@ namespace BattleFlowControl
             Notifications.ArmyDestroyed += GameOver;
             BattleReport.Reset();
             BattleReport.timeTaken = Time.time;
+            BattleReport.Achievements = new();
             Notifications.MeleeDamage += KillCounter;
             Notifications.RangedDamage += KillCounter;
 
@@ -65,6 +66,7 @@ namespace BattleFlowControl
         }
         void Victory()
         {
+            BattleReport.Achievements.Add(Achievements[0]);
             BattleReport.timeTaken = Time.time - BattleReport.timeTaken;
             SceneManager.LoadScene(2);
         }

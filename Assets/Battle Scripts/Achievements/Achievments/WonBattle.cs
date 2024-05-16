@@ -1,18 +1,31 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
-public class WonBattle : MonoBehaviour
+namespace AchievementSystem
 {
-    // Start is called before the first frame update
-    void Start()
+    [CreateAssetMenu(menuName = "Achievements/WonBattle")]
+    public class WonBattle : Achievments
     {
-        
-    }
+        [SerializeField, Range(1, 50)]
+        int experienceReward;
 
-    // Update is called once per frame
-    void Update()
-    {
-        
+        public override string Description => "Won the battle";
+
+        public override bool Achieved()
+        {
+            return true;
+        }
+
+        public override void Initialise()
+        {
+            
+        }
+
+        public override void Reward()
+        {
+            
+
+        }
+
     }
 }

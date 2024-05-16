@@ -7,7 +7,9 @@ namespace AchievementSystem
     {
         public Sprite icon;
         public abstract void Initialise();
-        public string Description { get; }
+        public abstract string Description { get; }
+        public abstract bool Achieved();
+        public abstract void Reward();
 
     }
 }
