@@ -34,6 +34,7 @@ namespace StatSystem
                 LevelUp();
             }
         }
+        
         void LevelUp()
         {
             foreach (var stat in Stats())
@@ -44,7 +45,21 @@ namespace StatSystem
                 levelBonuses[stat.StatType]++;
             }
         }
-        
+        public void Load()
+        {
+            foreach (var character in Campaign.CampaignDataManager.Data.characters)
+            {
+                if (character.statBase != this) continue;
+
+                return;
+            }
+            Campaign.StatWrapper _character = new()
+            {
+                statBase = this,
+                CostToField = 5
+            };
+            Campaign.CampaignDataManager.Data.characters.Add(_character);
+        }
         protected Dictionary<string, int> levelBonuses;
         public abstract List<Stat> Stats();
         public float FractionToNextLevel()
@@ -59,7 +74,7 @@ namespace StatSystem
         {
             string stats = "| ";
             foreach (var stat in Stats())
-                stats += stat.StatType + ": " + stat.BaseStat + " | ";
+                stats += stat.StatType + ": " + stat.CurrentStat + " | ";
             return stats;
         }
         public override string ToString()
@@ -67,7 +82,7 @@ namespace StatSystem
             string stats = UnitName + " Level: " + CurrentLevel + "\n";
             foreach (var stat in Stats())
             {
-                stats += stat.StatType + ": " + stat.BaseStat + "\n";
+                stats += stat.StatType + ": " + stat.CurrentStat + "\n";
             }
             return stats;
         }

@@ -46,29 +46,29 @@ public struct PositionR
         }
         return directions;
     }
-    public static Vector2Int ConvertToCoordinates(CardinalDirections directions)
+    public static Vector2 ConvertToCoordinates(CardinalDirections directions)
     {
         switch (directions)
         {
             case CardinalDirections.N:
-                return new Vector2Int(0, 1);
+                return new Vector2(0, 1);
             case CardinalDirections.NE:
-                return new Vector2Int(1, 1);
+                return new Vector2(1, 1);
             case CardinalDirections.NW:
-                return new Vector2Int(-1, 1);
+                return new Vector2(-1, 1);
             case CardinalDirections.W:
-                return new Vector2Int(-1, 0);
+                return new Vector2(-1, 0);
             case CardinalDirections.SW:
-                return new Vector2Int(-1, -1);
+                return new Vector2(-1, -1);
             case CardinalDirections.S:
-                return new Vector2Int(0, -1);
+                return new Vector2(0, -1);
             case CardinalDirections.SE:
-                return new Vector2Int(1, -1);
+                return new Vector2(1, -1);
             case CardinalDirections.E:
-                return new Vector2Int(1, 0);
+                return new Vector2(1, 0);
         }
         Debug.LogError("Unknown Cardinal direction");
-        return new Vector2Int(0, 0);
+        return new Vector2(0, 0);
     }
     #endregion
     #region Properties
@@ -80,7 +80,7 @@ public struct PositionR
     }
     [SerializeField]
     CardinalDirections _direction;
-    public Vector2Int Direction
+    public Vector2 Direction
     {
         get { return ConvertToCoordinates(_direction); }
     }
@@ -151,11 +151,15 @@ public struct PositionR
             newPath.state = node;
             newPath.weight = path.weight;
             if (node.location == path.state.location) newPath.weight += wheelCost;
-            else if (node.location - node.Direction == path.state.location) {
+            else if (node.location - node.Direction == path.state.location)
+            {
                 newPath.weight += advanceCost;
-                newPath.state.location -= newPath.state.Direction / 2;
+                newPath.state.location -= newPath.state.Direction * 0.7f;
+            }
+            else {
+                newPath.weight += strafeCost;
+                newPath.state.location -= newPath.state.Direction * 0.7f;
             } 
-            else newPath.weight += strafeCost;
             paths.Add(newPath);
         }
         return paths;

@@ -1,3 +1,4 @@
+using InfluenceMap;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -20,9 +21,25 @@ namespace Pathfinding
         {
 
             if (_targetUnit != null)
+            {
+                var waypoints = Battle.Instance.highLevelMap.A_StarSearch(unit.position.Location, _targetUnit.LeadModelPosition);
+                if (waypoints != null && waypoints.Count > 1)
+                {
+                    var waypoint = waypoints[waypoints.Count - 2];
+                    return Pathfinder.Search(unit, unit.position, waypoint);
+                }
                 return Pathfinder.Search(unit, unit.position, _targetUnit);
+            }
             else
+            {
+                var waypoints = Battle.Instance.highLevelMap.A_StarSearch(unit.position.Location, _targetTile);
+                if (waypoints!=null && waypoints.Count > 1)
+                {
+                    var waypoint = waypoints[waypoints.Count - 2];
+                    return Pathfinder.Search(unit, unit.position, waypoint);
+                }
                 return Pathfinder.Search(unit, unit.position, _targetTile);
+            }
         }
         public static bool operator ==(Waypoint a, Waypoint b)
         {
@@ -55,7 +72,7 @@ namespace Pathfinding
     {
         public class N
         {
-            public int score;
+            public float score;
             public T data;
         }
         public int size;
@@ -67,7 +84,7 @@ namespace Pathfinding
             mH = new N[size + 1];
         }
         //adds a node to the heap
-        public void insert(T info, int x)
+        public void Insert(T info, float x)
         {
             N n = new N
             {
@@ -76,28 +93,28 @@ namespace Pathfinding
             };
             //Debug.Log("inserting item to heap");
             mH[size] = n;
-            bubbleUp(size);
+            BubbleUp(size);
             size++;
         }
         //
-        public void bubbleUp(int index)
+        void BubbleUp(int index)
         {
             while ((index > 0) && (mH[Parent(index)].score > mH[index].score))
             {
                 int original_parent_pos = Parent(index);
-                swap(index, original_parent_pos);
+                Swap(index, original_parent_pos);
                 index = original_parent_pos;
             }
         }
         //gets node with the lowest value
-        public T extractMin()
+        public T ExtractMin()
         {
             N min = mH[0];
             //Debug.Log("getting first item from heap");
             mH[0] = mH[size - 1];
             mH[size - 1] = null;
             size--;
-            sinkDown(0);
+            SinkDown(0);
             return min.data;
         }
         //gets parent index node of the current node
@@ -106,7 +123,7 @@ namespace Pathfinding
             return (position - 1) / 2;
         }
         //
-        public void sinkDown(int k)
+        void SinkDown(int k)
         {
             int test;
             if (2 * k + 2 < size)
@@ -124,19 +141,19 @@ namespace Pathfinding
             }
             if (mH[k].score > mH[test].score)
             {
-                swap(k, test);
-                sinkDown(test);
+                Swap(k, test);
+                SinkDown(test);
             }
 
         }
         //swaps the positition of 2 nodes in the array
-        public void swap(int a, int b)
+        void Swap(int a, int b)
         {
             N temp = mH[a];
             mH[a] = mH[b];
             mH[b] = temp;
         }
-        public void displayScores()
+        public void DisplayScores()
         {
             string nodes = "";
 
@@ -147,7 +164,7 @@ namespace Pathfinding
             }
             Debug.Log(nodes);
         }
-        bool valid()
+        bool Valid()
         {
             for (int i = 0; i < size; i++)
             {

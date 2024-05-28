@@ -8,6 +8,7 @@ namespace Campaign
     {
         public int Money;
         public int MaxPrestige, CurrentPrestige;
+        [Range(1, 10)]
         public int CurrentLevel;
         public List<BattlePrep.BuyOrders> BuyOrders;
         public List<StatWrapper> characters;

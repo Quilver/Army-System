@@ -18,7 +18,7 @@ namespace EndGameUI
         {
             this.unit = unit;
             portrait.sprite = unit.statBase.portrait;
-            unitName.text = unit.statBase.name;
+            unitName.text = unit.statBase.UnitName;
             stats.text = unit.statBase.StatString();
             float width = unit.statBase.FractionToNextLevel() * levelBar.sizeDelta.x;
             XPBar.sizeDelta = new Vector2(width, levelBar.sizeDelta.y);

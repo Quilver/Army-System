@@ -22,7 +22,7 @@ namespace BattlePrep
             this.unit = unit;
             unit.Update();
             portrait.sprite = unit.statBase.portrait;
-            unitName.text= unit.statBase.name;
+            unitName.text= unit.statBase.UnitName;
             stats.text = unit.statBase.StatString();
             cost.text = unit.CostToField + "G";
             float width = unit.statBase.FractionToNextLevel() * levelBar.sizeDelta.x;

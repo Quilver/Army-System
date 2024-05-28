@@ -36,7 +36,6 @@ namespace BattleFlowControl
         }
         protected virtual void Init()
         {
-            Notifications.InitEvents();
             Notifications.ArmyDestroyed += GameOver;
             BattleReport.Reset();
             BattleReport.timeTaken = Time.time;

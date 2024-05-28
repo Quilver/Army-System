@@ -17,7 +17,7 @@ namespace Pathfinding
             while (openSet.size > 0 && searchLimit > 0)
             {
                 searchLimit--;
-                WeightedNode<PositionR> node = openSet.extractMin();
+                WeightedNode<PositionR> node = openSet.ExtractMin();
                 if (!unit.CanMoveOn(node.state)) continue;
                 if (ReachedGoal(node.state, goal))
                 {
@@ -30,7 +30,7 @@ namespace Pathfinding
                     //visited.Add(move.state);
                     //if(!unit.CanMoveOn(move.state))continue;
                     float cost = ExpectedDistanceFromGoal(move.state, goal);
-                    openSet.insert(move, Mathf.RoundToInt(move.weight + cost));
+                    openSet.Insert(move, move.weight + cost);
                     CameFrom.Add(move.state, node.state);
                 }
             }
@@ -47,7 +47,7 @@ namespace Pathfinding
             while (openSet.size > 0 && searchLimit > 0)
             {
                 searchLimit--;
-                WeightedNode<PositionR> node = openSet.extractMin();
+                WeightedNode<PositionR> node = openSet.ExtractMin();
                 if (ReachedGoal(unit, node.state, goal))
                 {
                     if (unit.CanMoveOn(node.state, -0.05f, null))
@@ -61,7 +61,7 @@ namespace Pathfinding
                 {
                     if (CameFrom.ContainsKey(move.state)) continue;
                     float cost = ExpectedDistanceFromGoal(move.state, goal);
-                    openSet.insert(move, Mathf.RoundToInt(move.weight + cost));
+                    openSet.Insert(move, move.weight + cost);
                     CameFrom.Add(move.state, node.state);
                 }
             }
@@ -74,7 +74,7 @@ namespace Pathfinding
             foreach (var move in PositionR.GetMoves(node))
             {
                 if (CameFrom.ContainsKey(move.state)) continue;
-                openSet.insert(move, (int)move.weight);
+                openSet.Insert(move, (int)move.weight);
                 CameFrom.Add(move.state, start);
             }
         }

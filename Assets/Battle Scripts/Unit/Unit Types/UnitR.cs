@@ -55,6 +55,8 @@ public class UnitR : MonoBehaviour, UnitInterface
     {
         get
         {
+            if (models == null || models.Count == 0)
+                return Movement.position.Location;
             return models[0].transform.position;
         }
     }
@@ -102,6 +104,8 @@ public class UnitR : MonoBehaviour, UnitInterface
     private void Start()
     {
         _state = UnitState.Idle;
+        if(Battle.Instance.player.Units.Contains(this))
+            unitStats.Load();
         var size = GetComponent<UnitSize>();
         movement.Init(this, size.UnitWidth);
         transform.position = new Vector3((int)transform.position.x, (int)transform.position.y, (int)transform.position.z);
@@ -175,6 +179,10 @@ public class UnitR : MonoBehaviour, UnitInterface
         Destroy(this.gameObject);
     }
     #endregion
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.DrawSphere(movement.position.Location, 0.3f);
+    }
     public override string ToString()
     {
         return UnitStats.ToString();

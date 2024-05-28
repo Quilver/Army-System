@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class Battle : MonoBehaviour {
     public static Battle Instance;
+    public InfluenceMap.HighLevelMap highLevelMap;
     public Dictionary<UnitInterface, Army> unitArmy;
     public Army player, enemy1;
     void Awake () {

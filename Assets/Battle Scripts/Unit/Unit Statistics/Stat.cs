@@ -10,9 +10,10 @@ namespace StatSystem
         public string StatType;
         [SerializeField, Range(1, 30)]
         int baseStat;
-        public int BaseStat
+        public int LevelBonus { private get; set; }
+        public int CurrentStat
         {
-            get { return baseStat; }
+            get { return baseStat + LevelBonus; }
         }
         [SerializeField, Range(3, 30)]
         int StatMaximum;

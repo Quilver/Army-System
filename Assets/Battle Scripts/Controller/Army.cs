@@ -47,6 +47,11 @@ public class Army : MonoBehaviour {
         }
         Notifications.Died += UnitDied;
     }
+    public void AddUnit(UnitInterface unit)
+    {
+        _units.Add(unit);
+        Battle.Instance.unitArmy.Add(unit, this);
+    }
     public UnitInterface GetUnit(int index)
     {
         var units = _units.ToList();

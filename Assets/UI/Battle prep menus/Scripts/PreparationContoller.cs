@@ -1,4 +1,5 @@
 using BattleFlowControl;
+using Campaign;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
@@ -11,14 +12,14 @@ namespace BattlePrep
     public class PreparationContoller : MonoBehaviour
     {
         [SerializeField]
-        PreparationData preparationData;
+        List<PreparationData> preparationData;
         public static PreparationData Data
         {
             get; private set;
         }
         private void Awake()
         {
-            Data = preparationData;
+            Data = preparationData[CampaignDataManager.Data.CurrentLevel-1];
             BattleReport.statWrappers = new();
         }
         [SerializeField]
@@ -58,12 +59,10 @@ namespace BattlePrep
             Deselect();
             buyTab.Select(selectColor, true);
         }
-        [SerializeField]
-        int CurrentLevel = 1;
         public void NextLevel()
         {
             int endOfNonLevelSceneIndexes = 2;
-            SceneManager.LoadScene(CurrentLevel + endOfNonLevelSceneIndexes);
+            SceneManager.LoadScene(CampaignDataManager.Data.CurrentLevel + endOfNonLevelSceneIndexes);
         }
         
         

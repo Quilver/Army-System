@@ -11,9 +11,10 @@ namespace Campaign
     public class CampaignDataManager: MonoBehaviour 
     {
         [SerializeField]
-        CampaignData data;
+        bool LoadData, SaveData;
         [SerializeField]
-        bool LoadData;
+        CampaignData data;
+        
         public static CampaignData Data
         {
             get
@@ -39,6 +40,7 @@ namespace Campaign
             if (instance != null)
             {
                 Destroy(gameObject);
+                return;
             }
             instance = this;
             SaverLoader= new FileDataHandler();
@@ -65,7 +67,8 @@ namespace Campaign
         }
         public void SaveGame()
         {
-            SaverLoader.Save(data);
+            if(SaveData)
+                SaverLoader.Save(data);
         }
         private void OnApplicationQuit()
         {

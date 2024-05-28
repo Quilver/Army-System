@@ -35,6 +35,7 @@ public class UnitPositionR
 		position.Location = new Vector2Int((int)unit.transform.position.x, (int)unit.transform.position.y);
 		charge = unit.GetComponentInChildren<ChargeSizer>();
 		unitBody=unit.GetComponentInChildren<RegimentSizer>();
+		//Notifications.Reached(unit, position);
 	}
 	#endregion
 	#region Helper Functions
@@ -78,6 +79,7 @@ public class UnitPositionR
             waypoints = null;
             return;
         }
+		Notifications.Reached(unit, position);
 
 		if (bufferTarget != null)
 		{

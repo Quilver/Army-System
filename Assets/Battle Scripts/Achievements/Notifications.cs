@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Notifications 
+public class Notifications : MonoBehaviour 
 {
     public static Action<UnitInterface> Deployed;
     public static Action<UnitInterface, UnitState> ChangeState;
@@ -12,7 +12,11 @@ public class Notifications
     public static Action<UnitInterface, PositionR> HeadingTo, Reached;
     public static Action<UnitInterface> Died;
     public static Action<Army> ArmyDestroyed;
-    public static void InitEvents()
+    private void Awake()
+    {
+        InitEvents();
+    }
+    static void InitEvents()
     {
         Deployed += Default; Died += Default;
         ChangeState+= Default;

@@ -14,15 +14,15 @@ namespace StatSystem
         //Shooting data
         public Stat FireRate, Accuracy;
 
-        int IRangedStats.ReloadRate => FireRate.BaseStat;
+        int IRangedStats.ReloadRate => FireRate.CurrentStat;
 
-        int IRangedStats.Accuracy => Accuracy.BaseStat;
+        int IRangedStats.Accuracy => Accuracy.CurrentStat;
 
-        int IDefenceStats.Defence => Defence.BaseStat;
+        int IDefenceStats.Defence => Defence.CurrentStat;
 
-        int IMovementStats.MoveSpeed => MoveSpeed.BaseStat;
+        int IMovementStats.MoveSpeed => MoveSpeed.CurrentStat;
 
-        int ICombatStats.AttackPower => AttackPower.BaseStat;
+        int ICombatStats.AttackPower => AttackPower.CurrentStat;
         void Initialise()
         {
             ModelCount.StatType = "Model Count";

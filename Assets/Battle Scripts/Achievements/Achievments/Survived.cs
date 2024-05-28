@@ -9,22 +9,31 @@ namespace AchievementSystem
     {
         [SerializeField, Range(1, 10)]
         int XpForSurviving;
-
-        public override string Description => throw new System.NotImplementedException();
+        List<StatSystem.RegimentStats> characters;
+        public override string Description { 
+            get
+            {
+                string description = "Survived: ";
+                foreach (var unit in characters)
+                {
+                    description += unit.UnitName;
+                }
+                return description;
+            } }
 
         public override bool Achieved()
         {
-            throw new System.NotImplementedException();
+            return characters.Count > 0;    
         }
 
         public override void Initialise()
         {
-            throw new System.NotImplementedException();
+            
         }
 
         public override void Reward()
         {
-            throw new System.NotImplementedException();
+            
         }
     }
 }
