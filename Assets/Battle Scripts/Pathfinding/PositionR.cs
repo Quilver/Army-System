@@ -72,6 +72,7 @@ public struct PositionR
     }
     #endregion
     #region Properties
+    [SerializeField]
     Vector2 location;
     public Vector2 Location
     {
@@ -141,7 +142,7 @@ public struct PositionR
         return moves;
     }
     public static List<Pathfinding.WeightedNode<PositionR>> GetMoves(Pathfinding.WeightedNode<PositionR> path, int advanceCost=1,
-        int wheelCost = 3, int strafeCost = 12)
+        int wheelCost = 1, int strafeCost = 12)
     {
         var nodes = path.state.GetMoves();
         List<Pathfinding.WeightedNode<PositionR>> paths = new();

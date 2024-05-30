@@ -7,6 +7,7 @@ namespace Pathfinding
 {
     public class Pathfinder : MonoBehaviour
     {
+        
         public static Stack<PositionR> Search(UnitPositionR unit, PositionR start, Vector2 goal, int searchLimit = 250)
         {
             MinHeap<WeightedNode<PositionR>> openSet = new(searchLimit * 10);
@@ -96,8 +97,9 @@ namespace Pathfinding
         static float ExpectedDistanceFromGoal(PositionR node, Vector2 goal)
         {
             var delta = node.Location - goal;
-            
-            return Mathf.Max(Mathf.Abs(delta.x), Mathf.Abs(delta.y));
+            float angleOff = Vector2.Distance(delta.normalized, node.Direction.normalized);
+            if (delta.magnitude == 0) return 0;
+            return Mathf.Max(Mathf.Abs(delta.x), Mathf.Abs(delta.y)) * (angleOff + 0.3f);
         }
         static float ExpectedDistanceFromGoal(PositionR node, UnitR goal)
         {

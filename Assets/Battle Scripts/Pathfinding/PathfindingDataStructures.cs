@@ -36,8 +36,10 @@ namespace Pathfinding
                 if (waypoints!=null && waypoints.Count > 1)
                 {
                     var waypoint = waypoints[waypoints.Count - 2];
+                    Debug.DrawLine(waypoint, unit.position.Location, Color.black, 12);
                     return Pathfinder.Search(unit, unit.position, waypoint);
                 }
+                Debug.DrawLine(_targetTile, unit.position.Location, Color.black, 12);
                 return Pathfinder.Search(unit, unit.position, _targetTile);
             }
         }

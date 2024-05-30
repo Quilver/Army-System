@@ -17,6 +17,14 @@ namespace InfluenceMap
         {
             CreateCluster();
         }
+        public int ClusterCount
+        {
+            get
+            {
+                if (clusters == null) return 0;
+                else return clusters.Count;
+            }
+        }
         Dictionary<Cluster, List<UnitInterface>> clusters;
         void CreateCluster()
         {

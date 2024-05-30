@@ -9,25 +9,29 @@ public class MoveTowardsEnemyCluster : MonoBehaviour
     {
         get
         {
-            return Battle.Instance.player.GetComponent<ClusterMap>().NearestCluster(_unit.LeadModelPosition);
+            return _clusterMap.NearestCluster(_unit.LeadModelPosition);
         }
     }
     UnitR _unit;
+    ClusterMap _clusterMap;
     // Start is called before the first frame update
     void Start()
     {
         _unit = GetComponentInParent<UnitR>();
-
+        _clusterMap = Battle.Instance.player.GetComponent<ClusterMap>();
     }
 
     private void OnDrawGizmosSelected()
     {
+        if(_unit== null) return;
         Gizmos.DrawSphere(TargetPosition, 0.3f);
     }
     // Update is called once per frame
     void Update()
     {
-        if (_unit.State == UnitState.Idle)
+        if(_unit== null) return;
+        if (_unit.State != UnitState.Idle) return;
+        if (_clusterMap.ClusterCount != 0) 
             _unit.Movement.MoveTo(TargetPosition);
     }
 }

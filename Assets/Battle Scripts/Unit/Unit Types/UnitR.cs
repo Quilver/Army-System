@@ -181,6 +181,7 @@ public class UnitR : MonoBehaviour, UnitInterface
     #endregion
     private void OnDrawGizmosSelected()
     {
+        if(movement== null) return;
         Gizmos.DrawSphere(movement.position.Location, 0.3f);
     }
     public override string ToString()

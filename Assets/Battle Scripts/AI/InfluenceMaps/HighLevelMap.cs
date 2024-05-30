@@ -29,10 +29,11 @@ namespace InfluenceMap
         //public static HighLevelMap instance { get;private set; }
         public void Awake()
         {
-            CreateMap();
             if(transform == null)
                 mapCenter= Vector2.zero;
             else mapCenter = transform.position;
+            CreateMap();
+
         }
         void OnEnable()
         {
