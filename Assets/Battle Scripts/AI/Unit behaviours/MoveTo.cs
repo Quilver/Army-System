@@ -6,11 +6,11 @@ public class MoveTo : MonoBehaviour
 {
     [SerializeField]
     Vector2 targetPosition;
-    UnitR _unit;
+    UnitBase _unit;
     // Start is called before the first frame update
     void Start()
     {
-        _unit= GetComponentInParent<UnitR>();
+        _unit= GetComponentInParent<UnitBase>();
         
     }
     private void OnDrawGizmosSelected()

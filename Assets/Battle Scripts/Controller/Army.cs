@@ -12,10 +12,10 @@ public class Army : MonoBehaviour {
         Computer,
         AltPlayer
     }
-    public HashSet<UnitInterface> EnemyUnits { 
+    public HashSet<UnitBase> EnemyUnits { 
         get
         {
-            HashSet<UnitInterface> result = new();
+            HashSet<UnitBase> result = new();
             foreach (var enemy in enemies)
             {
                 result.UnionWith(enemy._units);
@@ -29,15 +29,15 @@ public class Army : MonoBehaviour {
         
     }
     
-    HashSet<UnitInterface> _units;
-    public List<UnitInterface> Units
+    HashSet<UnitBase> _units;
+    public List<UnitBase> Units
     {
         get { return _units.ToList(); }
     }
     void Initiliase()
     {
-        _units= new HashSet<UnitInterface>();
-        foreach (var unit in GetComponentsInChildren<UnitInterface>())
+        _units= new HashSet<UnitBase>();
+        foreach (var unit in GetComponentsInChildren<UnitBase>())
         {
             _units.Add(unit);
         }
@@ -47,19 +47,19 @@ public class Army : MonoBehaviour {
         }
         Notifications.Died += UnitDied;
     }
-    public void AddUnit(UnitInterface unit)
+    public void AddUnit(UnitBase unit)
     {
         _units.Add(unit);
         Battle.Instance.unitArmy.Add(unit, this);
     }
-    public UnitInterface GetUnit(int index)
+    public UnitBase GetUnit(int index)
     {
         var units = _units.ToList();
         index = index % units.Count;
         if (index < 0) index += units.Count;
         return units[index];
     }
-    void UnitDied(UnitInterface unit)
+    void UnitDied(UnitBase unit)
     {
         if(_units.Contains(unit))
             _units.Remove(unit);

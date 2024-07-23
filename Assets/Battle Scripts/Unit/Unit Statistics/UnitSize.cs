@@ -20,4 +20,10 @@ public class UnitSize : MonoBehaviour
     {
         GetComponentInChildren<RegimentSizer>().SetBox(UnitWidth, StartingSize);
     }
+    public List<ModelR> GetModels(float angle)
+    {
+        List<ModelR> models = new();
+
+        return models;
+    }
 }

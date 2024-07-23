@@ -6,20 +6,26 @@ using UnityEngine;
 
 public class RegimentSizer : MonoBehaviour
 {
-    UnitR unit;
+    UnitBase unit;
     [SerializeField]
     List<GameObject> enemies;
+    [SerializeField]
+    bool relative;
+    [SerializeField]
+    bool debug;
     // Start is called before the first frame update
     void Start()
     {
-        unit = GetComponentInParent<UnitR>();
+        unit = GetComponentInParent<UnitBase>();
         enemies = new();
-        GetComponent<SpriteRenderer>().enabled= false;
+        if(!debug)
+            GetComponent<SpriteRenderer>().enabled= false;
     }
     // Update is called once per frame
     void Update()
     {
-        transform.parent.position = Vector3.zero;
+        if(!relative)
+            transform.parent.position = Vector3.zero;
         SetBox();
     }
     public bool Clipping
@@ -44,8 +50,8 @@ public class RegimentSizer : MonoBehaviour
     #region Box setter
     public void SetBox(int width, int Size)
     {
-        float angle = GetComponentInParent<UnitR>().Movement.position.Rotation;
-        Vector2 modelSize = GetComponentInParent<UnitR>().ModelSize;
+        float angle = GetComponentInParent<UnitBase>().Movement.Rotation;
+        Vector2 modelSize = GetComponentInParent<UnitBase>().ModelSize;
         int ranks = Mathf.CeilToInt((Size * 1f) / width);
         Vector3 size = GetSize(width, ranks, modelSize);
 
@@ -54,7 +60,7 @@ public class RegimentSizer : MonoBehaviour
         transform.localScale = size;
         transform.parent.rotation = Quaternion.Euler(0, 0, angle);
     }
-    public bool CanBeOn(PositionR pos, float avoidBy, int width, int ranks, UnitR target = null)
+    public bool CanBeOn(PositionR pos, float avoidBy, int width, int ranks, UnitBase target = null)
     {
         float angle = pos.Rotation;
         Vector2 size = GetSize(width, ranks, avoidBy, unit.ModelSize);
@@ -63,7 +69,7 @@ public class RegimentSizer : MonoBehaviour
         var overlaps = Physics2D.OverlapBoxAll(midPoint + pos.Location, size, pos.Rotation, 1 << 6);
         foreach (var collider2D in overlaps)
         {
-            var clipping = collider2D.GetComponentInParent<UnitR>();
+            var clipping = collider2D.GetComponentInParent<UnitBase>();
             if (clipping != unit && clipping != target)
                 return true;
         }
@@ -80,13 +86,15 @@ public class RegimentSizer : MonoBehaviour
         if (unit.ModelsRemaining == 0) return;
         //get values
         float angle = Angle; // unit.Movement.position.Rotation;
-        Vector3 size = GetSize(unit.Movement.UnitWidth, unit.Movement.Ranks, unit.ModelSize);
+        Vector3 size = GetSize(unit.Movement.Files, unit.Movement.Ranks, unit.ModelSize);
         
         var midpoint = MidPoint(size, angle, unit.ModelSize);
         Vector2 pos = unit.LeadModelPosition;
         _size = midpoint;
         //set value
-        transform.position = midpoint + pos;// unit.Movement.position.Location;
+        if (relative) transform.position = midpoint;
+        else
+            transform.position = midpoint + pos;// unit.Movement.position.Location;
         transform.localScale = size;
         transform.rotation = Quaternion.Euler(0, 0, angle);
     }

@@ -6,23 +6,24 @@ public class ModelR : MonoBehaviour//, SelectionData
 {
     #region Properties
     public Vector2 ModelSize = Vector2.one;
-    public UnitR unit;
+    public UnitBase unit;
     public bool STOPPED = false;
     Animator animator;
     [SerializeField]
-    Vector2 offset;
+    public Vector2 offset;
     public Vector2 ModelPosition
     {
         get
         {
-            return GetPosition(unit.Movement.position);
+            
+            return GetPosition(unit.Movement.Location, unit.Movement.Rotation);
         }
     }
-    Vector2 GetPosition(PositionR position)
+    Vector2 GetPosition(Vector2 position, float rotation)
     {
         Vector3 delta = new(offset.x, -offset.y);
-        Vector2 rotatedPosition = Quaternion.Euler(0, 0, position.Rotation) * delta;
-        return rotatedPosition+position.Location;
+        Vector2 rotatedPosition = Quaternion.Euler(0, 0, rotation) * delta;
+        return rotatedPosition+position;
     }
     public bool Moving
     {
@@ -34,7 +35,7 @@ public class ModelR : MonoBehaviour//, SelectionData
     }
     #endregion
     // Start is called before the first frame update
-    public void Init(Vector2 offset, UnitR owner, int index)
+    public void Init(Vector2 offset, UnitBase owner, int index)
     {
         this.unit = owner;
         offset.x *= ModelSize.x;
@@ -63,8 +64,14 @@ public class ModelR : MonoBehaviour//, SelectionData
         else
         {
             animator.Play("Idle");
-            animator.SetFloat("X", unit.Movement.position.Direction.x);
-            animator.SetFloat("Y", unit.Movement.position.Direction.y);
+            var direction = GetVectorFromAngle(unit.Movement.Rotation);
+            animator.SetFloat("X", direction.x);
+            animator.SetFloat("Y", direction.y);
         }
+    }
+    static Vector3 GetVectorFromAngle(float angle)
+    {
+        float angleRad = angle * (Mathf.PI / 180f);
+        return new Vector3(Mathf.Sin(angleRad), Mathf.Cos(angleRad));
     }
 }

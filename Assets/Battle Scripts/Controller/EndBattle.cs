@@ -30,13 +30,13 @@ namespace BattleFlowControl
             {
                 StatWrapper wrapper = new();
                 wrapper.statBase = Instantiate(unit.UnitStats);
-                this.units.Add(unit.UnitStats, wrapper);
+                //this.units.Add(unit.UnitStats, wrapper);
                 BattleReport.statWrappers.Add(wrapper);
             }
         }
         protected virtual void Init()
         {
-            Notifications.ArmyDestroyed += GameOver;
+            //Notifications.ArmyDestroyed += GameOver;
             BattleReport.Reset();
             BattleReport.timeTaken = Time.time;
             BattleReport.Achievements = new();
@@ -56,7 +56,7 @@ namespace BattleFlowControl
                 Victory();
             }
         }
-        void KillCounter(UnitInterface attacker, UnitInterface defender, int damage)
+        void KillCounter(UnitBase attacker, UnitBase defender, int damage)
         {
             if(Battle.Instance.player == Battle.Instance.unitArmy[attacker])
                 BattleReport.kills += damage;

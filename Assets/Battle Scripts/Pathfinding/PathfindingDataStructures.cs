@@ -8,12 +8,12 @@ namespace Pathfinding
     public class Waypoint
     {
         Vector2 _targetTile;
-        readonly UnitR _targetUnit;
+        readonly UnitBase _targetUnit;
         public Waypoint(Vector2 tile)
         {
             _targetTile = tile;
         }
-        public Waypoint(UnitR target)
+        public Waypoint(UnitBase target)
         {
             _targetUnit = target;
         }

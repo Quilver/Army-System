@@ -40,7 +40,7 @@ namespace InfluenceMap
             Notifications.Reached += UpdateMap;
         }
         
-        void UpdateMap(UnitInterface unit, PositionR position)
+        void UpdateMap(UnitBase unit, PositionR position)
         {
 
             foreach (var point in GetAdjacentNodes(position.Location))
@@ -158,39 +158,7 @@ namespace InfluenceMap
         }
         Node GetNode(Vector2 position)
         {
-            /*
-            float Delta(float axis)
-            {
-                float delta;
-                if (axis < 0)
-                    delta = Mathf.Abs(gridSize + axis % gridSize);
-                else
-                    delta = axis % gridSize;
-                return delta;
-            }
-            float Axis(float axis)
-            {
-                float delta = Delta(axis);
-                axis -= delta;
-                if (delta * 2 > gridSize)
-                    axis += gridSize;
-                return axis;
-            }
-            List<Vector2Int> AdjactentNodes(Vector2 position, float x, float y)
-            {
-                List<Vector2Int> options= new List<Vector2Int>();
-                options.Add(Round(x, y));
-                options.Add(Round(x + gridSize, y));
-                options.Add(Round(x - gridSize, y));
-                options.Add(Round(x, y + gridSize));
-                options.Add(Round(x, y - gridSize));
-                options = options.OrderBy(x => Vector2.Distance(position, x)).ToList();
-                return options;
-            }
-            Vector2Int Round(float x, float y) { return new Vector2Int((int)x, (int)y); }
-            float x = Axis(position.x) + transform.position.x % gridSize;
-            float y = Axis(position.y) + transform.position.y % gridSize;
-            */
+            
             foreach (var option in GetAdjacentNodes(position))//AdjactentNodes(position, x, y))
                 if (roundedPoints.ContainsKey(option))
                     return points[roundedPoints[option]];

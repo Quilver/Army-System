@@ -18,14 +18,14 @@ public class FieldofView : MonoBehaviour
     MeshFilter _mesh;
     Mesh mesh;
     MeshRenderer _renderer;
-    UnitR unit;
+    UnitBase unit;
     RangedWeapon rangedWeapon;
-    public Dictionary<UnitR, float> _targets;
+    public Dictionary<UnitBase, float> _targets;
 
     // Start is called before the first frame update
     void Start()
     {
-        unit = GetComponentInParent<UnitR>();
+        unit = GetComponentInParent<UnitBase>();
         rangedWeapon= GetComponentInParent<RangedWeapon>();
         _mesh = GetComponent<MeshFilter>();
         _renderer = GetComponent<MeshRenderer>();
@@ -64,7 +64,7 @@ public class FieldofView : MonoBehaviour
     {
         Mesh mesh = new();
 
-        float angle = -unit.Movement.position.Rotation;
+        float angle = -unit.Movement.Rotation;
         float angleIncrease = FOV / rayCount;
         Vector3 origin = LPosition;
         Vector3[] vertices = new Vector3[rayCount + 2];
@@ -100,7 +100,7 @@ public class FieldofView : MonoBehaviour
     {
         Mesh mesh = new();
         
-        float angle = -unit.Movement.position.Rotation + FOV - FOV/12;
+        float angle = -unit.Movement.Rotation + FOV - FOV/12;
         float angleIncrease = FOV / rayCount;
         Vector3 origin = RPosition;
         Vector3[] vertices = new Vector3[rayCount + 2];
@@ -136,7 +136,7 @@ public class FieldofView : MonoBehaviour
     {
         Mesh mesh = new();
         int rays = Mathf.CeilToInt(2 * Vector3.Distance(LPosition, RPosition)) + 1;
-        float angle = -unit.Movement.position.Rotation;
+        float angle = -unit.Movement.Rotation;
         Vector3 origin = LPosition;
         Vector3 diff = (RPosition - LPosition)/(float)(rays-1);
         Vector3[] vertices = new Vector3[(rays + 1)* 2];
@@ -176,7 +176,7 @@ public class FieldofView : MonoBehaviour
         get
         {
             Vector3 pos = unit.LeftMostModelPosition;
-            pos += GetVectorFromAngle(unit.Movement.position.Rotation)/2;
+            pos += GetVectorFromAngle(unit.Movement.Rotation)/2;
             return pos;
         }
     }
@@ -185,23 +185,23 @@ public class FieldofView : MonoBehaviour
         get
         {
             Vector3 pos = unit.RightMostModelPosition;
-            pos -= GetVectorFromAngle(unit.Movement.position.Rotation)/2;
+            pos -= GetVectorFromAngle(unit.Movement.Rotation)/2;
             return pos;
         }
     }
     Vector3 Ray(Vector3 origin, float angle)
     {
-        var raycast2D = Physics2D.Raycast(origin, GetVectorFromAngle(angle), range, 1 << 6);
+        var raycast2D = Physics2D.Raycast(origin, GetVectorFromAngle(angle), range);
         if (raycast2D.collider == null)
             return origin + GetVectorFromAngle(angle) * range;
         else
         {
-            var target = raycast2D.transform.GetComponentInParent<UnitR>();
+            var target = raycast2D.transform.GetComponentInParent<UnitBase>();
             HittingUnit(target, raycast2D.distance);
             return raycast2D.point;
         }
     }
-    void HittingUnit(UnitR unit, float Distance)
+    void HittingUnit(UnitBase unit, float Distance)
     {
         if (unit == null) return;
         if (!_targets.ContainsKey(unit))

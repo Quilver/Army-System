@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using UnityEngine;
 public class ChargeSizer : MonoBehaviour
 {
-    UnitR unit;
+    UnitBase unit;
     [SerializeField]
-    List<UnitR> unitRList;
+    List<UnitBase> unitRList;
+    [SerializeField]
+    bool relative;
     public bool UnitAhead
     {
         get
@@ -13,11 +15,11 @@ public class ChargeSizer : MonoBehaviour
             return unitRList.Count> 0;
         }
     }
-    public List<UnitR> Enemies
+    public List<UnitBase> Enemies
     {
         get
         {
-            var enemies = new List<UnitR>();
+            var enemies = new List<UnitBase>();
             foreach (var unit in unitRList)
             {
                 if(Battle.Instance.unitArmy[this.unit].EnemyUnits.Contains(unit))
@@ -28,8 +30,8 @@ public class ChargeSizer : MonoBehaviour
     }
     void Start()
     {
-        unit = GetComponentInParent<UnitR>();
-        unitRList = new List<UnitR>();
+        unit = GetComponentInParent<UnitBase>();
+        unitRList = new List<UnitBase>();
         GetComponent<SpriteRenderer>().enabled = false;
     }
 
@@ -42,32 +44,33 @@ public class ChargeSizer : MonoBehaviour
     {
         get
         {
-            float x = -(unit.Movement.UnitWidth % 2 - 1) / 2f;
+            float x = -(unit.Movement.Files % 2 - 1) / 2f;
             float y = (unit.Movement.Ranks - 1) / 2f;
             return new Vector3(x, y);
         }
     }
     Vector3 Offset(float y)
     {
-        return new Vector3(-(unit.Movement.UnitWidth % 2 - 1) / 2f, y);
+        return new Vector3(-(unit.Movement.Files % 2 - 1) / 2f, y);
     }
     void SetBox()
     {
         if (unit.ModelsRemaining == 0) return;
         //get values
         float angle = Angle;//unit.Movement.position.Rotation;
-        Vector3 size = GetSize(unit.Movement.UnitWidth * unit.ModelSize.x);//new(unit.Movement.UnitWidth, 1 + Midpoint.y/2);
-        Vector2 position = MidPoint(unit.Movement.UnitWidth, unit.Movement.Ranks, angle);
+        Vector3 size = GetSize(unit.Movement.Files * unit.ModelSize.x);//new(unit.Movement.UnitWidth, 1 + Midpoint.y/2);
+        Vector2 position = MidPoint(unit.Movement.Files, unit.Movement.Ranks, angle);
         //Vector2 rotatedOffset = Quaternion.Euler(0, 0, angle) * Offset(size.y);
         Vector2 pos = unit.LeadModelPosition;
         //set value
-        transform.position = position + pos;
+        if (relative) transform.position = position;
+        else transform.position = position + pos;
         transform.localScale = size;
         transform.rotation = Quaternion.Euler(0, 0, angle);
     }
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        UnitR unit = collision.GetComponentInParent<UnitR>();
+        UnitBase unit = collision.GetComponentInParent<UnitBase>();
         if (unit == null) { return; }
         if(this.unit != unit)
         {
@@ -78,7 +81,7 @@ public class ChargeSizer : MonoBehaviour
     }
     private void OnTriggerExit2D(Collider2D collision)
     {
-        UnitR unit = collision.GetComponentInParent<UnitR>();
+        UnitBase unit = collision.GetComponentInParent<UnitBase>();
         if (unit == null) { return; }
         if (this.unit != unit)
         {
@@ -87,17 +90,16 @@ public class ChargeSizer : MonoBehaviour
             //Battle.Instance.EndCombat(this.unit, unit);
         }
     }
-    public List<UnitInterface> TargetsAt(PositionR position)
+    public List<UnitBase> TargetsAt(Vector2 position, float angle)
     {
-        List<UnitInterface> targets = new();
-        float angle = position.Rotation;
-        Vector3 size = GetSize(unit.Movement.UnitWidth * unit.ModelSize.x);
-        Vector2 rotatedPos = MidPoint(unit.Movement.UnitWidth, unit.Movement.Ranks, angle);
-        Vector2 pos = position.Location + rotatedPos;
+        List<UnitBase> targets = new();
+        Vector3 size = GetSize(unit.Movement.Files * unit.ModelSize.x);
+        Vector2 rotatedPos = MidPoint(unit.Movement.Files, unit.Movement.Ranks, angle);
+        Vector2 pos = position + rotatedPos;
         var collisions = Physics2D.OverlapBoxAll(pos, size, angle, 1 << 6);
         foreach (var coll in collisions)
         {
-            targets.Add(GetComponentInParent<UnitR>());
+            targets.Add(GetComponentInParent<UnitBase>());
         }
         return targets;
     }
@@ -124,7 +126,7 @@ public class ChargeSizer : MonoBehaviour
         get
         {
             if (unit.ModelsRemaining <= 1)
-                return unit.Movement.position.Rotation;
+                return unit.Movement.Rotation;
             Vector3 center = unit.LeadModelPosition;
             Vector3 right = unit.RightMostModelPosition - center;
 

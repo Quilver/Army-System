@@ -4,14 +4,14 @@ using UnityEngine;
 #region Enemy Behaviours
 public class Wander : MonoBehaviour
 {
-    UnitR unit;
+    UnitBase unit;
     Vector2 center;
     [SerializeField, Range(5, 20)]
     int wanderDistance;
     // Start is called before the first frame update
     void Start()
     {
-        unit = GetComponentInParent<UnitR>();
+        unit = GetComponentInParent<UnitBase>();
         center= transform.position;
     }
 

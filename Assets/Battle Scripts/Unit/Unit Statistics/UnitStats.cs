@@ -7,6 +7,7 @@ namespace StatSystem
     public abstract class UnitStats : ScriptableObject
     {
         public string UnitName;
+        public GameObject UnitPrefab;
         public Sprite portrait;
         [SerializeField]
         LevelTable levelTable;

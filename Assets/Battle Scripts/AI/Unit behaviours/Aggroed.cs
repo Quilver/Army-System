@@ -5,35 +5,35 @@ using UnityEngine;
 #region Enemy Behaviours
 public class Aggroed : MonoBehaviour
 {
-    UnitInterface _unit;
+    UnitBase _unit;
     [SerializeField]
     float thinkingSpeed;
     [SerializeField]
     int AggroRange;
     float _time = 0;
-    public UnitR enemy;
+    public UnitBase enemy;
     // Start is called before the first frame update
     void Start()
     {
-        _unit = GetComponentInParent<UnitR>();
+        _unit = GetComponentInParent<UnitBase>();
 
     }
-    float DistanceFromUnit(UnitR unit)
+    float DistanceFromUnit(UnitBase unit)
     {
-        var pos = unit.Movement.position.Location - _unit.Movement.position.Location;
+        var pos = unit.Movement.Location - _unit.Movement.Location;
         return Mathf.Max(Mathf.Abs(pos.x), Mathf.Abs(pos.y));
     }
-    UnitR GetNearestUnit()
+    UnitBase GetNearestUnit()
     {
         float distance =float.MaxValue;
-        UnitR closestUnit=null;
+        UnitBase closestUnit =null;
         foreach (var enemy in Battle.Instance.unitArmy[_unit].EnemyUnits)
         {
-            float dist = DistanceFromUnit((UnitR)enemy);
+            float dist = DistanceFromUnit(enemy);
             if(dist < distance)
             {
                 distance = dist;
-                closestUnit = enemy as UnitR;
+                closestUnit = enemy;
             }
         }
         return closestUnit;
@@ -53,7 +53,7 @@ public class Aggroed : MonoBehaviour
         enemy = GetNearestUnit();
         if (enemy != null && DistanceFromUnit(enemy) < AggroRange)
         {
-            _unit.Movement.MoveTo(enemy.Movement.position.Location);
+            _unit.Movement.MoveTo(enemy);
         }
         else
             enemy = null;

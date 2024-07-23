@@ -8,10 +8,10 @@ namespace UnitBehaviour
         [SerializeField]
         List<Vector2> waypoints;
         Vector2 nextPoint;
-        UnitInterface unit;
+        UnitBase unit;
         private void Start()
         {
-            unit = GetComponentInParent<UnitInterface>();
+            unit = GetComponentInParent<UnitBase>();
         }
         private void Update()
         {
@@ -19,12 +19,12 @@ namespace UnitBehaviour
         }
         void GetNextPoint()
         {
-            if (Vector3.Distance(unit.Movement.position.Location, waypoints[0]) < 1)
+            if (Vector3.Distance(unit.Movement.Location, waypoints[0]) < 1)
             {
                 waypoints.RemoveAt(0);
             }
             nextPoint = waypoints[0];
-            GetComponent<UnitR>().Movement.MoveTo(nextPoint);
+            GetComponent<UnitBase>().Movement.MoveTo(nextPoint);
         }
         private void OnDrawGizmosSelected()
         {

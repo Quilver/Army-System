@@ -25,11 +25,11 @@ namespace InfluenceMap
                 else return clusters.Count;
             }
         }
-        Dictionary<Cluster, List<UnitInterface>> clusters;
+        Dictionary<Cluster, List<UnitBase>> clusters;
         void CreateCluster()
         {
             clusters = new();
-            Dictionary<Vector2, List<UnitInterface>> testCluster = new();
+            Dictionary<Vector2, List<UnitBase>> testCluster = new();
             foreach (var unit in army.Units)
             {
                 bool flag = true;
@@ -44,7 +44,7 @@ namespace InfluenceMap
                 }
                 if (flag)
                 {
-                    testCluster.Add(unit.LeadModelPosition, new List<UnitInterface>());
+                    testCluster.Add(unit.LeadModelPosition, new List<UnitBase>());
                     testCluster[unit.LeadModelPosition].Add(unit);
                 }
 
@@ -84,7 +84,7 @@ namespace InfluenceMap
         {
             public readonly float nodeSize;
             public readonly Vector2 position;
-            public List<UnitInterface> unitsInCluster;
+            public List<UnitBase> unitsInCluster;
             public Cluster(float size, Vector2 position)
             {
                 //size *= 0.75f;
@@ -92,7 +92,7 @@ namespace InfluenceMap
                 this.position = position;
                 unitsInCluster = new();
             }
-            public void DrawCircleGizmo(List<UnitInterface> units)
+            public void DrawCircleGizmo(List<UnitBase> units)
             {
                 Gizmos.DrawSphere(position, 0.3f);
                 if (units == null) return;

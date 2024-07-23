@@ -38,7 +38,7 @@ namespace Pathfinding
             return GenerateRoute(bestPath.state, CameFrom, start);
         }
 
-        public static Stack<PositionR> Search(UnitPositionR unit, PositionR start, UnitR goal, int searchLimit = 250)
+        public static Stack<PositionR> Search(UnitPositionR unit, PositionR start, UnitBase goal, int searchLimit = 250)
         {
             MinHeap<WeightedNode<PositionR>> openSet = new(searchLimit * 10);
             Dictionary<PositionR, PositionR> CameFrom = new();
@@ -84,9 +84,9 @@ namespace Pathfinding
         {
             return node.Location == goal;
         }
-        static bool ReachedGoal(UnitPositionR unit, PositionR node, UnitR target)
+        static bool ReachedGoal(UnitPositionR unit, PositionR node, UnitBase target)
         {
-            return unit.InCombatWith(node, target);//Map.Instance.GetTile(node.Location).unit == target;
+            return unit.InCombatWith(node.Location, node.Rotation, target);//Map.Instance.GetTile(node.Location).unit == target;
         }
         #endregion
         static WeightedNode<PositionR> MakePath(PositionR node, int cost)
@@ -101,9 +101,9 @@ namespace Pathfinding
             if (delta.magnitude == 0) return 0;
             return Mathf.Max(Mathf.Abs(delta.x), Mathf.Abs(delta.y)) * (angleOff + 0.3f);
         }
-        static float ExpectedDistanceFromGoal(PositionR node, UnitR goal)
+        static float ExpectedDistanceFromGoal(PositionR node, UnitBase goal)
         {
-            var delta = node.Location - goal.Movement.position.Location;
+            var delta = node.Location - goal.Movement.Location;
             return Mathf.Max(Mathf.Abs(delta.x), Mathf.Abs(delta.y));
         }
         #endregion

@@ -7,9 +7,9 @@ using UnityEngine;
 [System.Serializable]
 public class Weapon
 {
-    readonly UnitInterface unit;
+    readonly UnitBase unit;
     readonly StatSystem.RegimentStats regimentStats;
-    public Weapon(UnitInterface unit) {
+    public Weapon(UnitBase unit) {
         _enemies = new();
         Notifications.StartFight += StartFight;
         Notifications.EndFight += EndFight;
@@ -17,24 +17,24 @@ public class Weapon
         this.unit = unit;
         regimentStats = unit.UnitStats as StatSystem.RegimentStats;
     }
-    HashSet<UnitInterface> _enemies;
-    void StartFight(UnitInterface unit1, UnitInterface unit2)
+    HashSet<UnitBase> _enemies;
+    void StartFight(UnitBase unit1, UnitBase unit2)
     {
         if (unit1 != unit && unit2 != unit) return;
-        if(!Battle.Instance.Enemies(unit1 as UnitR, unit2 as UnitR)) return;
+        if(!Battle.Instance.Enemies(unit1, unit2)) return;
         if(_enemies.Count == 0)
             StartCombat();
         if(unit1 != unit) _enemies.Add(unit1);
         else if(unit2 != unit) _enemies.Add(unit2);
     }
-    void EndFight(UnitInterface unit1, UnitInterface unit2)
+    void EndFight(UnitBase unit1, UnitBase unit2)
     {
         if (unit1 != unit && unit2 != unit) return;
         if (unit1 != unit) _enemies.Remove(unit1);
         else if (unit2 != unit) _enemies.Remove(unit2);
         if (_enemies.Count == 0) unit.State = UnitState.Idle;
     }
-    void Death(UnitInterface unit)
+    void Death(UnitBase unit)
     {
         if (this.unit != unit) return;
         _enemies.Clear();
@@ -42,9 +42,9 @@ public class Weapon
         Notifications.EndFight-= EndFight;
         Notifications.Died -= Death;
     }
-    bool Flanking (UnitInterface target)
+    bool Flanking (UnitBase target)
     {
-        return !target.Movement.InCombatWith(target.Movement.position, unit);
+        return !((UnitPositionR)target.Movement).InCombatWith(target.Movement.Location, target.Movement.Rotation, unit);
     }
     float WoundedModifier {
         get {
@@ -56,7 +56,7 @@ public class Weapon
     }
     
     float _time, _damageDone, _damageModifier;
-    UnitInterface _target;
+    UnitBase _target;
     readonly float TIMECYCLE = 6;
     public void StartCombat()
     {
@@ -83,7 +83,7 @@ public class Weapon
             _damageDone= 0;
         }
     }
-    void DetermineTarget(HashSet<UnitInterface> enemy)
+    void DetermineTarget(HashSet<UnitBase> enemy)
     {
         if(enemy.Count == 0) Debug.LogError(unit.ToString() + " has no enemies");
         var enemies = enemy.ToList();

@@ -1,18 +1,19 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
+using UnitMovement;
 using UnityEngine;
 
 [System.Serializable]
-public class UnitPositionR
+public class UnitPositionR : IMovement
 {
     #region Properties
-    UnitInterface unit;
+    UnitBase unit;
 	public PositionR position;
 	RegimentSizer unitBody;
 	ChargeSizer charge;
 	int _unitWidth;
-	public int UnitWidth
+	int UnitWidth
 	{
 		get
 		{
@@ -28,7 +29,14 @@ public class UnitPositionR
 			return Mathf.CeilToInt((unit.ModelsRemaining * 1.0f) / UnitWidth);
 		}
 	}
-	public void Init(UnitR unit, int Width)
+
+    public Vector2 Location => position.Location;
+
+    public float Rotation => position.Rotation;
+
+    public int Files => UnitWidth;
+
+    public void Init(UnitBase unit, int Width)
 	{
 		this.unit= unit;
 		this._unitWidth = Width;
@@ -39,16 +47,16 @@ public class UnitPositionR
 	}
 	#endregion
 	#region Helper Functions
-	public bool CanMoveOn(PositionR positionR, float avoidBy = 1, UnitR target = null)
+	public bool CanMoveOn(PositionR positionR, float avoidBy = 1, UnitBase target = null)
 	{
 		if (unitBody.CanBeOn(positionR, avoidBy, UnitWidth, Ranks, target))
 			return false;
 		else
 			return true;
 	}
-	public bool InCombatWith(PositionR positionR, UnitInterface target)
+	public bool InCombatWith(Vector2 position, float angle, UnitBase target)
 	{
-		List<UnitInterface> targets = charge.TargetsAt(positionR);
+		List<UnitBase> targets = charge.TargetsAt(position, angle);
 		return targets.Contains(target);
 	}
 	#endregion
@@ -63,7 +71,13 @@ public class UnitPositionR
 		bufferTarget = new(position);
 		unit.State = UnitState.Moving;
     }
-	public void UpdateMovement()
+    public void MoveTo(UnitBase unit)
+    {
+        if (this.unit.State == UnitState.Fighting) return;
+        bufferTarget = new(unit);
+        this.unit.State = UnitState.Moving;
+    }
+    public void UpdateMovement()
 	{
 		if(unit.ModelsRemaining == 0) return;
         else if (unit.State == UnitState.Fighting) Pursuit();
@@ -113,5 +127,7 @@ public class UnitPositionR
 		//else
 		//	position.Location -= dir * 0.1f;
 	}
-	#endregion
+
+    
+    #endregion
 }

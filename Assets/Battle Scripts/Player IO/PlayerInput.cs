@@ -8,7 +8,7 @@ public class PlayerInput : MonoBehaviour {
     [SerializeField] Army playerArmy;
     public static PlayerInput Instance { get; protected set; }
     //public SelectionData selectedObject, hoverObject;
-    public UnitR selectedUnit, hoverUnit;
+    public UnitBase selectedUnit, hoverUnit;
     [SerializeField] Transform mouseHighlight;
     public Vector2Int MouseHighlight
     {
@@ -87,12 +87,9 @@ public class PlayerInput : MonoBehaviour {
     void ToggleUnits(InputAction.CallbackContext value)
     {
         _selectedUnitIndex += Mathf.RoundToInt(value.ReadValue<float>());
-        /*if(_selectedUnitIndex < 0) _selectedUnitIndex+= playerArmy.units.Count;
-        _selectedUnitIndex%= playerArmy.units.Count;
-        selectedUnit = playerArmy.units[_selectedUnitIndex];*/
-        selectedUnit = playerArmy.GetUnit(_selectedUnitIndex) as UnitR;
+        selectedUnit = playerArmy.GetUnit(_selectedUnitIndex);
         CursorPositionOffset = Vector2.zero;
-        var pos = selectedUnit.Movement.position.Location;
+        var pos = selectedUnit.Movement.Location;
         Camera.main.transform.position = new(pos.x, pos.y, -5);
 
     }
@@ -130,7 +127,7 @@ public class PlayerInput : MonoBehaviour {
     {
         var coll = Physics2D.OverlapCircle(transform.position, 0.6f, 1 << 6);
         if (coll != null)
-            hoverUnit = coll.GetComponentInParent<UnitR>();
+            hoverUnit = coll.GetComponentInParent<UnitBase>();
         else hoverUnit = null;
         if (hoverUnit == null) mouseHighlight.GetComponent<SpriteRenderer>().color = Color.white;
         else if (Battle.Instance.unitArmy[hoverUnit].controller == Army.Controller.Player)
@@ -157,7 +154,7 @@ public class PlayerInput : MonoBehaviour {
         mouseHighlight.position = worldPosition;
         var coll = Physics2D.OverlapCircle(worldPosition, 0.6f, 1 << 6);
         if (coll != null)
-            hoverUnit = coll.GetComponentInParent<UnitR>();
+            hoverUnit = coll.GetComponentInParent<UnitBase>();
         else hoverUnit = null;
         if (hoverUnit == null) mouseHighlight.GetComponent<SpriteRenderer>().color = Color.white;
         else if (Battle.Instance.unitArmy[hoverUnit].controller == Army.Controller.Player)
@@ -167,7 +164,10 @@ public class PlayerInput : MonoBehaviour {
     void GiveOrder()
     {
         if(selectedUnit!= null && Battle.Instance.unitArmy[selectedUnit].controller == Army.Controller.Player) { 
-            selectedUnit.Movement.MoveTo(MouseHighlight); 
+            if(hoverUnit==null || hoverUnit == selectedUnit)
+                selectedUnit.Movement.MoveTo(MouseHighlight); 
+            else 
+                selectedUnit.Movement.MoveTo(hoverUnit);
         }
     }
 }
