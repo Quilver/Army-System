@@ -23,6 +23,13 @@ public abstract class IUnit : MonoBehaviour
     private void Start()
     {
         Init();
+        Notifications.StartFight += StartFight;
+    }
+    void StartFight(UnitBase unit1, UnitBase unit2)
+    {
+        if (unit1 != this && unit2 != this) return;
+        if (!Battle.Instance.Enemies(unit1, unit2)) return;
+        State = UnitState.Fighting;
     }
     public abstract void Init();
     public override string ToString()

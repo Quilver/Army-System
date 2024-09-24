@@ -6,6 +6,7 @@ using static UnityEngine.RuleTile.TilingRuleOutput;
 
 namespace Pathfinding
 {
+    //This is a container for maths and formulas for RayMovement
     public class RayPathfinder
     {
         #region A*

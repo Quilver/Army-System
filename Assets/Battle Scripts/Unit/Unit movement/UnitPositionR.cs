@@ -10,9 +10,11 @@ public class UnitPositionR : IMovement
     #region Properties
     UnitBase unit;
 	public PositionR position;
-	RegimentSizer unitBody;
-	ChargeSizer charge;
-	int _unitWidth;
+	RegimentSizer _unitBody;
+    ChargeSizer _charge;
+    RegimentSizer IMovement.unitBody => _unitBody;
+    ChargeSizer IMovement.charge => _charge;
+    int _unitWidth;
 	int UnitWidth
 	{
 		get
@@ -36,29 +38,33 @@ public class UnitPositionR : IMovement
 
     public int Files => UnitWidth;
 
+    
+
     public void Init(UnitBase unit, int Width)
 	{
 		this.unit= unit;
 		this._unitWidth = Width;
 		position.Location = new Vector2Int((int)unit.transform.position.x, (int)unit.transform.position.y);
-		charge = unit.GetComponentInChildren<ChargeSizer>();
-		unitBody=unit.GetComponentInChildren<RegimentSizer>();
+		_charge = unit.GetComponentInChildren<ChargeSizer>();
+		_unitBody=unit.GetComponentInChildren<RegimentSizer>();
 		//Notifications.Reached(unit, position);
 	}
 	#endregion
 	#region Helper Functions
 	public bool CanMoveOn(PositionR positionR, float avoidBy = 1, UnitBase target = null)
 	{
-		if (unitBody.CanBeOn(positionR, avoidBy, UnitWidth, Ranks, target))
+		if (_unitBody.CanBeOn(positionR, avoidBy, UnitWidth, Ranks, target))
 			return false;
 		else
 			return true;
 	}
+	/*
 	public bool InCombatWith(Vector2 position, float angle, UnitBase target)
 	{
-		List<UnitBase> targets = charge.TargetsAt(position, angle);
+		List<UnitBase> targets = _charge.TargetsAt(position, angle);
 		return targets.Contains(target);
 	}
+	*/
 	#endregion
     #region Movement
     [SerializeField]
@@ -87,7 +93,7 @@ public class UnitPositionR : IMovement
 	}
 	void UpdatePath()
 	{
-		if(charge.UnitAhead && charge.Enemies.Count > 0)
+		if(_charge.UnitAhead && _charge.Enemies.Count > 0)
 		{
             //Master.Instance.AddCombat(unit, charge.Enemies[0]);
             waypoints = null;
@@ -118,14 +124,12 @@ public class UnitPositionR : IMovement
 	void Pursuit()
 	{
 		position.Location = unit.LeadModelPosition;
-		if (unitBody.Clipping) return;
-		if (!charge.UnitAhead) return;
+		if (_unitBody.Clipping) return;
+		if (!_charge.UnitAhead) return;
 		Vector2 dir = position.Direction;
 		PositionR advancePos = new(position, dir * 0.1f);
 		if (CanMoveOn(advancePos, 2f, null))
 			position = advancePos;
-		//else
-		//	position.Location -= dir * 0.1f;
 	}
 
     

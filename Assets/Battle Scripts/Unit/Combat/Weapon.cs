@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using UnitMovement;
 using UnityEngine;
 [System.Serializable]
 public class Weapon
@@ -44,7 +45,7 @@ public class Weapon
     }
     bool Flanking (UnitBase target)
     {
-        return !((UnitPositionR)target.Movement).InCombatWith(target.Movement.Location, target.Movement.Rotation, unit);
+        return !((IMovement)target.Movement).InCombatWith(target.Movement.Location, target.Movement.Rotation, unit);
     }
     float WoundedModifier {
         get {

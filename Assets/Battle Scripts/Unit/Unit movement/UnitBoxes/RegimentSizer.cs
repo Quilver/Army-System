@@ -79,6 +79,24 @@ public class RegimentSizer : MonoBehaviour
             return true;
         return false;
     }
+    public bool CanBeOn(Vector2 pos, float angle, float avoidBy, int width, int ranks, UnitBase target = null)
+    {
+        Vector2 size = GetSize(width, ranks, avoidBy, unit.ModelSize);
+        var midPoint = MidPoint(new Vector2(width, ranks), angle, unit.ModelSize);
+        //checks against other units
+        var overlaps = Physics2D.OverlapBoxAll(midPoint + pos, size, angle, 1 << 6);
+        foreach (var collider2D in overlaps)
+        {
+            var clipping = collider2D.GetComponentInParent<UnitBase>();
+            if (clipping != unit && clipping != target)
+                return true;
+        }
+        overlaps = Physics2D.OverlapBoxAll(midPoint + pos, size, angle, 1 << 8);
+        //checks against terrain
+        if (overlaps.Length != 0)
+            return true;
+        return false;
+    }
     [SerializeField]
     Vector2 _size;
     void SetBox()

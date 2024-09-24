@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using UnitMovement;
 using UnityEngine;
 
 namespace Pathfinding
@@ -86,7 +87,7 @@ namespace Pathfinding
         }
         static bool ReachedGoal(UnitPositionR unit, PositionR node, UnitBase target)
         {
-            return unit.InCombatWith(node.Location, node.Rotation, target);//Map.Instance.GetTile(node.Location).unit == target;
+            return (unit as IMovement).InCombatWith(node.Location, node.Rotation, target);//Map.Instance.GetTile(node.Location).unit == target;
         }
         #endregion
         static WeightedNode<PositionR> MakePath(PositionR node, int cost)

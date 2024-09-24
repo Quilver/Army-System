@@ -10,6 +10,7 @@ namespace UnitType
     {
         [SerializeField]
         UnitStats stats;
+        Weapon weapon;
         public override UnitStats UnitStats => stats;
         [SerializeField]
         UnitState _state;
@@ -34,7 +35,17 @@ namespace UnitType
         public override bool Wounded => false;
         public override void TakeDamage(int damage)
         {
-            throw new System.NotImplementedException();
+            for (int i = 0; i < damage; i++)
+            {
+                if (Models.Count == 0)
+                {
+                    //Die();
+                    return;
+                }
+                Destroy(Models[Models.Count - 1].gameObject);
+                Models.RemoveAt(Models.Count - 1);
+
+            }
         }
 
         public void Start() {
@@ -45,6 +56,12 @@ namespace UnitType
             (Movement as RayMovement).Load(transform.position, size.UnitWidth);
             InstantiateModels(size.StartingSize, size.UnitWidth);
             Destroy(size);
+            weapon = new Weapon(this);
+        }
+        public void Update()
+        {
+            if (State == UnitState.Fighting)
+                weapon.UpdateCombat();
         }
     }
 }
