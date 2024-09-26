@@ -205,6 +205,7 @@ namespace InfluenceMap
                 foreach (var neigbhor in _node.adjacentNodes)
                 {
                     if (cameFrom.ContainsKey(neigbhor.position)) continue;
+                    if(_node.position.x != neigbhor.position.x && _node.position.y != neigbhor.position.y) continue;
                     WeightedNode<Node> childNode = new();
                     childNode.state = neigbhor;
                     childNode.weight = currentWieghtedNode.weight + Vector2.Distance(_node.position, neigbhor.position);

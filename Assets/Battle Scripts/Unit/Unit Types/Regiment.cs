@@ -39,7 +39,7 @@ namespace UnitType
             {
                 if (Models.Count == 0)
                 {
-                    //Die();
+                    Die();
                     return;
                 }
                 Destroy(Models[Models.Count - 1].gameObject);
@@ -47,7 +47,13 @@ namespace UnitType
 
             }
         }
-
+        void Die()
+        {
+            if (this == null) return;
+            Notifications.Died(this);
+            //Battle.Instance.EndCombat(this);
+            Destroy(this.gameObject);
+        }
         public void Start() {
             _state = UnitState.Idle;
             if (Battle.Instance.player.Units.Contains(this))

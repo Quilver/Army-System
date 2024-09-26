@@ -173,7 +173,7 @@ namespace UnitMovement
             NextMidpoint = GetNextPoint();
             var dir = NextMidpoint - (Vector2)unit.LeadModelPosition;
             float angleDest = 90 - Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
-            angle = -LerpAngle(Rotation, angleDest, 1.5f);
+            angle = LerpAngle(Rotation, angleDest, 0.2f);
             if (Vector2.Distance(Location, NextMidpoint) < stepSize)
                 _pos = NextMidpoint;
             else
@@ -181,12 +181,9 @@ namespace UnitMovement
         }
         float LerpAngle(float currentAngle, float goalAngle, float stepSize)
         {
-            currentAngle %= 360; goalAngle %= 360;
-            if(currentAngle < 0) currentAngle = 360 + currentAngle;
-            if (goalAngle< 0) goalAngle = 360 + goalAngle;
-            float delta = Mathf.Abs(currentAngle - goalAngle);
-            if (delta < 180) return Mathf.Lerp(currentAngle, goalAngle, stepSize);
-            else return Mathf.Lerp(currentAngle, goalAngle, stepSize);
+            Quaternion current = Quaternion.Euler(0, currentAngle, 0);
+            Quaternion goal = Quaternion.Euler(0, 360-goalAngle, 0);
+            return Quaternion.Lerp(current, goal, stepSize).eulerAngles.y;
 
         }
         bool CanMoveTo(Vector2 location)
