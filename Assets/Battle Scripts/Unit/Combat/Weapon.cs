@@ -87,6 +87,7 @@ public class Weapon
     void DetermineTarget(HashSet<UnitBase> enemy)
     {
         if(enemy.Count == 0) Debug.LogError(unit.ToString() + " has no enemies");
+        if (enemy.Count == 0) return;
         var enemies = enemy.ToList();
         _target = enemies[UnityEngine.Random.Range(0, enemies.Count)];
     }

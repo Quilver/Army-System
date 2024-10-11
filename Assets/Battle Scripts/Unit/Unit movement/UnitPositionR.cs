@@ -58,13 +58,6 @@ public class UnitPositionR : IMovement
 		else
 			return true;
 	}
-	/*
-	public bool InCombatWith(Vector2 position, float angle, UnitBase target)
-	{
-		List<UnitBase> targets = _charge.TargetsAt(position, angle);
-		return targets.Contains(target);
-	}
-	*/
 	#endregion
     #region Movement
     [SerializeField]

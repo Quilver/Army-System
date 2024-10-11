@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -47,6 +48,7 @@ namespace UnitMovement
         {
             if (unit == null || unit.ModelsRemaining == 0) return;
             else if (unit.State == UnitState.Fighting) Pursuit();
+            else if (unit.State == UnitState.Fleeing) Flee();
             else if (destination == Location) unit.State = UnitState.Idle;
             else if (!unit.ModelsAreMoving)
                 UpdatePath();
@@ -54,11 +56,19 @@ namespace UnitMovement
         void Pursuit()
         {
             _pos = unit.LeadModelPosition;
+            targetEnemy = null;
+            Vector2 dir = transform.up;
+
+            Debug.DrawLine(_pos, _pos + dir * 10, Color.white);
             if (_unitBody.Clipping) return;
             if (!_charge.UnitAhead) return;
-            Vector2 advance = unit.LeadModelPosition + GetVectorFromAngle(angle) * 0.1f;
-            if (_unitBody.CanBeOn(advance, Rotation, 2, Files, Ranks))
+            Vector2 advance = _pos + dir * 0.1f;
+            //if (_unitBody.CanBeOn(advance, Rotation, 0f, Files, Ranks))
                 _pos = advance;
+        }
+        void Flee()
+        {
+
         }
         #region RaySystem
         List<Vector3> UnitRayStarts(float angle)
@@ -87,6 +97,19 @@ namespace UnitMovement
             Vector3 ORay = ChargeRay(unit.LeadModelPosition, angle, maxDistance, targetEnemy);
             return ORay;
         }
+        bool HitsEnemy(float angle, float distance)
+        {
+            float steps = Vector3.Distance(LPosition, RPosition);
+            if (steps < 2) steps = 2;
+            float maxDistance = Range;
+            foreach (var start in UnitRayStarts(angle))
+            {
+                bool hitTarget = RayHitEnemy(start, angle, distance, targetEnemy);
+                if (hitTarget)
+                    return true;
+            }
+            return false;
+        }
         Vector3 Ray(Vector3 origin, float angle, float range, int recursionLimit = 0)
         {
             var raycast2D = Physics2D.Raycast(origin, GetVectorFromAngle(angle), range);
@@ -99,14 +122,27 @@ namespace UnitMovement
                 return raycast2D.point;
             }
         }
-        Vector3 ChargeRay(Vector3 origin, float angle, float range, UnitBase target, int recursionLimit = 0)
+        bool RayHitEnemy(Vector3 origin, float angle, float range, Transform target)
+        {
+            var rayCast2D = Physics2D.RaycastAll(origin, GetVectorFromAngle(angle), range);
+            foreach (var hit in rayCast2D)
+            {
+                var unit = hit.collider.transform.parent;
+                if (unit != transform) { }
+                else if (unit != target.parent)
+                    return true;
+                else return false;
+            }
+            return false;
+        }
+        Vector3 ChargeRay(Vector3 origin, float angle, float range, Transform target, int recursionLimit = 0)
         {
             if(target == null) return Ray(origin, angle, range);
             var rayCast2D = Physics2D.RaycastAll(origin, GetVectorFromAngle(angle), range);
             foreach (var hit in rayCast2D)
             {
                 var unit = hit.collider.transform.parent;
-                if (unit != transform && unit != target.transform)
+                if (unit != transform && unit != target.parent)
                     return hit.point;
             }
             return origin + GetVectorFromAngle(angle) * range;
@@ -157,6 +193,7 @@ namespace UnitMovement
                 return destination;
             Vector2 nextPoint = unit.LeadModelPosition;
             var path = Battle.Instance.highLevelMap.A_StarSearch(unit.LeadModelPosition, destination);
+            if (path == null) return nextPoint;
             for (int i = 0; i < path.Count; i++)
             {
                 if (!CanMoveTo(path[i])) continue;
@@ -166,14 +203,16 @@ namespace UnitMovement
 
             return nextPoint;
         }
-        [SerializeField]
+        [SerializeField, Range(0.05f, 1)]
         float stepSize = 0.1f;
+        [SerializeField, Range(0.05f, 1)]
+        float turnSpeed = 0.1f;
         void UpdatePath()
         {
             NextMidpoint = GetNextPoint();
             var dir = NextMidpoint - (Vector2)unit.LeadModelPosition;
             float angleDest = 90 - Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
-            angle = LerpAngle(Rotation, angleDest, 0.2f);
+            angle = LerpAngle(Rotation, angleDest, turnSpeed);
             if (Vector2.Distance(Location, NextMidpoint) < stepSize)
                 _pos = NextMidpoint;
             else
@@ -195,6 +234,12 @@ namespace UnitMovement
             var ray = UnitRay(angle);
             if (Vector3.Distance(ray, Location) >= Distance)
                 return true;
+            else if(targetEnemy != null)
+            {
+                return true;
+                if(HitsEnemy(angle, Vector3.Distance(ray, Location)))
+                    return true;
+            }
             return false;
         }
         private void OnDrawGizmos()
@@ -239,11 +284,11 @@ namespace UnitMovement
             destination = location;
             unit.State = UnitState.Moving;
         }
-        UnitBase targetEnemy = null;
+        Transform targetEnemy = null;
         public void MoveTo(UnitBase unit)
         {
             if (unit.State == UnitState.Fighting)return;
-            targetEnemy = unit;
+            targetEnemy = unit.GetComponentInChildren<RegimentSizer>().transform;
             destination = unit.LeadModelPosition;
             unit.State = UnitState.Moving;
         }
