@@ -1,27 +1,22 @@
+using Pathfinding;
+using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq.Expressions;
+//using System.Linq.Expressions;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 
 namespace UnitMovement
 {
     public class RayMovement : MonoBehaviour, IMovement
     {
+        #region Properties
+
         RegimentSizer _unitBody;
         ChargeSizer _charge;
         RegimentSizer IMovement.unitBody => _unitBody;
         ChargeSizer IMovement.charge => _charge;
-        public void Load(Vector2 pos, int width)
-        {
-            _pos = pos;
-            this.width = width;
-            destination = pos;
-            transform.position = Vector3.zero;
-            _charge = unit.GetComponentInChildren<ChargeSizer>();
-            _unitBody = unit.GetComponentInChildren<RegimentSizer>();
-        }
+
         Vector2 _pos;
         int width;
         public Vector2 Location => _pos;
@@ -32,136 +27,94 @@ namespace UnitMovement
         {
             get
             {
-                if(unit.ModelsRemaining < width) width= unit.ModelsRemaining;
+                if (unit.ModelsRemaining < width) width = unit.ModelsRemaining;
                 return width;
             }
         }
-        public int Ranks => Mathf.CeilToInt((unit.ModelsRemaining* 1.0f) / Files);
+        public int Ranks => Mathf.CeilToInt((unit.ModelsRemaining * 1.0f) / Files);
         [SerializeField, Range(8, 30)]
         float Range;
         UnitBase unit;
+        Vector2 Destination
+        {
+            get
+            {
+                if (unit.State == UnitState.Idle)
+                    destination = _pos;
+                else if (targetEnemy != null)
+                    destination = targetEnemy.position;
+                return destination;
+            }
+        }
+        [SerializeField, Range(0.05f, 1)]
+        float stepSize = 0.1f;
+        [SerializeField, Range(0.05f, 1)]
+        float turnSpeed = 0.1f;
+        [SerializeField]
+        Vector2 destination;
+        Vector2 NextMidpoint;
+        Transform targetEnemy = null;
+        #endregion
+
+        #region Initialise 
         void Awake()
         {
             unit = GetComponent<UnitBase>();
         }
+        public void Load(Vector2 pos, int width)
+        {
+            _pos = pos;
+            this.width = width;
+            destination = pos;
+            transform.position = Vector3.zero;
+            _charge = unit.GetComponentInChildren<ChargeSizer>();
+            _unitBody = unit.GetComponentInChildren<RegimentSizer>();
+        }
+        #endregion
+        #region Update and Inputs
         public void Update()
         {
             if (unit == null || unit.ModelsRemaining == 0) return;
             else if (unit.State == UnitState.Fighting) Pursuit();
             else if (unit.State == UnitState.Fleeing) Flee();
-            else if (destination == Location) unit.State = UnitState.Idle;
-            else if (!unit.ModelsAreMoving)
-                UpdatePath();
+            else if (unit.State == UnitState.Moving && !unit.ModelsAreMoving)
+                MoveToLocation();
         }
+        public void MoveTo(Vector2 location)
+        {
+            if (unit.State == UnitState.Fighting) return;
+            targetEnemy = null;
+            destination = location;
+            unit.State = UnitState.Moving;
+        }
+        public void MoveTo(UnitBase unit)
+        {
+            if (this.unit.State == UnitState.Fighting) return;
+            targetEnemy = unit.GetComponentInChildren<RegimentSizer>().transform;
+            this.unit.State = UnitState.Moving;
+            destination = targetEnemy.position;
+        }
+        #endregion
+        #region Pursuit and Flee
         void Pursuit()
         {
             _pos = unit.LeadModelPosition;
             targetEnemy = null;
-            Vector2 dir = transform.up;
+            Vector2 dir = Quaternion.Euler(0, 0, angle) * Vector2.up;
 
             Debug.DrawLine(_pos, _pos + dir * 10, Color.white);
             if (_unitBody.Clipping) return;
             if (!_charge.UnitAhead) return;
             Vector2 advance = _pos + dir * 0.1f;
-            //if (_unitBody.CanBeOn(advance, Rotation, 0f, Files, Ranks))
-                _pos = advance;
+            _pos = advance;
         }
         void Flee()
         {
 
         }
-        #region RaySystem
-        List<Vector3> UnitRayStarts(float angle)
-        {
-            List<Vector3> starts = new List<Vector3>();
-            Vector3 L = Quaternion.Euler(0, 0, -angle) * new Vector3(unit.LOffset - unit.ModelSize.x/2,0) + unit.LeadModelPosition;
-            Vector3 R = Quaternion.Euler(0, 0, -angle) * new Vector3(unit.ROffset + unit.ModelSize.x/2,0) + unit.LeadModelPosition;
-            float steps = Vector3.Distance(L, R);
-            if (steps < 2) steps = 2;
-            for (float i = 0; i <= steps; i++)
-                starts.Add(Vector3.Lerp(L, R, i / steps));
-            starts.Add(R);    
-            return starts;
-        }
-        Vector3 UnitRay(float angle)
-        {
-            float steps = Vector3.Distance(LPosition, RPosition);
-            if (steps < 2) steps = 2;
-            float maxDistance = Range;
-            foreach (var start in UnitRayStarts(angle))
-            {
-                Vector3 end = ChargeRay(start, angle, maxDistance, targetEnemy);
-                if (Vector3.Distance(start, end) < maxDistance)
-                    maxDistance = Vector3.Distance(start, end) - 0.3f;
-            }
-            Vector3 ORay = ChargeRay(unit.LeadModelPosition, angle, maxDistance, targetEnemy);
-            return ORay;
-        }
-        bool HitsEnemy(float angle, float distance)
-        {
-            float steps = Vector3.Distance(LPosition, RPosition);
-            if (steps < 2) steps = 2;
-            float maxDistance = Range;
-            foreach (var start in UnitRayStarts(angle))
-            {
-                bool hitTarget = RayHitEnemy(start, angle, distance, targetEnemy);
-                if (hitTarget)
-                    return true;
-            }
-            return false;
-        }
-        Vector3 Ray(Vector3 origin, float angle, float range, int recursionLimit = 0)
-        {
-            var raycast2D = Physics2D.Raycast(origin, GetVectorFromAngle(angle), range);
-            if (raycast2D.collider == null)
-                return origin + GetVectorFromAngle(angle) * range;
-            else
-            {
-                if (raycast2D.collider.transform.parent == transform && recursionLimit <4)
-                    return Ray((Vector3)raycast2D.point + GetVectorFromAngle(angle) * 0.1f, angle, range - Vector3.Distance(origin, raycast2D.point), recursionLimit+1);
-                return raycast2D.point;
-            }
-        }
-        bool RayHitEnemy(Vector3 origin, float angle, float range, Transform target)
-        {
-            var rayCast2D = Physics2D.RaycastAll(origin, GetVectorFromAngle(angle), range);
-            foreach (var hit in rayCast2D)
-            {
-                var unit = hit.collider.transform.parent;
-                if (unit != transform) { }
-                else if (unit != target.parent)
-                    return true;
-                else return false;
-            }
-            return false;
-        }
-        Vector3 ChargeRay(Vector3 origin, float angle, float range, Transform target, int recursionLimit = 0)
-        {
-            if(target == null) return Ray(origin, angle, range);
-            var rayCast2D = Physics2D.RaycastAll(origin, GetVectorFromAngle(angle), range);
-            foreach (var hit in rayCast2D)
-            {
-                var unit = hit.collider.transform.parent;
-                if (unit != transform && unit != target.parent)
-                    return hit.point;
-            }
-            return origin + GetVectorFromAngle(angle) * range;
-        }
         #endregion
+
         #region Basic helper functions
-        static Vector3 GetVectorFromAngle(float angle)
-        {
-            float angleRad = angle * (Mathf.PI / 180f);
-            return new Vector3(Mathf.Sin(angleRad), Mathf.Cos(angleRad));
-        }
-        static Vector3 RotateAroundPivot(Vector3 point, Vector3 pivot, float angle)
-        {
-            return Quaternion.Euler(0, 0, angle) * (point - pivot) + pivot;
-
-        }
-
-        
-        
         Vector3 LPosition
         {
             get
@@ -178,21 +131,19 @@ namespace UnitMovement
             {
                 Vector3 offset = Vector3.right * unit.ModelSize.x / 2;
                 Vector3 rotatedPos = Quaternion.Euler(0, 0, angle) * offset;
-                Vector3 pos = unit.RightMostModelPosition +  rotatedPos;
-                return pos ;
+                Vector3 pos = unit.RightMostModelPosition + rotatedPos;
+                return pos;
             }
         }
         #endregion
         #region Move System
-        [SerializeField]
-        Vector2 destination;
-        Vector2 NextMidpoint;
+
         Vector2 GetNextPoint()
         {
-            if (CanMoveTo(destination))
-                return destination;
+            if (CanMoveTo(Destination))
+                return Destination;
             Vector2 nextPoint = unit.LeadModelPosition;
-            var path = Battle.Instance.highLevelMap.A_StarSearch(unit.LeadModelPosition, destination);
+            var path = Battle.Instance.highLevelMap.A_StarSearch(unit.LeadModelPosition, Destination);
             if (path == null) return nextPoint;
             for (int i = 0; i < path.Count; i++)
             {
@@ -203,12 +154,14 @@ namespace UnitMovement
 
             return nextPoint;
         }
-        [SerializeField, Range(0.05f, 1)]
-        float stepSize = 0.1f;
-        [SerializeField, Range(0.05f, 1)]
-        float turnSpeed = 0.1f;
-        void UpdatePath()
+
+        void MoveToLocation()
         {
+            if (Destination == _pos)
+            {
+                unit.State = UnitState.Idle;
+                return;
+            }
             NextMidpoint = GetNextPoint();
             var dir = NextMidpoint - (Vector2)unit.LeadModelPosition;
             float angleDest = 90 - Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
@@ -221,7 +174,7 @@ namespace UnitMovement
         float LerpAngle(float currentAngle, float goalAngle, float stepSize)
         {
             Quaternion current = Quaternion.Euler(0, currentAngle, 0);
-            Quaternion goal = Quaternion.Euler(0, 360-goalAngle, 0);
+            Quaternion goal = Quaternion.Euler(0, 360 - goalAngle, 0);
             return Quaternion.Lerp(current, goal, stepSize).eulerAngles.y;
 
         }
@@ -231,67 +184,25 @@ namespace UnitMovement
             var dir = location - (Vector2)unit.LeadModelPosition;
             float angle = 90 - Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
             float Distance = Vector3.Distance(Location, location);
-            var ray = UnitRay(angle);
+            var ray = RayPathfinder.UnitRay(angle, Range, unit, LPosition, RPosition, targetEnemy);
             if (Vector3.Distance(ray, Location) >= Distance)
                 return true;
-            else if(targetEnemy != null)
-            {
-                return true;
-                if(HitsEnemy(angle, Vector3.Distance(ray, Location)))
-                    return true;
-            }
             return false;
         }
-        private void OnDrawGizmos()
+
+
+        #endregion
+        void OnGizmosSelected()
         {
-            if(unit== null)
-            {
-                Vector3 l = RotateAroundPivot(transform.position + Vector3.left * 2, transform.position, this.angle);
-                Gizmos.color = Color.yellow;
-                Gizmos.DrawSphere(l, 0.25f);
-                Vector3 r = RotateAroundPivot(transform.position + Vector3.right * 2, transform.position, this.angle);
-                Gizmos.color = Color.green;
-                Gizmos.DrawSphere(r, 0.25f);
-            }
+            if (unit == null) return;
+
+            if(unit.State != UnitState.Moving) return;
+            if (CanMoveTo(Destination)) Gizmos.DrawLine(_pos, Destination);
             else
             {
-                Vector3 l = RotateAroundPivot(LPosition, unit.LeadModelPosition, this.angle);
-                Gizmos.color = Color.yellow;
-                Gizmos.DrawSphere(LPosition, 0.25f);
-                Vector3 r = RotateAroundPivot(RPosition, unit.LeadModelPosition, this.angle);
-                Gizmos.color = Color.blue;
-                Gizmos.DrawSphere(RPosition, 0.25f);
-            }
-            Gizmos.color = Color.black;
-            if (unit == null) return;
-            Gizmos.DrawSphere(unit.LeadModelPosition, 0.25f);
-            Vector2 nextPoint = GetNextPoint();
-            Gizmos.DrawSphere(nextPoint, 0.25f);
-            Vector3 dir = (Vector3)nextPoint - unit.LeadModelPosition;
-            Gizmos.color = Color.red;
-            Gizmos.DrawRay(unit.LeadModelPosition, dir);
-            Gizmos.color= Color.black;
-            float angle = 90 - Mathf.Atan2(NextMidpoint.y - unit.LeadModelPosition.y, NextMidpoint.x - unit.LeadModelPosition.x) * Mathf.Rad2Deg;
-            foreach (var start in UnitRayStarts(angle))
-            {
-                Gizmos.DrawRay(start, dir);
+                var path = Battle.Instance.highLevelMap.A_StarSearch(unit.LeadModelPosition, Destination);
+                Gizmos.DrawLine(_pos, path[1]);
             }
         }
-        public void MoveTo(Vector2 location)
-        {
-            if (unit.State == UnitState.Fighting)return;
-            targetEnemy = null;
-            destination = location;
-            unit.State = UnitState.Moving;
-        }
-        Transform targetEnemy = null;
-        public void MoveTo(UnitBase unit)
-        {
-            if (unit.State == UnitState.Fighting)return;
-            targetEnemy = unit.GetComponentInChildren<RegimentSizer>().transform;
-            destination = unit.LeadModelPosition;
-            unit.State = UnitState.Moving;
-        }
-        #endregion
     }
 }

@@ -21,7 +21,7 @@ public class FieldofView : MonoBehaviour
     UnitBase unit;
     RangedWeapon rangedWeapon;
     public Dictionary<UnitBase, float> _targets;
-
+    BoxCollider2D body;
     // Start is called before the first frame update
     void Start()
     {
@@ -32,6 +32,7 @@ public class FieldofView : MonoBehaviour
         _renderer.material.color = rangedWeapon.CurrentColour;
         transform.position = Vector3.zero;
         transform.parent.rotation = Quaternion.Euler(Vector3.zero);
+        body = transform.parent.parent.GetComponentInChildren<RegimentSizer>().transform.GetComponent<BoxCollider2D>();
     }
     void Update()
     {
@@ -39,7 +40,9 @@ public class FieldofView : MonoBehaviour
         {
             _targets = new();
             _renderer.enabled = true;
+            body.enabled = false;
             UpdateMesh();
+            //body.enabled = true;
             transform.position = Vector3.zero;
             _renderer.material.color = rangedWeapon.CurrentColour;
         }
@@ -176,7 +179,7 @@ public class FieldofView : MonoBehaviour
         get
         {
             Vector3 pos = unit.LeftMostModelPosition;
-            pos += GetVectorFromAngle(unit.Movement.Rotation)/2;
+            //pos += GetVectorFromAngle(unit.Movement.Rotation)/2;
             return pos;
         }
     }
@@ -185,7 +188,7 @@ public class FieldofView : MonoBehaviour
         get
         {
             Vector3 pos = unit.RightMostModelPosition;
-            pos -= GetVectorFromAngle(unit.Movement.Rotation)/2;
+            //pos += GetVectorFromAngle(unit.Movement.Rotation)/2;
             return pos;
         }
     }
