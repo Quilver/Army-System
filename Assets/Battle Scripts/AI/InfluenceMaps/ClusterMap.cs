@@ -44,6 +44,8 @@ namespace InfluenceMap
                 }
                 if (flag)
                 {
+                    if(testCluster.ContainsKey(unit.LeadModelPosition))
+                        continue;
                     testCluster.Add(unit.LeadModelPosition, new List<UnitBase>());
                     testCluster[unit.LeadModelPosition].Add(unit);
                 }
