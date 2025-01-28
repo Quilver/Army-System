@@ -150,6 +150,24 @@ public class SteerTowards : SteeringManager
         }
 
     }
+    public bool CanWalkTo(Vector2 destination)
+    {
+        Vector2 direction = destination - (Vector2)transform.position;
+        float angle = Vector2.SignedAngle(Vector2.up, direction);
+        float distance = direction.magnitude;
+        var hit = Physics2D.BoxCast(transform.position, transform.localScale * 0.5f, 0, direction, distance, SensorLayerMask);
+        if (hit)
+        {
+            Gizmos.color = Color.red;
+            Gizmos.DrawLine(transform.position, hit.point);
+        }
+        else
+        {
+            Gizmos.color = Color.blue;
+            Gizmos.DrawLine(transform.position, destination);
+        }
+        return !hit;
+    }
     #endregion
     #region Gizmos
     public enum GizmoDisplay
@@ -161,8 +179,11 @@ public class SteerTowards : SteeringManager
         None
     }
     public GizmoDisplay gizmoDisplay;
+    [SerializeField]
+    Transform target;
     private void OnDrawGizmos()
     {
+        CanWalkTo(target.position);
         switch (gizmoDisplay)
         {
             case GizmoDisplay.Context:
