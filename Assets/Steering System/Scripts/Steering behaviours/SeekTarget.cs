@@ -9,9 +9,10 @@ public class SeekTarget : SteeringBehaviour
     [SerializeField, Range(0.1f, 1)]
     float _priority;
     public override float priority => _priority;
-public override Vector2 GetDirection()
-    {
 
+    public override Vector2 GetDirection()
+    {
+        parent.CanWalkTo(target.position);
         parent.AddSteeringForce(parent.Seek(target.position), priority);
         return parent.Seek(target.position);
     }

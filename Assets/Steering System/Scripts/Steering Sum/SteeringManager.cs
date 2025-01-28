@@ -27,6 +27,15 @@ public abstract class SteeringManager : MonoBehaviour
         else angle -= 90;
         return Quaternion.AngleAxis(angle, transform.forward) * transform.up;
     }
+    public LayerMask SensorLayerMask;
+    public bool CanWalkTo(Vector2 destination)
+    {
+        Vector2 direction = destination - (Vector2)transform.position;
+        float angle = Vector2.SignedAngle(Vector2.up, direction);
+        float distance = direction.magnitude;
+        var hit = Physics2D.BoxCast(transform.position, transform.localScale * 0.5f, 0, direction, distance, SensorLayerMask);
+        return !hit;
+    }
     private void OnCollisionEnter2D(Collision2D collision)
     {
         Debug.Log(gameObject.name + " has gotten hit");
