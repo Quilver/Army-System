@@ -6,7 +6,7 @@ using UnityEngine;
 public class PathToTarget : SteeringBehaviour
 {
     [SerializeField]
-    Transform target;
+    public Transform target;
     [SerializeField, Range(0.1f, 1)]
     float _priority;
     public override float priority => _priority;

@@ -25,17 +25,17 @@ namespace InfluenceMap
                 else return clusters.Count;
             }
         }
-        Dictionary<Cluster, List<UnitBase>> clusters;
+        Dictionary<Cluster, List<UnitTemplate>> clusters;
         void CreateCluster()
         {
             clusters = new();
-            Dictionary<Vector2, List<UnitBase>> testCluster = new();
+            Dictionary<Vector2, List<UnitTemplate>> testCluster = new();
             foreach (var unit in army.Units)
             {
                 bool flag = true;
                 foreach (var cluster in testCluster)
                 {
-                    if(Vector2.Distance(cluster.Key, unit.LeadModelPosition) < clusterSize)
+                    if(Vector2.Distance(cluster.Key, unit.transform.position) < clusterSize)
                     {
                         flag= false;
                         testCluster[cluster.Key].Add(unit);
@@ -44,17 +44,17 @@ namespace InfluenceMap
                 }
                 if (flag)
                 {
-                    if(testCluster.ContainsKey(unit.LeadModelPosition))
+                    if(testCluster.ContainsKey(unit.transform.position))
                         continue;
-                    testCluster.Add(unit.LeadModelPosition, new List<UnitBase>());
-                    testCluster[unit.LeadModelPosition].Add(unit);
+                    testCluster.Add(unit.transform.position, new List<UnitTemplate>());
+                    testCluster[unit.transform.position].Add(unit);
                 }
 
             }
             foreach (var cluster in testCluster)
             {
                 Vector2 center = Vector2.zero;
-                foreach (var unit in cluster.Value) { center += (Vector2)unit.LeadModelPosition; }
+                foreach (var unit in cluster.Value) { center += (Vector2)unit.transform.position; }
                 center/=cluster.Value.Count;
                 Cluster node= new(clusterSize, center);
                 clusters.Add(node, cluster.Value);
@@ -86,7 +86,7 @@ namespace InfluenceMap
         {
             public readonly float nodeSize;
             public readonly Vector2 position;
-            public List<UnitBase> unitsInCluster;
+            public List<UnitTemplate> unitsInCluster;
             public Cluster(float size, Vector2 position)
             {
                 //size *= 0.75f;
@@ -94,13 +94,13 @@ namespace InfluenceMap
                 this.position = position;
                 unitsInCluster = new();
             }
-            public void DrawCircleGizmo(List<UnitBase> units)
+            public void DrawCircleGizmo(List<UnitTemplate> units)
             {
                 Gizmos.DrawSphere(position, 0.3f);
                 if (units == null) return;
                 foreach (var unit in units)
                 {
-                    Gizmos.DrawLine(position, unit.LeadModelPosition);
+                    Gizmos.DrawLine(position, unit.transform.position);
                 }
             }
         }

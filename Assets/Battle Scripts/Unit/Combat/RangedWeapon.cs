@@ -24,15 +24,15 @@ public class RangedWeapon: MonoBehaviour
     float maximumDamage;
     FieldofView targetTemplate;
     float _timeToShoot = 0;
-    UnitBase unit;
+    UnitTemplate unit;
     private void Start()
     {
-        unit= GetComponent<UnitBase>();
+        unit= GetComponent<UnitTemplate>();
         targetTemplate= GetComponentInChildren<FieldofView>();
     }
     void Update()
     {
-        if(unit.State != UnitState.Idle)
+        if(unit.unitState != UnitState.Idle)
         {
             _timeToShoot = 0;
             return;
@@ -46,7 +46,7 @@ public class RangedWeapon: MonoBehaviour
     void Shoot()
     {
         _timeToShoot = ReloadTime;
-        UnitBase nearestTarget = null;
+        UnitTemplate nearestTarget = null;
         float distance = float.MaxValue;
         foreach (var target in targetTemplate._targets)
         {
@@ -61,10 +61,10 @@ public class RangedWeapon: MonoBehaviour
             _timeToShoot = 0;
         }
     }
-    void DamageTarget(UnitBase target)
+    void DamageTarget(UnitTemplate target)
     {
         float damage = Random.Range(minimumDamage, maximumDamage);
-        StatSystem.IDefenceStats defence = target.UnitStats as StatSystem.IDefenceStats;
+        StatSystem.IDefenceStats defence = target.Stats as StatSystem.IDefenceStats;
         int kills = (int)(damage / defence.Defence);
         if(Notifications.RangedDamage != null)
             Notifications.RangedDamage(unit, target, kills);

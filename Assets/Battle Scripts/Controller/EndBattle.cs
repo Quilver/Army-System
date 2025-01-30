@@ -29,7 +29,7 @@ namespace BattleFlowControl
             foreach (var unit in Battle.Instance.player.Units)
             {
                 StatWrapper wrapper = new();
-                wrapper.statBase = Instantiate(unit.UnitStats);
+                wrapper.statBase = Instantiate(unit.Stats);
                 //this.units.Add(unit.UnitStats, wrapper);
                 BattleReport.statWrappers.Add(wrapper);
             }
@@ -56,7 +56,7 @@ namespace BattleFlowControl
                 Victory();
             }
         }
-        void KillCounter(UnitBase attacker, UnitBase defender, int damage)
+        void KillCounter(UnitTemplate attacker, UnitTemplate defender, int damage)
         {
             if(Battle.Instance.player == Battle.Instance.unitArmy[attacker])
                 BattleReport.kills += damage;

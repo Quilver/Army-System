@@ -1,11 +1,11 @@
 using StatSystem;
 using System.Collections;
 using System.Collections.Generic;
-using UnitMovement;
 using UnityEditor;
 using UnityEngine;
 namespace UnitType
 {
+    /*
     public class Regiment : UnitBase
     {
         [SerializeField]
@@ -70,4 +70,5 @@ namespace UnitType
                 weapon.UpdateCombat();
         }
     }
+*/
 }

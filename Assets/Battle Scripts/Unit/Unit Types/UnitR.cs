@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using UnityEngine;
+/*
 namespace UnitType
 {
     public class UnitR : UnitBase
@@ -113,3 +114,4 @@ namespace UnitType
     }
 }
 
+*/

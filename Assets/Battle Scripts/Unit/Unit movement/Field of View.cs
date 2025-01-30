@@ -18,25 +18,25 @@ public class FieldofView : MonoBehaviour
     MeshFilter _mesh;
     Mesh mesh;
     MeshRenderer _renderer;
-    UnitBase unit;
+    UnitTemplate unit;
     RangedWeapon rangedWeapon;
-    public Dictionary<UnitBase, float> _targets;
+    public Dictionary<UnitTemplate, float> _targets;
     BoxCollider2D body;
     // Start is called before the first frame update
     void Start()
     {
-        unit = GetComponentInParent<UnitBase>();
+        unit = GetComponentInParent<UnitTemplate>();
         rangedWeapon= GetComponentInParent<RangedWeapon>();
         _mesh = GetComponent<MeshFilter>();
         _renderer = GetComponent<MeshRenderer>();
         _renderer.material.color = rangedWeapon.CurrentColour;
         transform.position = Vector3.zero;
         transform.parent.rotation = Quaternion.Euler(Vector3.zero);
-        body = transform.parent.parent.GetComponentInChildren<RegimentSizer>().transform.GetComponent<BoxCollider2D>();
+        body = transform.parent.GetComponent<BoxCollider2D>();
     }
     void Update()
     {
-        if(unit.State == UnitState.Idle)
+        if(unit.unitState == UnitState.Idle)
         {
             _targets = new();
             _renderer.enabled = true;
@@ -67,7 +67,7 @@ public class FieldofView : MonoBehaviour
     {
         Mesh mesh = new();
 
-        float angle = -unit.Movement.Rotation;
+        float angle = -unit.transform.eulerAngles.z;
         float angleIncrease = FOV / rayCount;
         Vector3 origin = LPosition;
         Vector3[] vertices = new Vector3[rayCount + 2];
@@ -102,8 +102,8 @@ public class FieldofView : MonoBehaviour
     Mesh UpdateMeshRight()
     {
         Mesh mesh = new();
-        
-        float angle = -unit.Movement.Rotation + FOV - FOV/12;
+
+        float angle = -unit.transform.eulerAngles.z + FOV - FOV/12;
         float angleIncrease = FOV / rayCount;
         Vector3 origin = RPosition;
         Vector3[] vertices = new Vector3[rayCount + 2];
@@ -139,7 +139,7 @@ public class FieldofView : MonoBehaviour
     {
         Mesh mesh = new();
         int rays = Mathf.CeilToInt(2 * Vector3.Distance(LPosition, RPosition)) + 1;
-        float angle = -unit.Movement.Rotation;
+        float angle = -unit.transform.eulerAngles.z;
         Vector3 origin = LPosition;
         Vector3 diff = (RPosition - LPosition)/(float)(rays-1);
         Vector3[] vertices = new Vector3[(rays + 1)* 2];
@@ -178,7 +178,7 @@ public class FieldofView : MonoBehaviour
     {
         get
         {
-            Vector3 pos = unit.LeftMostModelPosition;
+            Vector3 pos = unit.transform.position - unit.transform.right;
             //pos += GetVectorFromAngle(unit.Movement.Rotation)/2;
             return pos;
         }
@@ -187,7 +187,7 @@ public class FieldofView : MonoBehaviour
     {
         get
         {
-            Vector3 pos = unit.RightMostModelPosition;
+            Vector3 pos = unit.transform.position + unit.transform.right;
             //pos += GetVectorFromAngle(unit.Movement.Rotation)/2;
             return pos;
         }
@@ -199,12 +199,12 @@ public class FieldofView : MonoBehaviour
             return origin + GetVectorFromAngle(angle) * range;
         else
         {
-            var target = raycast2D.transform.GetComponentInParent<UnitBase>();
+            var target = raycast2D.transform.GetComponentInParent<UnitTemplate>();
             HittingUnit(target, raycast2D.distance);
             return raycast2D.point;
         }
     }
-    void HittingUnit(UnitBase unit, float Distance)
+    void HittingUnit(UnitTemplate unit, float Distance)
     {
         if (unit == null) return;
         if (!_targets.ContainsKey(unit))

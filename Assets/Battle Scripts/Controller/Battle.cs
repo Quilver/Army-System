@@ -5,7 +5,7 @@ using UnityEngine;
 public class Battle : MonoBehaviour {
     public static Battle Instance;
     public InfluenceMap.HighLevelMap highLevelMap;
-    public Dictionary<UnitBase, Army> unitArmy;
+    public Dictionary<UnitTemplate, Army> unitArmy;
     public Army player, enemy1;
     void Awake () {
         if(Instance != null)
@@ -16,9 +16,9 @@ public class Battle : MonoBehaviour {
         {
             Instance = this;
         }
-        unitArmy = new Dictionary<UnitBase, Army>();
+        unitArmy = new Dictionary<UnitTemplate, Army>();
     }
-    public bool Enemies(UnitBase unit1, UnitBase unit2)
+    public bool Enemies(UnitTemplate unit1, UnitTemplate unit2)
     {
         return unitArmy[unit1] != unitArmy[unit2];
     }

@@ -17,9 +17,9 @@ public class CircleRound : SteeringBehaviour
         
         float unitDirectionAngle = Vector2.Angle(Vector2.zero, unitDirection);
         for (var i = 0; i < parent.SensorViews.Length; i++) {
-            if(GetLateralForce(i) == Vector2.zero)continue;
+            if(LateralForce(i) == Vector2.zero)continue;
             float weight = WeightedPriority(parent.RayLength, MinRange, parent.SensorViews[i].distance);
-            var seek = parent.Seek(parent.futurePosition + GetLateralForce(i));
+            var seek = parent.Seek(parent.futurePosition + LateralForce(i));
             parent.AddSteeringForce(seek, weight);
         }
 
@@ -34,6 +34,15 @@ public class CircleRound : SteeringBehaviour
         var hitDirection = (parent.SensorViews[i].point - (Vector2)parent.transform.position).normalized;
         float hitAngle = Vector2.Angle(Vector2.zero, hitDirection);
         if (Mathf.DeltaAngle(unitDirectionAngle, hitAngle) > 0)
+            return parent.GetNormalOfDirection(i, false);
+        else
+            return parent.GetNormalOfDirection(i, true);
+    }
+    Vector2 LateralForce(int i)
+    {
+        float unitDirectionAngle = Vector2.Angle(Vector2.zero, body.velocity.normalized);
+        float rayAngle = i * 360f / parent.SensorViews.Length + transform.rotation.z * Mathf.Deg2Rad;
+        if (Mathf.DeltaAngle(unitDirectionAngle, rayAngle) > 0)
             return parent.GetNormalOfDirection(i, false);
         else
             return parent.GetNormalOfDirection(i, true);
@@ -61,7 +70,7 @@ public class CircleRound : SteeringBehaviour
                 continue;
             }
             Gizmos.DrawLine(parent.transform.position, parent.SensorViews[i].point);
-            Gizmos.DrawLine(parent.SensorViews[i].point, parent.SensorViews[i].point+GetLateralForce(i));
+            Gizmos.DrawLine(parent.SensorViews[i].point, parent.SensorViews[i].point+ LateralForce(i));
         }
         Gizmos.color = Color.red;
         Gizmos.DrawLine(parent.transform.position, parent.transform.position + (Vector3)body.velocity);

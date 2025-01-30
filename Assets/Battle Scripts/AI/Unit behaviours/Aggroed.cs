@@ -5,28 +5,28 @@ using UnityEngine;
 #region Enemy Behaviours
 public class Aggroed : MonoBehaviour
 {
-    UnitBase _unit;
+    UnitTemplate _unit;
     [SerializeField]
     float thinkingSpeed;
     [SerializeField]
     int AggroRange;
     float _time = 0;
-    public UnitBase enemy;
+    public UnitTemplate enemy;
     // Start is called before the first frame update
     void Start()
     {
-        _unit = GetComponentInParent<UnitBase>();
+        _unit = GetComponentInParent<UnitTemplate>();
 
     }
-    float DistanceFromUnit(UnitBase unit)
+    float DistanceFromUnit(UnitTemplate unit)
     {
-        var pos = unit.Movement.Location - _unit.Movement.Location;
+        var pos = unit.transform.position - _unit.transform.position;
         return Mathf.Max(Mathf.Abs(pos.x), Mathf.Abs(pos.y));
     }
-    UnitBase GetNearestUnit()
+    UnitTemplate GetNearestUnit()
     {
         float distance =float.MaxValue;
-        UnitBase closestUnit =null;
+        UnitTemplate closestUnit = null;
         foreach (var enemy in Battle.Instance.unitArmy[_unit].EnemyUnits)
         {
             float dist = DistanceFromUnit(enemy);
@@ -53,7 +53,7 @@ public class Aggroed : MonoBehaviour
         enemy = GetNearestUnit();
         if (enemy != null && DistanceFromUnit(enemy) < AggroRange)
         {
-            _unit.Movement.MoveTo(enemy);
+            _unit.MoveTo(enemy.transform);
         }
         else
             enemy = null;

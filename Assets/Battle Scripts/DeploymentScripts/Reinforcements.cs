@@ -39,7 +39,7 @@ public class Reinforcements : MonoBehaviour
     {
         var unit = GameObject.Instantiate(unitsToDeploy, army.transform);
         unit.transform.position = transform.position;
-        army.AddUnit(unit.GetComponent<UnitBase>());
+        army.AddUnit(unit.GetComponent<UnitTemplate>());
         Destroy(gameObject);
     }
     [SerializeField]

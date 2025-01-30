@@ -1,8 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
-using UnitMovement;
 using UnityEngine;
-
+/*
 public abstract class UnitBase: MonoBehaviour
 {
     public abstract StatSystem.UnitStats UnitStats { get; }
@@ -105,3 +104,4 @@ public abstract class UnitBase: MonoBehaviour
     }
     #endregion
 }
+*/

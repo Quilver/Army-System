@@ -5,12 +5,12 @@ using UnityEngine;
 
 public class Notifications : MonoBehaviour 
 {
-    public static Action<UnitBase> Deployed;
-    public static Action<UnitBase, UnitState> ChangeState;
-    public static Action<UnitBase, UnitBase> StartFight, EndFight;
-    public static Action<UnitBase, UnitBase, int> MeleeDamage, RangedDamage;
-    public static Action<UnitBase, PositionR> HeadingTo, Reached;
-    public static Action<UnitBase> Died;
+    public static Action<UnitTemplate> Deployed;
+    public static Action<UnitTemplate, UnitState> ChangeState;
+    public static Action<UnitTemplate, UnitTemplate> StartFight, EndFight;
+    public static Action<UnitTemplate, UnitTemplate, int> MeleeDamage, RangedDamage;
+    public static Action<UnitTemplate, Vector2> HeadingTo, Reached;
+    public static Action<UnitTemplate> Died;
     public static Action<Army> ArmyDestroyed;
     private void Awake()
     {
@@ -25,11 +25,11 @@ public class Notifications : MonoBehaviour
         HeadingTo += Default; Reached += Default;
         ArmyDestroyed+= Default;
     }
-    static void Default(UnitBase unit) { }
-    static void Default(UnitBase unit, UnitState state) { }
+    static void Default(UnitTemplate unit) { }
+    static void Default(UnitTemplate unit, UnitState state) { }
     static void Default(Army army) { }
-    static void Default(UnitBase unit, UnitBase unitInterface) { }
-    static void Default(UnitBase unit, UnitBase unitInterface, int amount) { }
-    static void Default(UnitBase unit, PositionR pos) { }
+    static void Default(UnitTemplate unit, UnitTemplate unitInterface) { }
+    static void Default(UnitTemplate unit, UnitTemplate unitInterface, int amount) { }
+    static void Default(UnitTemplate unit, Vector2 pos) { }
 
 }

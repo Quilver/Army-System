@@ -1,12 +1,10 @@
-using Pathfinding;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.Collections;
-using Unity.Profiling;
 using UnityEngine;
-
+using Pathfinding;
 
 namespace InfluenceMap
 {
@@ -40,10 +38,9 @@ namespace InfluenceMap
             Notifications.Reached += UpdateMap;
         }
         
-        void UpdateMap(UnitBase unit, PositionR position)
+        void UpdateMap(UnitTemplate unit, Vector2 position)
         {
-
-            foreach (var point in GetAdjacentNodes(position.Location))
+            foreach (var point in GetAdjacentNodes(position))
             {
                 if (roundedPoints.ContainsKey(point))
                     points[roundedPoints[point]].UpdateNode();

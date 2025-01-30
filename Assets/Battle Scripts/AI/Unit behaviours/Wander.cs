@@ -4,22 +4,22 @@ using UnityEngine;
 #region Enemy Behaviours
 public class Wander : MonoBehaviour
 {
-    UnitBase unit;
+    UnitTemplate unit;
     Vector2 center;
     [SerializeField, Range(5, 20)]
     int wanderDistance;
     // Start is called before the first frame update
     void Start()
     {
-        unit = GetComponentInParent<UnitBase>();
+        unit = GetComponentInParent<UnitTemplate>();
         center= transform.position;
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (unit.State == UnitState.Idle)
-            unit.Movement.MoveTo(RandomMove());
+        if (unit.unitState == UnitState.Idle)
+            unit.MoveTo(RandomMove());
     }
     Vector2Int RandomMove()
     {

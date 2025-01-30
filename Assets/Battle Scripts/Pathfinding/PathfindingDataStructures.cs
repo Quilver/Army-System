@@ -3,8 +3,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UIElements;
 namespace Pathfinding
 {
+    /*
     public class Waypoint
     {
         Vector2 _targetTile;
@@ -33,7 +35,7 @@ namespace Pathfinding
             else
             {
                 var waypoints = Battle.Instance.highLevelMap.A_StarSearch(unit.position.Location, _targetTile);
-                if (waypoints!=null && waypoints.Count > 1)
+                if (waypoints != null && waypoints.Count > 1)
                 {
                     var waypoint = waypoints[waypoints.Count - 2];
                     Debug.DrawLine(waypoint, unit.position.Location, Color.black, 12);
@@ -65,6 +67,7 @@ namespace Pathfinding
         }
 
     }
+    */
     public struct WeightedNode<State>
     {
         public State state;

@@ -3,18 +3,32 @@ using System.Collections.Generic;
 using UnityEngine;
 namespace SoftBody
 {
-    public class UnitCreator : MonoBehaviour
+    class UnitCreator : MonoBehaviour
     {
+        #region Setup Values
         [SerializeField]
         GameObject ModelPrefab;
         [SerializeField, Range(1, 4)]
         float ModelSize;
         [SerializeField, Range(1, 32)]
         int modelCount, Width;
+
+        #endregion
+
+        #region Unit Details
+        public int Files
+        {
+            get
+            {
+                if (models == null || models.Count >= Width || models.Count == 0) return Width;
+                return models.Count;
+            }
+        }
         public int Ranks
         {
-            get {
-                return (modelCount % Width > 0) ? modelCount / Width + 1 : modelCount / Width; 
+            get
+            {
+                return (modelCount % Files > 0) ? modelCount / Files + 1 : modelCount / Files;
             }
         }
         Vector2 unitOffset
@@ -31,15 +45,41 @@ namespace SoftBody
                 return new Vector2(Width, Ranks) * ModelSize / 2;
             }
         }
+
+        #endregion
+        #region Orders
+        PathToTarget toTarget;
+        PathToPosition toPosition;
+        public void MoveTo(Vector2 position)
+        {
+            toPosition.target = position;
+            toPosition.enabled = true;
+            toTarget.enabled=false;
+        }
+        public void MoveTo(Transform target)
+        {
+            toTarget.target = target;
+            toPosition.enabled = false;
+            toTarget.enabled = true;
+        }
+
+        #endregion
+
+        List<Model> models;
         // Start is called before the first frame update
         void Awake()
         {
+            models = new();
             for (int i = 0; i < modelCount; i++) { 
                 var model = Instantiate(ModelPrefab);
                 model.transform.position = GetModelPos(i);
-                model.GetComponent<Model>().Setup(GetComponentsInChildren<Rigidbody2D>(), transform);
+                Model unitComponent = model.GetComponent<Model>();
+                unitComponent.Setup(GetComponentsInChildren<Rigidbody2D>(), transform);
+                models.Add(unitComponent);
             }
             unitCollider = GetComponent<BoxCollider2D>();
+            toTarget = GetComponentInChildren<PathToTarget>();
+            toPosition = GetComponentInChildren<PathToPosition>();
             //Destroy(this);
             DrawGizmo = false;
         }

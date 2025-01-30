@@ -1,9 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
-using UnitMovement;
 using UnityEngine;
 //Handles Setup of unit and movement controls
-public class SteerManager : MonoBehaviour, UnitMovement.IMovement
+public class SteerManager : MonoBehaviour
 {
     #region Fields
     [SerializeField]
@@ -27,12 +26,9 @@ public class SteerManager : MonoBehaviour, UnitMovement.IMovement
         throw new System.NotImplementedException();
     }
 
-    public void MoveTo(UnitBase unit)
+    public void MoveTo(UnitTemplate unit)
     {
         throw new System.NotImplementedException();
     }
     #endregion
-    RegimentSizer IMovement.unitBody => throw new System.NotImplementedException();
-
-    ChargeSizer IMovement.charge => throw new System.NotImplementedException();
 }

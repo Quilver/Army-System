@@ -6,11 +6,11 @@ public class MoveTo : MonoBehaviour
 {
     [SerializeField]
     Vector2 targetPosition;
-    UnitBase _unit;
+    UnitTemplate _unit;
     // Start is called before the first frame update
     void Start()
     {
-        _unit= GetComponentInParent<UnitBase>();
+        _unit= GetComponentInParent<UnitTemplate>();
         
     }
     private void OnDrawGizmosSelected()
@@ -20,8 +20,8 @@ public class MoveTo : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if(_unit.State == UnitState.Idle)
-            _unit.Movement.MoveTo(targetPosition);
+        if(_unit.unitState == UnitState.Idle)
+            _unit.MoveTo(targetPosition);
     }
 }
 #endregion
