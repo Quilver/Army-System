@@ -12,13 +12,23 @@ public abstract class SteeringBehaviour : MonoBehaviour
     {
         parent = GetComponentInParent<SteeringManager>();
         body = GetComponentInParent<Rigidbody2D>();
+        GetComponentInParent<SoftBody.SoftBodyUnit>().MoveTowards += Activate;
+        GetComponentInParent<SoftBody.SoftBodyUnit>().FinishedMoving += Deactivate;
+        enabled = false;
     }
-
-    // Update is called once per frame
-    void Update()
+    [SerializeField]
+    public Vector2 targetLocation;
+    protected Transform target;
+    public virtual void Activate(Vector2 position, Transform target)
     {
-        //parent.AddSteeringForce(GetDirection());
-
+        targetLocation = position;
+        this.target = target;
+        enabled = true;
+    }
+    public virtual void Deactivate(SteeringBehaviour stopper)
+    {
+        target = null;
+        enabled = false;
     }
     public abstract Vector2 GetDirection();
     protected float WeightedPriority(float maxDistance, float hardMinDistance, float distance)

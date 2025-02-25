@@ -52,15 +52,14 @@ namespace SoftBody
         PathToPosition toPosition;
         public void MoveTo(Vector2 position)
         {
-            toPosition.target = position;
+            toPosition.targetLocation = position;
             toPosition.enabled = true;
             toTarget.enabled=false;
         }
         public void MoveTo(Transform target)
         {
-            toTarget.target = target;
+            toTarget.Activate(target.position, target);
             toPosition.enabled = false;
-            toTarget.enabled = true;
         }
 
         #endregion

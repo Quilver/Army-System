@@ -13,10 +13,16 @@ public class CircleRound : SteeringBehaviour
     float MinRange;
     public override Vector2 GetDirection()
     {
+
+        //if(body.velocity.magnitude == 0) return Vector2.zero;
+
         var unitDirection = body.velocity.normalized;
         
         float unitDirectionAngle = Vector2.Angle(Vector2.zero, unitDirection);
         for (var i = 0; i < parent.SensorViews.Length; i++) {
+            if (!parent.SensorViews[i]) continue;
+            else if (parent.SensorViews[i].distance > parent.RayLength*parent.ArrivalModifier) continue;
+            else if (parent.SensorViews[i].collider.transform == target) continue;
             if(LateralForce(i) == Vector2.zero)continue;
             float weight = WeightedPriority(parent.RayLength, MinRange, parent.SensorViews[i].distance);
             var seek = parent.Seek(parent.futurePosition + LateralForce(i));

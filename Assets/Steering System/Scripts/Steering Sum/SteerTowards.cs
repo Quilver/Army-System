@@ -42,7 +42,7 @@ public class SteerTowards : SteeringManager
         }
         UpdateSensors();
         foreach (var s in steeringBehaviours) if (s.enabled) s.GetDirection();
-        body.AddForce(GetSteeringForce().normalized * maxForce);
+        body.AddForce(GetSteeringForce().normalized * maxForce * ArrivalModifier);
         TurnToMovement();
         
     }
@@ -82,21 +82,13 @@ public class SteerTowards : SteeringManager
         if (index == -1) return Vector2.zero;
         return GetDirection(index);
     }
-    
+    public float currentSpeed;
     void TurnToMovement()
     {
-        if (body.velocity.magnitude == 0) return;
-        //Version 1
-        //var desiredRotation = Quaternion.LookRotation(Vector3.forward, body.velocity.normalized);
-        //transform.rotation = Quaternion.RotateTowards(transform.rotation, desiredRotation, 70 * Time.deltaTime);
-
-        //Version 2
-        //Vector2 lookdirection = body.velocity;
-        //float angle = Mathf.Atan2(lookdirection.y, lookdirection.x) * Mathf.Rad2Deg - 90.0f;
-        //transform.rotation = Quaternion.AngleAxis(angle, Vector3.forward);
+        if (GetSteeringForce().magnitude * ArrivalModifier <= 0.01) return;
         float maxTurnSpeed = 20 * maxForce;
         float turnSpeed = body.angularVelocity;
-        float desiredAngle = Vector2.SignedAngle(transform.up, body.velocity);
+        float desiredAngle = Vector2.SignedAngle(transform.up, GetSteeringForce());
         desiredAngle = Mathf.Clamp(desiredAngle - turnSpeed, -maxTurnSpeed, maxTurnSpeed);
         float arrivalAngle = 30;
         if (Mathf.Abs(desiredAngle) < arrivalAngle)
@@ -108,6 +100,7 @@ public class SteerTowards : SteeringManager
             body.AddTorque(-maxTurnSpeed);
         else body.AddTorque(maxTurnSpeed);
     }
+    
     #endregion
     #region Sensors
     void UpdateSensors()

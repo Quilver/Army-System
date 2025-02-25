@@ -19,6 +19,8 @@ public class Separate : SteeringBehaviour
         Vector2 sumForce = Vector2.zero;
         foreach (var sensor in parent.SensorViews)
         {
+            if(!sensor)continue;
+            if(sensor.collider.transform == target) continue;
             float distance = Vector2.Distance(parent.transform.position, sensor.point);
             if (sensor.collider == null) distance = 100;
             if (distance > maxDistance)continue;

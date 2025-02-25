@@ -9,12 +9,19 @@ public abstract class SteeringManager : MonoBehaviour
     public abstract RaycastHit2D[] SensorViews { get; }
     public abstract void AddSteeringForce(Vector2 direction, float priority);
     public abstract float MaxSpeed { get; }
+    #region Common steering utilities
     public Vector2 Seek(Vector2 target)
     {
         Vector2 desiredVelocity = (target - futurePosition).normalized * MaxSpeed;
         Vector2 steerVelocity = desiredVelocity - GetComponent<Rigidbody2D>().velocity;
         return steerVelocity;
     }
+    public float ArrivalModifier=1;
+    public void SetArrivalModifier(float modifier)
+    {
+        ArrivalModifier = modifier;
+    }
+    #endregion
     public Vector2 GetDirection(int i)
     {
         float angle = i * 360f / SensorViews.Length + transform.rotation.z * Mathf.Deg2Rad;
@@ -35,9 +42,5 @@ public abstract class SteeringManager : MonoBehaviour
         float distance = direction.magnitude;
         var hit = Physics2D.BoxCast(transform.position, transform.localScale * 0.5f, 0, direction, distance, SensorLayerMask);
         return !hit;
-    }
-    private void OnCollisionEnter2D(Collision2D collision)
-    {
-        Debug.Log(gameObject.name + " has gotten hit");
     }
 }
