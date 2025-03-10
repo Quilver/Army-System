@@ -6,6 +6,13 @@ using UnityEngine;
 public abstract class UnitTemplate : MonoBehaviour
 {
 	#region Properties
+	protected Army army
+	{
+		get
+		{
+			return GetComponentInParent<Army>();
+		}
+	}
 	public int Ranks {
 		get
 		{

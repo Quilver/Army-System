@@ -83,8 +83,70 @@ public class ModelFactory : MonoBehaviour
     bool DrawGizmo;
     private void OnDrawGizmos()
     {
-        Gizmos.color = new Color(0, 0, 1, 0.7f);
         if (!DrawGizmo) return;
+        if (GetComponentInParent<Army>().controller == Army.Controller.Player)
+            Gizmos.color = new Color(0, 0, 1, 0.7f);
+        else
+            Gizmos.color = new Color(1, 0, 0, 0.7f);
         for (int i = 0; i < modelCount; i++) Gizmos.DrawSphere(GetModelPos(i), ModelSize / 5);
+        DrawArcs();
+        DrawArc();
+        TestAngleOfPoint();
+        
+    }
+    private void DrawArcs()
+    {
+        Vector3 Center = (Vector2)transform.position + GetComponent<Collider2D>().offset;
+
+        Vector3 LF, RF, LB, RB;
+        if (modelCount <= 1) { LF = Center; RF = LF; LB = Center; RB = Center; }
+        else { 
+            LF = GetModelPos(Width - 2); LB = GetModelPos(- 2 + Ranks * Width); 
+            RF = GetModelPos(Width - 1); RB = GetModelPos(- 1 + Ranks * Width);
+        }
+        if (Width % 2 == 1)
+        {
+            var temp = LB; 
+            LB = RB; RB = temp;
+            temp = LF; LF = RF; RF=temp;    
+        }
+        Vector2 forward = transform.up;
+        Gizmos.color = Color.green;
+        Vector2 leftLine = Quaternion.AngleAxis(45f, Vector3.forward) * forward * 3 + LF;
+        Vector2 rightLine = Quaternion.AngleAxis(-45f, Vector3.forward) * forward * 3 + RF;
+        Gizmos.DrawLine(RF, rightLine);
+        Gizmos.DrawLine(leftLine, LF);
+        Gizmos.DrawLine(leftLine, rightLine);
+        
+        Gizmos.color= Color.red;
+        var leftLineB = Quaternion.AngleAxis(135f, Vector3.forward) * forward * 3 + LB;
+        var rightLineB = Quaternion.AngleAxis(-135f, Vector3.forward) * forward * 3 + RB;
+        Gizmos.DrawLine(RB, rightLineB);
+        Gizmos.DrawLine(leftLineB, LB);
+        Gizmos.DrawLine(leftLineB, rightLineB);
+        
+        Gizmos.color=Color.yellow;
+        Gizmos.DrawLine(leftLine, leftLineB);
+        Gizmos.DrawLine(rightLine, rightLineB);
+    }
+    void DrawArc()
+    {
+        var Center = transform.position + (Vector3)GetModelPos((Ranks-1) * Width);Center /= 2;
+        var angle = Vector2.SignedAngle(transform.up, GetModelPos(Width-1) - (Vector2)Center);
+        Gizmos.color = Color.black;
+        Gizmos.DrawLine(Center, Quaternion.AngleAxis(angle, Vector3.forward) * transform.up * 3 +Center);
+        Gizmos.DrawLine(Center, Quaternion.AngleAxis(angle*2, Vector3.forward) * transform.up * 3 + Center);
+    }
+    [SerializeField] Transform TestPoint;
+    [SerializeField] float Angle;
+    void TestAngleOfPoint()
+    {
+        if(TestPoint==null)return;
+        Angle = Vector2.SignedAngle(transform.up, TestPoint.position- transform.position);
+        SpriteRenderer sprite = TestPoint.GetComponent<SpriteRenderer>();
+        if (Mathf.Abs(Angle) < 45) sprite.color = Color.green;
+        else if (Mathf.Abs(Angle) < 135) sprite.color = Color.yellow;
+        else sprite.color = Color.red;
+
     }
 }

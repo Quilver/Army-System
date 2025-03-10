@@ -8,7 +8,7 @@ namespace SoftBody
     public class SoftBodyUnit : UnitTemplate
     {
         #region Base Properties
-        List<Model> _models;
+        public List<Model> _models;
         int _width;
         float _modelSize;
         public override int Files => (ModelCount < _width) ? ModelCount : _width;
@@ -52,12 +52,14 @@ namespace SoftBody
                 rb.drag = 10;
                 rb.angularDrag = 10;
                 rb.mass = 10;
+                foreach (var model in _models) model.Move(false);
             }
             else
             {
                 rb.mass = 1;
                 rb.drag = 1;
                 rb.angularDrag = 2;
+                foreach (var model in _models) model.Move(true);
             }
         }
         public override void MoveTo(Vector2 position)
@@ -69,6 +71,10 @@ namespace SoftBody
 
         public override void MoveTo(Transform target)
         {
+            var unitTarget = target.GetComponent<SoftBodyUnit>();
+
+            if (unitTarget != null && !army.EnemyUnits.Contains(unitTarget))
+                return;
             Breaks(null);
             MoveTowards(target.position, target);
         }
@@ -86,11 +92,16 @@ namespace SoftBody
                 Destroy(model.gameObject);
             }
         }
-        private void OnCollisionEnter2D(Collision2D collision)
+        HashSet<SoftBodyUnit> enemies;
+        public void StartFight(SoftBodyUnit unitTarget)
         {
-            var otherUnit = collision.gameObject.GetComponent<UnitTemplate>();
-            if (otherUnit != null)
-                Notifications.StartFight(this, otherUnit);
+            if (unitTarget != null && !army.EnemyUnits.Contains(unitTarget))
+                return;
+            if(enemies == null) enemies = new HashSet<SoftBodyUnit>();
+            enemies.Add(unitTarget);
+            this.unitState = UnitState.Fighting;
         }
+
+        
     }
 }

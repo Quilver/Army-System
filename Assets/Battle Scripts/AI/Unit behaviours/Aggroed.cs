@@ -6,10 +6,10 @@ using UnityEngine;
 public class Aggroed : MonoBehaviour
 {
     UnitTemplate _unit;
-    [SerializeField]
+    [SerializeField, Range(0.3f, 3)]
     float thinkingSpeed;
-    [SerializeField]
-    int AggroRange;
+    [SerializeField, Range(2, 12)]
+    float AggroRange;
     float _time = 0;
     public UnitTemplate enemy;
     // Start is called before the first frame update
@@ -57,6 +57,14 @@ public class Aggroed : MonoBehaviour
         }
         else
             enemy = null;
+    }
+    [SerializeField]
+    bool Gizmo;
+    private void OnDrawGizmos()
+    {
+        if (!enabled || !Gizmo) return;
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(transform.position, AggroRange);
     }
 }
 #endregion

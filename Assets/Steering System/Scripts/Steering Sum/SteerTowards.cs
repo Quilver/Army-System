@@ -11,6 +11,16 @@ public class SteerTowards : SteeringManager
     {
         get { return maxForce; }
     }
+    List<SoftBody.Model> models;
+    float Mass
+    {
+        get
+        {
+            if(models == null) models = GetComponent<SoftBody.SoftBodyUnit>()._models;
+            if(models.Count == 0) return 0;
+            return models.Count * models[0].GetComponent<Rigidbody2D>().mass + 3;
+        }
+    }
     [SerializeField, Range(8, 32)]
     int MovementSlots;
     [SerializeField, Range(1, 6)]
@@ -42,7 +52,7 @@ public class SteerTowards : SteeringManager
         }
         UpdateSensors();
         foreach (var s in steeringBehaviours) if (s.enabled) s.GetDirection();
-        body.AddForce(GetSteeringForce().normalized * maxForce * ArrivalModifier);
+        body.AddForce(GetSteeringForce().normalized * maxForce * ArrivalModifier * Time.deltaTime * Mass * 5);
         TurnToMovement();
         
     }
@@ -97,8 +107,8 @@ public class SteerTowards : SteeringManager
         }
         if (desiredAngle == 0) { }
         else if (desiredAngle < 0)
-            body.AddTorque(-maxTurnSpeed);
-        else body.AddTorque(maxTurnSpeed);
+            body.AddTorque(-maxTurnSpeed * Time.deltaTime * Mass * 5);
+        else body.AddTorque(maxTurnSpeed * Time.deltaTime * Mass * 5);
     }
     
     #endregion

@@ -11,6 +11,8 @@ public class CircleRound : SteeringBehaviour
     float MaxRange;
     [SerializeField, Range(0.5f, 2)]
     float MinRange;
+    [SerializeField, Range(0, 1)]
+    float FOV = 0.1f;
     public override Vector2 GetDirection()
     {
 
@@ -20,6 +22,8 @@ public class CircleRound : SteeringBehaviour
         
         float unitDirectionAngle = Vector2.Angle(Vector2.zero, unitDirection);
         for (var i = 0; i < parent.SensorViews.Length; i++) {
+            if (Vector2.Dot(unitDirection, parent.GetDirection(i)) < FOV)
+                continue;
             if (!parent.SensorViews[i]) continue;
             else if (parent.SensorViews[i].distance > parent.RayLength*parent.ArrivalModifier) continue;
             else if (parent.SensorViews[i].collider.transform == target) continue;
@@ -63,8 +67,7 @@ public class CircleRound : SteeringBehaviour
         for (var i = 0; i < parent.SensorViews.Length; i++)
         {
             
-            var offset = Vector2.Dot(unitDirection, parent.GetDirection(i));
-            if (offset < 0.5f)
+            if (Vector2.Dot(unitDirection, parent.GetDirection(i)) < FOV)
                 continue;
             if (!parent.SensorViews[i]) {
                 Gizmos.DrawRay(parent.transform.position, parent.GetDirection(i)*parent.RayLength);
