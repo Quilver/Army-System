@@ -22,7 +22,7 @@ namespace SoftBody
         private void Start()
         {
             //
-            ModelFactory modelFactory = GetComponent<ModelFactory>();
+            UnitFormation modelFactory = GetComponent<UnitFormation>();
             _models = modelFactory.models;
             _width = modelFactory.Width;
             _modelSize = modelFactory.ModelSize;
@@ -84,13 +84,7 @@ namespace SoftBody
         }
         public override void TakeDamage(int damage)
         {
-            damage = Math.Clamp(damage, 0, ModelCount);
-            for (int i = damage - 1; i >= 0; i--)
-            {
-                var model = _models[_models.Count - 1];
-                _models.RemoveAt(_models.Count-1);
-                Destroy(model.gameObject);
-            }
+            Die();
         }
         HashSet<SoftBodyUnit> enemies;
         public void StartFight(SoftBodyUnit unitTarget)

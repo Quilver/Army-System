@@ -18,7 +18,7 @@ public class SteerTowards : SteeringManager
         {
             if(models == null) models = GetComponent<SoftBody.SoftBodyUnit>()._models;
             if(models.Count == 0) return 0;
-            return models.Count * models[0].GetComponent<Rigidbody2D>().mass + 3;
+            return models.Count * models[0].GetComponent<Rigidbody2D>().mass + 6;
         }
     }
     [SerializeField, Range(8, 32)]
