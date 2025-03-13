@@ -209,7 +209,7 @@ public class SteerTowards : SteeringManager
             var direction = Quaternion.AngleAxis(angle, transform.forward) * transform.up;
             var length = priority[i];
             if(length >= 0) 
-                Gizmos.DrawLine(transform.position, transform.position + direction * length * 2);
+                Gizmos.DrawLine(transform.position, transform.position + direction * length * 6);
             
         }
         Gizmos.color = Color.black;
@@ -230,7 +230,7 @@ public class SteerTowards : SteeringManager
             var direction = Quaternion.AngleAxis(angle, transform.forward) * transform.up;
             var length = priority[i] - avoidance[i];
             if (length >= 0)
-                Gizmos.DrawLine(transform.position, transform.position + direction * length * 2);
+                Gizmos.DrawLine(transform.position, transform.position + direction * length * 6);
 
         }
         Gizmos.color = Color.black;

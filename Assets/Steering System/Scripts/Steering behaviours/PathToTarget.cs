@@ -36,7 +36,8 @@ public class PathToTarget : SteeringBehaviour
             parent.AddSteeringForce(parent.Seek(targetPos + (targetPos - Center).normalized * 5), priority);
             return targetPos + (targetPos - Center).normalized * 5;
         }
-        else if (ReachTarget())
+        else 
+        if (ReachTarget())
         {
             parent.AddSteeringForce(parent.Seek(targetPos), priority);
             return parent.Seek(targetPos);
@@ -51,13 +52,29 @@ public class PathToTarget : SteeringBehaviour
         }
         return parent.Seek(targetPos);
     }
+
+    public Vector2 SeekPoint()
+    {
+        if (DistanceFromTarget < 2) return targetPos + (targetPos - Center).normalized * 5;
+        else if (ReachTarget()) return targetPos;
+        var path = Battle.Instance.highLevelMap.A_StarSearch(parent.transform.position, targetPos);
+        if (path == null) return targetPos;
+        for (int i = 0; i < path.Count; i++)
+        {
+            if (!parent.CanWalkTo(path[i])) continue;
+            return path[i];
+        }
+        return transform.position;
+    }
     public LayerMask SensorLayerMask;
+    public GameObject hittingOnWayToTarget;
     bool ReachTarget()
     {
         Vector2 direction = targetPos - (Vector2)transform.position;
         float angle = Vector2.SignedAngle(Vector2.up, direction);
-        float distance = direction.magnitude;
+        float distance = direction.magnitude * 1.5f;
         var hit = Physics2D.BoxCast(transform.position, transform.localScale * 0.5f, 0, direction, distance, SensorLayerMask);
+        if(hit)hittingOnWayToTarget=hit.rigidbody.gameObject;
         return hit && hit.rigidbody.gameObject == target.gameObject;
     }
     [SerializeField, Range(1, 2.5f)]
@@ -81,7 +98,7 @@ public class PathToTarget : SteeringBehaviour
         Gizmos.color = Color.green;
         Gizmos.DrawSphere(targetPos + (targetPos - Center).normalized * 5, 0.1f);
         Gizmos.color = Color.yellow;
-
+        /*
         if (ReachTarget())
         {
             if(SpeedupOnCharge() > 1)Gizmos.color = Color.red;
@@ -100,8 +117,10 @@ public class PathToTarget : SteeringBehaviour
                 }
                 Gizmos.DrawLine(path[i-1], path[i]);
             }
-        }
-        
+        }*/
+        Gizmos.color= Color.black;
+        Gizmos.DrawSphere(SeekPoint(), 0.2f);
+        Gizmos.DrawRay(parent.transform.position, (SeekPoint()- (Vector2)parent.transform.position).normalized * 5);
 
     }
 }
