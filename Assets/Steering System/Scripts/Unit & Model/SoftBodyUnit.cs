@@ -35,7 +35,13 @@ namespace SoftBody
             Breaks(null);
         }
 
+        #region Movement StateMachine
+        void IdleMove() { }
+        void MovingTo() { }
+        void CombatMove() { }
+        void Flee() { }
 
+        #endregion
 
 
 
@@ -45,6 +51,7 @@ namespace SoftBody
         Separate seperate;
         public Action<Vector2, Transform> MoveTowards;
         public Action<SteeringBehaviour> FinishedMoving;
+
         void Breaks(SteeringBehaviour behaviour)
         {
             Rigidbody2D rb = GetComponent<Rigidbody2D>();

@@ -90,34 +90,11 @@ public class PathToTarget : SteeringBehaviour
     public bool DrawGizmo;
     public void OnDrawGizmos()
     {
-        if(!DrawGizmo || parent == null || !enabled) return;
+        if(!DrawGizmo || parent == null || !enabled || target==null) return;
         Gizmos.color = Color.blue;
         Gizmos.DrawSphere(Center, 0.1f);
-        Gizmos.color = Color.red;
-        Gizmos.DrawSphere(targetPos, 0.1f);
-        Gizmos.color = Color.green;
-        Gizmos.DrawSphere(targetPos + (targetPos - Center).normalized * 5, 0.1f);
-        Gizmos.color = Color.yellow;
-        /*
-        if (ReachTarget())
-        {
-            if(SpeedupOnCharge() > 1)Gizmos.color = Color.red;
-            Gizmos.DrawLine(parent.transform.position, targetPos);
-        }
-        else
-        {
-            bool flag = true;
-            Vector2 previousPoint = targetPos;
-            var path = Battle.Instance.highLevelMap.A_StarSearch(parent.transform.position, targetPos);
-            for (int i = 1; i < path.Count; i++)
-            {
-                if (parent.CanWalkTo(path[i]) && flag) {
-                    flag = false;
-                    Gizmos.DrawLine(parent.transform.position, path[i]);
-                }
-                Gizmos.DrawLine(path[i-1], path[i]);
-            }
-        }*/
+        
+
         Gizmos.color= Color.black;
         Gizmos.DrawSphere(SeekPoint(), 0.2f);
         Gizmos.DrawRay(parent.transform.position, (SeekPoint()- (Vector2)parent.transform.position).normalized * 5);

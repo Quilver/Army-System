@@ -88,7 +88,7 @@ public class UnitFormation : MonoBehaviour
         if(!models.Contains(model)) return;
         int position = models.FindIndex(a=> a== model);
         Reposition(position);
-        Destroy(model.gameObject);
+        model.GetComponent<ModelDeath>().Setup();
         if (models.Count == 0) GetComponent<UnitTemplate>().TakeDamage(100);
     }
     void Reposition(int ModelToReplaceIndex)

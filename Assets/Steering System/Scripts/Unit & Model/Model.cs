@@ -80,6 +80,7 @@ namespace SoftBody
         void Attack()
         {
             Invoke("Attack", 10f/ AttacksPerTenSeconds);
+            Cleanup();
             if(InContactWith == null || InContactWith.Count == 0) return;
             var target = InContactWith[Random.Range(0, InContactWith.Count)];
             Debug.DrawRay(transform.position, (target.transform.position - transform.position).normalized * 2);
@@ -112,7 +113,6 @@ namespace SoftBody
             InContactWith.Add(collUnit);
             unit.StartFight(collUnit.unit);
             if(body.velocity.magnitude <= 1) return;
-            Debug.Log("Hit at speed: " + body.velocity.magnitude);
             collUnit.Hit(body.velocity.magnitude * body.mass, this);
 
         }
