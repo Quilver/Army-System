@@ -1,3 +1,4 @@
+using SoftBody;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -11,14 +12,15 @@ public class SteerTowards : SteeringManager
     {
         get { return maxForce; }
     }
-    List<SoftBody.Model> models;
+    SoftBody.SoftBodyUnit softBodyUnit;
+    UnitFormation unitFormation;
     float Mass
     {
         get
         {
-            if(models == null) models = GetComponent<SoftBody.SoftBodyUnit>()._models;
-            if(models.Count == 0) return 0;
-            return models.Count * models[0].GetComponent<Rigidbody2D>().mass + 6;
+            if(unitFormation.models == null) unitFormation.models = GetComponent<SoftBody.SoftBodyUnit>()._models;
+            if(unitFormation.models.Count == 0) return 0;
+            return unitFormation.models.Count * unitFormation.models[0].GetComponent<Rigidbody2D>().mass + 6;
         }
     }
     [SerializeField, Range(8, 32)]
@@ -42,7 +44,10 @@ public class SteerTowards : SteeringManager
         priority = new float[MovementSlots];
         avoidance = new float[MovementSlots];
         steeringBehaviours = GetComponentsInChildren<SteeringBehaviour>();
+        softBodyUnit = GetComponent<SoftBodyUnit>();
+        unitFormation = GetComponent<UnitFormation>();
     }
+    public bool Turn= true;
     void Update()
     {
         for (int i = 0; i < MovementSlots; i++)
@@ -52,8 +57,9 @@ public class SteerTowards : SteeringManager
         }
         UpdateSensors();
         foreach (var s in steeringBehaviours) if (s.enabled) s.GetDirection();
-        body.AddForce(GetSteeringForce().normalized * maxForce * ArrivalModifier * Time.deltaTime * Mass * 5);
-        TurnToMovement();
+        body.AddForce(GetSteeringForce().normalized * softBodyUnit.Stats.MoveSpeed.CurrentStat * ArrivalModifier * Time.deltaTime * Mass * 5);
+        if(Turn)
+            TurnToMovement();
         
     }
     #region Movement

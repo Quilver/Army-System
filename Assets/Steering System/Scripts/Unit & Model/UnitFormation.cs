@@ -89,7 +89,12 @@ public class UnitFormation : MonoBehaviour
         int position = models.FindIndex(a=> a== model);
         Reposition(position);
         model.GetComponent<ModelDeath>().Setup();
-        if (models.Count == 0) GetComponent<UnitTemplate>().TakeDamage(100);
+        GetComponent<UnitTemplate>().TakeDamage(models.Count);
+    }
+    public void DestroyUnit()
+    {
+        foreach (var model in models)
+            model.GetComponent<ModelDeath>().Setup();
     }
     void Reposition(int ModelToReplaceIndex)
     {

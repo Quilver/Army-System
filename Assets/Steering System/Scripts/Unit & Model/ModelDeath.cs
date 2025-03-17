@@ -30,7 +30,8 @@ public class ModelDeath : MonoBehaviour
         float L = 0.3f*color.r + 0.6f*color.g + 0.1f*color.b;
         return new Color(color.r + percentage * (L - color.r),
             color.g + percentage * (L - color.g),
-            color.b + percentage * (L - color.b));
+            color.b + percentage * (L - color.b),
+            color.a *= 1-percentage);
     }
     void Remove()
     {

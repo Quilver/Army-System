@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,15 +23,17 @@ public abstract class UnitTemplate : MonoBehaviour
 	public abstract int Files { get; }
 	public abstract int ModelCount { get; }
 	public abstract float ModelSize { get; }
-	public abstract StatSystem.UnitStats Stats { get; }
+	public abstract StatSystem.RegimentStats Stats { get; }
 	[SerializeField]
 	UnitState _unitState;
-	public UnitState unitState { 
+    protected Action<UnitState, UnitState> Transition;
+    public UnitState unitState { 
 		get { return _unitState; }
 		set
 		{
-
-		_unitState = value; 
+			if (_unitState == UnitState.Fleeing && value != UnitState.Idle) return;
+			Transition(unitState, value);
+			_unitState = value; 
 		} 
 	}
 	#endregion

@@ -34,7 +34,7 @@ namespace SoftBody
             ModelContainer.AddModel(this);
             InContactWith = new();
             GetComponent<SpriteRenderer>().color = (unit.GetComponentInParent<Army>().controller == Army.Controller.Player) ? Color.blue : Color.red;
-            Invoke("Attack", 10f / AttacksPerTenSeconds);
+            Invoke("Attack", Random.Range(0.1f, 10f / AttacksPerTenSeconds));
         }
         public void ResetPositionInFormation(Rigidbody2D[] pins, Vector2 position)
         {
@@ -81,11 +81,11 @@ namespace SoftBody
         {
             Invoke("Attack", 10f/ AttacksPerTenSeconds);
             Cleanup();
-            if(InContactWith == null || InContactWith.Count == 0) return;
+            if(InContactWith == null || InContactWith.Count == 0 || unit.unitState == UnitState.Fleeing) return;
             var target = InContactWith[Random.Range(0, InContactWith.Count)];
             Debug.DrawRay(transform.position, (target.transform.position - transform.position).normalized * 2);
-            target.body.AddForce((target.transform.position - transform.position).normalized * 2);
-            target.Hit(3, this);
+            target.body.AddForce((target.transform.position - transform.position).normalized * 100 * unit.Stats.AttackPower.CurrentStat);
+            target.Hit(Random.Range(0f, unit.Stats.AttackPower.CurrentStat), this);
         }
         void Cleanup()
         {
@@ -118,13 +118,14 @@ namespace SoftBody
         }
         void Hit(float Power, Model attacker)
         {
+            
             if (GetFace(attacker) == Facing.Front)
                 Power = Power/2;
             else if (GetFace(attacker) == Facing.Flank)
                 Power = Power * 1.5f;
             else
                 Power *= 3;
-            float defenceScore = Random.Range(0f, 10f);
+            float defenceScore = Random.Range(0f, unit.Stats.Defence.CurrentStat);
             if (defenceScore < Power) unit.GetComponent<UnitFormation>().Death(this);
 
         }
