@@ -1,11 +1,14 @@
 using System.Collections;
 using System.Collections.Generic;
+using SoftBody;
 using UnityEngine;
 
 public class RangedWeapon: MonoBehaviour
 {
     [SerializeField]
     Color startColour, endColour;
+    [SerializeField]
+    GameObject projectile;
     public Color CurrentColour
     {
         get
@@ -45,29 +48,12 @@ public class RangedWeapon: MonoBehaviour
     }
     void Shoot()
     {
-        _timeToShoot = ReloadTime;
-        UnitTemplate nearestTarget = null;
-        float distance = float.MaxValue;
-        foreach (var target in targetTemplate._targets)
+        _timeToShoot = 0;
+        if(targetTemplate._targets.Count == 0) return;
+        foreach (var model in GetComponent<UnitFormation>().models)
         {
-            if (distance > target.Value && Battle.Instance.Enemies(unit, target.Key)){
-                distance = target.Value;
-                nearestTarget = target.Key;
-            }
-        }
-        if (nearestTarget != null)
-        {
-            DamageTarget(nearestTarget);
-            _timeToShoot = 0;
+            model.Shoot(projectile, Random.Range(minimumDamage, maximumDamage) * 50, targetTemplate.NearestUnit.transform);
         }
     }
-    void DamageTarget(UnitTemplate target)
-    {
-        float damage = Random.Range(minimumDamage, maximumDamage);
-        StatSystem.IDefenceStats defence = target.Stats as StatSystem.IDefenceStats;
-        int kills = (int)(damage / defence.Defence);
-        if(Notifications.RangedDamage != null)
-            Notifications.RangedDamage(unit, target, kills);
-        target.TakeDamage(kills);
-    }
+    
 }

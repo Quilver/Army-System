@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using static UnityEngine.UI.Image;
+using UnityEngine.UIElements;
 namespace SoftBody
 {
     public class Model : MonoBehaviour
@@ -87,6 +89,15 @@ namespace SoftBody
             target.body.AddForce((target.transform.position - transform.position).normalized * 100 * unit.Stats.AttackPower.CurrentStat);
             target.Hit(Random.Range(0f, unit.Stats.AttackPower.CurrentStat), this);
         }
+        public void Shoot(GameObject projectile, float power, Transform target)
+        {
+            var direction = target.position - transform.position;
+            var raycast2D = Physics2D.Raycast(transform.position, direction.normalized, direction.magnitude);
+            if (raycast2D && raycast2D.rigidbody.transform != target) return;
+            var shot = Instantiate(projectile);
+            shot.transform.position = transform.position;
+            shot.GetComponent<Rigidbody2D>().AddForce(direction.normalized * power);
+        }
         void Cleanup()
         {
             //Removes models that are no longer in combat
@@ -128,6 +139,11 @@ namespace SoftBody
             float defenceScore = Random.Range(0f, unit.Stats.Defence.CurrentStat);
             if (defenceScore < Power) unit.GetComponent<UnitFormation>().Death(this);
 
+        }
+        public void Hit(float Power)
+        {
+            float defenceScore = Random.Range(0f, unit.Stats.Defence.CurrentStat);
+            if (defenceScore < Power) unit.GetComponent<UnitFormation>().Death(this);
         }
         enum Facing
         {

@@ -10,7 +10,6 @@ public class FieldofView : MonoBehaviour
     float FOV = 90f;
     [SerializeField, Range(2, 20)]
     int rayCount = 2;
-    //[SerializeField, Range(2, 100)]
     float range
     {
         get { return rangedWeapon.Range; }
@@ -21,7 +20,25 @@ public class FieldofView : MonoBehaviour
     UnitTemplate unit;
     RangedWeapon rangedWeapon;
     public Dictionary<UnitTemplate, float> _targets;
-    BoxCollider2D body;
+    public LayerMask SensorLayerMask;
+    public UnitTemplate NearestUnit
+    {
+        get
+        {
+            if (_targets == null || _targets.Count == 0) return null;
+            UnitTemplate nearestTarget = null;
+            float dist = float.MaxValue;
+            foreach (var t in _targets)
+            {
+                if (t.Value < dist)
+                {
+                    dist = t.Value;
+                    nearestTarget = t.Key;
+                }
+            }
+            return nearestTarget;
+        }
+    }
     // Start is called before the first frame update
     void Start()
     {
@@ -32,7 +49,6 @@ public class FieldofView : MonoBehaviour
         _renderer.material.color = rangedWeapon.CurrentColour;
         transform.position = Vector3.zero;
         transform.parent.rotation = Quaternion.Euler(Vector3.zero);
-        body = transform.parent.GetComponent<BoxCollider2D>();
     }
     void Update()
     {
@@ -40,9 +56,7 @@ public class FieldofView : MonoBehaviour
         {
             _targets = new();
             _renderer.enabled = true;
-            body.enabled = false;
             UpdateMesh();
-            //body.enabled = true;
             transform.position = Vector3.zero;
             _renderer.material.color = rangedWeapon.CurrentColour;
         }
@@ -194,7 +208,7 @@ public class FieldofView : MonoBehaviour
     }
     Vector3 Ray(Vector3 origin, float angle)
     {
-        var raycast2D = Physics2D.Raycast(origin, GetVectorFromAngle(angle), range);
+        var raycast2D = Physics2D.Raycast(origin, GetVectorFromAngle(angle), range, SensorLayerMask);
         if (raycast2D.collider == null)
             return origin + GetVectorFromAngle(angle) * range;
         else
