@@ -9,12 +9,10 @@ namespace SoftBody
     public class SoftBodyUnit : UnitTemplate
     {
         #region Base Properties
-        public List<Model> _models;
-        int _width;
-        float _modelSize;
-        public override int Files => (ModelCount < _width) ? ModelCount : _width;
-        public override int ModelCount => _models.Count;
-        public override float ModelSize => _modelSize;
+        UnitFormation formation;
+        public override int Files => (ModelCount < formation.Width) ? ModelCount : formation.Width;
+        public override int ModelCount => formation.models.Count;
+        public override float ModelSize => formation.ModelSize;
         [SerializeField]
         RegimentStats _unitStats;
         public override RegimentStats Stats => _unitStats;
@@ -23,10 +21,7 @@ namespace SoftBody
         private void Start()
         {
             //
-            UnitFormation modelFactory = GetComponent<UnitFormation>();
-            _models = modelFactory.models;
-            _width = modelFactory.Width;
-            _modelSize = modelFactory.ModelSize;
+            formation = GetComponent<UnitFormation>();
             //
             toPosition= GetComponentInChildren<PathToPosition>();
             toTarget = GetComponentInChildren<PathToTarget>();
@@ -35,6 +30,18 @@ namespace SoftBody
             FinishedMoving += Breaks;
             Breaks(null);
             Transition += EnterCombat; Transition += EnterFlee;
+        }
+
+        private void Update()
+        {
+            if (unitState == UnitState.Fighting)
+            {
+                foreach (var model in formation.models)
+                {
+                    if(model.InCombat) return;
+                }
+                unitState = UnitState.Idle;
+            }
         }
 
         #region Movement StateMachine
@@ -88,14 +95,14 @@ namespace SoftBody
                 rb.drag = 10;
                 rb.angularDrag = 10;
                 rb.mass = 10;
-                foreach (var model in _models) model.Move(false);
+                foreach (var model in formation.models) model.Move(false);
             }
             else
             {
                 rb.mass = 1;
                 rb.drag = 1;
                 rb.angularDrag = 2;
-                foreach (var model in _models) model.Move(true);
+                foreach (var model in formation.models) model.Move(true);
             }
         }
         public override void MoveTo(Vector2 position)
@@ -118,7 +125,7 @@ namespace SoftBody
         }
         public override string ToString()
         {
-            return _unitStats.UnitName + " " + _models.Count +"/"+_unitStats.Stats()[0].CurrentStat;
+            return _unitStats.UnitName + " " + formation.models.Count +"/"+_unitStats.Stats()[0].CurrentStat;
         }
         public override void TakeDamage(int modelsRemaining)
         {

@@ -52,7 +52,9 @@ public class FieldofView : MonoBehaviour
     }
     void Update()
     {
-        if(unit.unitState == UnitState.Idle)
+        transform.position = Vector3.zero;
+        transform.parent.rotation = Quaternion.Euler(Vector3.zero);
+        if (unit.unitState == UnitState.Idle)
         {
             _targets = new();
             _renderer.enabled = true;

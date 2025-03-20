@@ -1,8 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using static UnityEngine.UI.Image;
-using UnityEngine.UIElements;
 namespace SoftBody
 {
     public class Model : MonoBehaviour
@@ -12,6 +10,14 @@ namespace SoftBody
         Rigidbody2D body;
         [SerializeField, Range(0.2f, 1)]
         float HoldDampRatio, MoveDampRatio;
+
+        public bool InCombat
+        {
+            get
+            {
+                return InContactWith!=null && InContactWith.Count != 0;
+            }
+        }
         // Start is called before the first frame update
         void Start()
         {
@@ -86,8 +92,9 @@ namespace SoftBody
             if(InContactWith == null || InContactWith.Count == 0 || unit.unitState == UnitState.Fleeing) return;
             var target = InContactWith[Random.Range(0, InContactWith.Count)];
             Debug.DrawRay(transform.position, (target.transform.position - transform.position).normalized * 2);
-            target.body.AddForce((target.transform.position - transform.position).normalized * 100 * unit.Stats.AttackPower.CurrentStat);
-            target.Hit(Random.Range(0f, unit.Stats.AttackPower.CurrentStat), this);
+            float power = Random.Range(0f, unit.Stats.AttackPower.CurrentStat);
+            target.body.AddForce((target.transform.position - transform.position).normalized * 100 * Mathf.Sqrt(power));
+            target.Hit(power, this);
         }
         public void Shoot(GameObject projectile, float power, Transform target)
         {
@@ -96,7 +103,9 @@ namespace SoftBody
             if (raycast2D && raycast2D.rigidbody.transform != target) return;
             var shot = Instantiate(projectile);
             shot.transform.position = transform.position;
-            shot.GetComponent<Rigidbody2D>().AddForce(direction.normalized * power);
+            direction = Quaternion.Euler(0f, 0f, Random.Range(-15, 15)) * direction;
+            shot.GetComponent<Projectile>().Setup(direction, power);
+            //shot.GetComponent<Rigidbody2D>().AddForce(direction.normalized * power);
         }
         void Cleanup()
         {

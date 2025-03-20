@@ -120,7 +120,9 @@ public class UnitFormation : MonoBehaviour
     private void OnDrawGizmos()
     {
         if (!DrawGizmo) return;
-        if (GetComponentInParent<Army>().controller == Army.Controller.Player)
+        if(GetComponentInParent<Army>() == null)
+            Gizmos.color = Color.gray;
+        else if (GetComponentInParent<Army>().controller == Army.Controller.Player)
             Gizmos.color = new Color(0, 0, 1, 0.7f);
         else
             Gizmos.color = new Color(1, 0, 0, 0.7f);

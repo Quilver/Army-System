@@ -27,11 +27,11 @@ public class Flee : SteeringBehaviour
     }
     private void OnEnable()
     {
-        GetComponentInParent<SteerTowards>().Turn = false;
+        
     }
     private void OnDisable()
     {
-        GetComponentInParent<SteerTowards>().Turn = true;
+        if (GetComponentInParent<SteerTowards>() == null) return;
     }
     float WeightedPriority(float distance)
     {

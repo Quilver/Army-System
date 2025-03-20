@@ -6,11 +6,9 @@ using static UnityEngine.GraphicsBuffer;
 
 public class SteerTowards : SteeringManager
 {
-    [SerializeField, Range(0.1f, 12)]
-    float maxForce;
     public float MaxForce
     {
-        get { return maxForce; }
+        get { return softBodyUnit.Stats.MoveSpeed.CurrentStat; }
     }
     SoftBody.SoftBodyUnit softBodyUnit;
     UnitFormation unitFormation;
@@ -18,7 +16,6 @@ public class SteerTowards : SteeringManager
     {
         get
         {
-            if(unitFormation.models == null) unitFormation.models = GetComponent<SoftBody.SoftBodyUnit>()._models;
             if(unitFormation.models.Count == 0) return 0;
             return unitFormation.models.Count * unitFormation.models[0].GetComponent<Rigidbody2D>().mass + 6;
         }
@@ -47,7 +44,6 @@ public class SteerTowards : SteeringManager
         softBodyUnit = GetComponent<SoftBodyUnit>();
         unitFormation = GetComponent<UnitFormation>();
     }
-    public bool Turn= true;
     void Update()
     {
         for (int i = 0; i < MovementSlots; i++)
@@ -58,8 +54,7 @@ public class SteerTowards : SteeringManager
         UpdateSensors();
         foreach (var s in steeringBehaviours) if (s.enabled) s.GetDirection();
         body.AddForce(GetSteeringForce().normalized * softBodyUnit.Stats.MoveSpeed.CurrentStat * ArrivalModifier * Time.deltaTime * Mass * 5);
-        if(Turn)
-            TurnToMovement();
+        TurnToMovement();
         
     }
     #region Movement
@@ -102,7 +97,7 @@ public class SteerTowards : SteeringManager
     void TurnToMovement()
     {
         if (GetSteeringForce().magnitude * ArrivalModifier <= 0.01) return;
-        float maxTurnSpeed = 20 * maxForce;
+        float maxTurnSpeed = 20 * MaxForce;
         float turnSpeed = body.angularVelocity;
         float desiredAngle = Vector2.SignedAngle(transform.up, GetSteeringForce());
         desiredAngle = Mathf.Clamp(desiredAngle - turnSpeed, -maxTurnSpeed, maxTurnSpeed);
