@@ -25,9 +25,10 @@ public class Flee : SteeringBehaviour
             return nearbyUnits;
         }
     }
+    bool shoveFlag=false;
     private void OnEnable()
     {
-        
+        shoveFlag = true;
     }
     private void OnDisable()
     {
@@ -42,11 +43,37 @@ public class Flee : SteeringBehaviour
     public override Vector2 GetDirection()
     {
         parent.SetArrivalModifier(FleeSpeedBonus);
+        if (shoveFlag)
+        {
+            Debug.Log(NearbyEnemyUnits.Count);
+            
+            Vector3 p1;
+            if (NearestEnemy == null) p1 = parent.transform.position - parent.transform.up;
+            else p1 = NearestEnemy.position;
+            var dir = p1-parent.transform.position;
+            parent.GetComponent<Rigidbody2D>().AddForce((dir).normalized * 1000);
+            shoveFlag=false;
+        }
         foreach (Transform unit in NearbyEnemyUnits)
         {
             parent.AddSteeringForce(-parent.Seek(unit.position), WeightedPriority(priority));
         }
         return Vector2.zero;
+    }
+    public Transform NearestEnemy
+    {
+        get
+        {
+            Transform enemy = null;
+            float distance = float.MaxValue;
+            foreach (Transform unit in NearbyEnemyUnits)
+            {
+                if(distance < Vector3.Distance(unit.position, parent.transform.position)) continue;
+                enemy = unit;
+                distance = Vector3.Distance(unit.position, parent.transform.position);
+            }
+            return enemy;
+        }
     }
     public bool DrawGizmo;
     public void OnDrawGizmos()
