@@ -23,10 +23,7 @@ namespace SoftBody
             //
             formation = GetComponent<UnitFormation>();
             //
-            toPosition= GetComponentInChildren<PathToPosition>();
-            toTarget = GetComponentInChildren<PathToTarget>();
-            circleRound = GetComponentInChildren<CircleRound>();
-            seperate = GetComponentInChildren<Separate>();
+            GetSteeringBehaviours();
             FinishedMoving += Breaks;
             Breaks(null);
             Transition += EnterCombat; Transition += EnterFlee;
@@ -46,19 +43,26 @@ namespace SoftBody
 
         #region Movement StateMachine
         void EnterIdle(UnitState current, UnitState next) { 
-        
+            toTarget.enabled = false; toPosition.enabled = false; flee.enabled = false;
+            circleRound.enabled = false; separate.enabled = false;
         }
         void ExitIdle(UnitState current, UnitState next) { 
         
         }
-        void EnterMovement(UnitState current, UnitState next) { 
-        
+        void EnterMovement(UnitState current, UnitState next) {
+
+            if (next != UnitState.Moving) return;
+            separate.enabled = true;
+            circleRound.enabled=true;   
+            Breaks(null);
         }
         void ExitMovement(UnitState current, UnitState next) { 
         
         }
-        void EnterCombat(UnitState current, UnitState next) { 
-
+        void EnterCombat(UnitState current, UnitState next) {
+            if(next != UnitState.Fighting)return;
+            toPosition.enabled = false; flee.enabled=false;
+            circleRound.enabled = false; separate.enabled = false;
         }
         void ExitCombat(UnitState current, UnitState next) { 
 
@@ -79,14 +83,25 @@ namespace SoftBody
         }
         #endregion
 
-
-
+        #region Steering behaviours
+        //Move towards
         PathToTarget toTarget;
         PathToPosition toPosition;
+        Flee flee;
+        //Avoid collisions
         CircleRound circleRound;
-        Separate seperate;
+        Separate separate;
         public Action<Vector2, Transform> MoveTowards;
         public Action<SteeringBehaviour> FinishedMoving;
+        void GetSteeringBehaviours()
+        {
+            toPosition= GetComponentInChildren<PathToPosition>();
+            toTarget= GetComponentInChildren<PathToTarget>();
+            flee= GetComponentInChildren<Flee>();
+            circleRound= GetComponentInChildren<CircleRound>();
+            separate = GetComponentInChildren<Separate>();
+        }
+        #endregion
 
         void Breaks(SteeringBehaviour behaviour)
         {
@@ -108,9 +123,10 @@ namespace SoftBody
         public override void MoveTo(Vector2 position)
         {
             if(unitState == UnitState.Fleeing) return;
-
+            
             MoveTowards(position, null);
-            Breaks(null);
+            toPosition.enabled = true;
+            unitState = UnitState.Moving;
         }
         
         public override void MoveTo(Transform target)
@@ -120,12 +136,17 @@ namespace SoftBody
 
             if (unitTarget != null && !army.EnemyUnits.Contains(unitTarget))
                 return;
-            Breaks(null);
             MoveTowards(target.position, target);
+            toTarget.enabled = true;
+            unitState = UnitState.Moving;
         }
         public override string ToString()
         {
-            return _unitStats.UnitName + " " + formation.models.Count +"/"+_unitStats.Stats()[0].CurrentStat;
+            string description = _unitStats.UnitName + ": " + formation.models.Count + "/" + _unitStats.Stats()[0].CurrentStat+ "\n";
+            description += "|Speed: " + Stats.MoveSpeed.CurrentStat;
+            description += " | Power: " + Stats.AttackPower.CurrentStat;
+            description += " | Defence: " + Stats.Defence.CurrentStat+ " |";
+            return description;
         }
         public override void TakeDamage(int modelsRemaining)
         {

@@ -23,7 +23,7 @@ public abstract class SteeringBehaviour : MonoBehaviour
     {
         targetLocation = position;
         this.target = target;
-        enabled = true;
+        //enabled = true;
     }
     public virtual void Deactivate(SteeringBehaviour stopper)
     {

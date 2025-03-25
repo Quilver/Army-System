@@ -45,20 +45,22 @@ public class Flee : SteeringBehaviour
         parent.SetArrivalModifier(FleeSpeedBonus);
         if (shoveFlag)
         {
-            Debug.Log(NearbyEnemyUnits.Count);
-            
-            Vector3 p1;
-            if (NearestEnemy == null) p1 = parent.transform.position - parent.transform.up;
-            else p1 = NearestEnemy.position;
-            var dir = p1-parent.transform.position;
-            parent.GetComponent<Rigidbody2D>().AddForce((dir).normalized * 1000);
+            //parent.GetComponent<Rigidbody2D>().AddForce((FleeDirection).normalized * 3000);
             shoveFlag=false;
         }
         foreach (Transform unit in NearbyEnemyUnits)
         {
-            parent.AddSteeringForce(-parent.Seek(unit.position), WeightedPriority(priority));
+            parent.AddSteeringForce(FleeDirection, WeightedPriority(priority));
         }
         return Vector2.zero;
+    }
+    Vector2 FleeDirection
+    {
+        get
+        {
+            if(NearestEnemy == null) return parent.transform.up;
+            return parent.transform.position - NearestEnemy.transform.position;
+        }
     }
     public Transform NearestEnemy
     {
@@ -81,5 +83,6 @@ public class Flee : SteeringBehaviour
         if (!DrawGizmo || parent == null || !enabled) return;
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(parent.transform.position, maxDistance);
+        Gizmos.DrawRay(parent.transform.position, FleeDirection.normalized * 10);
     }
 }

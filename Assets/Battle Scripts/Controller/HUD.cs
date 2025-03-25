@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.UI;
 public class HUD : MonoBehaviour {
     [SerializeField] TextMeshProUGUI mousePos, unitDetail;
+    [SerializeField] Image mouseUnit, SelectedUnit;
     [SerializeField]
     PlayerInput player;
    
@@ -14,16 +15,32 @@ public class HUD : MonoBehaviour {
     }
     private void DrawTileBar()
     {
-        string description = player.MouseHighlight.ToString();
         if (player.hoverUnit != null)
-            description += "\n"+player.hoverUnit.ToString();
-        mousePos.text = description;
+        {
+            mousePos.text = player.hoverUnit.ToString();
+            mouseUnit.enabled = true;
+            mouseUnit.sprite = player.hoverUnit.Stats.portrait;
+        }
+        else
+        {
+            mousePos.text = "";
+            mouseUnit.enabled = false;
+            mouseUnit.sprite = null;
+        }
     }
     private void DrawUnitBar()
     {
-        if(player.selectedUnit!=null)
+        if (player.selectedUnit != null)
+        {
             unitDetail.text = player.selectedUnit.ToString();
+            SelectedUnit.enabled = true;
+            SelectedUnit.sprite = player.selectedUnit.Stats.portrait;
+        }
         else
-            unitDetail.text= string.Empty;
+        {
+            unitDetail.text = "";
+            SelectedUnit.enabled = false;
+            SelectedUnit.sprite = null;
+        }
     }
 }
