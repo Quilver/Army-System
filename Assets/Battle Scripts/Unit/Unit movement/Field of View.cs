@@ -21,6 +21,7 @@ public class FieldofView : MonoBehaviour
     RangedWeapon rangedWeapon;
     public Dictionary<UnitTemplate, float> _targets;
     public LayerMask SensorLayerMask;
+    public List<UnitTemplate> _targetsList;
     public UnitTemplate NearestUnit
     {
         get
@@ -61,12 +62,13 @@ public class FieldofView : MonoBehaviour
             UpdateMesh();
             transform.position = Vector3.zero;
             _renderer.material.color = rangedWeapon.CurrentColour;
+            _targetsList = _targets.Keys.ToList();
         }
         else
         {
             _renderer.enabled = false;
+            _targetsList = new();
         }
-        
     }
     void UpdateMesh()
     {

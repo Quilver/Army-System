@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using static UnityEngine.GraphicsBuffer;
 namespace SoftBody
 {
     public class Model : MonoBehaviour
@@ -26,6 +27,7 @@ namespace SoftBody
 
         }
         SpringJoint2D[] joints;
+        FieldofView fieldofView;
         public void Setup(Rigidbody2D[] pins, Transform unit)
         {
             int i = 1;
@@ -41,6 +43,7 @@ namespace SoftBody
             body = GetComponent<Rigidbody2D>();
             ModelContainer.AddModel(this);
             InContactWith = new();
+            fieldofView = unit.GetComponentInChildren<FieldofView>();
             GetComponent<SpriteRenderer>().color = (unit.GetComponentInParent<Army>().controller == Army.Controller.Player) ? Color.blue : Color.red;
             Invoke("Attack", Random.Range(0.1f, 10f / AttacksPerTenSeconds));
         }
@@ -98,8 +101,9 @@ namespace SoftBody
         }
         public void Shoot(GameObject projectile, float power, Transform target)
         {
+            if (fieldofView == null) Debug.LogError(gameObject.name + " unit is missing field of view");
             var direction = target.position - transform.position;
-            var raycast2D = Physics2D.Raycast(transform.position, direction.normalized, direction.magnitude);
+            var raycast2D = Physics2D.Raycast(transform.position, direction.normalized, direction.magnitude, fieldofView.SensorLayerMask);
             if (raycast2D && raycast2D.rigidbody.transform != target) return;
             var shot = Instantiate(projectile);
             shot.transform.position = transform.position;
@@ -170,6 +174,7 @@ namespace SoftBody
         }
         private void OnDrawGizmos()
         {
+            DrawRangedGizmoTest();
             if (InContactWith.Count == 0) return;
             Facing facing = Facing.Front;
             foreach (var model in InContactWith)
@@ -184,7 +189,22 @@ namespace SoftBody
             else if (facing == Facing.Flank) Gizmos.color = Color.yellow;
             else Gizmos.color = Color.red;
             Gizmos.DrawSphere(transform.position, 0.1f);
+
         }
+
+        void DrawRangedGizmoTest()
+        {
+            if (fieldofView == null || fieldofView.NearestUnit == null) return;
+            Transform target = fieldofView.NearestUnit.transform;
+            var direction = target.position - transform.position;
+            var raycast2D = Physics2D.Raycast(transform.position, direction.normalized, direction.magnitude * 1.2f, fieldofView.SensorLayerMask);
+            if (raycast2D && raycast2D.rigidbody.transform != target) Gizmos.color = Color.red;
+            else Gizmos.color= Color.green;
+            Gizmos.DrawSphere(transform.position, 0.2f);
+            Gizmos.DrawLine(transform.position, raycast2D.point);
+
+        }
+
         void ResistForce()
         {
 

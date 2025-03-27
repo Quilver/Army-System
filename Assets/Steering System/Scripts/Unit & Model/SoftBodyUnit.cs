@@ -26,7 +26,8 @@ namespace SoftBody
             GetSteeringBehaviours();
             FinishedMoving += Breaks;
             Breaks(null);
-            Transition += EnterCombat; Transition += EnterFlee;
+            Transition += EnterCombat; Transition += EnterFlee; Transition += EnterMovement;
+            FinishedMoving += ExitMovement;
         }
 
         private void Update()
@@ -56,8 +57,8 @@ namespace SoftBody
             circleRound.enabled=true;   
             Breaks(null);
         }
-        void ExitMovement(UnitState current, UnitState next) { 
-        
+        void ExitMovement(SteeringBehaviour behaviour) {
+            unitState = UnitState.Idle;
         }
         void EnterCombat(UnitState current, UnitState next) {
             if(next != UnitState.Fighting)return;
