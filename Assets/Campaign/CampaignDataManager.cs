@@ -14,7 +14,6 @@ namespace Campaign
         bool LoadData, SaveData;
         [SerializeField]
         CampaignData data;
-        
         public static CampaignData Data
         {
             get
@@ -33,6 +32,10 @@ namespace Campaign
             }
         }
         CampaignDataManager _manager;
+        //
+        public List<StatWrapper> deployedCharacters = new();
+
+
         public static CampaignDataManager instance { get; private set; }
         FileDataHandler SaverLoader;
         private void Awake()

@@ -52,7 +52,6 @@ public class RangedWeapon: MonoBehaviour
     {
         _timeToShoot = 0;
         if(targetTemplate._targets.Count == 0) return;
-        Debug.Log("Shoting at: " + targetTemplate.NearestUnit);
         foreach (var model in formation.models)
         {
             model.Shoot(projectile, Random.Range(minimumDamage, maximumDamage) * 50, targetTemplate.NearestUnit.transform);

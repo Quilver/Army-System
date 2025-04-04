@@ -9,8 +9,6 @@ using System.Reflection;
 
 public class UnitFormation : MonoBehaviour
 {
-    [SerializeField]
-    GameObject ModelPrefab;
     [Range(1, 4)]
     public float ModelSize;
     [SerializeField, Range(1, 32)]
@@ -19,27 +17,54 @@ public class UnitFormation : MonoBehaviour
     public int Width;
     public List<Model> models;
     Rigidbody2D[] unitPins;
+    UnitTemplate unit;
     // Start is called before the first frame update
     void Awake()
     {
+        unit = GetComponent<UnitTemplate>();
         models = new();
         unitPins = GetComponentsInChildren<Rigidbody2D>();
+        unitCollider = GetComponent<BoxCollider2D>();
+        Notifications.Deployed += CreateUnit;
+        transform.Find("DeploymentView").GetComponent<SpriteRenderer>().enabled = true;
+        if (GetComponentInParent<Army>() == null)
+            transform.Find("DeploymentView").GetComponent<SpriteRenderer>().color = Color.gray;
+        else if (GetComponentInParent<Army>().controller == Army.Controller.Player)
+            transform.Find("DeploymentView").GetComponent<SpriteRenderer>().color = playerColor;
+        else
+            transform.Find("DeploymentView").GetComponent<SpriteRenderer>().color = enemyColor;
+    }
+    private void OnDestroy()
+    {
+        Notifications.Deployed -= CreateUnit;
+    }
+    void CreateUnit(UnitTemplate UselessData)
+    {
+        GetComponent<Collider2D>().isTrigger = false;
+        Destroy(transform.Find("DeploymentView"));
         for (int i = 0; i < modelCount; i++)
         {
-            var model = Instantiate(ModelPrefab);
+            var model = Instantiate(this.unit.Stats.UnitPrefab);
             model.transform.position = GetModelPos(i);
             Model unitComponent = model.GetComponent<Model>();
             unitComponent.Setup(unitPins, transform);
             models.Add(unitComponent);
         }
-        unitCollider = GetComponent<BoxCollider2D>();
-        DrawGizmo =false;
+        DrawGizmo = false;
+        GetComponent<UnitTemplate>().unitState = UnitState.Idle;
+        GameObject formationImage = transform.Find("DeploymentView").gameObject;
+        DestroyImmediate(formationImage);
     }
     BoxCollider2D unitCollider;
     private void Update()
     {
         unitCollider.offset = unitOffset - (Vector2)transform.position;
         unitCollider.size = UnitSize;
+        if(unit.unitState == UnitState.Deployment)
+        {
+            transform.Find("DeploymentView").transform.localPosition = unitCollider.offset;
+            transform.Find("DeploymentView").transform.localScale = unitCollider.size;
+        }
     }
     Vector2 UnitSize
     {
@@ -117,15 +142,18 @@ public class UnitFormation : MonoBehaviour
     }
     [SerializeField]
     bool DrawGizmo;
+    Color unalignedColor = Color.gray;
+    Color playerColor = new Color(0, 0, 1, 0.7f);
+    Color enemyColor = new Color(1, 0, 0, 0.7f);
     private void OnDrawGizmos()
     {
         if (!DrawGizmo) return;
         if(GetComponentInParent<Army>() == null)
             Gizmos.color = Color.gray;
         else if (GetComponentInParent<Army>().controller == Army.Controller.Player)
-            Gizmos.color = new Color(0, 0, 1, 0.7f);
+            Gizmos.color = playerColor;
         else
-            Gizmos.color = new Color(1, 0, 0, 0.7f);
+            Gizmos.color = enemyColor;
         for (int i = 0; i < modelCount; i++) Gizmos.DrawSphere(GetModelPos(i), ModelSize / 5);
         
     }

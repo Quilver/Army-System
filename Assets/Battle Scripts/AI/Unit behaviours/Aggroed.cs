@@ -29,6 +29,7 @@ public class Aggroed : MonoBehaviour
         UnitTemplate closestUnit = null;
         foreach (var enemy in Battle.Instance.unitArmy[_unit].EnemyUnits)
         {
+            if(enemy == null) continue;
             float dist = DistanceFromUnit(enemy);
             if(dist < distance)
             {

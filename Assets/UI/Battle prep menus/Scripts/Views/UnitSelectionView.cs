@@ -40,12 +40,14 @@ namespace BattlePrep
                     return;
                 }
                 Campaign.CampaignDataManager.Data.Money -= unit.CostToField;
+                Campaign.CampaignDataManager.instance.deployedCharacters.Add(unit);
                 CheckBox.color = Color.black;
             }
 
             else
             {
                 Campaign.CampaignDataManager.Data.Money += unit.CostToField;
+                Campaign.CampaignDataManager.instance.deployedCharacters.Remove(unit);
                 CheckBox.color = Color.white;
             } 
                 

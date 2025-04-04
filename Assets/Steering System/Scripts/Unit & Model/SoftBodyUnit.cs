@@ -23,13 +23,20 @@ namespace SoftBody
             //
             formation = GetComponent<UnitFormation>();
             //
+            GetComponent<Collider2D>().isTrigger=false;
             GetSteeringBehaviours();
             FinishedMoving += Breaks;
             Breaks(null);
             Transition += EnterCombat; Transition += EnterFlee; Transition += EnterMovement;
             FinishedMoving += ExitMovement;
+            unitState = UnitState.Deployment;
         }
-
+        private void OnDestroy()
+        {
+            FinishedMoving -= Breaks;
+            Transition -= EnterCombat; Transition -= EnterFlee; Transition -= EnterMovement;
+            FinishedMoving -= ExitMovement;
+        }
         private void Update()
         {
             if (unitState == UnitState.Fighting)
@@ -124,15 +131,29 @@ namespace SoftBody
         public override void MoveTo(Vector2 position)
         {
             if(unitState == UnitState.Fleeing) return;
+            else if(unitState == UnitState.Deployment)
+            {
+                DeploymentMoveTo(position);
+                return;
+            }
             
             MoveTowards(position, null);
             toPosition.enabled = true;
             unitState = UnitState.Moving;
         }
-        
+        void DeploymentMoveTo(Vector2 position)
+        {
+            if (!Physics2D.OverlapPoint(position, LayerMask.GetMask("DeploymentZone"))) return;
+            Collider2D[] collisions = new Collider2D[10];
+            var oldPos = transform.position;
+            transform.position = position;
+
+            int numCollisions = GetComponent<Collider2D>().OverlapCollider(new ContactFilter2D(), collisions);
+            if (numCollisions > 1) transform.position = oldPos;
+        }
         public override void MoveTo(Transform target)
         {
-            if (unitState == UnitState.Fleeing) return;
+            if (unitState == UnitState.Fleeing || unitState == UnitState.Deployment) return;
             var unitTarget = target.GetComponent<SoftBodyUnit>();
 
             if (unitTarget != null && !army.EnemyUnits.Contains(unitTarget))

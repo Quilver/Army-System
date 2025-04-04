@@ -7,6 +7,7 @@ namespace SoftBody
     public class Model : MonoBehaviour
     {
         SoftBody.SoftBodyUnit unit;
+        public UnitTemplate Unit { get { return unit; } }
         [SerializeField]
         Rigidbody2D body;
         [SerializeField, Range(0.2f, 1)]

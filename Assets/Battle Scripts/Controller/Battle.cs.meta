@@ -1,8 +1,7 @@
 fileFormatVersion: 2
 guid: 26abad6c9a7f1924d878c422bb753296
-timeCreated: 1500401354
-licenseType: Free
 MonoImporter:
+  externalObjects: {}
   serializedVersion: 2
   defaultReferences:
   - grassFloor: {fileID: 21300000, guid: cb38f0d36f1ccbf4ebae02ec9203773a, type: 3}
@@ -11,7 +10,7 @@ MonoImporter:
   - map: {instanceID: 0}
   - hud: {instanceID: 0}
   - unit: {instanceID: 0}
-  executionOrder: 200
+  executionOrder: -20
   icon: {instanceID: 0}
   userData: 
   assetBundleName: 

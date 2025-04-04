@@ -108,8 +108,8 @@ public class SteerTowards : SteeringManager
         }
         if (desiredAngle == 0) { }
         else if (desiredAngle < 0)
-            body.AddTorque(-maxTurnSpeed * Time.deltaTime * Mass * 5);
-        else body.AddTorque(maxTurnSpeed * Time.deltaTime * Mass * 5);
+            body.AddTorque(-maxTurnSpeed * Time.deltaTime * Mass);
+        else body.AddTorque(maxTurnSpeed * Time.deltaTime * Mass);
     }
     
     #endregion

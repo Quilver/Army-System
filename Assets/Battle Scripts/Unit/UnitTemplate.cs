@@ -7,7 +7,7 @@ using UnityEngine;
 public abstract class UnitTemplate : MonoBehaviour
 {
 	#region Properties
-	protected Army army
+	public Army army
 	{
 		get
 		{
@@ -54,5 +54,6 @@ public abstract class UnitTemplate : MonoBehaviour
         if (Battle.Instance.player.Units.Contains(this))
             Stats.Load();
     }
-	#endregion
+    
+    #endregion
 }

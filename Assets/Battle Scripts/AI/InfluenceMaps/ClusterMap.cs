@@ -30,7 +30,7 @@ namespace InfluenceMap
         {
             clusters = new();
             Dictionary<Vector2, List<UnitTemplate>> testCluster = new();
-            foreach (var unit in army.Units)
+            foreach (var unit in GetComponentsInChildren<UnitTemplate>())
             {
                 bool flag = true;
                 foreach (var cluster in testCluster)

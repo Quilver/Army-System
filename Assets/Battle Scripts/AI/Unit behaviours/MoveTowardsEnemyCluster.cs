@@ -29,9 +29,9 @@ public class MoveTowardsEnemyCluster : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if(_unit== null) return;
+        //if(_unit== null) return;
         if (_unit.unitState != UnitState.Idle) return;
-        if (_clusterMap.ClusterCount != 0) 
+        //if (_clusterMap.ClusterCount != 0) 
             _unit.MoveTo(TargetPosition);
     }
 }

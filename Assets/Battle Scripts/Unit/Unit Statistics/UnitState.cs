@@ -39,6 +39,7 @@ public struct UnitStatsR
 
 public enum UnitState
 {
+    Deployment,
     Idle,
     Moving,
     Fighting,

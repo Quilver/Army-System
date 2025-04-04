@@ -53,6 +53,7 @@ namespace InfluenceMap
         #region Create Map
         private void OnValidate()
         {
+            mapCenter = transform.position;
             points = new();
             roundedPoints = new();
             CreateMap();
@@ -88,13 +89,14 @@ namespace InfluenceMap
 
 
         }
-
+        [SerializeField]
+        LayerMask UnwalkableTerrain;
         void TestNode(Node node, Vector2 direction, Stack<Node> UnsearchedNodes)
         {
             int mask = 1 << 8;
             var position = node.position + gridSize * direction;
-            var raycast = Physics2D.Raycast(node.position, direction, Vector2.Distance(node.position, position));
-            if (raycast && raycast.collider.gameObject.layer == mask)
+            var raycast = Physics2D.Raycast(node.position, direction, Vector2.Distance(node.position, position), UnwalkableTerrain);
+            if (raycast)// && raycast.collider.gameObject.layer == mask)
                 return;
             var newNode = new Node(gridSize, position);
             if (points.ContainsKey(newNode.position))
@@ -102,7 +104,7 @@ namespace InfluenceMap
                 node.adjacentNodes.Add(newNode);
                 return;
             }
-            var boxCollision = Physics2D.OverlapBox(position, newNode.nodeSize, 0, mask);
+            var boxCollision = Physics2D.OverlapBox(position, newNode.nodeSize, 0, UnwalkableTerrain);
             if (boxCollision)
             {
                 return;
