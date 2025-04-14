@@ -18,9 +18,20 @@ namespace AchievementSystem
 
         public override void Initialise()
         {
-            
+            Notifications.ArmyDestroyed += EndBattle;
         }
+        void EndBattle(Army army)
+        {
+            Debug.Log("Battle over");
+            if (army == null) return;
+            else if (army.controller == Army.Controller.Player) {
 
+            }
+            else
+            {
+
+            }
+        }
         public override void Reward()
         {
             

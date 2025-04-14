@@ -93,7 +93,6 @@ namespace InfluenceMap
         LayerMask UnwalkableTerrain;
         void TestNode(Node node, Vector2 direction, Stack<Node> UnsearchedNodes)
         {
-            int mask = 1 << 8;
             var position = node.position + gridSize * direction;
             var raycast = Physics2D.Raycast(node.position, direction, Vector2.Distance(node.position, position), UnwalkableTerrain);
             if (raycast)// && raycast.collider.gameObject.layer == mask)

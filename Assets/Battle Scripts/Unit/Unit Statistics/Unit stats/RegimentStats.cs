@@ -8,10 +8,13 @@ namespace StatSystem
     [CreateAssetMenu(menuName ="Stats/Regiment Stats")]
     public class RegimentStats : UnitStats, IMovementStats, IDefenceStats, ICombatStats, IRangedStats
     {
-        public Stat ModelCount, Defence;
+        //Formation Data
+        public Stat ModelCount;
+        //Movement
         public Stat MoveSpeed;
-        public Stat AttackPower;
-        //Shooting data
+        //Melee
+        public Stat AttackPower, AttackSpeed, Defence;
+        //Shooting Data
         public Stat FireRate, Accuracy;
 
         int IRangedStats.ReloadRate => FireRate.CurrentStat;
@@ -23,6 +26,7 @@ namespace StatSystem
         int IMovementStats.MoveSpeed => MoveSpeed.CurrentStat;
 
         int ICombatStats.AttackPower => AttackPower.CurrentStat;
+        float ICombatStats.AttackSpeed => AttackSpeed.CurrentStat;
         void Initialise()
         {
             ModelCount.StatType = "Model Count";

@@ -57,5 +57,17 @@ public class RangedWeapon: MonoBehaviour
             model.Shoot(projectile, Random.Range(minimumDamage, maximumDamage) * 50, targetTemplate.NearestUnit.transform);
         }
     }
-    
+    private void OnDrawGizmosSelected()
+    {
+        if (targetTemplate == null || targetTemplate._targets == null || targetTemplate._targets.Count == 0) return;
+        Gizmos.color = Color.yellow;
+        foreach(var target  in targetTemplate._targets)
+        {
+            if (targetTemplate.NearestUnit == target.Key) Gizmos.color = Color.green;
+            else if(Battle.Instance.Enemies(unit, target.Key)) Gizmos.color = Color.red;
+            else Gizmos.color = Color.yellow;
+            Gizmos.DrawSphere(target.Key.transform.position, 0.2f);
+        }
+        
+    }
 }
