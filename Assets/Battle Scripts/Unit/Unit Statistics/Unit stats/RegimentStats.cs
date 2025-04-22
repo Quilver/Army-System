@@ -33,18 +33,22 @@ namespace StatSystem
             Defence.StatType = "Defence";
             MoveSpeed.StatType = "Move Speed";
             AttackPower.StatType = "Attack Power";
+            AttackSpeed.StatType = "Attack Speed";
             FireRate.StatType = "Fire Rate";
             Accuracy.StatType = "Accuracy";
         }
+        List<Stat> _stats;
         public override List<Stat> Stats()
         {
+            //if (_stats != null) return _stats;
             Initialise();
-            List<Stat> _stats = new List<Stat>
+            _stats = new List<Stat>
             {
                 ModelCount,
                 MoveSpeed,
                 Defence,
                 AttackPower,
+                AttackSpeed,
                 FireRate,
                 Accuracy
             };

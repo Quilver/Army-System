@@ -5,6 +5,15 @@ using UnityEngine;
 
 public class CaputurePoint : MonoBehaviour
 {
+    public delegate void Captured(CaputurePoint point, Army.Controller owner);
+    public static Captured CapturedBy;
+    public enum CapturePointType
+    {
+        Fortress,
+        Village,
+        Banner,
+        Misc
+    }
     [SerializeField]
     Color PlayerControlled, NeutralControlled, AIControlled;
     [SerializeField, Range(-1, 1)]
@@ -23,6 +32,8 @@ public class CaputurePoint : MonoBehaviour
             sprite.color = Color.Lerp(NeutralControlled, PlayerControlled, holder);
         else
             sprite.color = Color.Lerp(NeutralControlled, AIControlled, -holder);
+        if(holder > 0.8f) CapturedBy?.Invoke(this, Army.Controller.Player);
+        else if (holder < -0.8)CapturedBy?.Invoke(this, Army.Controller.Computer);
     }
     private void OnTriggerEnter2D(Collider2D collision)
     {

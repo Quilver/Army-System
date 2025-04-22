@@ -128,7 +128,7 @@ public abstract class FigureTemplate : MonoBehaviour
         var shot = Instantiate(projectile);
         shot.transform.position = transform.position;
         direction = Quaternion.Euler(0f, 0f, Random.Range(-15, 15)) * direction;
-        shot.GetComponent<Projectile>().Setup(direction, power);
+        shot.GetComponent<Projectile>().Setup(direction, power, unit);
     }
     #endregion
 }

@@ -33,6 +33,11 @@ namespace BattleFlowControl
                 //this.units.Add(unit.UnitStats, wrapper);
                 BattleReport.statWrappers.Add(wrapper);
             }
+            foreach (var achievement in Achievements)
+            {
+                achievement.Initialise();
+                BattleReport.Achievements.Add(achievement);
+            }
         }
         protected virtual void Init()
         {
@@ -65,7 +70,10 @@ namespace BattleFlowControl
         }
         void Victory()
         {
-            BattleReport.Achievements.Add(Achievements[0]);
+            foreach (var achievement in Achievements)
+            {
+                BattleReport.Achievements.Add(achievement);
+            }
             BattleReport.timeTaken = Time.time - BattleReport.timeTaken;
             SceneManager.LoadScene(2);
         }

@@ -1,6 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
-using SoftBody;
+//using SoftBody;
 using UnityEngine;
 
 public class Projectile : MonoBehaviour
@@ -8,10 +8,12 @@ public class Projectile : MonoBehaviour
     // Start is called before the first frame update
     Rigidbody2D body;
     Collider2D col;
-    public void Setup(Vector2 direction, float force)
+    UnitTemplate unit;
+    public void Setup(Vector2 direction, float force, UnitTemplate shooter)
     {
         body = GetComponent<Rigidbody2D>();
         col = GetComponent<Collider2D>();
+        unit = shooter;
         body.AddForce(direction.normalized * force);
         float desiredAngle = Vector2.SignedAngle(Vector2.up, direction);
         transform.rotation = Quaternion.Euler(0, 0, desiredAngle);
@@ -28,9 +30,9 @@ public class Projectile : MonoBehaviour
     }
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        var unit = collision.gameObject.GetComponent<Model>();
+        var unit = collision.gameObject.GetComponent<SoftBody.Model>();
         if (unit == null) return;
-        unit.Hit(Random.Range(speed * body.mass /2, speed * body.mass));
+        unit.Hit(Random.Range(speed * body.mass /2, speed * body.mass), this.unit);
         Destroy(gameObject);
     }
 }

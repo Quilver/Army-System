@@ -8,6 +8,8 @@ public static class BattleReport
     public static int kills, deaths;
     public static List<AchievementSystem.Achievments> Achievements;
     public static List<Campaign.StatWrapper> statWrappers;
+    public static UpdateCharacter CharacterUpdate;
+    public delegate void UpdateCharacter(Campaign.StatWrapper character);
     public static void Reset()
     {
         timeTaken = 0;

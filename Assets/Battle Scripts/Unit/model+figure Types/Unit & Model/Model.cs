@@ -118,12 +118,16 @@ namespace SoftBody
         {
             if (GetFace(attacker.transform) == Facing.Rear) Power *= 5;
             else if (GetFace(attacker.transform) == Facing.Flank) Power *= 2;
-            Hit(Power);
+            Hit(Power, attacker.unit);
         }
-        public void Hit(float Power)
+        public void Hit(float Power, UnitTemplate attacker)
         {
             float defenceScore = Random.Range(0f, unit.Stats.Defence.CurrentStat + 5);
-            if (defenceScore < Power) unit.GetComponent<UnitFormation>().Death(this);
+            if (defenceScore < Power)
+            {
+                unit.GetComponent<UnitFormation>().Death(this);
+                Notifications.MeleeDamage(attacker, unit, 1);
+            } 
         }
         #endregion
         #region Shooting
@@ -146,7 +150,7 @@ namespace SoftBody
             var shot = Instantiate(projectile);
             shot.transform.position = transform.position;
             direction = Quaternion.Euler(0f, 0f, Random.Range(-15, 15)) * direction;
-            shot.GetComponent<Projectile>().Setup(direction, power);
+            shot.GetComponent<Projectile>().Setup(direction, power, unit);
         }
         #endregion
             

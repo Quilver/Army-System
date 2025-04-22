@@ -12,10 +12,13 @@ namespace EndGameUI
         List<StatWrapper> units;
         void Start()
         {
+            InitUnits(Campaign.CampaignDataManager.Data.characters);
+            /*
             if (BattleReport.statWrappers == null)
                 InitUnits(units);
             else
                 InitUnits(BattleReport.statWrappers);
+            */
         }
         void InitUnits(List<StatWrapper> units)
         {

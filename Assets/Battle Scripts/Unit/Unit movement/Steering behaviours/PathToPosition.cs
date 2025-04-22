@@ -50,6 +50,28 @@ public class PathToPosition : SteeringBehaviour
         if(Vector2.Distance(targetLocation, transform.position) < 1f) return true;
         else return false;
     }
+
+
+    public List<Vector3> PathUsed()
+    {
+        List<Vector3> ConstructedPath = new();
+        ConstructedPath.Add(transform.parent.transform.position);
+        if (!parent.CanWalkTo(targetLocation))
+        {
+            var Path = Battle.Instance.highLevelMap.A_StarSearch(parent.transform.position, targetLocation);
+            int index = 0;
+            for (int i = 0; i < Path.Count-1; i++)
+            {
+                index = i;
+                if (parent.CanWalkTo(Path[i])) break;
+            }
+            for (int i = index; i >= 0; i--)
+                ConstructedPath.Add((Vector3)Path[i]);
+        }
+        ConstructedPath.Add(targetLocation);
+        return ConstructedPath;
+    }
+
     public bool DrawGizmo;
     public void OnDrawGizmos()
     {

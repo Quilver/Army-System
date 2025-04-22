@@ -36,9 +36,19 @@ public abstract class UnitTemplate : MonoBehaviour
 			_unitState = value; 
 		} 
 	}
-	#endregion
-	#region Methods
-	public abstract void MoveTo(Vector2 position);
+    #endregion
+    #region Events
+    public static Action<UnitTemplate> Deployed, Died;
+    public Action _Deployed, _Died;
+    public static Action<UnitTemplate, UnitState> ChangeState;
+	public Action<UnitTemplate, UnitState> _ChangeState;
+    private void OnEnable()
+    {
+        _Deployed += ()=>UnitTemplate.Deployed(this);
+    }
+    #endregion
+    #region Methods
+    public abstract void MoveTo(Vector2 position);
 	public abstract void MoveTo(Transform target);
 	public abstract void TakeDamage(int damage);
 	protected void Die()

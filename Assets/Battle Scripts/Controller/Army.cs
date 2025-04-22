@@ -61,11 +61,11 @@ public class Army : MonoBehaviour {
     }
     void UnitDied(UnitTemplate unit)
     {
-        if(_units.Contains(unit)) 
-            Debug.Log(gameObject.name + " lost: " + unit.Stats.name + ", Remain units:" + (_units.Count - 1));
-        if(_units.Contains(unit))
+        if (_units.Contains(unit))
+        {
             _units.Remove(unit);
-        if (_units.Count == 0)
+        }
+        if (_units.Count <= 0)
             Notifications.ArmyDestroyed(this);
     }
 }

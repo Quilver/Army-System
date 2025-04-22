@@ -11,7 +11,6 @@ namespace StatSystem
         public Sprite portrait;
         [SerializeField]
         LevelTable levelTable;
-        //List<int> ExperienceToReachLevel;
         [SerializeField, Min(0)]
         int experience;
         public int CurrentLevel
@@ -40,10 +39,10 @@ namespace StatSystem
         {
             foreach (var stat in Stats())
             {
-                float chanceToGrow = stat.StatGrowthChance / 100f;
-                float roll = UnityEngine.Random.Range(0, 1);
-                if (roll > chanceToGrow) return;
-                levelBonuses[stat.StatType]++;
+                float chanceToGrow = stat.StatGrowthChance;
+                float roll = UnityEngine.Random.Range(0, 100);
+                if (roll > chanceToGrow) continue;
+                stat.LevelUp();
             }
         }
         public void Load()
@@ -51,7 +50,7 @@ namespace StatSystem
             foreach (var character in Campaign.CampaignDataManager.Data.characters)
             {
                 if (character.statBase != this) continue;
-
+                Load(character);
                 return;
             }
             Campaign.StatWrapper _character = new()
@@ -60,6 +59,10 @@ namespace StatSystem
                 CostToField = 5
             };
             Campaign.CampaignDataManager.Data.characters.Add(_character);
+        }
+        public void Load(Campaign.StatWrapper character)
+        {
+
         }
         protected Dictionary<string, int> levelBonuses;
         public abstract List<Stat> Stats();
@@ -76,6 +79,13 @@ namespace StatSystem
             string stats = "| ";
             foreach (var stat in Stats())
                 stats += stat.StatType + ": " + stat.CurrentStat + " | ";
+            return stats;
+        }
+        public string LevelUpBonusesString()
+        {
+            string stats = "Level: "+CurrentLevel+"\n| ";
+            foreach (var stat in Stats())
+                stats += stat.StatType + ": +" + stat.LevelBonus + " | ";
             return stats;
         }
         public override string ToString()

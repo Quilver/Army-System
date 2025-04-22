@@ -10,7 +10,17 @@ namespace StatSystem
         public string StatType;
         [SerializeField, Range(1, 30)]
         int baseStat;
-        public int LevelBonus { private get; set; }
+        [SerializeField]
+        int _levelBonus = 0;
+        public int LevelBonus { 
+            get
+            {  return _levelBonus; } 
+        }
+        public void LevelUp()
+        {
+            if(LevelBonus + 1 >= StatMaximum)return;
+            _levelBonus++;
+        }
         public int CurrentStat
         {
             get { return baseStat + LevelBonus; }

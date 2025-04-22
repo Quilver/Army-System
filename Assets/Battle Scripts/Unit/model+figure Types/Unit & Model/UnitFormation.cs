@@ -11,8 +11,6 @@ public class UnitFormation : MonoBehaviour
 {
     [Range(1, 4)]
     public float ModelSize;
-    [SerializeField, Range(1, 32)]
-    int modelCount;
     [Range(1, 8)]
     public int Width;
     public List<Model> models;
@@ -42,7 +40,7 @@ public class UnitFormation : MonoBehaviour
     {
         GetComponent<Collider2D>().isTrigger = false;
         Destroy(transform.Find("DeploymentView"));
-        for (int i = 0; i < modelCount; i++)
+        for (int i = 0; i < this.unit.Stats.ModelCount.CurrentStat; i++)
         {
             var model = Instantiate(this.unit.Stats.UnitPrefab);
             model.transform.position = GetModelPos(i);
@@ -62,6 +60,7 @@ public class UnitFormation : MonoBehaviour
         unitCollider.size = UnitSize;
         if(unit.unitState == UnitState.Deployment)
         {
+            transform.Find("DeploymentView").gameObject.GetComponent<SpriteRenderer>().enabled=true;
             transform.Find("DeploymentView").transform.localPosition = unitCollider.offset;
             transform.Find("DeploymentView").transform.localScale = unitCollider.size;
         }
@@ -85,7 +84,9 @@ public class UnitFormation : MonoBehaviour
     {
         get
         {
-            return (modelCount % Files > 0) ? modelCount / Files + 1 : modelCount / Files;
+            if(models == null || models.Count == 0)
+                return (unit.Stats.ModelCount.CurrentStat % Files > 0) ? unit.Stats.ModelCount.CurrentStat / Files + 1 : unit.Stats.ModelCount.CurrentStat / Files;
+            return (models.Count % Files > 0) ? models.Count / Files + 1 : models.Count / Files;
         }
     }
     Vector2 unitOffset
@@ -154,7 +155,7 @@ public class UnitFormation : MonoBehaviour
             Gizmos.color = playerColor;
         else
             Gizmos.color = enemyColor;
-        for (int i = 0; i < modelCount; i++) Gizmos.DrawSphere(GetModelPos(i), ModelSize / 5);
+        for (int i = 0; i < GetComponent<UnitTemplate>().Stats.ModelCount.CurrentStat; i++) Gizmos.DrawSphere(GetModelPos(i), ModelSize / 5);
         
     }
 }

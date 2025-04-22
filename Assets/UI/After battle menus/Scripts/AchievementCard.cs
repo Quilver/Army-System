@@ -16,5 +16,13 @@ namespace EndGameUI
             image.sprite = achievement.icon;
             tip = achievement.Description;
         }
+        bool GotReward = false;
+        public void GetReward()
+        {
+            if(GotReward) return;
+            image.color = new Color(0.8f, 0.8f, 0.8f);
+            achievement.Reward();
+            GotReward = true;
+        }
     }
 }

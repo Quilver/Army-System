@@ -42,6 +42,7 @@ public class Flee : SteeringBehaviour
     float FleeSpeedBonus = 2;
     public override void GetDirection()
     {
+        if(parent == null) return;
         parent.SetArrivalModifier(FleeSpeedBonus);
         if (shoveFlag)
         {

@@ -9,14 +9,14 @@ namespace AchievementSystem
     {
         [SerializeField, Range(1, 10)]
         int XpForSurviving;
-        List<StatSystem.RegimentStats> characters;
+        List<Campaign.StatWrapper> characters;
         public override string Description { 
             get
             {
                 string description = "Survived: ";
                 foreach (var unit in characters)
                 {
-                    description += unit.UnitName;
+                    description += unit.statBase.UnitName+", ";
                 }
                 return description;
             } }
@@ -28,12 +28,15 @@ namespace AchievementSystem
 
         public override void Initialise()
         {
-            
+            characters = Campaign.CampaignDataManager.instance.deployedCharacters;
         }
 
         public override void Reward()
         {
-            
+            foreach (var character in characters)
+            {
+                GiveExperience(character.statBase, XpForSurviving);
+            }
         }
     }
 }
