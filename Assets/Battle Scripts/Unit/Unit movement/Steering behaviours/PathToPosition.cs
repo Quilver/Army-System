@@ -11,6 +11,7 @@ public class PathToPosition : SteeringBehaviour
     public override void Activate(Vector2 position, Transform target)
     {
         base.Activate(position, target);
+        GetComponent<Pathfinding.IPathfinder>().GoTowards(position);
         if(target != null) 
             enabled = false;
     }

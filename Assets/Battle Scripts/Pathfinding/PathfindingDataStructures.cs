@@ -6,68 +6,6 @@ using UnityEngine;
 using UnityEngine.UIElements;
 namespace Pathfinding
 {
-    /*
-    public class Waypoint
-    {
-        Vector2 _targetTile;
-        readonly UnitBase _targetUnit;
-        public Waypoint(Vector2 tile)
-        {
-            _targetTile = tile;
-        }
-        public Waypoint(UnitBase target)
-        {
-            _targetUnit = target;
-        }
-        public Stack<PositionR> GetPath(UnitPositionR unit)
-        {
-
-            if (_targetUnit != null)
-            {
-                var waypoints = Battle.Instance.highLevelMap.A_StarSearch(unit.position.Location, _targetUnit.LeadModelPosition);
-                if (waypoints != null && waypoints.Count > 1)
-                {
-                    var waypoint = waypoints[waypoints.Count - 2];
-                    return Pathfinder.Search(unit, unit.position, waypoint);
-                }
-                return Pathfinder.Search(unit, unit.position, _targetUnit);
-            }
-            else
-            {
-                var waypoints = Battle.Instance.highLevelMap.A_StarSearch(unit.position.Location, _targetTile);
-                if (waypoints != null && waypoints.Count > 1)
-                {
-                    var waypoint = waypoints[waypoints.Count - 2];
-                    Debug.DrawLine(waypoint, unit.position.Location, Color.black, 12);
-                    return Pathfinder.Search(unit, unit.position, waypoint);
-                }
-                Debug.DrawLine(_targetTile, unit.position.Location, Color.black, 12);
-                return Pathfinder.Search(unit, unit.position, _targetTile);
-            }
-        }
-        public static bool operator ==(Waypoint a, Waypoint b)
-        {
-            if (a is null && b is null) return true;
-            else if (a is null || b is null) return false;
-            if (a._targetUnit != null || a._targetUnit == b._targetUnit) return true;
-            else if (a._targetTile == b._targetTile) return true;
-            else return false;
-        }
-        public static bool operator !=(Waypoint a, Waypoint b)
-        {
-            return !(a == b);
-        }
-        public override bool Equals(object obj)
-        {
-            return base.Equals(obj);
-        }
-        public override int GetHashCode()
-        {
-            return base.GetHashCode();
-        }
-
-    }
-    */
     public struct WeightedNode<State>
     {
         public State state;

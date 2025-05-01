@@ -1,44 +1,41 @@
+using SteeringSystem;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 [RequireComponent(typeof(LineRenderer))]
 public class PathRenderer : MonoBehaviour
 {
-    PathToPosition toPosition;
-    PathToTarget toTarget;
     LineRenderer lineRenderer;
+    IPathfinder _pathfinder;
+    IMoveOrders _moveOrder;
     // Start is called before the first frame update
     void Start()
     {
         lineRenderer = GetComponent<LineRenderer>();
-        toPosition = GetComponent<PathToPosition>();
-        toTarget = GetComponent<PathToTarget>();
+        _pathfinder = GetComponentInParent<IPathfinder>();
+        _moveOrder=GetComponentInParent<IMoveOrders>();
     }
 
     // Update is called once per frame
     void Update()
     {
-        if(GetComponentInParent<UnitTemplate>().unitState != UnitState.Moving)
+        if(_moveOrder==null || !_moveOrder.IsMoving)
             lineRenderer.enabled = false;
-        else if (toPosition != null)
+        else 
             DrawPathToPosition();
-        else if (toTarget != null)
-            DrawPathToTarget();
-        else
-            lineRenderer.enabled = false;
     }
     void DrawPathToPosition()
     {
         lineRenderer.enabled=true;
-        var path = toPosition.PathUsed();
+        var path = _pathfinder.GetPath(_moveOrder.TargetPosition);
         lineRenderer.positionCount=path.Count;
-        lineRenderer.SetPositions(path.ToArray());
+        lineRenderer.SetPositions(Convert(path));
     }
-    void DrawPathToTarget()
+    Vector3[] Convert(List<Vector2> path)
     {
-        lineRenderer.enabled = true;
-        var path = toTarget.PathUsed();
-        lineRenderer.positionCount = path.Count;
-        lineRenderer.SetPositions(path.ToArray());
+        Vector3[] convertedPath = new Vector3[path.Count];
+        for (int i = 0; i < path.Count; i++)
+            convertedPath[i]=path[i];
+        return convertedPath;
     }
 }

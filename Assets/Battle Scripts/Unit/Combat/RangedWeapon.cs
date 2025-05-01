@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Shooting;
 using SoftBody;
 using UnityEngine;
 
@@ -29,11 +30,13 @@ public class RangedWeapon: MonoBehaviour
     float _timeToShoot = 0;
     UnitTemplate unit;
     UnitFormation formation;
+    IRangedTargeter target;
     private void Start()
     {
         unit= GetComponentInParent<UnitTemplate>();
         targetTemplate= GetComponentInChildren<FieldofView>();
         formation = GetComponentInParent<UnitFormation>();
+        target = GetComponentInChildren<IRangedTargeter>();
     }
     void Update()
     {
@@ -54,20 +57,7 @@ public class RangedWeapon: MonoBehaviour
         if(targetTemplate._targets.Count == 0) return;
         foreach (var model in formation.models)
         {
-            model.Shoot(projectile, Random.Range(minimumDamage, maximumDamage) * 50, targetTemplate.NearestUnit.transform);
+            model.Shoot(projectile, Random.Range(minimumDamage, maximumDamage) * 50, target.Target.transform);
         }
-    }
-    private void OnDrawGizmosSelected()
-    {
-        if (targetTemplate == null || targetTemplate._targets == null || targetTemplate._targets.Count == 0) return;
-        Gizmos.color = Color.yellow;
-        foreach(var target  in targetTemplate._targets)
-        {
-            if (targetTemplate.NearestUnit == target.Key) Gizmos.color = Color.green;
-            else if(Battle.Instance.Enemies(unit, target.Key)) Gizmos.color = Color.red;
-            else Gizmos.color = Color.yellow;
-            Gizmos.DrawSphere(target.Key.transform.position, 0.2f);
-        }
-        
     }
 }
