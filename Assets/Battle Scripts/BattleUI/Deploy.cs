@@ -2,15 +2,17 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
-public class Deploy : MonoBehaviour
+namespace BattleUI 
 {
-    [SerializeField]
-    List<GameObject> deploymentZones;
-    public void StartBattle()
+    public class Deploy : MonoBehaviour
     {
-        foreach (var deploymentZone in deploymentZones) Destroy(deploymentZone);    
-        Notifications.Deployed(null);
-        Destroy(gameObject);
+        [SerializeField]
+        List<GameObject> deploymentZones;
+        public void StartBattle()
+        {
+            foreach (var deploymentZone in deploymentZones) Destroy(deploymentZone);
+            Notifications.Deployed(null);
+            Destroy(gameObject);
+        }
     }
 }

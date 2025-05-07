@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -6,19 +7,24 @@ namespace SteeringSystem
     public interface IMoveOrders
     {
         #region Events
-        delegate void Moving(Vector2 target);
-        delegate void MovingUnit(Vector2 target, Transform unit);
-        event Moving moving;
-        static event MovingUnit movingUnit;
+        //Unit reached position
+        public event Action finishedMovement;
+        public static event Action<Transform> unitFinishedMovement;
+        public void InvokeReached(Transform transform)
+        {
+            unitFinishedMovement?.Invoke(transform);
+
+        }        
+        //Unit moving to position
+        public event Action<Vector2> moving;
+        public static event Action<Vector2, Transform> movingUnit;
         public void InvokeMove(Vector2 position, Transform unit)
         {
             movingUnit?.Invoke(position, unit);
         }
-
-        delegate void Pursuing(Transform target);
-        delegate void PursuingUnit(Transform target, Transform unit);
-        event Pursuing pursuing;
-        static event PursuingUnit pursuingUnit;
+        //Unit moving towards target
+        event Action<Transform> pursuing;
+        static event Action<Transform, Transform> pursuingUnit;
         public void InvokePursuit(Transform target, Transform unit)
         {
             pursuingUnit?.Invoke(target, unit);

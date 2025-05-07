@@ -8,8 +8,6 @@ namespace SteeringSystem
     class CalculateSteering : IGetSteerDirection
     {
         
-        float _maxSpeed = 3;
-        protected override float MaxSpeed => _maxSpeed;
         [SerializeField, Range(8, 32)]
         int _movementSlot = 16;
         int MovementSlots

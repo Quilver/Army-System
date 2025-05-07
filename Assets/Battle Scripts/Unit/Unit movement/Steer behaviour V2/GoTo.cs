@@ -5,7 +5,7 @@ namespace SteeringSystem
 {
     class GoTo : MonoBehaviour, ISteeringBehaviour
     {
-        [SerializeField, Range(0, 1)]
+        [SerializeField, Range(0, 10)]
         float priority;
         IGetSteerDirection _direction;
         IPathfinder _pathfinder;
@@ -25,6 +25,9 @@ namespace SteeringSystem
         public Vector2 GetForce()
         {
             if(!_moveOrders.IsMoving)return Vector2.zero;
+            var path = _pathfinder.GetPath(_moveOrders.TargetPosition);
+            if (path == null || path.Count < 2)
+                return _direction.Seek(_moveOrders.TargetPosition);
             return _direction.Seek(_pathfinder.GetPath(_moveOrders.TargetPosition)[1]);
         }
         [SerializeField]

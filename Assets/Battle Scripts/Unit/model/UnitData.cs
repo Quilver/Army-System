@@ -6,18 +6,18 @@ namespace ModelComponents
 {
     class UnitData : MonoBehaviour, IUnitData
     {
-        UnitTemplate _unit;
-        UnitFormation _formation;
+        IUnit _unit;
+        Formation.IFormationData _formation;
         public RegimentStats UnitStats => _unit.Stats;
 
-        public UnitTemplate Unit => _unit;
+        public IUnit Unit => _unit;
 
-        public UnitFormation Formation => _formation;
+        public Formation.IFormationData Formation => _formation;
 
-        public void Setup(UnitTemplate unit)
+        public void Setup(IUnit unit)
         {
             _unit = unit;
-            _formation = unit.GetComponent<UnitFormation>();
+            _formation = unit.GetComponent<Formation.IFormationData>();
         }
     }
 }

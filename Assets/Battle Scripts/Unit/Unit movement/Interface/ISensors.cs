@@ -7,5 +7,6 @@ namespace SteeringSystem
     {
         public float SensorLength { get; }
         public List<RaycastHit2D> Sensors { get; }
+        public Vector2 SensorDirection(RaycastHit2D hit);
     }
 }

@@ -6,8 +6,8 @@ namespace ModelComponents
     public interface IUnitData
     {
         public StatSystem.RegimentStats UnitStats { get; }
-        public UnitTemplate Unit { get; }
-        public UnitFormation Formation { get; }
-        public void Setup(UnitTemplate unit);
+        public IUnit Unit { get; }
+        public Formation.IFormationData Formation { get; }
+        public void Setup(IUnit unit);
     }
 }

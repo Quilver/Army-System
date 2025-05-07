@@ -6,8 +6,10 @@ namespace Formation
     class FormationData : MonoBehaviour, IFormationData
     {
         UnitTemplate _unit;
+        ISpawnModels _spawnModels;
         void Start()
         {
+            _spawnModels = GetComponent<ISpawnModels>();
             _unit = GetComponentInParent<UnitTemplate>();
         }
         [SerializeField, Range(0.5f, 2f)]
@@ -19,5 +21,6 @@ namespace Formation
         [SerializeField, Range(1, 32)]
         int _modelCount;
         public int ModelCount => _modelCount;
+        public List<GameObject> Models => _spawnModels.Models;
     }
 }

@@ -6,22 +6,24 @@ namespace SteeringSystem
     public class SimpleSteerer : IGetSteerDirection
     {
         Vector2 _sumDirection;
-
-        protected override float MaxSpeed => 5;
-
+        float _totalPriority;
+        
         public override void AddForce(Vector2 direction, float priority)
         {
+            _totalPriority += priority;
             _sumDirection += direction * priority;
         }
 
         public override Vector2 GetDirection()
         {
-            return _sumDirection.normalized;
+            if(_totalPriority==0)return Vector2.zero;
+            return _sumDirection/_totalPriority;
         }
 
         void Update()
         {
             _sumDirection = Vector2.zero;
+            _totalPriority = 0;
             UpdateForces();
         }
     }

@@ -8,5 +8,6 @@ namespace Formation
         public float ModelSize { get; }
         public int ModelCount { get; }
         public int Width { get; }
+        public List<GameObject> Models { get; }
     }
 }

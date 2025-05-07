@@ -7,7 +7,7 @@ public class HUD : MonoBehaviour {
     [SerializeField] TextMeshProUGUI mousePos, unitDetail;
     [SerializeField] Image mouseUnit, SelectedUnit;
     [SerializeField]
-    PlayerInput player;
+    PlayerControls.PlayerInput player;
    
     void OnGUI() {
         DrawUnitBar();

@@ -13,7 +13,15 @@ namespace SteeringSystem
 
         //Negative priority can be passed as means to avoid a location
         public abstract void AddForce(Vector2 direction, float priority);
-        protected abstract float MaxSpeed { get; }
+        IMovementData movementData;
+        public float MaxSpeed {
+            get
+            {
+                if(movementData == null) movementData=GetComponent<IMovementData>();
+                return movementData.MaxSpeed;
+            }
+
+        }
         Rigidbody2D _body;
         protected Rigidbody2D Body
         {

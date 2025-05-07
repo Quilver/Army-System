@@ -29,8 +29,7 @@ namespace ModelComponents
             model = GetComponentInParent<Model>();
             _inCombatWith = new();
         }
-
-        private void OnCollisionEnter2D(Collision2D collision)
+        private void OnTriggerEnter2D(Collider2D collision)
         {
             var collUnit = collision.gameObject.GetComponent<ITakeDamage>();
             if (collUnit == null || collision.transform == transform.parent) return;

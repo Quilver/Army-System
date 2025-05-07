@@ -6,5 +6,6 @@ namespace Formation
     public interface ISpawnModels 
     {
         void SpawnUnit();
+        public List<GameObject> Models { get; } 
     }
 }

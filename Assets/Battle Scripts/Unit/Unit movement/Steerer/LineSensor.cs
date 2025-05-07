@@ -52,6 +52,11 @@ namespace SteeringSystem
                 offset.y *= _formationData.OffsetFromUnit.y; 
                 return transform.position + offset; }
         }
+        public Vector2 SensorDirection(RaycastHit2D hit)
+        {
+            float angle = Sensors.FindIndex(x=>x== hit) * 360f / _sensorCount + transform.rotation.z * Mathf.Deg2Rad;
+            return Quaternion.AngleAxis(angle, transform.forward) * transform.up;
+        }
         RaycastHit2D BoxSensor(float angle)
         {
 
@@ -92,6 +97,8 @@ namespace SteeringSystem
                 DrawBoxSensor(angle);
             }
         }
+
+        
         #endregion
     }
 }
