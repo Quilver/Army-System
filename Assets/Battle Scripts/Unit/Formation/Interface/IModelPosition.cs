@@ -6,6 +6,6 @@ namespace Formation
     public interface IModelPosition 
     {
         Vector3 GetModelPosition(int index);
-        void RemoveModel();
+        void RemoveModel(Transform model);
     }
 }

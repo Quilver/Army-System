@@ -7,7 +7,8 @@ namespace ModelComponents
 {
     class MeleeTargeter : MonoBehaviour, IMeleeTargeter
     {
-        Model model;
+        [SerializeField]
+        UnitData _unitData;
         [SerializeField]
         List<ITakeDamage> _inCombatWith;
         [SerializeField, Range(0.5f, 3)]
@@ -26,14 +27,16 @@ namespace ModelComponents
         public ITakeDamage Target => Targets[0];
         void Start()
         {
-            model = GetComponentInParent<Model>();
+            if(_unitData == null)
+                _unitData = GetComponentInParent<UnitData>();
             _inCombatWith = new();
         }
         private void OnTriggerEnter2D(Collider2D collision)
         {
             var collUnit = collision.gameObject.GetComponent<ITakeDamage>();
-            if (collUnit == null || collision.transform == transform.parent) return;
-            if (_inCombatWith.Contains(collUnit)) return;// || !Battle.Instance.Enemies(model.unit, )) return;
+            var unitData = collUnit.GetComponent<IUnitData>();
+            if (unitData == null || unitData.Unit == _unitData.Unit) return;
+            if (_inCombatWith.Contains(collUnit) || !Battle.Instance.Enemies(_unitData.Unit, unitData.Unit)) return;
             _inCombatWith.Add(collUnit);
         }
     }

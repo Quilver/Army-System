@@ -26,12 +26,12 @@ namespace ModelComponents
         public void SetPosition(Vector3 position, bool warpToPoint = false)
         {
             if(warpToPoint) transform.position = position;
-            int i = 1;
+            int i = 0;
             foreach (var joint in GetComponents<SpringJoint2D>())
             {
                 joint.connectedBody = pins[i];
-                joint.distance = Vector3.Distance(transform.position, pins[i].transform.position);
-                joints[i - 1] = joint;
+                joint.distance = Vector3.Distance(position, pins[i].transform.position);
+                joints[i] = joint;
                 i++;
             }
         }

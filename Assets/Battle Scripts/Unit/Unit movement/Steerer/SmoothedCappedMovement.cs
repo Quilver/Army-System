@@ -19,22 +19,6 @@ namespace SteeringSystem
         }
         [SerializeField]
         IMovementData _moveData;
-        float Mass
-        {
-            get
-            {
-                if (_moveData == null) _moveData=GetComponent<IMovementData>();
-                return _moveData.Mass+ 4;
-            }
-        }
-        float Force
-        {
-            get
-            {
-                if (_moveData == null) _moveData=GetComponent<IMovementData>();
-                return (_moveData.MaxSpeed);
-            }
-        }
         [SerializeField]
         float _currentSpeed;
         [SerializeField]
@@ -45,7 +29,7 @@ namespace SteeringSystem
         {
             _speed=_direction.MaxSpeed;
             _currentSpeed = _body.velocity.magnitude;
-            _body.AddForce(Mass * Force * direction * Time.deltaTime);
+            _body.AddForce(_moveData.Mass * _moveData.Force * direction * Time.deltaTime);
             if (_body.velocity.magnitude > _currentSpeed && _direction.MaxSpeed < _currentSpeed)
                 _body.velocity = _body.velocity.normalized * _currentSpeed;
             else if (_body.velocity.magnitude > _direction.MaxSpeed)

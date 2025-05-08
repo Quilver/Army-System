@@ -14,7 +14,7 @@ namespace SteeringSystem
             get
             {
                 if(_formationData == null) _formationData = transform.parent.GetComponentInChildren<Formation.FormationData>();
-                return _formationData.ModelCount;
+                return _formationData.ModelCount + 3;
             }
         }
             
@@ -45,6 +45,14 @@ namespace SteeringSystem
             get {
                 if(_unitTemplate==null) _unitTemplate=GetComponentInParent<IUnit>();
                 return _unitTemplate.Stats.MoveSpeed.CurrentStat;
+            }
+        }
+
+        public float Force
+        {
+            get
+            {
+                return (MaxSpeed * 3 + 5);
             }
         }
     }

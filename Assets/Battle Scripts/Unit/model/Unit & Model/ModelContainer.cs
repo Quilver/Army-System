@@ -12,6 +12,12 @@ namespace SoftBody
                 instance = new GameObject("Model holder");
             model.transform.parent = instance.transform;
         }
+        public static void AddModel(Transform model)
+        {
+            if (instance == null)
+                instance = new GameObject("Model holder");
+            model.parent = instance.transform;
+        }
     }
 }
 

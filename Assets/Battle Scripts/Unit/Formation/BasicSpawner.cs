@@ -29,6 +29,7 @@ namespace Formation
                 model.GetComponent<ModelComponents.IUnitData>().Setup(GetComponentInParent<IUnit>());
                 model.transform.position = _position.GetModelPosition(i);
                 model.GetComponent<ModelComponents.IModelFormation>().SetUp(GetComponentsInChildren<Rigidbody2D>());
+                SoftBody.ModelContainer.AddModel(model.transform);
             }
         }
 

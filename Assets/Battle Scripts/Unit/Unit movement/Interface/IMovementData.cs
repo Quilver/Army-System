@@ -7,6 +7,8 @@ namespace SteeringSystem
     {
         
         public float Mass { get; }
+        public float Force { get; }
+
         public Vector2 Center { get; }
         public Vector2 FuturePosition { get; }
         public float MaxSpeed { get; }

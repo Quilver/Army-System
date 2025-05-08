@@ -5,10 +5,11 @@ using UnityEngine.Events;
 
 namespace ModelComponents
 {
-    public interface IDeath
+    public abstract class IDeath : MonoBehaviour
     {
-        public event System.Action Death;
-        void Die();
+        [SerializeField]
+        protected UnityEvent Dead;
+        public abstract void Die();
         
     }
 }

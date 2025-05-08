@@ -27,7 +27,6 @@ namespace PlayerControls
         {
             unit = SelectedUnitV;
             _cursor = transform;
-            Debug.Log(SelectedUnitV);
             SelectedUnit?.Invoke(SelectedUnitV);
         }
         protected override void MoveCursor(InputAction.CallbackContext value)

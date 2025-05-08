@@ -6,24 +6,44 @@ namespace ModelComponents
     class WarriorToughness : ITakeDamage
     {
         IUnitData _unitData;
+        IDeath _death;
         private void Start()
         {
             _unitData= GetComponent<IUnitData>();
+            _death= GetComponent<IDeath>();
         }
+        float DefenceRoll()
+        {
+            return Random.Range(0f, 3*(_unitData.UnitStats.Defence.CurrentStat + 5));
+        }
+        //Rear angle should be 135, but I am cheating it to 120 so flanks are harder
+        const float FLANKANGLE = 120;
+        const int FLANKBONUS = 2;
+        const float REARANGLE = 45;
+        const int REARBONUS = 4;
         public override void TakeDamage(float damage, Transform attacker)
         {
-            float defenceScore = Random.Range(0f, _unitData.UnitStats.Defence.CurrentStat + 5);
-            if (defenceScore < damage)
+            if(!enabled)return;
+            var angle = Vector2.Angle(transform.up, (transform.position - attacker.position));
+            //Rear attack bonus
+            if (angle < REARANGLE)
+                damage *= REARBONUS;
+            //Flank attack bonus
+            else if(angle < FLANKANGLE)
+                damage *= FLANKBONUS;
+            if (DefenceRoll() < damage)
             {
-                //_unitData.Formation.Death(this);
-                //unit.GetComponent<UnitFormation>().Death(this);
-                //Notifications.MeleeDamage(attacker, unit, 1);
+                _death.Die();
             }
         }
 
         public override void TakeDamage(float damage)
         {
-            throw new System.NotImplementedException();
+            if (!enabled) return;
+            if (DefenceRoll() < damage)
+            {
+                _death.Die();
+            }
         }
     }
 }

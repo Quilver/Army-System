@@ -1,6 +1,7 @@
 ﻿using Campaign;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class Battle : MonoBehaviour {
@@ -49,5 +50,10 @@ public class Battle : MonoBehaviour {
     public bool Enemies(UnitTemplate unit1, UnitTemplate unit2)
     {
         return unitArmy[unit1] != unitArmy[unit2];
+    }
+    public bool Enemies(IUnit unit1, IUnit unit2)
+    {
+        List<IUnit> units = player.GetComponentsInChildren<IUnit>().ToList();
+        return units.Contains(unit1) != units.Contains(unit2);
     }
 }

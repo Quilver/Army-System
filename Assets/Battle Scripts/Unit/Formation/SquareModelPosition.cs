@@ -21,9 +21,32 @@ namespace Formation
             return transform.position + offset;
         }
         void Start()=>DrawGizmo=false;
-        public void RemoveModel()
+        public void RemoveModel(Transform model)
         {
-            throw new System.NotImplementedException();
+            if(_data == null || !_data.Models.Contains(model.gameObject)) return;
+            int index = _data.Models.IndexOf(model.gameObject);
+            RemoveModelAtIndex(index);            
+        }
+        void RemoveModelAtIndex(int index)
+        {
+            var models = _data.Models;
+            var Width = _data.Width;
+            //shift up
+            if (index + Width < models.Count)
+            {
+                models[index] = models[index + Width];
+                models[index].GetComponent<ModelComponents.IModelFormation>().SetPosition(GetModelPosition(index));
+                RemoveModelAtIndex(index + Width);
+            }
+            //shift right
+            else if (index + 2 < models.Count)
+            {
+                models[index] = models[index + 2];
+                models[index].GetComponent<ModelComponents.IModelFormation>().SetPosition(GetModelPosition(index));
+                RemoveModelAtIndex(index + 2);
+            }
+            //done
+            else models.RemoveAt(index);
         }
         [SerializeField]
         bool DrawGizmo;

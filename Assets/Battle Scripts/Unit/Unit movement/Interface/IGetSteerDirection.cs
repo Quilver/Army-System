@@ -6,8 +6,7 @@ namespace SteeringSystem
     public abstract class IGetSteerDirection : MonoBehaviour
     {
         #region Events
-        public delegate void UpdateSteeringForces();
-        public event UpdateSteeringForces updateSteeringForces;
+        public event System.Action updateSteeringForces;
         protected void UpdateForces()=>updateSteeringForces?.Invoke();
         #endregion
 
