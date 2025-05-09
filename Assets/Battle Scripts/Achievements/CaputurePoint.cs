@@ -1,4 +1,3 @@
-using SoftBody;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -37,15 +36,15 @@ public class CaputurePoint : MonoBehaviour
     }
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        var model = collision.GetComponent<Model>();
-        if (model.Unit.army.controller == Army.Controller.Player) 
+        var model = collision.GetComponent<ModelComponents.IUnitData>();
+        if (model.Unit.GetComponentInParent<ArmyData>().controller == Army.Controller.Player) 
             counter++;
         else counter--;
     }
     private void OnTriggerExit2D(Collider2D collision)
     {
-        var model = collision.GetComponent<Model>();
-        if (model.Unit.army.controller == Army.Controller.Player)
+        var model = collision.GetComponent<ModelComponents.IUnitData>();
+        if (model.Unit.GetComponentInParent<ArmyData>().controller == Army.Controller.Player)
             counter--;
         else counter++;
     }

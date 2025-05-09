@@ -30,13 +30,13 @@ namespace AchievementSystem
 
         public override void Initialise()
         {
-            Notifications.MeleeDamage += RecordKills;
+            throw new System.NotImplementedException();
             KillsByEachUnit = new();
         }
-        Dictionary<UnitTemplate, int> KillsByEachUnit;
-        void RecordKills(UnitTemplate attacker, UnitTemplate victim, int kills)
+        Dictionary<IUnit, int> KillsByEachUnit;
+        void RecordKills(IUnit attacker, IUnit victim, int kills)
         {
-            if(attacker.army.controller != Army.Controller.Player)return;
+            if(attacker.GetComponentInParent<ArmyData>().controller != Army.Controller.Player)return;
             if(KillsByEachUnit.ContainsKey(attacker))
                 KillsByEachUnit[attacker] += kills;
             else KillsByEachUnit.Add(attacker, kills);

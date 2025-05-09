@@ -19,10 +19,10 @@ namespace AchievementSystem
 
         public override void Initialise()
         {
-            
-            Notifications.ArmyDestroyed += EndBattle;
+            throw new System.NotImplementedException();
+            //Notifications.ArmyDestroyed += EndBattle;
         }
-        void EndBattle(Army army)
+        void EndBattle(ArmyData army)
         {
             Debug.Log("Battle over: "+army.gameObject.name);
             if (army == null) return;

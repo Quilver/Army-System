@@ -5,7 +5,7 @@ namespace Shooting
 {
     public interface IRangedTargeter
     {
-        public List<UnitTemplate> ValidTargets { get; }
-        public UnitTemplate Target { get; }
+        public List<Transform> ValidTargets { get; }
+        public Transform Target { get; }
     }
 }

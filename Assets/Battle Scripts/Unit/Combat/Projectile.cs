@@ -8,8 +8,8 @@ public class Projectile : MonoBehaviour
     // Start is called before the first frame update
     Rigidbody2D body;
     Collider2D col;
-    UnitTemplate unit;
-    public void Setup(Vector2 direction, float force, UnitTemplate shooter)
+    IUnit unit;
+    public void Setup(Vector2 direction, float force, IUnit shooter)
     {
         body = GetComponent<Rigidbody2D>();
         col = GetComponent<Collider2D>();
@@ -30,9 +30,9 @@ public class Projectile : MonoBehaviour
     }
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        var unit = collision.gameObject.GetComponent<SoftBody.Model>();
+        var unit = collision.gameObject.GetComponent<ModelComponents.ITakeDamage>();
         if (unit == null) return;
-        unit.Hit(Random.Range(speed * body.mass /2, speed * body.mass), this.unit);
+        unit.TakeDamage(Random.Range(speed * body.mass / 2, speed * body.mass));
         Destroy(gameObject);
     }
 }

@@ -1,15 +1,16 @@
 using System.Collections;
 using System.Collections.Generic;
 using Shooting;
-using SoftBody;
 using UnityEngine;
 
 public class RangedWeapon: MonoBehaviour
 {
+    //shooter, targetPosition, Target gameobject
+    public event System.Action<IUnit, Vector2, Transform> ShootAt;
     [SerializeField]
     Color startColour, endColour;
     [SerializeField]
-    GameObject projectile;
+    public GameObject projectile;
     public Color CurrentColour
     {
         get
@@ -28,19 +29,19 @@ public class RangedWeapon: MonoBehaviour
     float maximumDamage;
     FieldofView targetTemplate;
     float _timeToShoot = 0;
-    UnitTemplate unit;
-    UnitFormation formation;
+    IUnit unit;
+    
     IRangedTargeter target;
     private void Start()
     {
-        unit= GetComponentInParent<UnitTemplate>();
+        unit= GetComponentInParent<IUnit>();
         targetTemplate= GetComponentInChildren<FieldofView>();
-        formation = GetComponentInParent<UnitFormation>();
+        
         target = GetComponentInChildren<IRangedTargeter>();
     }
     void Update()
     {
-        if(unit.unitState != UnitState.Idle)
+        if(unit.State != UnitState.Idle)
         {
             _timeToShoot = 0;
             return;
@@ -54,10 +55,12 @@ public class RangedWeapon: MonoBehaviour
     void Shoot()
     {
         _timeToShoot = 0;
-        if(targetTemplate._targets.Count == 0) return;
-        foreach (var model in formation.models)
-        {
-            model.Shoot(projectile, Random.Range(minimumDamage, maximumDamage) * 50, target.Target.transform);
-        }
+        if(target.ValidTargets.Count == 0 || target.Target == null) return;
+        ShootAt?.Invoke(unit, target.Target.position, target.Target);
+        //Shoot(projectile, Random.Range(minimumDamage, maximumDamage) * 50, target.Target.transform);
+    }
+    public float ShootPower
+    {
+        get => Random.Range(minimumDamage, maximumDamage) * 50;
     }
 }

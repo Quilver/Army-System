@@ -5,12 +5,12 @@ namespace Formation
 {
     class FormationData : MonoBehaviour, IFormationData
     {
-        UnitTemplate _unit;
+        IUnit _unit;
         ISpawnModels _spawnModels;
         void Start()
         {
             _spawnModels = GetComponent<ISpawnModels>();
-            _unit = GetComponentInParent<UnitTemplate>();
+            _unit = GetComponentInParent<IUnit>();
         }
         [SerializeField, Range(0.5f, 2f)]
         float _modelSize;

@@ -17,33 +17,15 @@ public class FieldofView : MonoBehaviour
     MeshFilter _mesh;
     Mesh mesh;
     MeshRenderer _renderer;
-    UnitTemplate unit;
+    IUnit unit;
     RangedWeapon rangedWeapon;
-    public Dictionary<UnitTemplate, float> _targets;
+    public Dictionary<Transform, float> _targets;
     public LayerMask SensorLayerMask;
-    public List<UnitTemplate> _targetsList;
-    public UnitTemplate NearestUnit
-    {
-        get
-        {
-            if (_targets == null || _targets.Count == 0) return null;
-            UnitTemplate nearestTarget = null;
-            float dist = float.MaxValue;
-            foreach (var t in _targets)
-            {
-                if (t.Value < dist)
-                {
-                    dist = t.Value;
-                    nearestTarget = t.Key;
-                }
-            }
-            return nearestTarget;
-        }
-    }
+    public List<Transform> _targetsList;
     // Start is called before the first frame update
     void Start()
     {
-        unit = GetComponentInParent<UnitTemplate>();
+        unit = GetComponentInParent<IUnit>();
         rangedWeapon= GetComponentInParent<RangedWeapon>();
         _mesh = GetComponent<MeshFilter>();
         _renderer = GetComponent<MeshRenderer>();
@@ -55,7 +37,7 @@ public class FieldofView : MonoBehaviour
     {
         transform.position = Vector3.zero;
         transform.parent.rotation = Quaternion.Euler(Vector3.zero);
-        if (unit.unitState == UnitState.Idle)
+        if (unit.State == UnitState.Idle)
         {
             _targets = new();
             _renderer.enabled = true;
@@ -217,22 +199,22 @@ public class FieldofView : MonoBehaviour
             return origin + GetVectorFromAngle(angle) * range;
         else
         {
-            var target = raycast2D.transform.GetComponentInParent<UnitTemplate>();
+            var target = raycast2D.transform.GetComponentInParent<IUnit>();
             HittingUnit(target, raycast2D.distance);
             return raycast2D.point;
         }
     }
-    void HittingUnit(UnitTemplate unit, float Distance)
+    void HittingUnit(IUnit unit, float Distance)
     {
         if (unit == null) return;
-        if (!_targets.ContainsKey(unit))
+        if (!_targets.ContainsKey(unit.transform))
         {
-            _targets.Add(unit, Distance);
+            _targets.Add(unit.transform, Distance);
         }
         else
         {
-            if (_targets[unit] > Distance)
-                _targets[unit] = Distance;
+            if (_targets[unit.transform] > Distance)
+                _targets[unit.transform] = Distance;
         }
     }
     static Vector3 GetVectorFromAngle(float angle)

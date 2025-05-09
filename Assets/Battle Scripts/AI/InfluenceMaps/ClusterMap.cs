@@ -3,15 +3,15 @@ using System.Collections.Generic;
 using UnityEngine;
 namespace InfluenceMap
 {
-    [RequireComponent(typeof(Army))]
+    [RequireComponent(typeof(ArmyData))]
     public class ClusterMap : MonoBehaviour
     {
-        Army army;
+        ArmyData army;
         [SerializeField, Range(3, 15)]
         float clusterSize;
         private void Start()
         {
-            army= GetComponent<Army>();
+            army= GetComponent<ArmyData>();
         }
         void Update ()
         {
@@ -25,12 +25,12 @@ namespace InfluenceMap
                 else return clusters.Count;
             }
         }
-        Dictionary<Cluster, List<UnitTemplate>> clusters;
+        Dictionary<Cluster, List<IUnit>> clusters;
         void CreateCluster()
         {
             clusters = new();
-            Dictionary<Vector2, List<UnitTemplate>> testCluster = new();
-            foreach (var unit in GetComponentsInChildren<UnitTemplate>())
+            Dictionary<Vector2, List<IUnit>> testCluster = new();
+            foreach (var unit in GetComponentsInChildren<IUnit>())
             {
                 bool flag = true;
                 foreach (var cluster in testCluster)
@@ -46,7 +46,7 @@ namespace InfluenceMap
                 {
                     if(testCluster.ContainsKey(unit.transform.position))
                         continue;
-                    testCluster.Add(unit.transform.position, new List<UnitTemplate>());
+                    testCluster.Add(unit.transform.position, new List<IUnit>());
                     testCluster[unit.transform.position].Add(unit);
                 }
 
@@ -86,7 +86,7 @@ namespace InfluenceMap
         {
             public readonly float nodeSize;
             public readonly Vector2 position;
-            public List<UnitTemplate> unitsInCluster;
+            public List<IUnit> unitsInCluster;
             public Cluster(float size, Vector2 position)
             {
                 //size *= 0.75f;
@@ -94,7 +94,7 @@ namespace InfluenceMap
                 this.position = position;
                 unitsInCluster = new();
             }
-            public void DrawCircleGizmo(List<UnitTemplate> units)
+            public void DrawCircleGizmo(List<IUnit> units)
             {
                 Gizmos.DrawSphere(position, 0.3f);
                 if (units == null) return;

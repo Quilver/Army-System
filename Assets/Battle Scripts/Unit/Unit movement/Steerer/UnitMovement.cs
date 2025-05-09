@@ -15,7 +15,7 @@ namespace SteeringSystem
                 return _body;
             }
         }
-        UnitTemplate _unit;
+        IUnit _unit;
         IGetSteerDirection _direction;
         IGetSteerDirection GetSteerDirection
         {
@@ -49,7 +49,7 @@ namespace SteeringSystem
         {
             _direction=GetComponent<IGetSteerDirection>();
             _formation = transform.parent.GetComponentInChildren<Formation.IFormationData>();
-            _unit=GetComponentInParent<UnitTemplate>();
+            _unit=GetComponentInParent<IUnit>();
         }
         void Update()
         {

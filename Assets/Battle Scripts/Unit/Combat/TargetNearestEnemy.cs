@@ -11,19 +11,19 @@ namespace Shooting
         {
             _fieldOfView = GetComponentInChildren<FieldofView>();
         }
-        public List<UnitTemplate> ValidTargets
+        public List<Transform> ValidTargets
         {
             get
             {
                 if(_fieldOfView == null || _fieldOfView._targets == null)
-                    return new List<UnitTemplate>();
+                    return new List<Transform>();
                 var unvlaidatedTargets = _fieldOfView._targets.Keys;
                 var validatedTargets = unvlaidatedTargets.Where(target => target.GetComponentInParent<Army>() != GetComponentInParent<Army>()).ToList();
                 return validatedTargets;
             }
         }
 
-        public UnitTemplate Target
+        public Transform Target
         {
             get
             {
