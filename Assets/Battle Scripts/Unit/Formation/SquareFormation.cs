@@ -14,13 +14,14 @@ namespace Formation
                 return _formationData;
             }
         }
-        public Vector2 OffsetFromUnit => new Vector2(0, 0 - (Ranks - 1) * FormationData.ModelSize / 4);
+        public Vector2 OffsetFromUnit => new Vector2(0, 0 - (Ranks - 2) * FormationData.ModelSize / 4);
 
         public Vector2 SizeOfFormation => new Vector2(FormationData.Width, Ranks) * FormationData.ModelSize / 2;
         public int Ranks
         {
             get
             {
+                if(FormationData.ModelCount == 0) return 0;
                 int ranks = FormationData.ModelCount / FormationData.Width;
                 if (FormationData.ModelCount % FormationData.Width == 0)
                     return ranks;

@@ -34,6 +34,7 @@ namespace ModelComponents
             if (DefenceRoll() < damage)
             {
                 _death.Die();
+                LogKill(attacker.GetComponent<IUnit>(), _unitData.Unit);
             }
         }
 

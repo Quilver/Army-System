@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 namespace ModelComponents
 {
-    class MeleeAttack : MonoBehaviour
+    class MeleeAttack : IMeleeAttack
     {
         IUnitData _unitData;
         IMeleeTargeter _targeter;
@@ -37,6 +37,7 @@ namespace ModelComponents
         void Attack()
         {
             var target = _targeter.Target;
+            MakeStrike();
             target.GetComponentInParent<Rigidbody2D>().AddForce(
                 (target.transform.position - transform.position).normalized 
                 * _unitData.UnitStats.AttackPower.CurrentStat * _attackForceMultiplier);

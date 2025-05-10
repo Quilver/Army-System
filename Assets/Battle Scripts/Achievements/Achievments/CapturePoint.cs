@@ -29,7 +29,7 @@ namespace AchievementSystem
         }
         public override void Reward()
         {
-            foreach (var character in BattleReport.statWrappers)
+            foreach (var character in BattleReport.DeployedCharacters)
             {
                 GiveExperience(character.statBase, xpReward);
             }

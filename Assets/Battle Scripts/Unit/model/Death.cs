@@ -13,13 +13,27 @@ namespace ModelComponents
         SpriteRenderer sprite;
         public override void Die()
         {
+            UnitDeath();
+            Destroy(GetComponent<ModelFacing>());
             Dead?.Invoke();
-            GetComponent<IUnitData>().Unit.DeadModel?.Invoke(transform);
             sprite.color = Desaturate(0.4f, sprite.color);
             GetComponent<Collider2D>().enabled = false;
             foreach (var joint in GetComponents<Joint2D>())
                 Destroy(joint);
             Invoke("Remove", fadeoutTime);
+        }
+        void UnitDeath()
+        {
+            IUnitData unitData = GetComponent<IUnitData>();
+            if (unitData == null || unitData.Unit == null) return;
+            unitData.Unit.UnitDestroyed -= Die;
+            unitData.Unit.DeadModel?.Invoke(transform);
+        }
+        private void OnDestroy()
+        {
+            IUnitData unitData = GetComponent<IUnitData>();
+            if (unitData == null || unitData.Unit == null) return;
+            unitData.Unit.UnitDestroyed -= Die;
         }
         Color Desaturate(float percentage, Color color)
         {

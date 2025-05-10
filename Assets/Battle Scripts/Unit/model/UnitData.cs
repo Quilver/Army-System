@@ -17,6 +17,7 @@ namespace ModelComponents
         public void Setup(IUnit unit)
         {
             _unit = unit;
+            _unit.UnitDestroyed+=GetComponent<IDeath>().Die;
             _formation = unit.GetComponent<Formation.IFormationData>();
         }
     }

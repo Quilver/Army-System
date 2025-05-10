@@ -28,7 +28,7 @@ namespace AchievementSystem
 
         public override void Initialise()
         {
-            characters = Campaign.CampaignDataManager.instance.deployedCharacters;
+            characters = BattleReport.DeployedCharacters;
         }
 
         public override void Reward()

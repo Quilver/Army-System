@@ -9,5 +9,6 @@ namespace ModelComponents
         public IUnit Unit { get; }
         public Formation.IFormationData Formation { get; }
         public void Setup(IUnit unit);
+
     }
 }

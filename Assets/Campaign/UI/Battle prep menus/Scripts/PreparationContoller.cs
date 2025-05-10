@@ -19,7 +19,7 @@ namespace BattlePrep
         private void Awake()
         {
             Data = preparationData[CampaignDataManager.Data.CurrentLevel-1];
-            BattleReport.statWrappers = new();
+            BattleReport.DeployedCharacters = new();
         }
         [SerializeField]
         BriefingTab briefingTab;

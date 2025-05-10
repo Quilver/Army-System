@@ -7,9 +7,11 @@ namespace Shooting
     public class TargetNearestEnemy : MonoBehaviour, IRangedTargeter
     {
         FieldofView _fieldOfView;
+        ArmyData _armyData;
         void Start()
         {
             _fieldOfView = GetComponentInChildren<FieldofView>();
+            _armyData = GetComponentInParent<ArmyData>();
         }
         public List<Transform> ValidTargets
         {

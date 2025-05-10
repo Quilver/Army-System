@@ -31,6 +31,7 @@ namespace Formation
                 model.GetComponent<ModelComponents.IModelFormation>().SetUp(GetComponentsInChildren<Rigidbody2D>());
                 ModelComponents.ModelContainer.AddModel(model.transform);
             }
+
         }
 
     }

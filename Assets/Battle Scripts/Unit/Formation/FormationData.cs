@@ -20,7 +20,22 @@ namespace Formation
         public int Width => (_width > ModelCount)? ModelCount : _width;
         [SerializeField, Range(1, 32)]
         int _modelCount;
-        public int ModelCount => _modelCount;
-        public List<GameObject> Models => _spawnModels.Models;
+        public int ModelCount
+        {
+            get
+            {
+                if(Models !=null)return Models.Count;
+                if(_unit == null)_unit = GetComponentInParent<IUnit>();
+                return _unit.Stats.ModelCount.CurrentStat;
+            }
+        }
+        public List<GameObject> Models
+        {
+            get
+            {
+                if (_spawnModels == null) return null;
+                return _spawnModels.Models;
+            }
+        }
     }
 }

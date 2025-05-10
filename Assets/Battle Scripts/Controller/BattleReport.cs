@@ -43,20 +43,20 @@ public class BattleReport: MonoBehaviour
         }
     }
     [SerializeField]
-    List<Campaign.StatWrapper> _statWrappers;
-    public static List<Campaign.StatWrapper> statWrappers
+    List<Campaign.StatWrapper> _deployedCharacters;
+    public static List<Campaign.StatWrapper> DeployedCharacters
     {
-        get { return instance._statWrappers; }
-        set { instance._statWrappers = value; }
+        get { return instance._deployedCharacters; }
+        set { instance._deployedCharacters = value; }
     }
     public static UpdateCharacter CharacterUpdate;
     public delegate void UpdateCharacter(Campaign.StatWrapper character);
-    public static void Reset()
+    public static void Set(List<Campaign.StatWrapper> deployedCharacter, List<AchievementSystem.Achievments> achievements)
     {
         timeTaken = 0;
         kills= 0;
         deaths= 0;
-        Achievements = new();
-        statWrappers = new();
+        Achievements = achievements;
+        DeployedCharacters = deployedCharacter;
     }
 }

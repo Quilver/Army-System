@@ -30,16 +30,16 @@ namespace AchievementSystem
 
         public override void Initialise()
         {
-            throw new System.NotImplementedException();
+            ModelComponents.ITakeDamage.kill += RecordKills;
             KillsByEachUnit = new();
         }
         Dictionary<IUnit, int> KillsByEachUnit;
-        void RecordKills(IUnit attacker, IUnit victim, int kills)
+        void RecordKills(IUnit attacker, IUnit victim)
         {
             if(attacker.GetComponentInParent<ArmyData>().controller != Army.Controller.Player)return;
             if(KillsByEachUnit.ContainsKey(attacker))
-                KillsByEachUnit[attacker] += kills;
-            else KillsByEachUnit.Add(attacker, kills);
+                KillsByEachUnit[attacker] ++;
+            else KillsByEachUnit.Add(attacker, 1);
         }
         public override void Reward()
         {

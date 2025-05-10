@@ -2,9 +2,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UIElements;
 namespace SteeringSystem
 {
-    class OrderMove : MonoBehaviour, IMoveOrders
+    class OrderMove : IMoveOrders
     {
         #region Values      
         [SerializeField]
@@ -13,17 +14,25 @@ namespace SteeringSystem
         Vector2 _position;
         [SerializeField]
         Transform _target;
-        public bool IsMoving => _orderedMove;
+        public override bool IsMoving => _orderedMove;
 
-        public Vector2 TargetPosition { 
+        public override Vector2 TargetPosition { 
             get { 
                 if (_target == null)
                     return _position; 
                 return _target.position;
             }
         }
-
-        public Transform Target => _target;
+        IUnit _unit;
+        IUnit Unit
+        {
+            get
+            {
+                if (_unit == null) _unit = GetComponent<IUnit>();
+                return _unit;
+            }
+        }
+        public override Transform Target => _target;
         [SerializeField, Range(0.1f, 1)]
         float _maxReachedRange;
         bool ReachedPoint
@@ -37,40 +46,53 @@ namespace SteeringSystem
         }
         #endregion
         #region Events
-        public event Action finishedMovement;
-        public event Action<Vector2> moving;
-        public event Action<Transform> pursuing;
+        //public event Action<Transform> pursuing;
         #endregion
-        public void MoveTo(Vector2 position)
+        public override void MoveTo(Vector2 position)
         {
+            if(Unit.State == UnitState.Fleeing) return; 
+            if(Unit.State == UnitState.Deployment)
+            {
+                DeploymentMove(position);
+                return;
+            }
             _orderedMove = true;
             _position = position;
             _target = null;
-            moving?.Invoke(position);
-            GetComponent<IUnit>().State =UnitState.Moving;
+            InvokeMove(position);
+            Unit.State =UnitState.Moving;
         }
-        public void MoveTo(Transform target)
+        [SerializeField]
+        bool TEST;
+        void DeploymentMove(Vector2 position)
         {
+            if (!Physics2D.OverlapPoint(position, 1 << 12)) return;
+            transform.position = position;
+            FinishedMovement();
+        }
+        public override void MoveTo(Transform target)
+        {
+            if (Unit.State == UnitState.Deployment || Unit.State == UnitState.Fleeing)
+            {
+                return;
+            }
             _orderedMove = true;
             _target = target;
-            pursuing?.Invoke(target);
-            GetComponent<IUnit>().State = UnitState.Moving;
+            InvokePursuit(target);
+            Unit.State = UnitState.Moving;
         }
         void Update()
         {
-            if(ReachedPoint)
+            if(Unit.State == UnitState.Moving && ReachedPoint)
             {
                 _orderedMove = false;
-                finishedMovement?.Invoke();
-                GetComponent<IUnit>().State = UnitState.Idle;
+                FinishedMovement();
+                Unit.State = UnitState.Idle;
             }
         }
 
         [SerializeField]
-        bool DrawGizmo;
-
-        
-
+        bool DrawGizmo; 
         private void OnDrawGizmos()
         {
             if (!DrawGizmo) return;

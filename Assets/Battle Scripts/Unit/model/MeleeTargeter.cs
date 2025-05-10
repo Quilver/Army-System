@@ -33,6 +33,7 @@ namespace ModelComponents
         private void OnTriggerEnter2D(Collider2D collision)
         {
             var collUnit = collision.gameObject.GetComponent<ITakeDamage>();
+            if(collUnit == null)return;
             var unitData = collUnit.GetComponent<IUnitData>();
             if (unitData == null || unitData.Unit == _unitData.Unit) return;
             if (_inCombatWith.Contains(collUnit) || !Battle.Instance.Enemies(_unitData.Unit, unitData.Unit)) return;

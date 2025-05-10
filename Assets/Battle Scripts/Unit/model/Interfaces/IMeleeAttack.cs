@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 namespace ModelComponents
 {
-    public interface IMeleeAttack 
+    public abstract class IMeleeAttack : MonoBehaviour
     {
-        public void Attack();
+        public event System.Action Strike;
+        protected void MakeStrike()=>Strike?.Invoke();
     }
 }
