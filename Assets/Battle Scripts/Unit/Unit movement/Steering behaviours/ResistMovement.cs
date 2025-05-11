@@ -1,10 +1,19 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-namespace SteeringSystem
+namespace MovementSystem.SteeringBehaviour
 {
     public class ResistMovement : ISteeringBehaviour
     {
+        IMovementData _movementData;
+        IMovementData MovementData
+        {
+            get
+            {
+                if (_movementData == null) _movementData = GetComponentInParent<IMovementData>();
+                return _movementData;
+            }
+        }
         Rigidbody2D _body;
         Rigidbody2D Body
         {
@@ -17,11 +26,12 @@ namespace SteeringSystem
         public override void AddForce()
         {
             GetSteerDirection.AddForce(GetForce(), 1);
+            Body.angularVelocity = -Body.angularVelocity/2;
         }
 
         public override Vector2 GetForce()
         {
-            return -Body.totalForce / 2;
+            return -Body.velocity * 5;
         }
     }
 }

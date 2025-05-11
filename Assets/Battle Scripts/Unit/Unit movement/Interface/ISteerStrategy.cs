@@ -1,12 +1,15 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-namespace SteeringSystem
+namespace MovementSystem
 {
     public abstract class ISteerStrategy : MonoBehaviour
     {
-        [SerializeField]
-        List<ISteeringBehaviour> _behaviours;
+        ISteeringBehaviour[] _behaviours;
+        void Start ()
+        {
+            _behaviours = GetComponents<ISteeringBehaviour>();  
+        }
         // Start is called before the first frame update
         private void OnEnable()=>EnableEvents();
         private void OnDisable()=>DisableEvents();

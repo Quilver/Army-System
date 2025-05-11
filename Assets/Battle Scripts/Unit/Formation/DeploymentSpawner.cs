@@ -24,7 +24,7 @@ namespace Formation
             _shape = GetComponent<IShape>();
             Battle.Instance.Deploy += SpawnUnit;
             CallValidSpawn();
-            GetComponentInParent<SteeringSystem.IMoveOrders>().finishedMovement += CallValidSpawn;
+            GetComponentInParent<MovementSystem.IMoveOrders>().finishedMovement += CallValidSpawn;
             GetComponent<DisplaySquareFormation>().UpdateColor(spawn);
         }
         [SerializeField]

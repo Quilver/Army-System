@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using UnityEngine;
 
-namespace SteeringSystem
+namespace MovementSystem
 {
     public class SmoothedCappedMovement : MonoBehaviour, IMoveUnit
     {

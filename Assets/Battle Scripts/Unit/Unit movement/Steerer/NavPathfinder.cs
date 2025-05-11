@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.AI;
-namespace SteeringSystem
+namespace MovementSystem
 {
     class NavPathfinder : MonoBehaviour, IPathfinder
     {

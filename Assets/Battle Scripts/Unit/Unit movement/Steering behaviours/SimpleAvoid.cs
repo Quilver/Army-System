@@ -1,14 +1,14 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-namespace SteeringSystem
+namespace MovementSystem
 {
     class SimpleAvoid : ISteeringBehaviour
     {
         Sensors _sensors;
         IMovementData _movementData;
         IMoveOrders _moveOrders;
-        private void Start()
+        private void Awake()
         {
             _moveOrders = GetComponentInParent<IMoveOrders>();
             _movementData = GetComponentInParent<IMovementData>();

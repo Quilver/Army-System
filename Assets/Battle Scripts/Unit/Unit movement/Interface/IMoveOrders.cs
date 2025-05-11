@@ -2,7 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-namespace SteeringSystem
+namespace MovementSystem
 {
     public abstract class IMoveOrders: MonoBehaviour
     {
@@ -25,7 +25,7 @@ namespace SteeringSystem
             movingUnit?.Invoke(position, transform);
         }
         //Unit moving towards target
-        event Action<Transform> pursuing;
+        public event Action<Transform> pursuing;
         static event Action<Transform, Transform> pursuingUnit;
         public void InvokePursuit(Transform target)
         {

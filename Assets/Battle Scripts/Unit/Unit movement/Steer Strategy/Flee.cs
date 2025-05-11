@@ -2,13 +2,26 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
-namespace SteeringSystem.Reaction
+namespace MovementSystem.Reaction
 {
-    [RequireComponent (typeof(IUnit))]
-    public class Flee : MonoBehaviour
+    public class Flee : ISteerStrategy
     {
         IUnit _unit;
+        IUnit Unit { 
+            get { 
+                if (_unit == null) _unit = GetComponentInParent<IUnit>();
+                return _unit; 
+            } 
+        }
         Rigidbody2D _body;
+        Rigidbody2D Body
+        {
+            get
+            {
+                if(_body == null) _body = GetComponentInParent<Rigidbody2D>();
+                return _body;
+            }
+        }
         ArmyData _army;
         ArmyData _Army
         {
@@ -18,22 +31,39 @@ namespace SteeringSystem.Reaction
                 return _army;
             }
         }
-        // Start is called before the first frame update
-        void Start()
+        [SerializeField]
+        bool _fleeing;
+        protected override void EnableEvents()
         {
-            _body = GetComponent<Rigidbody2D>();
-            _unit = GetComponent<IUnit>();
-            _unit.StateChanged += React;
-            enabled = false;
+            Unit.StateChanged += React;
+        }
+
+        protected override void DisableEvents()
+        {
+            Unit.StateChanged += React;
         }
         void React(UnitState state)
         {
-            if (state != UnitState.Fleeing) {
-                enabled = false;
-                return;
+            if (state != UnitState.Fleeing)
+            {
+                _fleeing = false;
+
             }
-            enabled = true;
-            _body.AddForce(FleeDirection() * _forceMultiple * 30);
+            else
+            {
+                Enter();
+            }
+        }
+        protected override void Enter()
+        {
+            base.Enter();
+            _fleeing = true;
+            Body.AddForce(FleeDirection() * _forceMultiple);
+        }
+        protected override void Exit()
+        {
+            base.Exit();
+            _fleeing = false;
         }
         private void Update()
         {
@@ -43,7 +73,7 @@ namespace SteeringSystem.Reaction
         float _forceMultiple;
         void FleeFromEnemy()
         {
-            _body.AddForce(FleeDirection() * Time.deltaTime * _forceMultiple);
+            Body.AddForce(FleeDirection() * Time.deltaTime * _forceMultiple);
 
         }
         Vector2 FleeDirection()

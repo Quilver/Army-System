@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
 using static UnityEngine.RuleTile.TilingRuleOutput;
-namespace SteeringSystem
+namespace MovementSystem
 {
     class FrontWhiskersSensor : MonoBehaviour, Sensors
     {

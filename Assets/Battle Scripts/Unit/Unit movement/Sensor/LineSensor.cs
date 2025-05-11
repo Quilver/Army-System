@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
-namespace SteeringSystem
+namespace MovementSystem
 {
     class LineSensor : MonoBehaviour, Sensors
     {
