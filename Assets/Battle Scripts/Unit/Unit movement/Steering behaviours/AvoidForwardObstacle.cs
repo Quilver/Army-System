@@ -4,26 +4,23 @@ using System.Linq;
 using UnityEngine;
 namespace SteeringSystem
 {
-    class AvoidForwardObstacle : MonoBehaviour, ISteeringBehaviour
+    class AvoidForwardObstacle : ISteeringBehaviour
     {
         [SerializeField, Range(0.1f, 10)]
         float _priorityMultiplier;
         Sensors _sensors;
-        IGetSteerDirection _getSteerDirection;
         IMoveOrders _moveOrders;
         private void Start()
         {
             _moveOrders = GetComponentInParent<IMoveOrders>();
             _sensors = GetComponentInParent<Sensors>();
-            _getSteerDirection = GetComponentInParent<IGetSteerDirection>();
-            _getSteerDirection.updateSteeringForces += AddForce;
         }
-        public void AddForce()
+        public override void AddForce()
         {
-            _getSteerDirection.AddForce(GetForce(), GetForce().magnitude);
+            GetSteerDirection.AddForce(GetForce(), GetForce().magnitude);
         }
         
-        public Vector2 GetForce()
+        public override Vector2 GetForce()
         {
             Vector2 sumVector = Vector2.zero;
             sumVector += ForceForSensor(_sensors.Sensors[0]);
@@ -48,7 +45,7 @@ namespace SteeringSystem
             _obstacle=sensor.transform;
             if (_moveOrders != null && _moveOrders.Target == sensor.transform) return Vector2.zero;  
             float magnitude = (1-sensor.fraction);
-            Vector2 avoidanceDirection = _getSteerDirection.Seek(AvoidPoint(sensor)).normalized;
+            Vector2 avoidanceDirection = GetSteerDirection.Seek(AvoidPoint(sensor)).normalized;
             distancePriority = magnitude;
             return avoidanceDirection * magnitude * _priorityMultiplier;
         }
@@ -65,8 +62,6 @@ namespace SteeringSystem
             //Vector2 direction = PerpendicularNormalRatio * (_sensors.SensorDirection(sensor)).normalized + (1- PerpendicularNormalRatio) * sensor.normal;
             return (Vector2)transform.position + perpendicular * k;
         }
-        [SerializeField]
-        bool DrawGizmo;
         void DrawRayReaction(RaycastHit2D sensor)
         {
             if (!sensor) return;
@@ -84,11 +79,10 @@ namespace SteeringSystem
             Gizmos.color = Color.cyan;
             Gizmos.DrawRay(transform.position, ForceForSensor(sensor));
         }
-        private void OnDrawGizmos()
+        protected override void OnDrawGizmos()
         {
             if (!DrawGizmo) return;
             if (_sensors == null) _sensors = GetComponentInParent<Sensors>();
-            if (_getSteerDirection == null) _getSteerDirection = GetComponentInParent<IGetSteerDirection>();
             Gizmos.color = Color.red;
             Gizmos.DrawRay(transform.position, _sensors.SensorDirection(_sensors.Sensors[0])*3);
             Gizmos.color = new Color(0.8f, 0.5f, 0.5f);

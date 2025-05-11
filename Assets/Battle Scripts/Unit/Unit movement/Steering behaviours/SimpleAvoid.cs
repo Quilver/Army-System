@@ -3,10 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 namespace SteeringSystem
 {
-    class SimpleAvoid : MonoBehaviour, ISteeringBehaviour
+    class SimpleAvoid : ISteeringBehaviour
     {
         Sensors _sensors;
-        IGetSteerDirection _getSteerDirection;
         IMovementData _movementData;
         IMoveOrders _moveOrders;
         private void Start()
@@ -14,16 +13,14 @@ namespace SteeringSystem
             _moveOrders = GetComponentInParent<IMoveOrders>();
             _movementData = GetComponentInParent<IMovementData>();
             _sensors = GetComponentInParent<Sensors>();
-            _getSteerDirection = GetComponentInParent<IGetSteerDirection>();
-            _getSteerDirection.updateSteeringForces += AddForce;
         }
-        public void AddForce()
+        public override void AddForce()
         {
-            _getSteerDirection.AddForce(GetForce(), GetForce().magnitude);
+            GetSteerDirection.AddForce(GetForce(), GetForce().magnitude);
         }
         [SerializeField, Range(1, 10)]
         float _priority;
-        public Vector2 GetForce()
+        public override Vector2 GetForce()
         {
             Vector2 sumVector = Vector2.zero;
             foreach (var sensor in _sensors.Sensors)
@@ -39,13 +36,11 @@ namespace SteeringSystem
             float magnitude = _sensors.SensorLength * _priority / sensor.distance;
             return (_movementData.Center - sensor.point).normalized * magnitude;
         }
-        [SerializeField]
-        bool DrawGizmo;
-        private void OnDrawGizmos()
+        
+        protected override void OnDrawGizmos()
         {
             if (!DrawGizmo) return;
             if (_sensors == null) _sensors = GetComponentInParent<Sensors>();
-            if (_getSteerDirection == null) _getSteerDirection = GetComponentInParent<IGetSteerDirection>();
             if(_movementData == null) _movementData = GetComponentInParent<IMovementData>();
             if(_moveOrders == null) _moveOrders = GetComponentInParent<IMoveOrders>();
             Gizmos.color = Color.red;

@@ -8,7 +8,7 @@ namespace ModelComponents
     public abstract class IDeath : MonoBehaviour
     {
         [SerializeField]
-        protected UnityEvent Dead;
+        public UnityEvent Dead;
         public abstract void Die();
         
     }
