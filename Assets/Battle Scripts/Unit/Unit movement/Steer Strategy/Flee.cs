@@ -31,6 +31,15 @@ namespace MovementSystem.Reaction
                 return _army;
             }
         }
+        IMovementData _movement;
+        IMovementData MoveData
+        {
+            get
+            {
+                if(_movement==null)_movement=GetComponentInParent<IMovementData>();
+                return _movement;
+            }
+        }
         [SerializeField]
         bool _fleeing;
         protected override void EnableEvents()
@@ -44,38 +53,29 @@ namespace MovementSystem.Reaction
         }
         void React(UnitState state)
         {
-            if (state != UnitState.Fleeing)
+            if (state == UnitState.Fleeing)
             {
-                _fleeing = false;
-
-            }
-            else
-            {
+                if(_fleeing || Body == null)return;
                 Enter();
+            }
+            else if(_fleeing)
+            {
+                Exit();
             }
         }
         protected override void Enter()
         {
             base.Enter();
             _fleeing = true;
-            Body.AddForce(FleeDirection() * _forceMultiple);
+            Body.AddForce(FleeDirection() * _forceMultiple * MoveData.Mass);
         }
         protected override void Exit()
         {
             base.Exit();
             _fleeing = false;
         }
-        private void Update()
-        {
-            FleeFromEnemy();
-        }
         [SerializeField, Range(50, 300)]
         float _forceMultiple;
-        void FleeFromEnemy()
-        {
-            Body.AddForce(FleeDirection() * Time.deltaTime * _forceMultiple);
-
-        }
         Vector2 FleeDirection()
         {
             if(NearestEnemy() == null)return Vector2.zero;

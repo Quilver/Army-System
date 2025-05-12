@@ -33,19 +33,16 @@ namespace MovementSystem.SteeringBehaviour
         float RADIUS = 12;
         public Transform NearestEnemy()
         {
-            var hits = Physics2D.OverlapCircleAll(transform.position, RADIUS);
+            var hits = Physics2D.OverlapCircleAll(transform.position, RADIUS, 1<<6);
             Transform nearestEnemy=null;
             float BestDist = float.MaxValue;
             foreach (var hit in hits)
             {
                 if (hit.transform.parent == transform.parent.parent.parent)
                     continue;
-                if(Vector2.Distance(hit.transform.position, transform.position)  < BestDist)
-                {
-                    BestDist = Vector2.Distance(hit.transform.position, transform.position);
-                    nearestEnemy=hit.transform;
-                }
-
+                if (Vector2.Distance(hit.transform.position, transform.position) > BestDist) continue;
+                BestDist = Vector2.Distance(hit.transform.position, transform.position);
+                nearestEnemy=hit.transform;
             }
             return nearestEnemy;
         }
@@ -53,7 +50,7 @@ namespace MovementSystem.SteeringBehaviour
         {
             var enemy = NearestEnemy();
             if (enemy == null) return Vector2.zero;
-            return (transform.position - enemy.position).normalized * 5;
+            return (transform.position - enemy.position).normalized * MovementData.MaxSpeed;
         }
         protected override void OnDrawGizmos()
         {

@@ -29,5 +29,31 @@ class Unit : IUnit
             _state = value;
         }
     }
-
+    int _modelsFighting;
+    bool _MeleeInit;
+    public override bool InMelee {
+        get
+        {
+            if (!_MeleeInit) {
+                var models = GetComponentInChildren<Formation.IFormationData>().Models;
+                foreach (var model in models)
+                    model.GetComponentInChildren<ModelComponents.IMeleeTargeter>().ChangedCombat+=ModelsFighting;
+                _MeleeInit = true;
+            }
+            return _modelsFighting > 0;
+        }
+    }
+    void ModelsFighting(bool enteredMelee)
+    {
+        if (enteredMelee) _modelsFighting++;
+        else _modelsFighting--;
+        if(enteredMelee && _modelsFighting == 1) Melee(true);
+        else if(_modelsFighting == 0) Melee(false);
+    }
+    [SerializeField]
+    bool _inMelee;
+    private void Update()
+    {
+        _inMelee=InMelee;
+    }
 }

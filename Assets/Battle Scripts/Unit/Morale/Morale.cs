@@ -14,6 +14,7 @@ namespace MoraleSystem
         {
             _formationData = GetComponentInChildren<Formation.IFormationData>();
             _unit = GetComponent<Unit>();
+            
             enabled = false;
         }
         public void TakeDamage()
@@ -26,11 +27,20 @@ namespace MoraleSystem
             //below half, flee
             else if (_formationData.ModelCount <= _unit.Stats.ModelCount.CurrentStat / 2)
             {
-                _unit.State = UnitState.Fleeing;
-                enabled = true;
-                _timeLeft = FleeTime;
+                EnterFlee();
             }
 
+        }
+        void EnterFlee()
+        {
+            _unit.State = UnitState.Fleeing;
+            enabled = true;
+            _timeLeft = FleeTime;
+        }
+        void ExitFlee()
+        {
+            enabled = false;
+            _unit.State = UnitState.Idle;
         }
         float _timeLeft;
         private void Update()
@@ -38,8 +48,7 @@ namespace MoraleSystem
             _timeLeft -= Time.deltaTime;
             if (_timeLeft < 0)
             {
-                enabled = false;
-                _unit.State = UnitState.Idle;
+                ExitFlee();
             }
         }
     }

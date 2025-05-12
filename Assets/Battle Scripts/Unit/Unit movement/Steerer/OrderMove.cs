@@ -45,9 +45,6 @@ namespace MovementSystem
             }
         }
         #endregion
-        #region Events
-        //public event Action<Transform> pursuing;
-        #endregion
         public override void MoveTo(Vector2 position)
         {
             if(Unit.State == UnitState.Fleeing) return; 

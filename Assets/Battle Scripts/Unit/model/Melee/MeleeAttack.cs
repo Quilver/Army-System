@@ -29,7 +29,7 @@ namespace ModelComponents
             if (timeSinceLastAttack >= AttackPerXSeconds)
             {
                 timeSinceLastAttack = 0;
-                if (_targeter.Targets.Count == 0) return;
+                if (_targeter.Targets.Count == 0 || _unitData.Unit.State == UnitState.Fleeing) return;
                 Attack();
             }
         }

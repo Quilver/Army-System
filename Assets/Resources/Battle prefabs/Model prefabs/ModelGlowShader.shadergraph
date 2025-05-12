@@ -153,7 +153,7 @@
                 "m_Node": {
                     "m_Id": "96fd49891d4d470f9182a528e8dd4712"
                 },
-                "m_SlotId": 4
+                "m_SlotId": 0
             },
             "m_InputSlot": {
                 "m_Node": {
@@ -167,7 +167,7 @@
                 "m_Node": {
                     "m_Id": "96fd49891d4d470f9182a528e8dd4712"
                 },
-                "m_SlotId": 4
+                "m_SlotId": 0
             },
             "m_InputSlot": {
                 "m_Node": {
@@ -467,7 +467,7 @@
     "m_Type": "UnityEditor.ShaderGraph.Texture2DMaterialSlot",
     "m_ObjectId": "39ed0654506f48d6abcb63c5f3e33317",
     "m_Id": 0,
-    "m_DisplayName": "MainText",
+    "m_DisplayName": "MainTex",
     "m_SlotType": 1,
     "m_Hidden": false,
     "m_ShaderOutputName": "Out",
@@ -482,12 +482,12 @@
     "m_Guid": {
         "m_GuidSerialized": "500a0f8e-e4d9-462c-b600-10eed3d65d67"
     },
-    "m_Name": "MainText",
+    "m_Name": "MainTex",
     "m_DefaultRefNameVersion": 1,
-    "m_RefNameGeneratedByDisplayName": "MainText",
-    "m_DefaultReferenceName": "_MainText",
+    "m_RefNameGeneratedByDisplayName": "MainTex",
+    "m_DefaultReferenceName": "_MainTex",
     "m_OverrideReferenceName": "",
-    "m_GeneratePropertyBlock": true,
+    "m_GeneratePropertyBlock": false,
     "m_UseCustomSlotLabel": false,
     "m_CustomSlotLabel": "",
     "m_DismissedVersion": 0,
@@ -712,7 +712,7 @@
     "m_RefNameGeneratedByDisplayName": "Emission",
     "m_DefaultReferenceName": "_Emission",
     "m_OverrideReferenceName": "",
-    "m_GeneratePropertyBlock": true,
+    "m_GeneratePropertyBlock": false,
     "m_UseCustomSlotLabel": false,
     "m_CustomSlotLabel": "",
     "m_DismissedVersion": 0,
@@ -874,10 +874,10 @@
         "m_Expanded": true,
         "m_Position": {
             "serializedVersion": "2",
-            "x": -247.0,
-            "y": 874.0,
-            "width": 0.0,
-            "height": 0.0
+            "x": -156.99996948242188,
+            "y": 612.0,
+            "width": 104.99998474121094,
+            "height": 34.0
         }
     },
     "m_Slots": [
@@ -996,8 +996,8 @@
         "m_Expanded": true,
         "m_Position": {
             "serializedVersion": "2",
-            "x": -27.034059524536134,
-            "y": 619.9659423828125,
+            "x": -156.99996948242188,
+            "y": 646.0,
             "width": 208.0,
             "height": 302.0
         }
