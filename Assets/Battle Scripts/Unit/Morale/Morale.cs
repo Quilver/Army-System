@@ -20,12 +20,12 @@ namespace MoraleSystem
         public void TakeDamage()
         {
             //below third, shatter
-            if (_formationData.ModelCount <= _unit.Stats.ModelCount.CurrentStat / 3)
+            if (_formationData.ModelCount <= _unit.Stats.ModelCount / 3)
             {
                 Destroy(gameObject);
             }
             //below half, flee
-            else if (_formationData.ModelCount <= _unit.Stats.ModelCount.CurrentStat / 2)
+            else if (_formationData.ModelCount <= _unit.Stats.ModelCount / 2)
             {
                 EnterFlee();
             }

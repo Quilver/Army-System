@@ -26,7 +26,7 @@ namespace Formation
             {
                 if(Models !=null)return Models.Count;
                 if(_unit == null)_unit = GetComponentInParent<IUnit>();
-                return _unit.Stats.ModelCount.CurrentStat;
+                return _unit.Stats.ModelCount;
             }
         }
         public List<GameObject> Models

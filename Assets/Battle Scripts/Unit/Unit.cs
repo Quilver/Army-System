@@ -7,8 +7,8 @@ using System;
 class Unit : IUnit
 {
     [SerializeField]
-    RegimentStats _stats;
-    public override RegimentStats Stats => _stats;
+    StatSystem.Refactor.IUnitStatBlock _stats;
+    public override StatSystem.Refactor.IUnitStatBlock Stats => _stats;
     
     [SerializeField]
     UnitState _state;

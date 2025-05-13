@@ -25,5 +25,15 @@ namespace StatSystem.Refactor
         public abstract int ShootSpeed { get; }
         public abstract int Accuracy { get; }
         #endregion
+
+        public override string ToString()
+        {
+            string statString = $"{_unitName}\n";
+            statString += $"\tMovement Speed: {Movement}\tModel Count: {ModelCount}\n";
+            statString += $"\tDefence: {Defence}\tLeadership: {Leadership}\n";
+            statString += $"\tAttack: {AttackPower}\tAttack Speed: {AttackSpeed}\n";
+            statString += $"\tAccuracy: {Accuracy}\tFire Rate: {ShootSpeed}";
+            return statString;
+        }
     }
 }

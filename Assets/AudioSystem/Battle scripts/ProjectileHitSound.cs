@@ -1,14 +1,22 @@
+using RangedWeapons;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
-public class ProjectileHitSound : MonoBehaviour
+namespace AudioSystem
 {
-    [SerializeField]
-    GameObject hitSoundPrefab;
-    private void OnDestroy()
+    public class ProjectileHitSound : MonoBehaviour
     {
-        var sound = Instantiate(hitSoundPrefab, transform.parent);
-        sound.transform.position=transform.position;
+        private void Start()
+        {
+            GetComponent<IProjectile>().Hit += HitSound;
+        }
+        private void HitSound()
+        {
+            GetComponent<AudioSource>().Play();
+            //var sound = Instantiate(hitSoundPrefab, transform.parent);
+            //sound.transform.position=transform.position;
+
+        }
     }
 }
+

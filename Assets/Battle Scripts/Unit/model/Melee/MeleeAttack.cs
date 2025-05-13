@@ -18,7 +18,7 @@ namespace ModelComponents
             get
             {
                 float X = 6;
-                return X / _unitData.UnitStats.AttackSpeed.CurrentStat;
+                return X / _unitData.UnitStats.AttackSpeed;
             }
         }
         float timeSinceLastAttack;
@@ -40,8 +40,8 @@ namespace ModelComponents
             MakeStrike();
             target.GetComponentInParent<Rigidbody2D>().AddForce(
                 (target.transform.position - transform.position).normalized 
-                * _unitData.UnitStats.AttackPower.CurrentStat * _attackForceMultiplier);
-            target.TakeDamage(_unitData.UnitStats.AttackPower.CurrentStat, transform);
+                * _unitData.UnitStats.AttackPower * _attackForceMultiplier);
+            target.TakeDamage(_unitData.UnitStats.AttackPower, transform);
         }
     }
 }

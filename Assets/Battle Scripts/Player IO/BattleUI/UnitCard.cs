@@ -29,7 +29,7 @@ namespace BattleUI
             }
             else gameObject.SetActive(true);
             _unit = unit;
-            _profile.sprite = _unit.Stats.portrait;
+            _profile.sprite = _unit.Stats.Portrait;
             _name.text = _unit.Stats.name;
             _statBlock.text = _unit.Stats.ToString();
             HandleExtension();

@@ -14,7 +14,7 @@ namespace ModelComponents
         }
         float DefenceRoll()
         {
-            return Random.Range(0f, 3*(_unitData.UnitStats.Defence.CurrentStat + 5));
+            return Random.Range(0f, 3*(_unitData.UnitStats.Defence + 5));
         }
         //Rear angle should be 135, but I am cheating it to 120 so flanks are harder
         const float FLANKANGLE = 120;

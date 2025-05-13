@@ -8,7 +8,7 @@ namespace ModelComponents
     {
         IUnit _unit;
         Formation.IFormationData _formation;
-        public RegimentStats UnitStats => _unit.Stats;
+        public StatSystem.Refactor.IUnitStatBlock UnitStats => _unit.Stats;
 
         public IUnit Unit => _unit;
 

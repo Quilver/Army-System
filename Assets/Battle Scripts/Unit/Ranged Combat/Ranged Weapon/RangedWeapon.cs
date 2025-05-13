@@ -1,16 +1,15 @@
 using System.Collections;
 using System.Collections.Generic;
+using RangedWeapons;
 using Shooting;
 using UnityEngine;
 
 public class RangedWeapon: MonoBehaviour
 {
-    //shooter, targetPosition, Target gameobject
     public event System.Action<IUnit, Vector2, Transform> ShootAt;
     [SerializeField]
     Color startColour, endColour;
-    [SerializeField]
-    public GameObject projectile;
+    public IProjectile _projectile;
     public Color CurrentColour
     {
         get
@@ -32,6 +31,13 @@ public class RangedWeapon: MonoBehaviour
     IUnit unit;
     
     IRangedTargeter target;
+    public Transform CurrentTarget
+    {
+        get
+        {
+            return target.Target;
+        }
+    }
     private void Start()
     {
         unit= GetComponentInParent<IUnit>();

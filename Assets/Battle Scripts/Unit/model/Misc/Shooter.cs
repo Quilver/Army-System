@@ -1,3 +1,4 @@
+using RangedWeapons;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -34,17 +35,19 @@ namespace ModelComponents
         [SerializeField]
         LayerMask _shootMask;
         void Shoot(IUnit unit, Vector2 position, Transform target) {
-            Vector2 direction = (position - (Vector2)transform.position);  
-            float distance = direction.magnitude;
-            direction = direction.normalized;
-            RaycastHit2D hit = Physics2D.Raycast(transform.position, direction, distance, _shootMask);
-            if (hit && hit.transform != target)
-                return;
+            if (!_weapon._projectile.ValidShot(_unitData.Unit, transform, position, target)) return;
             Shot?.Invoke();
-            var shot = Instantiate(_weapon.projectile);
+            var shot = Instantiate(_weapon._projectile);
             shot.transform.position = transform.position;
-            shot.GetComponent<Projectile>().Setup(direction, _weapon.ShootPower, unit);
+            shot.GetComponent<IProjectile>().Shoot(_unitData.Unit, position, target, _weapon.ShootPower);
             RangedWeapons.ProjectileContainer.AddProjectile(shot.transform);
+        }
+        private void OnDrawGizmosSelected()
+        {
+            if (_weapon == null) return;
+            Transform target = _weapon.CurrentTarget;
+            _weapon._projectile.GizmosValidShot(_unitData.Unit, transform, target.position, target);
+            _weapon._projectile.GizmosFireRadius(_unitData.Unit, transform, target.position, target);
         }
     }
 }

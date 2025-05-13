@@ -44,7 +44,7 @@ namespace MovementSystem
         {
             get {
                 if(_unitTemplate==null) _unitTemplate=GetComponentInParent<IUnit>();
-                return _unitTemplate.Stats.MoveSpeed.CurrentStat;
+                return _unitTemplate.Stats.Movement;
             }
         }
 

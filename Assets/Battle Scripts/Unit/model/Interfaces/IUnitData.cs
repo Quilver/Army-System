@@ -5,7 +5,7 @@ namespace ModelComponents
 {
     public interface IUnitData
     {
-        public StatSystem.RegimentStats UnitStats { get; }
+        public StatSystem.Refactor.IUnitStatBlock UnitStats { get; }
         public IUnit Unit { get; }
         public Formation.IFormationData Formation { get; }
         public void Setup(IUnit unit);

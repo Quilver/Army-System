@@ -7,7 +7,7 @@ namespace Formation
     {
         IFormationData _formationData;
         IModelPosition _position;
-        StatSystem.RegimentStats _stats;
+        StatSystem.Refactor.IUnitStatBlock _stats;
         List<GameObject> _models;
 
         public List<GameObject> Models => _models;
@@ -24,7 +24,7 @@ namespace Formation
         {
             for (int i = 0; i < _formationData.ModelCount; i++)
             {
-                GameObject model = Instantiate(_stats.UnitPrefab);
+                GameObject model = Instantiate(_stats.ModelPrefab[0]);
                 _models.Add(model);
                 model.GetComponent<ModelComponents.IUnitData>().Setup(GetComponentInParent<IUnit>());
                 model.transform.position = _position.GetModelPosition(i);

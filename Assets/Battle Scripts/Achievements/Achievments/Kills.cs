@@ -45,7 +45,7 @@ namespace AchievementSystem
         {
             foreach (var unit in KillsByEachUnit.Keys)
             {
-                GiveExperience(unit.Stats, KillsByEachUnit[unit] * XPperKill);
+                //GiveExperience(unit.Stats, KillsByEachUnit[unit] * XPperKill);
             }
         }
     }

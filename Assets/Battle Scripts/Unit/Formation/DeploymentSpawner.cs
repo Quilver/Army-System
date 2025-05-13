@@ -8,7 +8,7 @@ namespace Formation
     {
         IFormationData _formationData;
         IModelPosition _position;
-        StatSystem.RegimentStats _stats;
+        StatSystem.Refactor.IUnitStatBlock _stats;
         IShape _shape;
         List<GameObject> _models;
         [SerializeField]
@@ -59,7 +59,7 @@ namespace Formation
             Deployed?.Invoke();
             for (int i = 0; i < _formationData.ModelCount; i++)
             {
-                GameObject model = Instantiate(_stats.UnitPrefab);
+                GameObject model = Instantiate(_stats.ModelPrefab[0]);
                 _models.Add(model);
                 model.GetComponent<ModelComponents.IUnitData>().Setup(GetComponentInParent<IUnit>());
                 model.transform.position = _position.GetModelPosition(i);

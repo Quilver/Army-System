@@ -38,7 +38,7 @@ namespace MovementSystem
         {
             get
             {
-                return 3 * (3 + _unit.Stats.MoveSpeed.CurrentStat);
+                return 3 * (3 + _unit.Stats.Movement);
             }
         }
         public void MoveUnit(Vector2 direction)
