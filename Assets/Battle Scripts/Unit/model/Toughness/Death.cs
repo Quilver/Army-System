@@ -25,7 +25,7 @@ namespace ModelComponents
         void UnitDeath()
         {
             IUnitData unitData = GetComponent<IUnitData>();
-            if (unitData == null || unitData.Unit == null) return;
+            if (unitData == null || unitData.Unit == null || transform == null) return;
             unitData.Unit.UnitDestroyed -= Die;
             unitData.Unit.DeadModel?.Invoke(transform);
         }

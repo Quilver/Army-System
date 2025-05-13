@@ -16,7 +16,13 @@ namespace Formation
         }
         public Vector2 OffsetFromUnit => new Vector2(0, 0 - (Ranks - 2) * FormationData.ModelSize / 4);
 
-        public Vector2 SizeOfFormation => new Vector2(FormationData.Width, Ranks) * FormationData.ModelSize / 2;
+        public Vector2 SizeOfFormation
+        {
+            get
+            {
+                return new Vector2(FormationData.Width, Ranks) * FormationData.ModelSize / 2;
+            }
+        }
         public int Ranks
         {
             get

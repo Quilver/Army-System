@@ -36,6 +36,7 @@ class Unit : IUnit
         {
             if (!_MeleeInit) {
                 var models = GetComponentInChildren<Formation.IFormationData>().Models;
+                if(models==null)return false;
                 foreach (var model in models)
                     model.GetComponentInChildren<ModelComponents.IMeleeTargeter>().ChangedCombat+=ModelsFighting;
                 _MeleeInit = true;

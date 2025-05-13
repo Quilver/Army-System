@@ -19,7 +19,6 @@ namespace Formation
         {
             _formationData = GetComponent<FormationData>();
             _position = GetComponent<IModelPosition>();
-            _models = new();
             _stats = GetComponentInParent<IUnit>().Stats;
             _shape = GetComponent<IShape>();
             Battle.Instance.Deploy += SpawnUnit;
@@ -53,14 +52,16 @@ namespace Formation
         }
         public void SpawnUnit()
         {
+            int modelCount = _formationData.ModelCount;
+            _models = new(new GameObject[_formationData.ModelCount]); 
             GetComponentInParent<IUnit>().State = UnitState.Idle;
             GetComponent<DisplaySquareFormation>().enabled = false;
             enabled= false;
             Deployed?.Invoke();
-            for (int i = 0; i < _formationData.ModelCount; i++)
+            for (int i = 0; i < modelCount; i++)
             {
                 GameObject model = Instantiate(_stats.ModelPrefab[0]);
-                _models.Add(model);
+                _models[i]=model;
                 model.GetComponent<ModelComponents.IUnitData>().Setup(GetComponentInParent<IUnit>());
                 model.transform.position = _position.GetModelPosition(i);
                 model.GetComponent<ModelComponents.IModelFormation>().SetUp(GetComponentsInChildren<Rigidbody2D>());

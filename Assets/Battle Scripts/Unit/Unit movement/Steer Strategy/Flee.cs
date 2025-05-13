@@ -87,6 +87,7 @@ namespace MovementSystem.Reaction
             float bestDistance = 1000;
             Transform nearestEnemy = null;
             var enemies = _Army.Enemies;
+            if(enemies == null) return null;
             foreach(var enemy in enemies) 
                 if(Vector2.Distance(transform.position, enemy.transform.position) < bestDistance)
                 {

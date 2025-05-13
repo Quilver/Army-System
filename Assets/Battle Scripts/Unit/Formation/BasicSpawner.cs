@@ -16,16 +16,16 @@ namespace Formation
         {
             _formationData=GetComponent<FormationData>();
             _position=GetComponent<IModelPosition>();
-            _models = new();
             _stats= GetComponentInParent<IUnit>().Stats;
             SpawnUnit();
         }
         public void SpawnUnit()
         {
+            _models = new(new GameObject[_formationData.ModelCount]);
             for (int i = 0; i < _formationData.ModelCount; i++)
             {
                 GameObject model = Instantiate(_stats.ModelPrefab[0]);
-                _models.Add(model);
+                _models[i] = model;
                 model.GetComponent<ModelComponents.IUnitData>().Setup(GetComponentInParent<IUnit>());
                 model.transform.position = _position.GetModelPosition(i);
                 model.GetComponent<ModelComponents.IModelFormation>().SetUp(GetComponentsInChildren<Rigidbody2D>());

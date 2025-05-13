@@ -7,7 +7,7 @@ namespace Formation
     {
         IUnit _unit;
         ISpawnModels _spawnModels;
-        void Start()
+        void Awake()
         {
             _spawnModels = GetComponent<ISpawnModels>();
             _unit = GetComponentInParent<IUnit>();
