@@ -32,10 +32,7 @@ namespace Campaign
             }
         }
         CampaignDataManager _manager;
-        //
-        public List<StatWrapper> deployedCharacters = new();
-
-
+        
         public static CampaignDataManager instance { get; private set; }
         FileDataHandler SaverLoader;
         private void Awake()

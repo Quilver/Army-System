@@ -11,12 +11,13 @@ namespace AchievementSystem
         public abstract string Description { get; }
         public abstract bool Achieved();
         public abstract void Reward();
-        protected void GiveExperience(StatSystem.UnitStats characterStatBlock, int xp)
+        protected void GiveExperience(StatSystem.Refactor.PC_Stats characterStatBlock, int xp)
         {
-            var character =CampaignDataManager.Data.characters.Find( x => x.statBase.UnitName == characterStatBlock.UnitName);
+            var character =CampaignDataManager.Data.Characters.Find( x => x.statBase.UnitName == characterStatBlock.UnitName);
+            Debug.Log(character);
             if(character == null ) return;
             character.XP += xp;
-            character.statBase.AddXP(xp);
+            character.AddXP(xp);
             BattleReport.CharacterUpdate(character);    
         }
         protected void GiveGoldAndPrestige(int gold, int prestige) {

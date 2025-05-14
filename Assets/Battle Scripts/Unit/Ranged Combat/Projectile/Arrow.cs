@@ -53,7 +53,7 @@ namespace RangedWeapons
                 unit.TakeDamage(Random.Range(_minDamage, _maxDamage));
             Remove(true);
         }
-        protected override void Remove(bool hit)
+        protected override void Remove(bool hit, float timeBeforeDestroy=2)
         {
             SpriteRenderer sprite = GetComponent<SpriteRenderer>();
             if (hit) sprite.color = new(1, 1, 1, 0.7f);
@@ -61,7 +61,7 @@ namespace RangedWeapons
             if (!hit)body.velocity = Vector2.zero;
             enabled = false;
             col.enabled = false;
-            base.Remove(hit);
+            base.Remove(hit, timeBeforeDestroy);
         }
 
         [SerializeField]

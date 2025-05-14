@@ -3,13 +3,16 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System;
+using StatSystem.Refactor;
 
 class Unit : IUnit
 {
     [SerializeField]
     StatSystem.Refactor.IUnitStatBlock _stats;
-    public override StatSystem.Refactor.IUnitStatBlock Stats => _stats;
-    
+    public override IUnitStatBlock Stats { 
+        get => _stats;
+        set => _stats = value; 
+    }
     [SerializeField]
     UnitState _state;
 
@@ -44,6 +47,9 @@ class Unit : IUnit
             return _modelsFighting > 0;
         }
     }
+
+    
+
     void ModelsFighting(bool enteredMelee)
     {
         if (enteredMelee) _modelsFighting++;

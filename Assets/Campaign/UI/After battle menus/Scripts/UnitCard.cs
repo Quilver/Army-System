@@ -13,25 +13,24 @@ namespace EndGameUI
         RectTransform levelBar, XPBar;
         [SerializeField]
         TextMeshProUGUI unitName, stats, levelUps;
-        Campaign.StatWrapper unit;
-        public void Set(Campaign.StatWrapper unit)
+        Campaign.PCWrapper unit;
+        public void Set(Campaign.PCWrapper unit)
         {
             this.unit = unit;
             BattleReport.CharacterUpdate += CharacterUpdate;
-            portrait.sprite = unit.statBase.portrait;
+            portrait.sprite = unit.statBase.Portrait;
             unitName.text = unit.statBase.UnitName;
             stats.text = unit.statBase.StatString();
-            levelUps.text = unit.statBase.LevelUpBonusesString();
-            float width = unit.statBase.FractionToNextLevel() * levelBar.sizeDelta.x;
+            levelUps.text = unit.LevelBonuses();
+            float width = unit.PercentToNextLevel() * levelBar.sizeDelta.x;
             XPBar.sizeDelta = new Vector2(width, levelBar.sizeDelta.y);
         }
-        void CharacterUpdate(Campaign.StatWrapper unit)
+        void CharacterUpdate(Campaign.PCWrapper unit)
         {
             if (this.unit != unit) return;
-            portrait.sprite = unit.statBase.portrait;
-            unitName.text = unit.statBase.UnitName;
             stats.text = unit.statBase.StatString();
-            float width = unit.statBase.FractionToNextLevel() * levelBar.sizeDelta.x;
+            levelUps.text = unit.LevelBonuses();
+            float width = unit.PercentToNextLevel() * levelBar.sizeDelta.x;
             XPBar.sizeDelta = new Vector2(width, levelBar.sizeDelta.y);
         }
     }

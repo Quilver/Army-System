@@ -9,7 +9,7 @@ namespace AchievementSystem
     {
         [SerializeField, Range(1, 10)]
         int XpForSurviving;
-        List<Campaign.StatWrapper> characters;
+        List<Campaign.PCWrapper> characters;
         public override string Description { 
             get
             {
@@ -33,7 +33,7 @@ namespace AchievementSystem
 
         public override void Reward()
         {
-            foreach (var character in characters)
+            foreach (var character in BattleReport.DeployedCharacters)
             {
                 GiveExperience(character.statBase, XpForSurviving);
             }

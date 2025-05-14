@@ -14,6 +14,8 @@ public abstract class PlayerController : MonoBehaviour
     #region Event hooks
     public UnityEvent<Vector2> movedPositionOfCursor;
     public UnityEvent<IUnit> highlightUnit, SelectedUnit;
+    public static Action<IUnit> SelectUnit;
+    protected static void InvokeSelectUnit(IUnit unit)=>SelectUnit?.Invoke(unit);
     #endregion
     Player inputs;
     // Use this for initialization
@@ -32,6 +34,7 @@ public abstract class PlayerController : MonoBehaviour
         inputs.CursorControls.Order.performed += Order;
         inputs.CursorControls.Pause.performed += Pause;
         inputs.CursorControls.ToggleUnits.performed += ToggleUnits;
+        
 
 
     }

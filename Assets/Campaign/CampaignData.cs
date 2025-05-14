@@ -11,6 +11,6 @@ namespace Campaign
         [Range(1, 10)]
         public int CurrentLevel;
         public List<BattlePrep.BuyOrders> BuyOrders;
-        public List<StatWrapper> characters;
+        public List<PCWrapper> Characters;
     }
 }

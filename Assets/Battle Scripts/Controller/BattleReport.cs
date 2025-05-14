@@ -9,6 +9,8 @@ public class BattleReport: MonoBehaviour
     {
         if(instance == null)
             instance = this;
+        else 
+            Destroy(gameObject);
     }
     [SerializeField]
     float _timeTaken = 0;
@@ -43,20 +45,28 @@ public class BattleReport: MonoBehaviour
         }
     }
     [SerializeField]
-    List<Campaign.StatWrapper> _deployedCharacters;
-    public static List<Campaign.StatWrapper> DeployedCharacters
+    List<Campaign.PCWrapper> _deployedCharacters;
+    public static List<Campaign.PCWrapper> DeployedCharacters
     {
         get { return instance._deployedCharacters; }
         set { instance._deployedCharacters = value; }
     }
     public static UpdateCharacter CharacterUpdate;
-    public delegate void UpdateCharacter(Campaign.StatWrapper character);
-    public static void Set(List<Campaign.StatWrapper> deployedCharacter, List<AchievementSystem.Achievments> achievements)
+    public delegate void UpdateCharacter(Campaign.PCWrapper character);
+    public static void Set(List<Campaign.PCWrapper> deployedCharacter, List<AchievementSystem.Achievments> achievements)
     {
         timeTaken = 0;
         kills= 0;
         deaths= 0;
         Achievements = achievements;
         DeployedCharacters = deployedCharacter;
+    }
+    public static void Reset()
+    {
+        timeTaken = 0;
+        kills = 0;
+        deaths = 0;
+        Achievements = new();
+        DeployedCharacters = new();
     }
 }

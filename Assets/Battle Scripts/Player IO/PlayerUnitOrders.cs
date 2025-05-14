@@ -27,6 +27,7 @@ namespace PlayerControls
         {
             unit = SelectedUnitV;
             _cursor = transform;
+            InvokeSelectUnit(SelectedUnitV);
             SelectedUnit?.Invoke(SelectedUnitV);
         }
         protected override void MoveCursor(InputAction.CallbackContext value)
@@ -44,6 +45,7 @@ namespace PlayerControls
         {
             _unitSelectionIndex = (_unitSelectionIndex + 1) % playerArmy.GetComponentsInChildren<IUnit>().Length;
             SelectedUnit?.Invoke(SelectedUnitV);
+            InvokeSelectUnit(SelectedUnitV);
             var pos = SelectedUnitV.transform.position;
             Camera.main.transform.position = new(pos.x, pos.y, -5);
         }

@@ -12,7 +12,7 @@ public class UnitSelectionTab : MonoBehaviour, ITab
     Image buttonBackground;
     void Start()
     {
-        foreach (var unit in Campaign.CampaignDataManager.Data.characters)
+        foreach (var unit in Campaign.CampaignDataManager.Data.Characters)
         {
             var obj = GameObject.Instantiate(UnitPrefab, transform);
             obj.GetComponent<UnitSelectionView>().Set(unit);

@@ -16,16 +16,16 @@ namespace BattlePrep
         RectTransform levelBar, XPBar;
         [SerializeField]
         TextMeshProUGUI unitName, stats, cost;
-        Campaign.StatWrapper unit;
-        public void Set(Campaign.StatWrapper unit)
+        Campaign.PCWrapper unit;
+        public void Set(Campaign.PCWrapper unit)
         {
             this.unit = unit;
             unit.Update();
-            portrait.sprite = unit.statBase.portrait;
+            portrait.sprite = unit.statBase.Portrait;
             unitName.text= unit.statBase.UnitName;
             stats.text = unit.statBase.StatString();
             cost.text = unit.CostToField + "G";
-            float width = unit.statBase.FractionToNextLevel() * levelBar.sizeDelta.x;
+            float width = unit.PercentToNextLevel() * levelBar.sizeDelta.x;
             XPBar.sizeDelta = new Vector2(width, levelBar.sizeDelta.y);
         }
         bool selected;
@@ -40,14 +40,14 @@ namespace BattlePrep
                     return;
                 }
                 Campaign.CampaignDataManager.Data.Money -= unit.CostToField;
-                Campaign.CampaignDataManager.instance.deployedCharacters.Add(unit);
+                BattleReport.DeployedCharacters.Add(unit);
                 CheckBox.color = Color.black;
             }
 
             else
             {
                 Campaign.CampaignDataManager.Data.Money += unit.CostToField;
-                Campaign.CampaignDataManager.instance.deployedCharacters.Remove(unit);
+                BattleReport.DeployedCharacters.Remove(unit);
                 CheckBox.color = Color.white;
             } 
                 

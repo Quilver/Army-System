@@ -8,7 +8,7 @@ public abstract class IUnit: MonoBehaviour
     public event System.Action<UnitState> StateChanged;
     public UnityEvent<Transform> DeadModel;
     public event System.Action UnitDestroyed, EnteredMelee, ExitedMelee;
-    public abstract StatSystem.Refactor.IUnitStatBlock Stats { get; }
+    public abstract StatSystem.Refactor.IUnitStatBlock Stats { get; set; }
     public abstract UnitState State { get; set; }
     public abstract bool InMelee { get; }
     

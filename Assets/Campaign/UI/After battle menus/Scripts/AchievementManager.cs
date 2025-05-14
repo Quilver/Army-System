@@ -6,19 +6,34 @@ namespace EndGameUI
     public class AchievementManager : MonoBehaviour
     {
         [SerializeField]
-        List<AchievementSystem.Achievments> achievments;
+        List<AchievementSystem.Achievments> achievements;
         [SerializeField]
         GameObject AchievementCard;
         // Start is called before the first frame update
         void Start()
         {
-            achievments = BattleReport.Achievements;
-            foreach (var achievement in achievments)
+            
+            StartCoroutine(SlowlyAddAchievements());
+        }
+        private void UpdateInstant()
+        {
+            achievements = BattleReport.Achievements;
+            foreach (var achievement in achievements)
             {
                 var card = Instantiate(AchievementCard, transform);
                 card.GetComponent<AchievementCard>().Init(achievement);
             }
-
+        }
+        IEnumerator SlowlyAddAchievements()
+        {
+            achievements = BattleReport.Achievements;
+            yield return new WaitForSeconds(1);
+            foreach (var achievement in achievements)
+            {
+                var card = Instantiate(AchievementCard, transform);
+                card.GetComponent<AchievementCard>().Init(achievement);
+                yield return new WaitForSeconds(1);
+            }
         }
 
         

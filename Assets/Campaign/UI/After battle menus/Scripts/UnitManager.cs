@@ -9,10 +9,10 @@ namespace EndGameUI
         [SerializeField]
         GameObject unitCard;
         [SerializeField]
-        List<StatWrapper> units;
+        List<PCWrapper> units;
         void Start()
         {
-            InitUnits(Campaign.CampaignDataManager.Data.characters);
+            InitUnits(Campaign.CampaignDataManager.Data.Characters);
             /*
             if (BattleReport.statWrappers == null)
                 InitUnits(units);
@@ -20,7 +20,7 @@ namespace EndGameUI
                 InitUnits(BattleReport.statWrappers);
             */
         }
-        void InitUnits(List<StatWrapper> units)
+        void InitUnits(List<PCWrapper> units)
         {
             this.units = units;
             foreach (var unit in units)

@@ -10,6 +10,7 @@ namespace EndGameUI
         public void Click()
         {
             Campaign.CampaignDataManager.Data.CurrentLevel++;
+            BattleReport.Reset();
             if (SceneManager.sceneCountInBuildSettings + 3 > Campaign.CampaignDataManager.Data.CurrentLevel)
                 SceneManager.LoadScene(1);
             else

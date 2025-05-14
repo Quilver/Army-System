@@ -44,7 +44,7 @@ namespace AchievementSystem
             foreach (var character in BattleReport.DeployedCharacters)
             {
                 GiveExperience(character.statBase, experienceReward);
-                character.statBase.AddXP(experienceReward);
+                character.AddXP(experienceReward);
             }
         }
 

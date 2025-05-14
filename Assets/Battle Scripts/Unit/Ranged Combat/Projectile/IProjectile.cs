@@ -6,10 +6,10 @@ namespace RangedWeapons
     public abstract class IProjectile : MonoBehaviour
     {
         public event System.Action Hit;
-        protected virtual void Remove(bool hit)
+        protected virtual void Remove(bool hit, float timeBeforeDestroy = 3)
         {
             if(hit) Hit?.Invoke();
-            Invoke("_Delete", 3);
+            Invoke("_Delete", timeBeforeDestroy);
         }
         void _Delete()=>Destroy(gameObject);
         public abstract bool ValidShot(IUnit unit, Transform model, Vector2? targetPoint, Transform target);
