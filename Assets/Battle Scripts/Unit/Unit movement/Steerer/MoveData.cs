@@ -6,14 +6,14 @@ namespace MovementSystem
     class MoveData : MonoBehaviour, IMovementData
     {
         Rigidbody2D _body;
-        Formation.FormationData _formationData;
+        Formation.IFormationData _formationData;
         Formation.IShape _formationShape;
         IUnit _unitTemplate;
         public float Mass
         {
             get
             {
-                if(_formationData == null) _formationData = transform.parent.GetComponentInChildren<Formation.FormationData>();
+                if(_formationData == null) _formationData = transform.parent.GetComponentInChildren<Formation.IFormationData>();
                 return _formationData.ModelCount + 3;
             }
         }

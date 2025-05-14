@@ -22,10 +22,13 @@ public class FieldofView : MonoBehaviour
     public Dictionary<Transform, float> _targets;
     public LayerMask SensorLayerMask;
     public List<Transform> _targetsList;
-    // Start is called before the first frame update
+    public Formation.IFormationData _formationData;
+    
     void Start()
     {
+
         unit = GetComponentInParent<IUnit>();
+        _formationData = unit.GetComponentInChildren<Formation.IFormationData>();    
         rangedWeapon= GetComponentInParent<RangedWeapon>();
         _mesh = GetComponent<MeshFilter>();
         _renderer = GetComponent<MeshRenderer>();
@@ -178,18 +181,20 @@ public class FieldofView : MonoBehaviour
     {
         get
         {
+            Vector2 pos2  = unit.transform.position-_formationData.ModelSize*(_formationData.Width-1) *unit.transform.right/4;
             Vector3 pos = unit.transform.position - unit.transform.right;
             //pos += GetVectorFromAngle(unit.Movement.Rotation)/2;
-            return pos;
+            return pos2;
         }
     }
     Vector3 RPosition
     {
         get
         {
+            Vector2 pos2 = unit.transform.position + _formationData.ModelSize * (_formationData.Width - 1) * unit.transform.right/4;
             Vector3 pos = unit.transform.position + unit.transform.right;
             //pos += GetVectorFromAngle(unit.Movement.Rotation)/2;
-            return pos;
+            return pos2;
         }
     }
     Vector3 Ray(Vector3 origin, float angle)

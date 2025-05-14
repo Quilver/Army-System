@@ -17,7 +17,7 @@ namespace Formation
 
         void Start()
         {
-            _formationData = GetComponent<FormationData>();
+            _formationData = GetComponent<IFormationData>();
             _position = GetComponent<IModelPosition>();
             _stats = GetComponentInParent<IUnit>().Stats;
             _shape = GetComponent<IShape>();

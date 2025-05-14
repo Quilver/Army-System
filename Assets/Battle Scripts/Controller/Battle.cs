@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.SceneManagement;
 
 public class Battle : MonoBehaviour {
     public static Battle Instance;
@@ -51,5 +52,15 @@ public class Battle : MonoBehaviour {
     public bool Enemies(IUnit unit1, IUnit unit2)
     {
         return unit1.transform.parent != unit2.transform.parent;
+    }
+    public void EndBattle(bool win)
+    {
+        if (win)
+            SceneManager.LoadScene(2);
+        else
+        {
+            Destroy(Campaign.CampaignDataManager.instance.gameObject);
+            SceneManager.LoadScene(0);
+        }
     }
 }

@@ -17,6 +17,15 @@ public class CaputurePoint : MonoBehaviour
     Color PlayerControlled, NeutralControlled, AIControlled;
     [SerializeField, Range(-1, 1)]
     float holder;
+    [SerializeField, Range(0, 1)]
+    float triggerThreshold = 0.8f;
+    public event System.Action<bool> capturedBy;
+    public static event System.Action<CaputurePoint, bool> PointCaptured;
+    void InvokeCapture(bool playerCaptured)
+    {
+        capturedBy?.Invoke(playerCaptured);
+        PointCaptured?.Invoke(this, playerCaptured);
+    }
     int counter = 0;
     SpriteRenderer sprite;
     private void Start()
@@ -25,14 +34,26 @@ public class CaputurePoint : MonoBehaviour
     }
     void Update()
     {
+        bool belowThreshold = Mathf.Abs(holder) > triggerThreshold;
+
+        CalculateHolder();
+        UpdateColour();
+        if (belowThreshold && Mathf.Abs(holder) > triggerThreshold)
+            InvokeCapture(holder > 0);
+    }
+    void CalculateHolder()
+    {
         float gradient = Mathf.Clamp(counter, -30, 30) * Time.deltaTime / 50;
         holder = Mathf.Clamp(holder + gradient, -1, 1);
-        if(holder > 0)
+    }
+    void UpdateColour()
+    {
+        if (holder > 0)
             sprite.color = Color.Lerp(NeutralControlled, PlayerControlled, holder);
         else
             sprite.color = Color.Lerp(NeutralControlled, AIControlled, -holder);
-        if(holder > 0.8f) CapturedBy?.Invoke(this, Army.Controller.Player);
-        else if (holder < -0.8)CapturedBy?.Invoke(this, Army.Controller.Computer);
+        if (holder > 0.8f) CapturedBy?.Invoke(this, Army.Controller.Player);
+        else if (holder < -0.8) CapturedBy?.Invoke(this, Army.Controller.Computer);
     }
     private void OnTriggerEnter2D(Collider2D collision)
     {
@@ -44,6 +65,7 @@ public class CaputurePoint : MonoBehaviour
     private void OnTriggerExit2D(Collider2D collision)
     {
         var model = collision.GetComponent<ModelComponents.IUnitData>();
+        if(model == null || model.Unit == null || model.Unit.GetComponentInParent<ArmyData>()) return;
         if (model.Unit.GetComponentInParent<ArmyData>().controller == Army.Controller.Player)
             counter--;
         else counter++;

@@ -26,5 +26,12 @@ namespace AISystem
             if (target != null) move.MoveTo(target);
             else if (position != null) move.MoveTo(position.Value);
         }
+        public override string ToString()
+        {
+            if (target != null)
+                return $"Charge {target.gameObject.name}";
+            else
+                return $"Move to {position.Value}";
+        }
     }
 }

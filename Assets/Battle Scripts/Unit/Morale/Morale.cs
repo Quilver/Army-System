@@ -13,8 +13,7 @@ namespace MoraleSystem
         void Start()
         {
             _formationData = GetComponentInChildren<Formation.IFormationData>();
-            _unit = GetComponent<Unit>();
-            
+            _unit = GetComponent<IUnit>();
             enabled = false;
         }
         public void TakeDamage()
