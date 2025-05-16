@@ -20,11 +20,12 @@ namespace PlayerControls
         float minOrtho = 5.0f;
         [SerializeField, Range(10, 30)]
         float maxOrtho = 20.0f;
-        Player inputs;
+        PlayerInputMap inputs;
         void Awake()
         {
             targetOrtho = Camera.main.orthographicSize;
-            inputs = new Player();
+            inputs = new PlayerInputMap();
+            
         }
         private void OnEnable()
         {

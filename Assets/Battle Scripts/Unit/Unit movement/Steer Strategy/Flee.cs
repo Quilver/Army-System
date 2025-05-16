@@ -49,7 +49,7 @@ namespace MovementSystem.Reaction
 
         protected override void DisableEvents()
         {
-            Unit.StateChanged += React;
+            Unit.StateChanged -= React;
         }
         void React(UnitState state)
         {
@@ -68,6 +68,11 @@ namespace MovementSystem.Reaction
             base.Enter();
             _fleeing = true;
             Body.AddForce(FleeDirection() * _forceMultiple * MoveData.Mass);
+        }
+        protected override void Start()
+        {
+            base.Start();
+            Exit();
         }
         protected override void Exit()
         {

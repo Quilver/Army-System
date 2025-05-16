@@ -38,9 +38,19 @@ public class RangedWeapon: MonoBehaviour
             return target.Target;
         }
     }
+    public void Setup(StatSystem.Refactor.PC_Stats character)
+    {
+        _projectile = character._rangedWeapon._projectile;
+        WeaponRange = character._rangedWeapon.range;
+        ReloadTime =character._rangedWeapon.ReloadTimeBase;
+        minimumDamage = character._rangedWeapon.MinDamage;
+        maximumDamage = character._rangedWeapon.MaxDamage;
+
+    }
     private void Start()
     {
         unit= GetComponentInParent<IUnit>();
+        ReloadTime *= Mathf.Lerp(1, 0.5f, unit.Stats.ShootSpeed / 20f); 
         targetTemplate= GetComponentInChildren<FieldofView>();
         
         target = GetComponentInChildren<IRangedTargeter>();

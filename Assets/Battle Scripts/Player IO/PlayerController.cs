@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.InputSystem;
@@ -17,16 +16,17 @@ public abstract class PlayerController : MonoBehaviour
     public static Action<IUnit> SelectUnit;
     protected static void InvokeSelectUnit(IUnit unit)=>SelectUnit?.Invoke(unit);
     #endregion
-    Player inputs;
+    PlayerInputMap inputs;
     // Use this for initialization
     void Awake()
     {
         Cursor.visible = false;
-        inputs = new Player();
+        inputs = new PlayerInputMap();
+        inputs.Enable();
     }
     private void OnEnable()
     {
-        inputs.Enable();
+        
         inputs.CursorControls.MoveCursor.performed += MoveCursor;
         inputs.CursorControls.MoveCursor.canceled += MoveCursor;
         inputs.CursorControls.SetCursor.performed += SetCursor;
@@ -40,7 +40,7 @@ public abstract class PlayerController : MonoBehaviour
     }
     private void OnDisable()
     {
-        inputs.Disable();
+        //inputs.Disable();
         inputs.CursorControls.MoveCursor.performed -= MoveCursor;
         inputs.CursorControls.MoveCursor.canceled -= MoveCursor;
         inputs.CursorControls.SetCursor.performed -= SetCursor;

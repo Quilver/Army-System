@@ -21,20 +21,16 @@ namespace MovementSystem
             }
 
         }
-        Rigidbody2D _body;
-        protected Rigidbody2D Body
-        {
-            get
-            {
-                if (_body == null) _body = GetComponentInParent<Rigidbody2D>();
-                return _body;
-            }
-        }
-        public Vector2 Seek(Vector2 target)
+        public Vector2 SeekError(Vector2 target)
         {
             Vector2 desiredVelocity = (target - (Vector2)transform.position).normalized * MaxSpeed;
-            Vector2 steerVelocity = desiredVelocity - Body.velocity;
-            return steerVelocity;
+            Vector2 errorVelocity = desiredVelocity - movementData.Velocity;
+            return errorVelocity;
+        }
+        public Vector2 Seek(Vector2 target, bool normalised = true)
+        {
+            if (movementData == null) movementData = GetComponent<IMovementData>();
+            return (movementData.Velocity + SeekError(target)) / MaxSpeed;
         }
 
         public abstract Vector2 GetDirection();

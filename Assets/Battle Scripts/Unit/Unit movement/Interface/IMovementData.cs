@@ -8,7 +8,7 @@ namespace MovementSystem
         
         public float Mass { get; }
         public float Force { get; }
-
+        public Vector2 Velocity { get; }    
         public Vector2 Center { get; }
         public Vector2 FuturePosition { get; }
         public float MaxSpeed { get; }

@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.UIElements;
 namespace MovementSystem
 {
-    class LineSensor : MonoBehaviour, Sensors
+    class LineSensor : MonoBehaviour, ISensors
     {
         [SerializeField, Range(1, 10)]
         float _sensorLength;
@@ -30,6 +30,9 @@ namespace MovementSystem
                 return _sensors;
             }
         }
+        public RaycastHit2D ForwardSensor => Sensors[0];
+        public RaycastHit2D RightWhisker => Sensors[1];
+        public RaycastHit2D LeftWhisker => Sensors[2];
         Formation.IShape _formationData;
         void Start()
         {

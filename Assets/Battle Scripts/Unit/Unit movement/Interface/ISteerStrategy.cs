@@ -6,7 +6,7 @@ namespace MovementSystem
     public abstract class ISteerStrategy : MonoBehaviour
     {
         ISteeringBehaviour[] _behaviours;
-        void Start ()
+        protected virtual void Start ()
         {
             _behaviours = GetComponents<ISteeringBehaviour>();  
         }

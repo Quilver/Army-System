@@ -14,11 +14,20 @@ namespace MovementSystem
             get
             {
                 if(_formationData == null) _formationData = transform.parent.GetComponentInChildren<Formation.IFormationData>();
-                return _formationData.ModelCount + 3;
+                if (!_body) _body = GetComponentInParent<Rigidbody2D>();
+                _body.mass = _formationData.ModelCount;
+                return _body.mass * 2;
             }
         }
-            
 
+        public Vector2 Velocity
+        {
+            get
+            {
+                if (!_body) _body = GetComponentInParent<Rigidbody2D>();
+                return _body.velocity;
+            }
+        }
         public Vector2 Center
         {
             get
@@ -44,7 +53,7 @@ namespace MovementSystem
         {
             get {
                 if(_unitTemplate==null) _unitTemplate=GetComponentInParent<IUnit>();
-                return _unitTemplate.Stats.Movement;
+                return _unitTemplate.Stats.Movement/5;
             }
         }
 
@@ -52,7 +61,7 @@ namespace MovementSystem
         {
             get
             {
-                return (MaxSpeed * 3 + 5);
+                return (MaxSpeed * Mass * 50);
             }
         }
     }

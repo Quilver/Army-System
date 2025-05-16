@@ -9,7 +9,7 @@ namespace ModelComponents
         float HoldDampRatio, MoveDampRatio;
         SpringJoint2D[] joints;
         Rigidbody2D[] pins;
-        public void SetUp(Rigidbody2D[] pins)
+        public void SetUp(Rigidbody2D[] pins, Vector2 offsetPos, Transform unit)
         {
             joints = new SpringJoint2D[3];
             this.pins = pins;
@@ -23,7 +23,7 @@ namespace ModelComponents
             }
 
         }
-        public void SetPosition(Vector3 position, bool warpToPoint = false)
+        public void SetPosition(Vector3 position, Vector2 offsetPos, bool warpToPoint = false)
         {
             if(warpToPoint) transform.position = position;
             int i = 0;

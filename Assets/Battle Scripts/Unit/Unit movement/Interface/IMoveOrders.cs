@@ -15,12 +15,14 @@ namespace MovementSystem
         {
             unitFinishedMovement?.Invoke(transform);
 
-        }        
+        }
         //Unit moving to position
+        public event Action OrderReceived;
         public event Action<Vector2> moving;
         public static event Action<Vector2, Transform> movingUnit;
         public void InvokeMove(Vector2 position)
         {
+            OrderReceived?.Invoke();
             moving?.Invoke(position);
             movingUnit?.Invoke(position, transform);
         }
@@ -29,15 +31,16 @@ namespace MovementSystem
         static event Action<Transform, Transform> pursuingUnit;
         public void InvokePursuit(Transform target)
         {
+            OrderReceived?.Invoke();
             pursuing?.Invoke(target);
             pursuingUnit?.Invoke(target, transform);
         }
         #endregion
-        public abstract void MoveTo(Vector2 position);
+        public abstract void MoveTo(Vector2 position, Vector2? faceDirection = null);
         public abstract void MoveTo(Transform target);
         public abstract bool IsMoving { get; }
         public abstract Vector2 TargetPosition { get; }
         public abstract Transform Target { get; }
-
+        public abstract Vector2? FaceTowards { get; }
     }
 }

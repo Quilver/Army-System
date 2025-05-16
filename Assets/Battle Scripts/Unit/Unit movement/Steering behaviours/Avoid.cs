@@ -5,10 +5,10 @@ namespace MovementSystem.SteeringBehaviour
 {
     class Avoid : ISteeringBehaviour
     {
-        Sensors _sensors;
+        ISensors _sensors;
         private void Start()
         {
-            _sensors = GetComponentInParent<Sensors>();
+            _sensors = GetComponentInParent<ISensors>();
         }
         public override void AddForce()
         {
@@ -29,7 +29,7 @@ namespace MovementSystem.SteeringBehaviour
         protected override void OnDrawGizmos()
         {
             if(!DrawGizmo) return;
-            if (_sensors == null) _sensors = GetComponentInParent<Sensors>();
+            if (_sensors == null) _sensors = GetComponentInParent<ISensors>();
             Gizmos.color=Color.red;
             Gizmos.DrawRay(transform.position, GetForce());
         }

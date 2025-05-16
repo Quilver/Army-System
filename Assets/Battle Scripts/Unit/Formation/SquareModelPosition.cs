@@ -20,6 +20,18 @@ namespace Formation
             offset = Quaternion.AngleAxis(transform.eulerAngles.z, Vector3.forward) * offset;
             return transform.position + offset;
         }
+        public Vector3 GetModelOffsetPosition(int index)
+        {
+            if (_data == null) _data = GetComponent<IFormationData>();
+            float x = index % _data.Width;
+            if (x % 2 == 0) x = -x / 2;
+            else x = x / 2 + 0.5f;
+            if (_data.Width % 2 == 0) x -= 0.5f;
+
+
+            int y = (index / _data.Width);
+            return new Vector3(x, -y) * _data.ModelSize / 2;
+        }
         void Start()=>DrawGizmo=false;
         public void RemoveModel(Transform model)
         {
@@ -35,14 +47,14 @@ namespace Formation
             if (index + Width < models.Count)
             {
                 models[index] = models[index + Width];
-                models[index].GetComponent<ModelComponents.IModelFormation>().SetPosition(GetModelPosition(index));
+                models[index].GetComponent<ModelComponents.IModelFormation>().SetPosition(GetModelPosition(index), GetModelOffsetPosition(index));
                 RemoveModelAtIndex(index + Width);
             }
             //shift right
             else if (index + 2 < models.Count)
             {
                 models[index] = models[index + 2];
-                models[index].GetComponent<ModelComponents.IModelFormation>().SetPosition(GetModelPosition(index));
+                models[index].GetComponent<ModelComponents.IModelFormation>().SetPosition(GetModelPosition(index), GetModelOffsetPosition(index));
                 RemoveModelAtIndex(index + 2);
             }
             //done

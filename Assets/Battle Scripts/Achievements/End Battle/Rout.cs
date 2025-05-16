@@ -17,7 +17,6 @@ namespace AchievementSystem.EndBattle
         void CheckUnitsRemaining(IUnit unitDestroyed)
         {
             if(_army == null)return;
-            Debug.Log($"{unitDestroyed.gameObject.name} is destroyed, {_army.Units.Count} remaining");
             if(_army.Units.Count > 1) return;
             IUnit.OnUnitDestroyed -= CheckUnitsRemaining;
             Battle.Instance.EndBattle(WinCondition);

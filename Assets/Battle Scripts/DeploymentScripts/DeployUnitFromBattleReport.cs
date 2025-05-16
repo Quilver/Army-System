@@ -30,9 +30,9 @@ namespace Deployment
         void _SetRangedCombat(IUnit unit, Campaign.PCWrapper character)
         {
             var rangedWeapon = unit.transform.GetComponentInChildren<RangedWeapon>();
-            if (character.statBase._projectile != null)
+            if (character.statBase._rangedWeapon != null)
             {
-                rangedWeapon._projectile = character.statBase._projectile;
+                rangedWeapon.Setup(character.statBase);
                 rangedWeapon.gameObject.SetActive(true);
             }
             else

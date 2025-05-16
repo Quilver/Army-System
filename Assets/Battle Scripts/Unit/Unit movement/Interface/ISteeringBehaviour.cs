@@ -14,13 +14,31 @@ namespace MovementSystem
                 return _getSteerDirection;
             }
         }
+        MovementSystem.IMovementData _movementData;
+        protected IMovementData GetMovementData
+        {
+            get
+            {
+                if (_movementData == null) _movementData = GetComponentInParent<IMovementData>();
+                return _movementData;
+            }
+        }
+        IMoveOrders _moveOrders;
+        protected IMoveOrders GetMoveOrders
+        {
+            get
+            {
+                if(_moveOrders==null)_moveOrders= GetComponentInParent<IMoveOrders>();
+                return _moveOrders;
+            }
+        }
         private void OnEnable()
         {
             GetSteerDirection.updateSteeringForces += AddForce;
         }
         private void OnDisable()
         {
-            GetSteerDirection.updateSteeringForces += AddForce;
+            GetSteerDirection.updateSteeringForces -= AddForce;
         }
         public abstract Vector2 GetForce();
         public abstract void AddForce();
@@ -28,6 +46,7 @@ namespace MovementSystem
         protected bool DrawGizmo;
         protected virtual void OnDrawGizmos()
         {
+            if (!DrawGizmo) return;
             Gizmos.color = Color.red;
             Gizmos.DrawRay(transform.position, GetForce());
         }

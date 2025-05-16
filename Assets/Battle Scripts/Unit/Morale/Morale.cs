@@ -21,7 +21,8 @@ namespace MoraleSystem
             //below third, shatter
             if (_formationData.ModelCount <= _unit.Stats.ModelCount / 3)
             {
-                Destroy(gameObject);
+                _unit.KillUnit();
+                //Destroy(gameObject);
             }
             //below half, flee
             else if (_formationData.ModelCount <= _unit.Stats.ModelCount / 2)
@@ -29,6 +30,12 @@ namespace MoraleSystem
                 EnterFlee();
             }
 
+        }
+        int BreakPoint()
+        {
+            float percentage = Mathf.Lerp(1, 0.4f, _unit.Stats.Leadership / 20f);
+            return Mathf.RoundToInt(percentage * _unit.Stats.ModelCount);
+            
         }
         void EnterFlee()
         {

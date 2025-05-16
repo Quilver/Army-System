@@ -7,6 +7,15 @@ namespace ModelComponents
     {
         IUnitData _unitData;
         IMeleeTargeter _targeter;
+        Rigidbody2D _body2D;
+        Rigidbody2D Body
+        {
+            get
+            {
+                if(_body2D == null) _body2D = GetComponentInParent<Rigidbody2D>();
+                return _body2D;
+            }
+        }
         private void Start()
         {
             _unitData = GetComponentInParent<IUnitData>();
@@ -33,14 +42,18 @@ namespace ModelComponents
                 Attack();
             }
         }
+        [SerializeField, Range(80, 300)]
         float _attackForceMultiplier = 100;
+        [SerializeField, Range(0, 1)]
+        float _knockBackModifier = 0.2f;
         void Attack()
         {
             var target = _targeter.Target;
             MakeStrike();
-            target.GetComponentInParent<Rigidbody2D>().AddForce(
-                (target.transform.position - transform.position).normalized 
-                * _unitData.UnitStats.AttackPower * _attackForceMultiplier);
+            Vector2 dir = (target.transform.position - transform.position).normalized;
+            float force = _unitData.UnitStats.AttackPower * _attackForceMultiplier;
+            Body.AddForce(-force * _knockBackModifier * dir);
+            target.GetComponentInParent<Rigidbody2D>().AddForce(dir*force);
             target.TakeDamage(_unitData.UnitStats.AttackPower, transform);
         }
     }

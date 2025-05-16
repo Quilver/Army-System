@@ -14,26 +14,24 @@ namespace MovementSystem.SteeringBehaviour
                 return _pathfinder; 
             } 
         }
-        IMoveOrders _moveOrders;
-        IMoveOrders MoveOrders
-        {
-            get {
-                if(_moveOrders == null) _moveOrders = GetComponentInParent<IMoveOrders>();
-                return _moveOrders;
-            }
-        }
+        [SerializeField] Vector2 _force;
+        [SerializeField] float _speed;
         public override void AddForce()
         {
+            _force=GetForce();_speed=_force.magnitude;
             GetSteerDirection.AddForce(GetForce(), priority);
         }
 
         public override Vector2 GetForce()
         {
-            if(!MoveOrders.IsMoving)return Vector2.zero;
-            var path = Pathfinder.GetPath(MoveOrders.TargetPosition);
+            if(!GetMoveOrders.IsMoving)return Vector2.zero;
+            var path = Pathfinder.GetPath(GetMoveOrders.TargetPosition);
+            Vector2 targetPoint;
             if (path == null || path.Count < 2)
-                return GetSteerDirection.Seek(MoveOrders.TargetPosition);
-            return GetSteerDirection.Seek(path[1]);
+                targetPoint = GetMoveOrders.TargetPosition;
+            else
+                targetPoint = path[1];
+            return (GetSteerDirection.Seek(targetPoint));
         }
         protected override void OnDrawGizmos()
         {

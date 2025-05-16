@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using UnityEngine;
 namespace StatSystem.Refactor
 {
-    [CreateAssetMenu(menuName = "Stats/Refactor/PC Stats")]
+    [CreateAssetMenu(menuName = "Stats/PC Stats")]
     public class PC_Stats : IUnitStatBlock
     {
         [SerializeField]
         IUnit _unitPrefab;
         public IUnit UnitPrefab=> _unitPrefab;
-        public RangedWeapons.IProjectile _projectile;
+        //public RangedWeapons.IProjectile _projectile;
+        public RangedWeapons.IRangedWeaponData _rangedWeapon;
         [SerializeField]    
         Stat _Movement;
         public override int Movement => _Movement.value;

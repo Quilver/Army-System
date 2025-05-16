@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using UnityEngine;
 namespace StatSystem.Refactor
 {
-    [CreateAssetMenu(menuName = "Stats/Refactor/NPC Stats")]
+    [CreateAssetMenu(menuName = "Stats/NPC Stats")]
     public class NPC_Stats : IUnitStatBlock
     {
         [SerializeField, Range(1, 15)]

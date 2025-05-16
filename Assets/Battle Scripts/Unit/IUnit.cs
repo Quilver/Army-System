@@ -26,9 +26,13 @@ public abstract class IUnit: MonoBehaviour
         if(enter)EnteredMelee?.Invoke();
         else ExitedMelee?.Invoke();
     }
-    private void OnDestroy()
+    public void KillUnit()
     {
         InvokeUnitDestroyed(this);
-        //UnitDestroyed?.Invoke();
+        Destroy(gameObject);
+    }
+    private void OnDestroy()
+    {
+        
     }
 }

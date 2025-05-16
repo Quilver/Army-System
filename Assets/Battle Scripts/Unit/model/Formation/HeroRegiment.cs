@@ -9,7 +9,7 @@ namespace ModelComponents
         FixedJoint2D joint;
         [SerializeField]
         Rigidbody2D[] pins;
-        public void SetUp(Rigidbody2D[] pins)
+        public void SetUp(Rigidbody2D[] pins, Vector2 offsetPos, Transform unit)
         {
             joint = GetComponent<FixedJoint2D>();
             this.pins = pins;
@@ -17,7 +17,7 @@ namespace ModelComponents
             joint.enabled = true;
         }
 
-        public void SetPosition(Vector3 position, bool warpToPoint = false)
+        public void SetPosition(Vector3 position, Vector2 offsetPos, bool warpToPoint = false)
         {
             
         }

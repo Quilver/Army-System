@@ -1,11 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UIElements;
-using static UnityEngine.RuleTile.TilingRuleOutput;
 namespace MovementSystem
 {
-    class FrontWhiskersSensor : MonoBehaviour, Sensors
+    class FrontWhiskersSensor : MonoBehaviour, ISensors
     {
         [SerializeField, Range(1, 10)]
         float _sensorLength;
@@ -29,6 +27,9 @@ namespace MovementSystem
                 return _sensors;
             }
         }
+        public RaycastHit2D ForwardSensor => throw new System.NotImplementedException();
+        public RaycastHit2D RightWhisker => throw new System.NotImplementedException();
+        public RaycastHit2D LeftWhisker => throw new System.NotImplementedException();
         Formation.IShape _formationData;
         Rigidbody2D _body;
         void Start()
@@ -95,6 +96,9 @@ namespace MovementSystem
                 return transform.position + offset;
             }
         }
+
+        
+
         Vector2 GetDirection(float angle)=> Quaternion.AngleAxis(angle, transform.forward)* transform.up;
         RaycastHit2D BoxSensor(float angle)
         {

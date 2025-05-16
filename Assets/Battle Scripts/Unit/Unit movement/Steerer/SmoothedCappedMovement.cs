@@ -27,6 +27,8 @@ namespace MovementSystem
         Rigidbody2D _body;
         public void MoveUnit(Vector2 direction)
         {
+            _body.AddForce(_moveData.Force * direction * Time.deltaTime);
+            /*
             _speed=_direction.MaxSpeed;
             _currentSpeed = _body.velocity.magnitude;
             _body.AddForce(_moveData.Mass * _moveData.Force * direction * Time.deltaTime);
@@ -34,6 +36,7 @@ namespace MovementSystem
                 _body.velocity = _body.velocity.normalized * _currentSpeed;
             else if (_body.velocity.magnitude > _direction.MaxSpeed)
                 _body.velocity = _body.velocity.normalized * _direction.MaxSpeed;
+            */
         }
         Vector2 force;
         void Start()
@@ -45,11 +48,11 @@ namespace MovementSystem
         }
         [SerializeField, Range(1, 10)]
         float _forceChangeRate;
-        void Update()
+        void FixedUpdate()
         {
             var newForce = Vector2.ClampMagnitude(_direction.GetDirection(), _forceChangeRate);
             force = Vector2.MoveTowards(force, newForce, _forceChangeRate * Time.deltaTime);
-            MoveUnit(force);
+            MoveUnit(_direction.GetDirection());
         }
 
         [SerializeField]

@@ -12,6 +12,8 @@ namespace MovementSystem
         bool _orderedMove;
         [SerializeField]
         Vector2 _position;
+        Vector2? _faceTowards;
+        public override Vector2? FaceTowards => _faceTowards;
         [SerializeField]
         Transform _target;
         public override bool IsMoving => _orderedMove;
@@ -45,26 +47,30 @@ namespace MovementSystem
             }
         }
         #endregion
-        public override void MoveTo(Vector2 position)
+        public override void MoveTo(Vector2 position, Vector2? faceDirection = null)
         {
             if(Unit.State == UnitState.Fleeing) return; 
             if(Unit.State == UnitState.Deployment)
             {
-                DeploymentMove(position);
+                DeploymentMove(position, faceDirection);
                 return;
             }
             _orderedMove = true;
             _position = position;
+            _faceTowards = faceDirection;
             _target = null;
             InvokeMove(position);
             Unit.State =UnitState.Moving;
         }
         [SerializeField]
         bool TEST;
-        void DeploymentMove(Vector2 position)
+        void DeploymentMove(Vector2 position, Vector2? faceDirection = null)
         {
             if (!Physics2D.OverlapPoint(position, 1 << 12)) return;
             transform.position = position;
+            if(faceDirection != null) 
+                transform.up = (Vector3)faceDirection.Value - transform.position;
+            InvokeMove(position);
             FinishedMovement();
         }
         public override void MoveTo(Transform target)
@@ -74,6 +80,7 @@ namespace MovementSystem
                 return;
             }
             _orderedMove = true;
+            _faceTowards = null;
             _target = target;
             InvokePursuit(target);
             Unit.State = UnitState.Moving;

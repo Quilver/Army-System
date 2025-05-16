@@ -54,6 +54,8 @@ namespace PlayerControls
             if (SelectedUnitV == null) return;
             if (HoverUnit == null)
                 SelectedUnitV.transform.GetComponent<MovementSystem.IMoveOrders>().MoveTo(_cursor.position);
+            else if(HoverUnit == SelectedUnitV)
+                SelectedUnitV.transform.GetComponent<MovementSystem.IMoveOrders>().MoveTo(_cursor.position);
             else
                 SelectedUnitV.GetComponent<MovementSystem.IMoveOrders>().MoveTo(HoverUnit.transform);
         }

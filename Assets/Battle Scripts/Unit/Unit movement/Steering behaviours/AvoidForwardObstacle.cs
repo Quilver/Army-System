@@ -8,12 +8,12 @@ namespace MovementSystem.SteeringBehaviour
     {
         [SerializeField, Range(0.1f, 10)]
         float _priorityMultiplier;
-        Sensors _sensors;
+        ISensors _sensors;
         IMoveOrders _moveOrders;
         private void Start()
         {
             _moveOrders = GetComponentInParent<IMoveOrders>();
-            _sensors = GetComponentInParent<Sensors>();
+            _sensors = GetComponentInParent<ISensors>();
         }
         public override void AddForce()
         {
@@ -82,7 +82,7 @@ namespace MovementSystem.SteeringBehaviour
         protected override void OnDrawGizmos()
         {
             if (!DrawGizmo) return;
-            if (_sensors == null) _sensors = GetComponentInParent<Sensors>();
+            if (_sensors == null) _sensors = GetComponentInParent<ISensors>();
             Gizmos.color = Color.red;
             Gizmos.DrawRay(transform.position, _sensors.SensorDirection(_sensors.Sensors[0])*3);
             Gizmos.color = new Color(0.8f, 0.5f, 0.5f);

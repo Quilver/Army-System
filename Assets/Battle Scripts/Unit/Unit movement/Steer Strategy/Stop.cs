@@ -42,45 +42,31 @@ namespace MovementSystem.Reaction
             MoveOrders.finishedMovement += Enter;
             Unit.StateChanged += Disrupt;
         }
-        bool _stopping;
         void Disrupt(UnitState state)
         {
             if(state == UnitState.Idle)
             {
                 Enter();
-                _stopping=true;
             }
             else if(state == UnitState.Moving || state == UnitState.Fighting || state== UnitState.Fleeing)
             {
                 Exit();
             }
         }
-        Rigidbody2D _rigidbody;
-        Rigidbody2D Body
-        {
-            get
-            {
-                if(_rigidbody == null)_rigidbody=GetComponentInParent<Rigidbody2D>();
-                return _rigidbody;
-            }
-        }
         protected override void Enter()
         {
             base.Enter();
             Invoke("Exit", 0.2f);
-            Body.AddForce(-Body.velocity * MovementData.Mass * MovementData.MaxSpeed);
-            Body.angularVelocity = 0;
         }
         protected override void Exit()
         {
-            base.Exit();
-            _stopping=false;
+            //base.Exit();
         }
         [SerializeField]
         bool DrawGizmo;
         private void OnDrawGizmos()
         {
-            if(!DrawGizmo && !_stopping) return;
+            if(!DrawGizmo) return;
             Gizmos.color = Color.yellow;
             Gizmos.DrawSphere(transform.position, 0.2f);
         }
