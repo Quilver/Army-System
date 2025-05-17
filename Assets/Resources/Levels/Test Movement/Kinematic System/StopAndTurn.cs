@@ -8,8 +8,16 @@ namespace MovementSystem.SteeringBehaviour
 
         public override void AddForce()
         {
-            if (GetMoveOrders.FaceTowards == null) return;
-            transform.parent.parent.up = ((Vector3)GetMoveOrders.FaceTowards.Value - transform.position).normalized;
+            if (GetMoveOrders.FaceTowards == null)
+            {
+                enabled = false;
+                return;
+            }
+            var dir = ((Vector3)GetMoveOrders.FaceTowards.Value - transform.position).normalized;
+            if (Vector2.Distance(transform.parent.parent.up, dir) < 0.1f)
+                return;
+            transform.parent.parent.up = Vector3.MoveTowards(transform.parent.parent.up, dir, GetMovementData.MaxSpeed * Time.deltaTime / 5);
+
         }
 
         public override Vector2 GetForce()

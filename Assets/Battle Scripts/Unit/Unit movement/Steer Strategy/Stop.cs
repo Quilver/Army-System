@@ -50,17 +50,8 @@ namespace MovementSystem.Reaction
             }
             else if(state == UnitState.Moving || state == UnitState.Fighting || state== UnitState.Fleeing)
             {
-                Exit();
+                
             }
-        }
-        protected override void Enter()
-        {
-            base.Enter();
-            Invoke("Exit", 0.2f);
-        }
-        protected override void Exit()
-        {
-            //base.Exit();
         }
         [SerializeField]
         bool DrawGizmo;

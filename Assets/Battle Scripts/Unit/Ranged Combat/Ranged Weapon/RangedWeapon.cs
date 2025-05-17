@@ -72,11 +72,12 @@ public class RangedWeapon: MonoBehaviour
     {
         _timeToShoot = 0;
         if(target.ValidTargets.Count == 0 || target.Target == null) return;
+        Debug.Log($"Shooting at {target.Target.name}");
         ShootAt?.Invoke(unit, target.Target.position, target.Target);
         //Shoot(projectile, Random.Range(minimumDamage, maximumDamage) * 50, target.Target.transform);
     }
     public float ShootPower
     {
-        get => Random.Range(minimumDamage, maximumDamage) * 50;
+        get => Random.Range(minimumDamage, maximumDamage) * 5;
     }
 }

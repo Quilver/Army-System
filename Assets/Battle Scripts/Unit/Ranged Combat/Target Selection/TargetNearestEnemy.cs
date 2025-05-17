@@ -7,24 +7,30 @@ namespace Shooting
     public class TargetNearestEnemy : MonoBehaviour, IRangedTargeter
     {
         FieldofView _fieldOfView;
-        ArmyData _armyData;
+        Army _armyData;
         void Start()
         {
             _fieldOfView = GetComponentInChildren<FieldofView>();
-            _armyData = GetComponentInParent<ArmyData>();
+            _armyData = GetComponentInParent<Army>();
         }
         public List<Transform> ValidTargets
         {
-            get
-            {
-                if(_fieldOfView == null || _fieldOfView._targets == null)
-                    return new List<Transform>();
-                var unvlaidatedTargets = _fieldOfView._targets.Keys;
-                var validatedTargets = unvlaidatedTargets.Where(target => target.GetComponentInParent<Army>() != GetComponentInParent<Army>()).ToList();
-                return validatedTargets;
-            }
+            get => _validTargets;
         }
-
+        [SerializeField]
+        List<Transform> _validTargets;
+        List<Transform> CalculateValidTargets()
+        {
+            if (_fieldOfView == null || _fieldOfView._targets == null)
+            {
+                Debug.LogWarning("missing field of view");
+                return new List<Transform>();
+            }
+            var unvlaidatedTargets = _fieldOfView._targets.Keys;
+            var validatedTargets = unvlaidatedTargets.Where(target => target.GetComponentInParent<Army>() != GetComponentInParent<Army>()).ToList();
+            return validatedTargets;
+        }
+        void Update()=>_validTargets=CalculateValidTargets();
         public Transform Target
         {
             get

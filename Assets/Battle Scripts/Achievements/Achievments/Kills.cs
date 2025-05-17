@@ -36,7 +36,7 @@ namespace AchievementSystem
         Dictionary<IUnit, int> KillsByEachUnit;
         void RecordKills(IUnit attacker, IUnit victim)
         {
-            if(attacker.GetComponentInParent<ArmyData>().controller != Army.Controller.Player)return;
+            if(attacker.GetComponentInParent<Army>().controller != Army.Controller.Player)return;
             if(KillsByEachUnit.ContainsKey(attacker))
                 KillsByEachUnit[attacker] ++;
             else KillsByEachUnit.Add(attacker, 1);

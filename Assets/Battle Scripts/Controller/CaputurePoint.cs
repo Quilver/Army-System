@@ -58,15 +58,15 @@ public class CaputurePoint : MonoBehaviour
     private void OnTriggerEnter2D(Collider2D collision)
     {
         var model = collision.GetComponent<ModelComponents.IUnitData>();
-        if (model.Unit.GetComponentInParent<ArmyData>().controller == Army.Controller.Player) 
+        if (model.Unit.GetComponentInParent<Army>().controller == Army.Controller.Player) 
             counter++;
         else counter--;
     }
     private void OnTriggerExit2D(Collider2D collision)
     {
         var model = collision.GetComponent<ModelComponents.IUnitData>();
-        if(model == null || model.Unit == null || model.Unit.GetComponentInParent<ArmyData>()) return;
-        if (model.Unit.GetComponentInParent<ArmyData>().controller == Army.Controller.Player)
+        if(model == null || model.Unit == null || model.Unit.GetComponentInParent<Army>()) return;
+        if (model.Unit.GetComponentInParent<Army>().controller == Army.Controller.Player)
             counter--;
         else counter++;
     }

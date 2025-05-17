@@ -52,6 +52,7 @@ namespace ModelComponents
         {
             if (_weapon == null) return;
             Transform target = _weapon.CurrentTarget;
+            if (target == null) return;
             _weapon._projectile.GizmosValidShot(_unitData.Unit, transform, target.position, target);
             _weapon._projectile.GizmosFireRadius(_unitData.Unit, transform, target.position, target);
         }

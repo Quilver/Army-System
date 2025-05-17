@@ -10,4 +10,23 @@ public class Army : MonoBehaviour {
         Computer,
         AltPlayer
     }
+    [SerializeField]
+    List<IUnit> _units;
+    public Army.Controller controller;
+
+    public List<IUnit> Units
+    {
+        get
+        {
+            if (transform == null) return null;
+            if (_units == null || _units.Count != transform.childCount) _units = GetComponentsInChildren<IUnit>().ToList();
+            return _units;
+        }
+    }
+    [SerializeField]
+    Army _enemy;
+    public List<IUnit> Enemies
+    {
+        get => _enemy.Units;
+    }
 }

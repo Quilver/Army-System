@@ -12,21 +12,33 @@ public abstract class PlayerController : MonoBehaviour
 {
     #region Event hooks
     public UnityEvent<Vector2> movedPositionOfCursor;
-    public UnityEvent<IUnit> highlightUnit, SelectedUnit;
-    public static Action<IUnit> SelectUnit;
-    protected static void InvokeSelectUnit(IUnit unit)=>SelectUnit?.Invoke(unit);
+    [SerializeField]
+    UnityEvent<IUnit> highlightUnit, SelectedUnitAction;
+    //public static Action<IUnit> SelectUnit;
+    protected static void InvokeSelectUnit(IUnit unit, bool selectOrTarget)
+    {
+        if (selectOrTarget)
+        {
+            //SelectUnit?.Invoke(unit);
+            instance.SelectedUnitAction?.Invoke(unit);
+        }
+        else
+            instance.highlightUnit?.Invoke(unit);
+    }
     #endregion
     PlayerInputMap inputs;
+    static PlayerController instance;
     // Use this for initialization
     void Awake()
     {
+        instance = this;
         Cursor.visible = false;
         inputs = new PlayerInputMap();
-        inputs.Enable();
+        
     }
     private void OnEnable()
     {
-        
+        inputs.Enable();
         inputs.CursorControls.MoveCursor.performed += MoveCursor;
         inputs.CursorControls.MoveCursor.canceled += MoveCursor;
         inputs.CursorControls.SetCursor.performed += SetCursor;
@@ -40,7 +52,7 @@ public abstract class PlayerController : MonoBehaviour
     }
     private void OnDisable()
     {
-        //inputs.Disable();
+        inputs.Disable();
         inputs.CursorControls.MoveCursor.performed -= MoveCursor;
         inputs.CursorControls.MoveCursor.canceled -= MoveCursor;
         inputs.CursorControls.SetCursor.performed -= SetCursor;

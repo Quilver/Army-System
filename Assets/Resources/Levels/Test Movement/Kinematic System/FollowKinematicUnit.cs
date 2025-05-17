@@ -42,27 +42,45 @@ namespace ModelComponents
         public void SetPosition(Vector3 position, Vector2 offsetPos, bool warpToPoint = false)
         {
             this.offsetPosition = offsetPos;
+            if(warpToPoint ) Unit.position = position;
         }
         [SerializeField] Vector2 _pos;
         
         [Header("Spring Variables"), Range(30, 300)] 
         public float _springForceK = 100;
-        [SerializeField, Range(0, 10)] float _damping = 1;
+        [SerializeField, Range(0, 1)] float _damping = 1;
         void UpdateUnitPos()
         {
-            if (Vector2.Distance(UnitPosition, transform.position) > softFollowRadius)
-                _mover.UpdatePosAndFacing((Vector2)transform.position - UnitPosition, Body.velocity.normalized, Body.velocity);
+            //if (Vector2.Distance(UnitPosition, transform.position) > softFollowRadius)
+            _mover.UpdatePosAndFacing((Vector2)transform.position - UnitPosition, Body.velocity.normalized, Body.velocity);
         }
+        Vector2 forwardForce, springForce; float distance;
         void SpringVelocity(Vector2 dirToMove)
         {
+            forwardForce = dirToMove;
             Body.AddForce(dirToMove);
             Vector2 directionToUnit = UnitPosition - (Vector2)transform.position;
-            Vector2 force = Time.deltaTime * _springForceK * directionToUnit - Body.velocity * _damping;
-            Body.AddForce(force);
+            distance = directionToUnit.magnitude;
+            if(directionToUnit.magnitude < softFollowRadius) springForce = Vector2.zero;
+            else
+                SpringForce(directionToUnit);
+        }
+        void SpringForce(Vector2 directionToUnit)
+        {
+            Vector2 force = _springForceK * directionToUnit;// - Body.velocity * _damping;
+            if (directionToUnit.sqrMagnitude < softFollowRadius * softFollowRadius)
+                force -= force * _damping;
+            springForce = force;
+            Body.AddForce(Time.deltaTime * force);
         }
         void OnDrawGizmos()
         {
             if(Unit == null) return;
+            Gizmos.color = Color.red;
+            Gizmos.DrawRay(transform.position, forwardForce);
+            Gizmos.color= Color.blue;
+            Gizmos.DrawRay(transform.position, springForce * Time.deltaTime);
+            Gizmos.color = Color.white;
             Gizmos.DrawLine(transform.position, UnitPosition);
             Gizmos.DrawSphere(UnitPosition, 0.2f);
         }

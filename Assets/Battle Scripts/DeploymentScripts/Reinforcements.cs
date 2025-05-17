@@ -10,7 +10,7 @@ public class Reinforcements : MonoBehaviour
     [SerializeField]
     GameObject unitsToDeploy;
     [SerializeField]
-    ArmyData army;
+    Army army;
     private void OnDrawGizmosSelected()
     {
         Gizmos.DrawSphere(transform.position, 0.3f);

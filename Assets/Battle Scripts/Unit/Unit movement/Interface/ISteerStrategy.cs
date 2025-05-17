@@ -8,7 +8,9 @@ namespace MovementSystem
         ISteeringBehaviour[] _behaviours;
         protected virtual void Start ()
         {
-            _behaviours = GetComponents<ISteeringBehaviour>();  
+            _behaviours = GetComponents<ISteeringBehaviour>();
+            foreach (var behaviour in _behaviours)
+                behaviour.enabled = false;
         }
         // Start is called before the first frame update
         private void OnEnable()=>EnableEvents();

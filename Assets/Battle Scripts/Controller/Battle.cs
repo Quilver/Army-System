@@ -12,7 +12,7 @@ public class Battle : MonoBehaviour {
     public event Action Deploy;
     [SerializeField]
     UnityEvent _Deploy;
-    public ArmyData player, enemy;
+    public Army player, enemy;
     [SerializeField]
     bool UseDeployedTroops;
     [ExecuteAlways]

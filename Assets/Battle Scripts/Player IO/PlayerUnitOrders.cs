@@ -27,8 +27,7 @@ namespace PlayerControls
         {
             unit = SelectedUnitV;
             _cursor = transform;
-            InvokeSelectUnit(SelectedUnitV);
-            SelectedUnit?.Invoke(SelectedUnitV);
+            InvokeSelectUnit(SelectedUnitV, true);
         }
         protected override void MoveCursor(InputAction.CallbackContext value)
         {
@@ -44,8 +43,7 @@ namespace PlayerControls
         protected override void ToggleUnits(InputAction.CallbackContext value)
         {
             _unitSelectionIndex = (_unitSelectionIndex + 1) % playerArmy.GetComponentsInChildren<IUnit>().Length;
-            SelectedUnit?.Invoke(SelectedUnitV);
-            InvokeSelectUnit(SelectedUnitV);
+            InvokeSelectUnit(SelectedUnitV, true);
             var pos = SelectedUnitV.transform.position;
             Camera.main.transform.position = new(pos.x, pos.y, -5);
         }
@@ -96,7 +94,7 @@ namespace PlayerControls
             {
                 if (_hoverUnit == value) return;
                 _hoverUnit = value;
-                highlightUnit?.Invoke(_hoverUnit);
+                InvokeSelectUnit(_hoverUnit, false);
             }
         }
         void UpdateHover()
@@ -106,7 +104,7 @@ namespace PlayerControls
                 HoverUnit = coll.GetComponentInParent<IUnit>();
             else HoverUnit = null;
             if (HoverUnit == null) _cursor.GetComponent<SpriteRenderer>().color = Color.white;
-            else if (HoverUnit.GetComponentInParent<ArmyData>().controller == Army.Controller.Player)
+            else if (HoverUnit.GetComponentInParent<Army>().controller == Army.Controller.Player)
                 _cursor.GetComponent<SpriteRenderer>().color = Color.blue;
             else _cursor.GetComponent<SpriteRenderer>().color = Color.red;
         }

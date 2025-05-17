@@ -3,15 +3,15 @@ using System.Collections.Generic;
 using UnityEngine;
 namespace InfluenceMap
 {
-    [RequireComponent(typeof(ArmyData))]
+    [RequireComponent(typeof(Army))]
     public class ClusterMap : MonoBehaviour
     {
-        ArmyData army;
+        Army army;
         [SerializeField, Range(3, 15)]
         float clusterSize;
         private void Start()
         {
-            army= GetComponent<ArmyData>();
+            army= GetComponent<Army>();
         }
         void Update ()
         {

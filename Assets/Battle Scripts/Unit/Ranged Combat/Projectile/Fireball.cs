@@ -52,7 +52,7 @@ namespace RangedWeapons
         
         void Explode()
         {
-            GetComponent<AudioSource>().Play();
+            GetComponent<AudioSource>().PlayOneShot(GetComponent<AudioSource>().clip, 8);
             StartCoroutine(ExplosionAnimation());
             var hits = Physics2D.OverlapCircleAll(transform.position, _blastRadius, 1<<10);
             foreach (var hit in hits)

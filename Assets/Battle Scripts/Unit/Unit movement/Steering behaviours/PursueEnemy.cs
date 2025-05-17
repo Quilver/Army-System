@@ -14,15 +14,6 @@ namespace MovementSystem.SteeringBehaviour
                 return _movementData;
             }
         }
-        Rigidbody2D _body;
-        Rigidbody2D Body
-        {
-            get
-            {
-                if (_body == null) _body = GetComponentInParent<Rigidbody2D>();
-                return _body;
-            }
-        }
         public override void AddForce()
         {
             GetSteerDirection.AddForce(GetForce(), 1);

@@ -102,6 +102,7 @@ namespace MovementSystem
             if (!DrawGizmo) return;
             Gizmos.color = Color.red;
             Gizmos.DrawSphere(TargetPosition, 0.3f);
+            Gizmos.DrawWireSphere(transform.position, _maxReachedRange);
         }
     }
 }

@@ -8,7 +8,7 @@ namespace AchievementSystem.EndBattle
         [SerializeField]
         bool WinCondition;
         [SerializeField]
-        ArmyData _army;
+        Army _army;
         void Start()
         {
             if(_army == null) Debug.LogError($"{gameObject.name} has not been assigned army for rout exit");

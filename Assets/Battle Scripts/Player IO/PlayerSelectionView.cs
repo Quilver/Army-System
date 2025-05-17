@@ -20,7 +20,7 @@ public class PlayerSelectionView : MonoBehaviour
         _light.enabled = false;
         _moveOrders = GetComponentInParent<MovementSystem.IMoveOrders>();
         _moveOrders.OrderReceived += Order;
-        PlayerController.SelectUnit += Selection;
+        PlayerSelectUnits.SelectUnit += Selection;
         _unit.StateChanged += Flee;
         _unit.UnitDestroyed += Death;
     }
@@ -61,7 +61,7 @@ public class PlayerSelectionView : MonoBehaviour
         transform.parent = null;
         _light.enabled=false;   
         PlayRandomisedClip(_unitDies);
-        PlayerController.SelectUnit -= Selection;
+        PlayerSelectUnits.SelectUnit -= Selection;
         _moveOrders.OrderReceived -= Order;
         _unit.StateChanged -= Flee;
         _unit.UnitDestroyed -= Death;

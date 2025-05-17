@@ -22,12 +22,12 @@ namespace MovementSystem.Reaction
                 return _body;
             }
         }
-        ArmyData _army;
-        ArmyData _Army
+        Army _army;
+        Army _Army
         {
             get
             {
-                if (_army == null)_army = GetComponentInParent<ArmyData>();
+                if (_army == null)_army = GetComponentInParent<Army>();
                 return _army;
             }
         }

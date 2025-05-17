@@ -6,7 +6,7 @@ namespace Deployment
     public class DeployUnitFromBattleReport : MonoBehaviour
     {
         [SerializeField]
-        ArmyData armyData;
+        Army armyData;
         Vector2 Range;
         private void Awake()
         {

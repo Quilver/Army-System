@@ -22,7 +22,7 @@ namespace AchievementSystem
             throw new System.NotImplementedException();
             //Notifications.ArmyDestroyed += EndBattle;
         }
-        void EndBattle(ArmyData army)
+        void EndBattle(Army army)
         {
             Debug.Log("Battle over: "+army.gameObject.name);
             if (army == null) return;

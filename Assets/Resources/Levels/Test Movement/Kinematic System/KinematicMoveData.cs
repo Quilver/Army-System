@@ -5,7 +5,6 @@ namespace MovementSystem
 {
     class KinematicMoveData : MonoBehaviour, IMovementData
     {
-        Rigidbody2D _body;
         IUnit _unitTemplate;
         public float Mass
         {
@@ -55,7 +54,7 @@ namespace MovementSystem
         {
             get
             {
-                return MaxSpeed;
+                return MaxSpeed * 15 * Time.deltaTime;
             }
         }
     }

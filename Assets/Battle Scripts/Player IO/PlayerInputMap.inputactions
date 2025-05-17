@@ -1,5 +1,5 @@
 {
-    "name": "Player",
+    "name": "PlayerInputMap",
     "maps": [
         {
             "name": "CursorControls",
@@ -238,6 +238,39 @@
                     "isPartOfComposite": true
                 },
                 {
+                    "name": "Num Keys",
+                    "id": "c49fb1c6-1c97-4ce8-bf78-7ed6f04017e6",
+                    "path": "1DAxis",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Toggle Units",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "negative",
+                    "id": "13e8604b-9cf9-4241-94ff-fe861502698a",
+                    "path": "<Keyboard>/1",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Toggle Units",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "positive",
+                    "id": "b5799d38-20f7-4448-8904-e41bd68e0ffe",
+                    "path": "<Keyboard>/2",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Toggle Units",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
                     "name": "",
                     "id": "8865a86e-2035-4c3e-bf34-9c192a736c08",
                     "path": "<Mouse>/position",
@@ -267,6 +300,15 @@
                     "name": "Zoom",
                     "type": "Value",
                     "id": "4bec44d3-468a-41ce-828a-a18f1d2f51f4",
+                    "expectedControlType": "Axis",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
+                },
+                {
+                    "name": "Scroll Zoom",
+                    "type": "Value",
+                    "id": "131bd636-0e08-4d0b-adf3-897722347ba9",
                     "expectedControlType": "Axis",
                     "processors": "",
                     "interactions": "",
@@ -513,6 +555,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "Zoom",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "48efe540-a627-458f-9b6d-8c09581344bc",
+                    "path": "<Mouse>/scroll/y",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Scroll Zoom",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

@@ -6,7 +6,7 @@ namespace AISystem.Simple
     public class SimpleMoves : IPossibleMoves
     {
         [SerializeField]
-        ArmyData army;
+        Army army;
         public override List<UnitOrder> GetMoves(IUnit unit)
         {
             return ChargeNearbyEnemies(unit);

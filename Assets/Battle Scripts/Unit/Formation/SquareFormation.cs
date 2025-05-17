@@ -36,10 +36,12 @@ namespace Formation
             }
         }
         BoxCollider2D _collider;
-        void Update()
+        [SerializeField] bool _noOffsetUsed;
+        void FixedUpdate()
         {
             if(_collider == null) _collider = GetComponentInParent<BoxCollider2D>();
-            _collider.offset = OffsetFromUnit;
+            if(!_noOffsetUsed)
+                _collider.offset = OffsetFromUnit;
             _collider.size=SizeOfFormation;
             
         }
