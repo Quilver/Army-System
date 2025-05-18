@@ -53,8 +53,10 @@ public class Battle : MonoBehaviour {
     {
         return unit1.transform.parent != unit2.transform.parent;
     }
+    public event System.Action<bool> BattleOver;
     public void EndBattle(bool win)
     {
+        BattleOver?.Invoke(win);
         if (win)
             SceneManager.LoadScene(2);
         else

@@ -58,11 +58,6 @@ namespace BattlePrep
             Deselect();
             buyTab.Select(selectColor, true);
         }
-        public void NextLevel()
-        {
-            int endOfNonLevelSceneIndexes = 2;
-            SceneManager.LoadScene(CampaignDataManager.Data.CurrentLevel + endOfNonLevelSceneIndexes);
-        }
         
         
     }

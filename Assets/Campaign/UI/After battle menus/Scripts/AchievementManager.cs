@@ -6,7 +6,7 @@ namespace EndGameUI
     public class AchievementManager : MonoBehaviour
     {
         [SerializeField]
-        List<AchievementSystem.Achievments> achievements;
+        List<AchievementSystem.Achievement> achievements;
         [SerializeField]
         GameObject AchievementCard;
         // Start is called before the first frame update
@@ -20,6 +20,7 @@ namespace EndGameUI
             achievements = BattleReport.Achievements;
             foreach (var achievement in achievements)
             {
+                if(!achievement.Achieved())continue;
                 var card = Instantiate(AchievementCard, transform);
                 card.GetComponent<AchievementCard>().Init(achievement);
             }
@@ -30,6 +31,7 @@ namespace EndGameUI
             yield return new WaitForSeconds(1);
             foreach (var achievement in achievements)
             {
+                if (!achievement.Achieved()) continue;
                 var card = Instantiate(AchievementCard, transform);
                 card.GetComponent<AchievementCard>().Init(achievement);
                 yield return new WaitForSeconds(1);

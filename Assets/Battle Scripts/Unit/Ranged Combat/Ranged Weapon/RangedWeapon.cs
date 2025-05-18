@@ -6,7 +6,7 @@ using UnityEngine;
 
 public class RangedWeapon: MonoBehaviour
 {
-    public event System.Action<IUnit, Vector2, Transform> ShootAt;
+    public event System.Action<IUnit, Vector2, Transform, float> ShootAt;
     [SerializeField]
     Color startColour, endColour;
     public IProjectile _projectile;
@@ -26,6 +26,8 @@ public class RangedWeapon: MonoBehaviour
     float minimumDamage;
     [SerializeField, Range(3, 15)] 
     float maximumDamage;
+    [SerializeField, Range(1, 20)]
+    public float accuracy;
     FieldofView targetTemplate;
     float _timeToShoot = 0;
     IUnit unit;
@@ -45,7 +47,7 @@ public class RangedWeapon: MonoBehaviour
         ReloadTime =character._rangedWeapon.ReloadTimeBase;
         minimumDamage = character._rangedWeapon.MinDamage;
         maximumDamage = character._rangedWeapon.MaxDamage;
-
+        accuracy = character.Accuracy;
     }
     private void Start()
     {
@@ -73,11 +75,18 @@ public class RangedWeapon: MonoBehaviour
         _timeToShoot = 0;
         if(target.ValidTargets.Count == 0 || target.Target == null) return;
         Debug.Log($"Shooting at {target.Target.name}");
-        ShootAt?.Invoke(unit, target.Target.position, target.Target);
+        ShootAt?.Invoke(unit, target.Target.position, target.Target, accuracy);
         //Shoot(projectile, Random.Range(minimumDamage, maximumDamage) * 50, target.Target.transform);
     }
     public float ShootPower
     {
         get => Random.Range(minimumDamage, maximumDamage) * 5;
+    }
+    private void OnDrawGizmos()
+    {
+        if (target== null || target.ValidTargets.Count == 0 || target.Target == null) return;
+        Gizmos.color = Color.green;
+        Gizmos.DrawLine(transform.parent.position, target.Target.position);
+        Gizmos.DrawWireSphere(target.Target.position, _projectile.Inaccuracy(Vector2.Distance(transform.parent.position, target.Target.position), accuracy));
     }
 }

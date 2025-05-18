@@ -13,16 +13,18 @@ namespace RangedWeapons
         }
         void _Delete()=>Destroy(gameObject);
         public abstract bool ValidShot(IUnit unit, Transform model, Vector2? targetPoint, Transform target);
-        public abstract void Shoot(IUnit shooter, Vector2 targetPoint, Transform target, float damage);
-        protected Vector2 InaccurateTarget(Vector2 targetPoint)
+        public abstract void Shoot(IUnit shooter, Vector2 targetPoint, Transform target, float damage, float accuracy);
+        protected Vector2 InaccurateTarget(Vector2 targetPoint, float accuracy)
         {
-            return Offset(transform.position, targetPoint) * Random.insideUnitCircle + targetPoint;    
+
+            return Inaccuracy(Vector2.Distance(transform.position, targetPoint), accuracy) * Random.insideUnitCircle + targetPoint;    
         }
-        protected float Offset(Vector2 start, Vector2 target)
+        public float Inaccuracy(float distance, float accuracy)
         {
-            return Vector2.Distance(start, target) / 10 + 3;
+            float inaccuracy = distance * 5 / accuracy + 1;
+            return inaccuracy;
         }
         public abstract void GizmosValidShot(IUnit unit, Transform model, Vector2? targetPoint, Transform target);
-        public abstract void GizmosFireRadius(IUnit unit, Transform model, Vector2? targetPoint, Transform target);
+        public abstract void GizmosFireRadius(IUnit unit, Transform model, Vector2? targetPoint, Transform target, float accuracy);
     }
 }

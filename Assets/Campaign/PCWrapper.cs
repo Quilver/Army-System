@@ -7,21 +7,18 @@ namespace Campaign
     [System.Serializable]
     public class PCWrapper
     {
-        [Range(0, 1000)]
-        public int XP = 0;
+        public event System.Action LevelledUp;
+        public event System.Action<int> GainedXP;
+        public event System.Action<StatSystem.Refactor.StatType, int> GainedStatBonus;
+        [SerializeField,Range(0, 1000)]
+        int XP = 0;
+        public int CurrentXP => XP;
         public int Level
         {
             get
             {
                 if(levelTable == null)return 0;
-                int XpRequired = 0;
-                for (int i = 0; i < levelTable.ExperienceToReachLevel.Count; i++)
-                {
-                    XpRequired += levelTable.ExperienceToReachLevel[i];
-                    if (XpRequired > XP)
-                        return i + 1;
-                }
-                return levelTable.ExperienceToReachLevel.Count;
+                return levelTable.CurrentLevel(XP);
             }
         }
         [Range(5, 50)]
@@ -37,33 +34,29 @@ namespace Campaign
         }
         public void AddXP(int xp) {
             Debug.Log("Adding xp");
+            GainedXP?.Invoke(xp);
             int currentLevel = Level;
             XP += xp;
             if(Level > currentLevel) 
-                LevelUp();
+                for(int i =0; i < Level - currentLevel; i++)
+                    LevelUp();
         }
         void LevelUp()
         {
             Debug.Log("Level up");
+            LevelledUp?.Invoke();
             foreach (var stat in statBase.LevelUp())
             {
+                StatSystem.Refactor.StatType? statType = StatSystem.Refactor.Stat.StringToStatType(stat);
+                if (statType.HasValue)
+                    GainedStatBonus?.Invoke(statType.Value, 1);
                 if(statsGained.ContainsKey(stat)) statsGained[stat]++;
                 else statsGained.Add(stat, 1);
             }
         }
         public void Update() { }
-        public float PercentToNextLevel()
-        {
-            int XpRequired = 0;
-            for (int i = 0; i < levelTable.ExperienceToReachLevel.Count; i++)
-            {
-                float prevXpRequired=XpRequired;
-                XpRequired += levelTable.ExperienceToReachLevel[i];
-                if (XpRequired > XP)
-                    return (XP-prevXpRequired) / (float)levelTable.ExperienceToReachLevel[i];
-            }
-            return 1;
-        }
+        public float PercentToNextLevel()=>levelTable.fractionToNextLevel(XP);
+        public float PercentToNextLevel(int _XP)=>levelTable.fractionToNextLevel(_XP);
         public StatSystem.Refactor.IUnitStatBlock GetStatsForBattle()
         {
             return StatSystem.Refactor.NPC_Stats.CreateStats(statBase, statsGained);

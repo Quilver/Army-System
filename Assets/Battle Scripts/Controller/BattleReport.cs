@@ -32,11 +32,12 @@ public class BattleReport: MonoBehaviour
         set { instance._deaths = value; }
     }
     [SerializeField]
-    List<AchievementSystem.Achievments> _achievements;
-    public static List<AchievementSystem.Achievments> Achievements
+    List<AchievementSystem.Achievement> _achievements;
+    public static List<AchievementSystem.Achievement> Achievements
     {
         get
         {
+            if (instance._achievements == null) instance._achievements = new();
             return instance._achievements;
         }
         set
@@ -53,14 +54,6 @@ public class BattleReport: MonoBehaviour
     }
     public static UpdateCharacter CharacterUpdate;
     public delegate void UpdateCharacter(Campaign.PCWrapper character);
-    public static void Set(List<Campaign.PCWrapper> deployedCharacter, List<AchievementSystem.Achievments> achievements)
-    {
-        timeTaken = 0;
-        kills= 0;
-        deaths= 0;
-        Achievements = achievements;
-        DeployedCharacters = deployedCharacter;
-    }
     public static void Reset()
     {
         timeTaken = 0;

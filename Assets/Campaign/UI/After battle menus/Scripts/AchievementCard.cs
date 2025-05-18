@@ -9,8 +9,8 @@ namespace EndGameUI
     {
         [SerializeField]
         Image image;
-        AchievementSystem.Achievments achievement;
-        public void Init(AchievementSystem.Achievments achievement)
+        AchievementSystem.Achievement achievement;
+        public void Init(AchievementSystem.Achievement achievement)
         {
             this.achievement = achievement;
             image.sprite = achievement.icon;

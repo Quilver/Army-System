@@ -79,7 +79,7 @@ public class PlayerSelectUnits : MonoBehaviour
     }
     void ToggleUnits(InputAction.CallbackContext value)
     {
-        _unitSelectionIndex = (value.ReadValue<float>() > 0) ? 1 : -1;
+        _unitSelectionIndex += (value.ReadValue<float>() > 0) ? 1 : -1;
         if (_unitSelectionIndex < 0) _unitSelectionIndex = _playerArmy.Units.Count - 1;
         _unitSelectionIndex %= _playerArmy.Units.Count;
         InvokeSelectUnit(SelectedUnit, true);

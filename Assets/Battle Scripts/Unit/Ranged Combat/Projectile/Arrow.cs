@@ -20,7 +20,7 @@ namespace RangedWeapons
         [SerializeField, Range(1, 20)]
         float _minDamage, _maxDamage;
         #endregion
-        public override void Shoot(IUnit shooter, Vector2 targetPoint, Transform target, float damage)
+        public override void Shoot(IUnit shooter, Vector2 targetPoint, Transform target, float damage, float accuracy)
         {
             //Assign references
             body = GetComponent<Rigidbody2D>();
@@ -28,7 +28,7 @@ namespace RangedWeapons
             _shooter = shooter;
             //Set trajectory
             _startPoint=shooter.transform.position;
-            _targetPoint = InaccurateTarget(targetPoint);
+            _targetPoint = InaccurateTarget(targetPoint, accuracy);
             Vector2 direction = (_targetPoint-(Vector2)transform.position).normalized;
             body.velocity = direction * Random.Range(0.9f, 1.1f) * ProjectileSpeed;
             float desiredAngle = Vector2.SignedAngle(Vector2.up, direction);
@@ -85,11 +85,11 @@ namespace RangedWeapons
             Gizmos.DrawLine(model.position, position);
         }
 
-        public override void GizmosFireRadius(IUnit unit, Transform model, Vector2? targetPoint, Transform target)
+        public override void GizmosFireRadius(IUnit unit, Transform model, Vector2? targetPoint, Transform target, float accuracy)
         {
             Gizmos.color=Color.red;
             Vector2 position = (targetPoint != null) ? targetPoint.Value : target.position;
-            Gizmos.DrawWireSphere(position, Offset(model.position, position));
+            Gizmos.DrawWireSphere(position, Inaccuracy(Vector2.Distance(model.position, position), accuracy));
         }
     }
 }

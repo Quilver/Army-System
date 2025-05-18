@@ -40,21 +40,21 @@ namespace StatSystem.Refactor
             List<string> levelledStats = new List<string>();
 
             if (LevelStat(_Movement)) levelledStats.Add("Movement");
-            if (LevelStat(_Movement)) levelledStats.Add("ModelCount");
+            if (LevelStat(_modelCount)) levelledStats.Add("ModelCount");
 
-            if (LevelStat(_Movement)) levelledStats.Add("Defence");
-            if (LevelStat(_Movement)) levelledStats.Add("Leadership");
+            if (LevelStat(_defence)) levelledStats.Add("Defence");
+            if (LevelStat(_leadership)) levelledStats.Add("Leadership");
 
-            if (LevelStat(_Movement)) levelledStats.Add("AttackPower");
-            if (LevelStat(_Movement)) levelledStats.Add("AttackSpeed");
+            if (LevelStat(_attackPower)) levelledStats.Add("AttackPower");
+            if (LevelStat(_attackSpeed)) levelledStats.Add("AttackSpeed");
 
-            if (LevelStat(_Movement)) levelledStats.Add("ShootSpeed");
-            if (LevelStat(_Movement)) levelledStats.Add("Accuracy");
+            if (LevelStat(_shootSpeed)) levelledStats.Add("ShootSpeed");
+            if (LevelStat(_accuracy)) levelledStats.Add("Accuracy");
 
 
             return levelledStats;
         }
-        bool LevelStat(Stat stat) => Random.Range(0, 100) < stat.GrowthChange;
+        bool LevelStat(Stat stat)=> (stat.Max > stat.value)? Random.Range(0, 100) < stat.GrowthChange : false;
     }
 }
 
