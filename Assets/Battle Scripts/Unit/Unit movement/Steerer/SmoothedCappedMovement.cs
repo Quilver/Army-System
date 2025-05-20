@@ -25,7 +25,7 @@ namespace MovementSystem
         float _speed;
         [SerializeField]
         Rigidbody2D _body;
-        public void MoveUnit(Vector2 direction)
+        public void MoveUnit(Vector2 direction, Vector2 facing)
         {
             _body.AddForce(_moveData.Force * direction * Time.deltaTime);
             /*
@@ -52,7 +52,7 @@ namespace MovementSystem
         {
             var newForce = Vector2.ClampMagnitude(_direction.GetDirection(), _forceChangeRate);
             force = Vector2.MoveTowards(force, newForce, _forceChangeRate * Time.deltaTime);
-            MoveUnit(_direction.GetDirection());
+            MoveUnit(_direction.GetDirection(), Vector2.zero);
         }
 
         [SerializeField]

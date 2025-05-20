@@ -21,7 +21,7 @@ namespace RangedWeapons
         }
         public float Inaccuracy(float distance, float accuracy)
         {
-            float inaccuracy = distance * 5 / accuracy + 1;
+            float inaccuracy = distance * 2 / accuracy + 1;
             return inaccuracy;
         }
         public abstract void GizmosValidShot(IUnit unit, Transform model, Vector2? targetPoint, Transform target);

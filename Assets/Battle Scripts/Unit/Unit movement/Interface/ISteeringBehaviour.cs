@@ -41,6 +41,7 @@ namespace MovementSystem
             GetSteerDirection.updateSteeringForces -= AddForce;
         }
         public abstract Vector2 GetForce();
+        public virtual Vector2 GetTurnToForce()=>Vector2.zero;
         public abstract void AddForce();
         [SerializeField]
         protected bool DrawGizmo;

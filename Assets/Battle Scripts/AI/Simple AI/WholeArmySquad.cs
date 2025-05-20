@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 namespace AISystem.Simple
 {
-    public class SimpleSelect : ISelectUnits
+    public class WholeArmySquad : ISquad
     {
         [SerializeField]
         Army _armyToControl;

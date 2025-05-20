@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 namespace BattlePrep
 {
-    public class BuyTab : MonoBehaviour, ITab
+    public class BuyTab : ITab
     {
         [SerializeField]
         GameObject BuyPrefab;
@@ -24,7 +24,7 @@ namespace BattlePrep
         }
         [SerializeField]
         Image button;
-        public void Select(Color color, bool selected)
+        public override void Select(Color color, bool selected)
         {
             button.color = color;
             if(selected)gameObject.SetActive(true);

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class UnitSelectionTab : MonoBehaviour, ITab
+public class UnitSelectionTab : ITab
 {
     [SerializeField]
     GameObject UnitPrefab;
@@ -18,7 +18,7 @@ public class UnitSelectionTab : MonoBehaviour, ITab
             obj.GetComponent<UnitSelectionView>().Set(unit);
         }
     }
-    public void Select(Color color, bool selected = false)
+    public override void Select(Color color, bool selected = false)
     {
         buttonBackground.color = color;
         gameObject.SetActive(selected);

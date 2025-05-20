@@ -32,7 +32,7 @@ namespace Campaign
         } 
         public int CurrentPrestige
         {
-            get => _maxPrestige;
+            get => _currentPrestige;
             set
             {
 

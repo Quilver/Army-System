@@ -23,7 +23,8 @@ namespace MovementSystem
         }
         protected virtual void Exit()
         {
-            foreach (var behaviour in _behaviours) behaviour.enabled = false;
+            foreach (var behaviour in _behaviours) 
+                if(behaviour!=null) behaviour.enabled = false;
         }
     }
 }

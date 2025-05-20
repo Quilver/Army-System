@@ -54,7 +54,7 @@ public class RangedWeapon: MonoBehaviour
         unit= GetComponentInParent<IUnit>();
         ReloadTime *= Mathf.Lerp(1, 0.5f, unit.Stats.ShootSpeed / 20f); 
         targetTemplate= GetComponentInChildren<FieldofView>();
-        
+        accuracy = Mathf.Clamp(accuracy, 1, 20);
         target = GetComponentInChildren<IRangedTargeter>();
     }
     void Update()

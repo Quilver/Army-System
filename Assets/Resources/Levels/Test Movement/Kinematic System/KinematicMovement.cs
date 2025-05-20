@@ -36,9 +36,8 @@ namespace MovementSystem
         [SerializeField] Vector2 _velocity;
         void FixedUpdate()
         {
-            MoveUnit(Vector2.zero);
+            MoveUnit(Vector2.zero, Vector2.up);
         }
-        public event System.Action UpdatePos;
         public event System.Action<Vector2> SetDirection;
         Vector2 _meanPos, _meanFacing, _meanVelocity;float _total;
         public void UpdatePosAndFacing(Vector2 pos, Vector2 facing, Vector2 velocity)
@@ -51,23 +50,13 @@ namespace MovementSystem
         public float _averageSpeed;
         Vector2 NewPosition => UnitB.position + (Vector3)_meanPos;
         Vector2 Offset => -UnitB.up * _shapeData.OffsetFromUnit.y - UnitB.right * _shapeData.OffsetFromUnit.x;
-        void UpdateTransform()
+        public void MoveUnit(Vector2 direction, Vector2 facing)
         {
-
-            _total = 0; _meanFacing = Vector2.zero; _meanPos = Vector2.zero;
-            UpdatePos?.Invoke();
-            _meanVelocity /= _total;
-            _averageSpeed = (_meanVelocity).magnitude;
-            _meanPos /= _total;
-            UnitB.position = _meanPos;
-            //UnitB.position = NewPosition + Offset;
-            if(_averageSpeed > 1) 
-                UnitB.up = Vector3.MoveTowards(UnitB.up, _meanFacing/_total, _moveData.MaxSpeed * Time.deltaTime / 5);  
-            //UnitB.up = _meanFacing;
-        }
-        public void MoveUnit(Vector2 direction)
-        {
-            UpdateTransform();
+            //Set desired facing
+            Vector3 faceDir = (Vector3)_direction.GetFacingDirection();
+            if(faceDir!=Vector3.zero) 
+                UnitB.up = faceDir;
+            //Set movement
             _velocity = _direction.GetDirection();
             SetDirection?.Invoke(_velocity * _moveData.Force);
         }

@@ -42,8 +42,8 @@ namespace ModelComponents
                 Attack();
             }
         }
-        [SerializeField, Range(80, 300)]
-        float _attackForceMultiplier = 100;
+        [SerializeField, Range(10, 100)]
+        float _attackForceMultiplier = 60;
         [SerializeField, Range(0, 1)]
         float _knockBackModifier = 0.2f;
         void Attack()

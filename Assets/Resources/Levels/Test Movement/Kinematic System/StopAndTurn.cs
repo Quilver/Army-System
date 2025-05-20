@@ -13,16 +13,17 @@ namespace MovementSystem.SteeringBehaviour
                 enabled = false;
                 return;
             }
-            var dir = ((Vector3)GetMoveOrders.FaceTowards.Value - transform.position).normalized;
-            if (Vector2.Distance(transform.parent.parent.up, dir) < 0.1f)
-                return;
-            transform.parent.parent.up = Vector3.MoveTowards(transform.parent.parent.up, dir, GetMovementData.MaxSpeed * Time.deltaTime / 5);
+            GetSteerDirection.AddTurnForce(GetTurnToForce(), 1);
 
         }
 
         public override Vector2 GetForce()
         {
             return Vector2.zero;
+        }
+        public override Vector2 GetTurnToForce()
+        {
+            return GetMoveOrders.FaceTowards.Value;
         }
         protected override void OnDrawGizmos()
         {

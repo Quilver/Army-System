@@ -30,6 +30,7 @@ namespace RangedWeapons
             _startPoint=shooter.transform.position;
             _targetPoint = InaccurateTarget(targetPoint, accuracy);
             Vector2 direction = (_targetPoint-(Vector2)transform.position).normalized;
+            Debug.Log($"direction {direction}, starting at {transform.position} going to {_targetPoint}");
             body.velocity = direction * Random.Range(0.9f, 1.1f) * ProjectileSpeed;
             float desiredAngle = Vector2.SignedAngle(Vector2.up, direction);
             transform.rotation = Quaternion.Euler(0, 0, desiredAngle);

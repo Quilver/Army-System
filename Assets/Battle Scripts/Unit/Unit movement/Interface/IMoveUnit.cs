@@ -6,6 +6,6 @@ namespace MovementSystem
     public interface IMoveUnit
     {
         
-        void MoveUnit(Vector2 direction);
+        void MoveUnit(Vector2 moveDirection, Vector2 faceTowards);
     }
 }

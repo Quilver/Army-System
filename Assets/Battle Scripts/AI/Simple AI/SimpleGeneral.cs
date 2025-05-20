@@ -5,7 +5,7 @@ namespace AISystem.Simple
 {
     public class SimpleGeneral : MonoBehaviour
     {
-        ISelectUnits _selectUnits;
+        ISquad _selectUnits;
         IPossibleMoves _possibleMoves;
         [SerializeField]
         bool _waitForDeployment = true;
@@ -13,7 +13,7 @@ namespace AISystem.Simple
         // Start is called before the first frame update
         void Awake()
         {
-            _selectUnits=GetComponent<ISelectUnits>();
+            _selectUnits=GetComponent<ISquad>();
             _possibleMoves=GetComponent<IPossibleMoves>();
             _lastOrder = new();
             if ( _waitForDeployment )enabled=false;
@@ -27,7 +27,7 @@ namespace AISystem.Simple
             
             foreach (var unit in _selectUnits.GetUnitsToOrder)
             {
-                OrderUnit(unit, _possibleMoves.GetMoves(unit));
+                OrderUnit(unit, _possibleMoves.GenerateOrders(unit));
             }
         }
         void OrderUnit(IUnit unit, List<UnitOrder> orders)

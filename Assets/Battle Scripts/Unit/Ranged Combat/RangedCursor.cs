@@ -31,12 +31,6 @@ public class RangedCursor : MonoBehaviour
         }
         sprite.enabled = true;
         transform.position = cursorToFollow.position;
-        transform.localScale = rangedWeapon._projectile.Inaccuracy(Vector2.Distance(transform.position, rangedWeapon.transform.parent.position), rangedWeapon.accuracy) * Vector3.one;
-    }
-    private void OnDrawGizmos()
-    {
-        if (rangedWeapon == null) return;
-        Gizmos.color = Color.red;
-        Gizmos.DrawLine(transform.position, rangedWeapon.transform.parent.position);
+        transform.localScale = rangedWeapon._projectile.Inaccuracy(Vector2.Distance(transform.position, rangedWeapon.transform.parent.position), rangedWeapon.accuracy) * 2 * Vector3.one;
     }
 }

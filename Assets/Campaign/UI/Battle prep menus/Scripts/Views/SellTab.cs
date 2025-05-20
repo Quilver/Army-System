@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 namespace BattlePrep
 {
-    public class SellTab : MonoBehaviour, ITab
+    public class SellTab : ITab
     {
         [SerializeField]
         Image button;
@@ -25,7 +25,7 @@ namespace BattlePrep
             buy.GetComponent<SellView>().Set(order);
         }
 
-        public void Select(Color color, bool selected = false)
+        public override void Select(Color color, bool selected = false)
         {
             button.color = color;
             if(selected) gameObject.SetActive(true);

@@ -24,12 +24,17 @@ public class ToBattleButton : MonoBehaviour
         {
             button.enabled = false;
             Text.color = InvalidColour;
-            Text.text = "Select Units For Battle";
+            if (Campaign.CampaignDataManager.Data.Money == 0)
+                Text.text = "Needs Money, Get A Loan";
+            else if(BattleReport.DeployedCharacters.Count == 0)
+                Text.text = "Select Units For Battle";
+            else 
+                Text.text = "Need At Least 2 Units For Battle";
         }
     }
     bool ValidSetup()
     {
-        return BattleReport.DeployedCharacters.Count > 0;
+        return BattleReport.DeployedCharacters.Count > 1;
     }
     public void NextLevel()
 

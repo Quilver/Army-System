@@ -21,10 +21,10 @@ namespace BattlePrep
         {
             sellData = sell;
             Title.text = sell.orderInfo;
-            money.text = sell.gold.ToString()+"G";
-            interest.text = sell.interestRate + "%";
-            prestige.text = sell.PrestigeRequired.ToString();
-            dueDate.text = sell.timeLeft + " Months";
+            money.text = "Gold: " + sell.gold.ToString()+"G";
+            interest.text = "Interest Rate: " + sell.interestRate + "%";
+            prestige.text = "Prestige Reward: " + sell.PrestigeRequired.ToString();
+            dueDate.text = "Due date: " + sell.timeLeft + " Months";
             tip = sell.orderDetails;
         }
         public void Select()

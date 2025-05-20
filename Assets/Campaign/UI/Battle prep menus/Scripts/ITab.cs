@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 namespace BattlePrep
 {
-    public interface ITab
+    public abstract class ITab : MonoBehaviour
     {
-        public void Select(Color color, bool selected = false);
+        public abstract void Select(Color color, bool selected = false);
     }
 }

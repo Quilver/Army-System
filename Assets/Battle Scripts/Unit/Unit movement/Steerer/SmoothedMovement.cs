@@ -41,7 +41,7 @@ namespace MovementSystem
                 return 3 * (3 + _unit.Stats.Movement);
             }
         }
-        public void MoveUnit(Vector2 direction)
+        public void MoveUnit(Vector2 direction, Vector2 faceTowards)
         {
             Body.AddForce(Mass * Force * direction * Time.deltaTime);
         }
@@ -58,7 +58,7 @@ namespace MovementSystem
         void Update()
         {
             force = Vector2.MoveTowards(force, _direction.GetDirection(), _forceChangeRate * Time.deltaTime);
-            MoveUnit(force);
+            MoveUnit(force, Vector2.zero);
         }
 
         [SerializeField]

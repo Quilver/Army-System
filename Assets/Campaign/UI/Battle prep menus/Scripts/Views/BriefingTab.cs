@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 namespace BattlePrep
 {
-    public class BriefingTab : MonoBehaviour, ITab
+    public class BriefingTab : ITab
     {
         [SerializeField]
         Image buttonBackground;
@@ -19,7 +19,7 @@ namespace BattlePrep
             image.sprite = PreparationContoller.Data.image;
             textBox.text = PreparationContoller.Data.briefing;
         }
-        public void Select(Color color, bool select)
+        public override void Select(Color color, bool select)
         {
             if(!select)
             {

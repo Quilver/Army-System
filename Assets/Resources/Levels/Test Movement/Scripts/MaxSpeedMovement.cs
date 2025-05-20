@@ -34,9 +34,9 @@ namespace MovementSystem
         {
             _velocity = _direction.GetDirection();
             _speed = _velocity.magnitude;
-            MoveUnit(_velocity);
+            MoveUnit(_velocity, Vector2.zero);
         }
-        public void MoveUnit(Vector2 direction)
+        public void MoveUnit(Vector2 direction, Vector2 faceTowards)
         {
             forceGain = CalcForce();
             _force += forceGain;

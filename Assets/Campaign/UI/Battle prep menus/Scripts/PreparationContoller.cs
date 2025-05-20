@@ -20,7 +20,23 @@ namespace BattlePrep
         {
             Data = preparationData[CampaignDataManager.Data.CurrentLevel-1];
             BattleReport.DeployedCharacters = new();
+            _currentSelected = briefingTab;
         }
+        public static event System.Action<ITab> OpenedTab;
+        [SerializeField]
+        ITab _currentSelected;
+        public ITab SelectedTab
+        {
+            get => _currentSelected;
+            protected set
+            {
+                _currentSelected.Select(deSelectColor, false);
+                _currentSelected = value;
+                _currentSelected.Select(selectColor, true);
+                OpenedTab?.Invoke(_currentSelected);
+            }
+        }
+
         [SerializeField]
         BriefingTab briefingTab;
         [SerializeField]
@@ -31,34 +47,11 @@ namespace BattlePrep
         BuyTab buyTab;
         [SerializeField]
         Color selectColor, deSelectColor;
-        void Deselect()
-        {
-            briefingTab.Select(deSelectColor, false);
-            unitSelectionTab.Select(deSelectColor, false);
-            buyTab.Select(deSelectColor, false);
-            SellTab.Select(deSelectColor, false);
-        }
-        public void SwapToBriefing()
-        {
-            Deselect();
-            briefingTab.Select(selectColor, true);
-        }
-        public void SwapToUnitSelection()
-        {
-            Deselect();
-            unitSelectionTab.Select(selectColor, true);
-        }
-        public void SwapToBuys()
-        {
-            Deselect();
-            SellTab.Select(selectColor, true);
-        }
-        public void SwapToSells()
-        {
-            Deselect();
-            buyTab.Select(selectColor, true);
-        }
-        
-        
+        public void SwapToBriefing() => SelectedTab = briefingTab;
+        public void SwapToUnitSelection() => SelectedTab = unitSelectionTab;
+        public void SwapToBuys() => SelectedTab = buyTab;
+        public void SwapToSells() => SelectedTab = SellTab;
+
+
     }
 }

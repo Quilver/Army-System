@@ -12,6 +12,12 @@ namespace MovementSystem
 
         //Negative priority can be passed as means to avoid a location
         public abstract void AddForce(Vector2 direction, float priority);
+        protected Vector2 _faceTowards; float _faceTowardsPriority;
+        public virtual void AddTurnForce(Vector2 target, float priority)
+        {
+            _faceTowards = target;
+            _faceTowardsPriority = priority;
+        }
         IMovementData movementData;
         public float MaxSpeed {
             get
@@ -34,5 +40,9 @@ namespace MovementSystem
         }
 
         public abstract Vector2 GetDirection();
+        public virtual Vector2 GetFacingDirection() {
+            if (movementData == null) movementData = GetComponent<IMovementData>();
+            return _faceTowardsPriority*(_faceTowards - movementData.Center).normalized;
+        } 
     }
 }

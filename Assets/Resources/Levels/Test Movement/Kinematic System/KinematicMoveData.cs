@@ -14,17 +14,33 @@ namespace MovementSystem
                 return 1;
             }
         }
-        Vector2 _oldPosition;
-        [SerializeField] Vector2 _velocity;
         [SerializeField] float _speed;
         public Vector2 Velocity=> _velocity;
-        
+        public event System.Action UpdatePos;
+        [SerializeField]
+        Vector2 _position, _facing, _velocity;
+        int counter;
         void FixedUpdate()
         {
-            _velocity = ((Vector2)transform.parent.position - _oldPosition)/Time.deltaTime;
+            counter = 0; _position = Vector2.zero; _facing = Vector2.zero; _velocity = Vector2.zero;
+            UpdatePos?.Invoke();
+            if(counter == 0 ) return;
+            _position/=counter; _facing/=counter; _velocity/=counter;
+
             _speed=_velocity.magnitude;
-            _oldPosition = transform.parent.position;
+
+            //Setting position and facing
+            transform.parent.position = _position;
+            transform.parent.up = _facing;
         }
+        public void UpdatePosAndFacing(Vector2 pos, Vector2 facing, Vector2 velocity)
+        {
+            counter++;
+            _position += pos + (Vector2)transform.position;
+            _facing += facing;
+            _velocity += velocity;
+        }
+
         public Vector2 Center
         {
             get
