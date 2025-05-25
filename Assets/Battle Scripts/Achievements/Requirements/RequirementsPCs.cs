@@ -64,18 +64,18 @@ namespace AchievementSystem
     public class CapturePoints : RequirementsPCs
     {
         Army army;
-        List<CaputurePoint> capturePoints;
+        List<CapturePoint> capturePoints;
         protected override void SetupListeners()
         {
             army = _PCsUnit.GetComponentInParent<Army>();
-            CaputurePoint.CapturedBy += CaptureEvent;
+            CapturePoint.CapturedBy += CaptureEvent;
         }
-        void CaptureEvent(CaputurePoint capturePoint, Army.Controller controller)
+        void CaptureEvent(CapturePoint capturePoint, Army controller)
         {
             if (capturePoint == null) return;
-            if (controller == Army.Controller.Player && !capturePoints.Contains(capturePoint))
+            if (controller == army && !capturePoints.Contains(capturePoint))
                 capturePoints.Add(capturePoint);
-            else if (controller == Army.Controller.Computer)
+            else if (controller != army)
                 capturePoints.Remove(capturePoint);
         }
         public override int Succeeded()

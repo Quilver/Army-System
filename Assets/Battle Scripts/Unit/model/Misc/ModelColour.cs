@@ -13,10 +13,7 @@ namespace ModelComponents
             var sprite = GetComponent<SpriteRenderer>();
             var data = GetComponent<ModelComponents.IUnitData>();
             var army = data.Unit.GetComponentInParent<Army>();
-            if (army.controller == Army.Controller.Player)
-                sprite.color = player;
-            else
-                sprite.color = enemy;
+            sprite.color = army.ArmyColour;
         }
 
     }

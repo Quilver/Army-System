@@ -62,6 +62,7 @@ namespace Formation
         {
             if(!DrawGizmo) return;
             if (_data == null) _data = GetComponent<IFormationData>();
+            Gizmos.color = GetComponentInParent<Army>().ArmyColour;
             for (int i = 0; i < _data.ModelCount; i++)
             {
                 Gizmos.DrawSphere(GetModelPosition(i), _data.ModelSize/5);

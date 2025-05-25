@@ -7,6 +7,7 @@ namespace AISystem
     public abstract class IPossibleMoves : MonoBehaviour
     {
         ISquad _squad;
+        IUnit _unit;
         public ISquad Squad
         {
             get

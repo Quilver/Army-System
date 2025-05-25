@@ -36,6 +36,7 @@ namespace MovementSystem
             pursuingUnit?.Invoke(target, transform);
         }
         #endregion
+        public void Halt()=>FinishedMovement();
         public abstract void MoveTo(Vector2 position, Vector2? faceDirection = null);
         public abstract void MoveTo(Transform target);
         public abstract bool IsMoving { get; }

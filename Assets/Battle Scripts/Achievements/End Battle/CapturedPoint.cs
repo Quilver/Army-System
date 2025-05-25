@@ -8,10 +8,10 @@ namespace AchievementSystem.EndBattle
         [SerializeField]
         bool WinCondition, playerControlled;
         [SerializeField]
-        CaputurePoint _capturePoint;
+        CapturePoint _capturePoint;
         void Start()
         {
-            if (_capturePoint == null) _capturePoint = GetComponent<CaputurePoint>();
+            if (_capturePoint == null) _capturePoint = GetComponent<CapturePoint>();
             if (_capturePoint == null) Debug.LogError($"{gameObject.name} has not been assigned Capture point");
             _capturePoint.capturedBy += Captured;
         }

@@ -22,7 +22,6 @@ namespace Shooting
         Transform _desiredTarget;
         void SetTarget(Transform target)
         {
-            Debug.Log($"Setting Target to {target.gameObject.name}");
             _desiredTarget = target;
         }
         void SetTarget(Vector2 target)

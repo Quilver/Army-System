@@ -104,7 +104,7 @@ namespace PlayerControls
                 HoverUnit = coll.GetComponentInParent<IUnit>();
             else HoverUnit = null;
             if (HoverUnit == null) _cursor.GetComponent<SpriteRenderer>().color = Color.white;
-            else if (HoverUnit.GetComponentInParent<Army>().controller == Army.Controller.Player)
+            else if (HoverUnit.GetComponentInParent<Army>() == playerArmy)
                 _cursor.GetComponent<SpriteRenderer>().color = Color.blue;
             else _cursor.GetComponent<SpriteRenderer>().color = Color.red;
         }

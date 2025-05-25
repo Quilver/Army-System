@@ -9,7 +9,7 @@ namespace MovementSystem
     class NavPathfinder : MonoBehaviour, IPathfinder
     {
         //Needed for pathfinder, I don't know why it is this value though
-        int mask = -1;
+        public static int MASK = -1;
         NavMeshPath path;
         [SerializeField]
         LayerMask _layerMask;
@@ -18,7 +18,7 @@ namespace MovementSystem
             Vector2 direction = location - (Vector2)transform.position;
             float angle = Vector2.SignedAngle(Vector2.up, direction);
             float distance = direction.magnitude;
-            var hit = Physics2D.BoxCast(transform.position, transform.localScale * 0.5f, 0, direction, distance, _layerMask);
+            var hit = Physics2D.BoxCast(transform.position, transform.localScale * 0.5f, angle, direction, distance, _layerMask);
             return !hit;
         }
         public List<Vector2> GetPath(Vector2 position)
@@ -31,7 +31,7 @@ namespace MovementSystem
             }
             path = new();
             //agent.CalculatePath(destination, path);
-            NavMesh.CalculatePath(transform.parent.position, position, mask, path);
+            NavMesh.CalculatePath(transform.parent.position, position, MASK, path);
             return Convert(path.corners);
         }
         List<Vector2> Convert(Vector3[] path)

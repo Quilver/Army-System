@@ -4,22 +4,17 @@ using System.Linq;
 using UnityEngine;
 
 public class Army : MonoBehaviour {
-    public enum Controller
-    {
-        Player,
-        Computer,
-        AltPlayer
-    }
+    public Color ArmyColour;
     [SerializeField]
     List<IUnit> _units;
-    public Army.Controller controller;
-
+    
     public List<IUnit> Units
     {
         get
         {
             if (transform == null) return null;
             if (_units == null || _units.Count != transform.childCount) _units = GetComponentsInChildren<IUnit>().ToList();
+            else _units = _units.Where(x => x != null).ToList();
             return _units;
         }
     }
