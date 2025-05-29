@@ -10,20 +10,21 @@ namespace MovementSystem.SteeringBehaviour
         {
             if (GetMovementData.Velocity.magnitude > 0.1f) 
                 GetSteerDirection.AddTurnForce(GetTurnToForce(), 1);
-
         }
 
         public override Vector2 GetForce()
         {
             return Vector2.zero;
         }
+
+        public bool over90degrees, clockwise;
         public override Vector2 GetTurnToForce()
         {
             return GetMovementData.FuturePosition;
         }
         protected override void OnDrawGizmos()
         {
-            if (!DrawGizmo || !enabled || GetMoveOrders.FaceTowards == null) return;
+            if (!DrawGizmo || !enabled) return;
             Gizmos.DrawLine(transform.position, GetTurnToForce());
         }
     }

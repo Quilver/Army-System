@@ -30,13 +30,6 @@ namespace MovementSystem.Reaction
                 return _movementData;
             }
         }
-        protected override void DisableEvents()
-        {
-            MoveOrders.finishedMovement -= Enter;
-            if(Unit == null)return;
-            Unit.StateChanged-= Disrupt;
-        }
-
         protected override void EnableEvents()
         {
             MoveOrders.finishedMovement += Enter;
@@ -52,6 +45,12 @@ namespace MovementSystem.Reaction
             {
                 
             }
+        }
+        protected override void DisableEvents()
+        {
+            MoveOrders.finishedMovement -= Enter;
+            if(Unit == null)return;
+            Unit.StateChanged-= Disrupt;
         }
         [SerializeField]
         bool DrawGizmo;

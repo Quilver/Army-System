@@ -16,6 +16,11 @@ namespace EndGameUI
         // Start is called before the first frame update
         void Start()
         {
+            foreach (var pc in BattleReport.DeployedCharacters)
+            {
+                if (!Campaign.CampaignDataManager.Data.Characters.Contains(pc))
+                    Campaign.CampaignDataManager.Data.Characters.Add(pc);
+            }
             StartCoroutine(TrackFloat(BattleReport.timeTaken, (float t)=>time.text=GetTime(t) ));
             StartCoroutine(TrackInt(BattleReport.kills, (int k) => kills.text =$"Kills: {k}" ));
             StartCoroutine(TrackInt(BattleReport.deaths, (int d) => deaths.text = $"Deaths: {d}"));

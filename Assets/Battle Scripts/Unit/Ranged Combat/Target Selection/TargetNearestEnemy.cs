@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+/*
 namespace Shooting
 {
     public class TargetNearestEnemy : MonoBehaviour, IRangedTargeter
@@ -63,3 +64,4 @@ namespace Shooting
         }
     }
 }
+*/

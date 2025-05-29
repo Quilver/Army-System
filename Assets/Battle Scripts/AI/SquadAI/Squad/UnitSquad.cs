@@ -10,15 +10,22 @@ namespace AISystem.Squads
         [SerializeField]
         InfluenceMap influenceMap;
         List<IUnit> units;
+        Dictionary<IUnit, UnitAI.UnitAIMono> unitAndTheirAI;
         public override List<IUnit> GetUnitsToOrder
         {
             get
             {
-                if (units == null)
+                if (units == null || units.Count != GetComponentsInChildren<UnitAI.UnitAIMono>().Length)
                 {
                     units = new List<IUnit>();
+                    unitAndTheirAI = new();
                     foreach (var unitAI in GetComponentsInChildren<UnitAI.UnitAIMono>())
+                    {
+                        if(unitAI.unit == null)continue;
+                        unitAI.unit.UnitDestroyed += () => units.Remove(unitAI.unit);
                         units.Add(unitAI.unit);
+                        unitAndTheirAI.Add(unitAI.unit, unitAI);
+                    }
                 }
                 return units;
             }

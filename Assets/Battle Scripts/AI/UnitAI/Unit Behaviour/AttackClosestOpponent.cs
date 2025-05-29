@@ -36,6 +36,7 @@ namespace AISystem.Behaviour
             IUnit closestEnemy = null;
             foreach (var enemy in map.relevantEnemies)
             {
+                if (enemy == null) continue;
                 float pathDistance = UnitDistance(enemy.transform);
                 if(distance < pathDistance)continue;
                 distance = pathDistance;

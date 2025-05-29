@@ -66,7 +66,7 @@ namespace AchievementSystem
         public override void GiveReward(PCWrapper pc, int levelOfReward)
         {
             var character = CampaignDataManager.Data.Characters.Find(x => x.statBase.UnitName == pc.statBase.UnitName);
-            Debug.Log(character);
+            
             if (character == null) return;
             character.AddXP(xpPerLevel * levelOfReward);
             BattleReport.CharacterUpdate(character);

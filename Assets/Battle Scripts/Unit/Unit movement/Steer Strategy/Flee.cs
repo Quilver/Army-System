@@ -13,15 +13,6 @@ namespace MovementSystem.Reaction
                 return _unit; 
             } 
         }
-        Rigidbody2D _body;
-        Rigidbody2D Body
-        {
-            get
-            {
-                if(_body == null) _body = GetComponentInParent<Rigidbody2D>();
-                return _body;
-            }
-        }
         Army _army;
         Army _Army
         {
@@ -55,7 +46,7 @@ namespace MovementSystem.Reaction
         {
             if (state == UnitState.Fleeing)
             {
-                if(_fleeing || Body == null)return;
+                if(_fleeing)return;
                 Enter();
             }
             else if(_fleeing)
@@ -67,7 +58,6 @@ namespace MovementSystem.Reaction
         {
             base.Enter();
             _fleeing = true;
-            Body.AddForce(FleeDirection() * _forceMultiple * MoveData.Mass);
         }
         protected override void Start()
         {

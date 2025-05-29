@@ -28,7 +28,8 @@ public class PlayerSelectUnits : MonoBehaviour
     {
         get
         {
-
+            if(_playerArmy.Units.Count <= _unitSelectionIndex)
+                _unitSelectionIndex = _playerArmy.Units.Count - 1;
             return _playerArmy.GetComponentsInChildren<IUnit>()[_unitSelectionIndex];
         }
     }
@@ -91,7 +92,11 @@ public class PlayerSelectUnits : MonoBehaviour
     {
         var coll = Physics2D.OverlapCircle(transform.position, 0.6f, 1 << 6);
         if (coll != null)
-            TargetUnit = coll.GetComponentInParent<IUnit>();
+        {
+            var _target = coll.GetComponentInParent<IUnit>();
+            if(_target != TargetUnit) highlightUnit?.Invoke(_target);
+            TargetUnit = _target;
+        }
         else TargetUnit = null;
     }
 }

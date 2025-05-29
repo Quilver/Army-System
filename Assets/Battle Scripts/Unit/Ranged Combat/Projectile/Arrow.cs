@@ -50,7 +50,7 @@ namespace RangedWeapons
         {
             var unit = collision.gameObject.GetComponent<ModelComponents.ITakeDamage>();
             if (unit != null) 
-                unit.TakeDamage(Random.Range(_minDamage, _maxDamage));
+                unit.TakeDamage(Random.Range(_minDamage, _maxDamage), (Vector2)unit.transform.position - _startPoint);
             Remove(true);
         }
         protected override void Remove(bool hit, float timeBeforeDestroy=2)

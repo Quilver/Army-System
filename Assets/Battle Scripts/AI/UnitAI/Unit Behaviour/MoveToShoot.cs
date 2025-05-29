@@ -7,24 +7,18 @@ namespace AISystem.Behaviour
     public class MoveToPositionAndShoot : UnitBehaviour
     {
         RangedWeapon weapon;
-        Shooting.IRangedTargeter rangedTargeter;
         public override void Setup(IUnit unit, ISquad squad, InfluenceMap map)
         {
             if (unit == null) throw new System.Exception("Move to shoot ai is missing unit");
             base.Setup(unit, squad, map);
-            rangedTargeter = unit.GetComponentInChildren<Shooting.IRangedTargeter>();
             weapon = unit.GetComponentInChildren<RangedWeapon>();
-            if (rangedTargeter == null) throw new System.Exception($"{unit.name} is missing a ranged targeter for AI in squad: {squad.name}");
 
         }
         UnitOrder lastOrder;
         protected override void MakeUnitMove()
         {
             //If it can shoot its target do nothing
-            if (rangedTargeter.Target != null) return;
-            //If there is a valid target it can shoot at, switch target
-            else if (rangedTargeter.ValidTargets.Count > 0)
-                (new UnitOrder(rangedTargeter.ValidTargets[Random.Range(0, rangedTargeter.ValidTargets.Count)], false)).MakeOrder(unit);
+            if (weapon.CurrentTarget != null) return;
             //If it needs to move and is not moving to shoot at a target, do that
             else if (!lastOrder.position.HasValue || (map.relevantEnemies.Count > 0 && !InSweetSpot(lastOrder.position.Value)))
             {

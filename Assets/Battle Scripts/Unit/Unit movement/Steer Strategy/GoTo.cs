@@ -26,16 +26,14 @@ namespace MovementSystem.Reaction
         protected override void EnableEvents()
         {
             MoveOrders.moving += Moving;
-            MoveOrders.pursuing += Moving;
             MoveOrders.finishedMovement += Exit;
         }
         protected override void DisableEvents()
         {
             MoveOrders.moving -= Moving;
-            MoveOrders.pursuing -= Moving;
             MoveOrders.finishedMovement -= Exit;
         }
         void Moving(Vector2 pos) => Enter();
-        void Moving(Transform pos) => Enter();
+        //void Moving(Transform pos) => Enter();
     }
 }

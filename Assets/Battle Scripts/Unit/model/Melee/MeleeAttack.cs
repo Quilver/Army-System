@@ -19,41 +19,31 @@ namespace ModelComponents
         private void Start()
         {
             _unitData = GetComponentInParent<IUnitData>();
-            _targeter = GetComponent<IMeleeTargeter>(); 
-            timeSinceLastAttack = Random.Range(0, AttackPerXSeconds);
+            _targeter = GetComponent<IMeleeTargeter>();
+            StartCoroutine(MakeAttacks());
         }
         float AttackPerXSeconds
         {
             get
             {
-                float X = 6;
+                float X = 10;
                 return X / _unitData.UnitStats.AttackSpeed;
             }
         }
-        float timeSinceLastAttack;
-        [SerializeField]
-        private void Update()
+        IEnumerator MakeAttacks()
         {
-            timeSinceLastAttack += Time.deltaTime;
-            if (timeSinceLastAttack >= AttackPerXSeconds)
+            yield return new WaitForSeconds(Random.Range(0, AttackPerXSeconds));
+            while (enabled)
             {
-                timeSinceLastAttack = 0;
-                if (_targeter.Targets.Count == 0 || _unitData.Unit.State == UnitState.Fleeing) return;
-                Attack();
+                if (_targeter.Targets.Count > 0 && _unitData.Unit.State != UnitState.Fleeing)
+                    Attack();
+                yield return new WaitForSeconds(AttackPerXSeconds);
             }
         }
-        [SerializeField, Range(10, 100)]
-        float _attackForceMultiplier = 60;
-        [SerializeField, Range(0, 1)]
-        float _knockBackModifier = 0.2f;
         void Attack()
         {
             var target = _targeter.Target;
             MakeStrike();
-            Vector2 dir = (target.transform.position - transform.position).normalized;
-            float force = _unitData.UnitStats.AttackPower * _attackForceMultiplier;
-            Body.AddForce(-force * _knockBackModifier * dir);
-            target.GetComponentInParent<Rigidbody2D>().AddForce(dir*force);
             target.TakeDamage(_unitData.UnitStats.AttackPower, transform);
         }
     }

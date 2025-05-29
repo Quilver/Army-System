@@ -13,7 +13,7 @@ namespace AISystem
         List<IEvaluate> evaluators;
         [Header("Potential moves and nearby enemies")]
         public List<Vector2> closePositions, farPositions;
-        public List<IUnit> relevantEnemies, shootableEnemies;
+        public List<IUnit> closeEnemies, relevantEnemies, shootableEnemies;
         public List<CapturePoint> capturePoints;
         public Vector2 directionOfSquadTravel;
         [Header("Scores for the different moves")]

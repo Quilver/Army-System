@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+/*
 namespace Shooting
 {
     public class TargetOrdered: MonoBehaviour, IRangedTargeter
@@ -41,8 +42,8 @@ namespace Shooting
                 Debug.LogWarning("missing field of view");
                 return new List<Transform>();
             }
-            var unvlaidatedTargets = _fieldOfView._targets.Keys;
-            var validatedTargets = unvlaidatedTargets.Where(target => target.GetComponentInParent<Army>() != GetComponentInParent<Army>()).ToList();
+            var unvalidatedTargets = _fieldOfView._targets.Keys;
+            var validatedTargets = unvalidatedTargets.Where(target => target != null && target.GetComponentInParent<Army>() != GetComponentInParent<Army>()).ToList();
             return validatedTargets;
         }
         void Update() => _validTargets = CalculateValidTargets();
@@ -68,4 +69,4 @@ namespace Shooting
             }
         }
     }
-}
+}*/

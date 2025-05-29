@@ -26,6 +26,11 @@ namespace AISystem
         }
         protected abstract void MakeUnitMove();
         protected virtual void MakeSquadMove() =>throw new System.NotImplementedException();
+        [SerializeField] bool showDebug;
+        public virtual void DrawDebug()
+        {
+            if (!showDebug)return;
+        }
     }
     
     

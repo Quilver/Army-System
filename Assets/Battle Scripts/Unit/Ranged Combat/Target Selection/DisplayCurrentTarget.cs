@@ -1,29 +1,28 @@
-using Shooting;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 namespace RangedWeapons
 {
-    [RequireComponent(typeof(IRangedTargeter), typeof(LineRenderer))]
+    [RequireComponent(typeof(LineRenderer))]
     public class DisplayCurrentTarget : MonoBehaviour
     {
-        IRangedTargeter target;
+        RangedWeapon rangedWeapon;
         LineRenderer lineRenderer;
         // Start is called before the first frame update
         void Start()
         {
-            target = GetComponent<IRangedTargeter>();
+            rangedWeapon = GetComponentInParent<RangedWeapon>();
             lineRenderer = GetComponent<LineRenderer>();
         }
 
         // Update is called once per frame
         void Update()
         {
-            if (target.Target != null)
+            if (rangedWeapon.CurrentTarget != null)
             {
                 lineRenderer.enabled = true;
                 lineRenderer.SetPosition(0, transform.parent.position);
-                lineRenderer.SetPosition(1, target.Target.position);
+                lineRenderer.SetPosition(1, rangedWeapon.CurrentTarget.transform.position);
             }
             else
                 lineRenderer.enabled = false;

@@ -42,14 +42,6 @@ namespace RangedWeapons
             else if (body.velocity.magnitude < ProjectileSpeed / 2)
                 Remove(false);
         }
-        private void OnCollisionEnter2D(Collision2D collision)
-        {
-            var unit = collision.gameObject.GetComponent<ModelComponents.ITakeDamage>();
-            if (unit != null)
-                unit.TakeDamage(Random.Range(_minDamage, _maxDamage));
-            Remove(true);
-        }
-        
         void Explode()
         {
             GetComponent<AudioSource>().PlayOneShot(GetComponent<AudioSource>().clip, 8);
@@ -60,8 +52,7 @@ namespace RangedWeapons
                 float damage = Random.Range(_minDamage, _maxDamage);
                 var direction = hit.transform.position - transform.position;
                 var multiple = Mathf.Lerp(1, 0.5f, direction.magnitude / _blastRadius);
-                hit.attachedRigidbody.AddForce(direction.normalized * multiple * damage * 150);
-                hit.GetComponent<ModelComponents.ITakeDamage>()?.TakeDamage(damage);
+                hit.GetComponent<ModelComponents.ITakeDamage>()?.TakeDamage(damage, direction.normalized);
             }
         }
         [SerializeField]

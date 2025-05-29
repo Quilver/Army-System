@@ -17,7 +17,8 @@ namespace MovementSystem
         public static LayerMask SensorLayerMask = 1<<3 | LayerMask.GetMask("Unit") | LayerMask.GetMask("Terrain");
         public static RaycastHit2D UnitCast(Vector2 position, Vector2 direction, Vector2 size)
         {
-            return Physics2D.CircleCast(position, size.x, direction, SensorLayerMask);
+            float angle = Vector2.SignedAngle(Vector2.up, direction.normalized);
+            return Physics2D.BoxCast(position, size, angle, direction, direction.magnitude, SensorLayerMask);
         }
         public static RaycastHit2D RayCast(Vector2 position, float angle, float size)
         {

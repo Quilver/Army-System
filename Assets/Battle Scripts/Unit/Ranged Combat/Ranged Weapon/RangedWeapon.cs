@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using RangedWeapons;
-using Shooting;
 using UnityEngine;
 
 public class RangedWeapon: MonoBehaviour
@@ -31,15 +30,10 @@ public class RangedWeapon: MonoBehaviour
     FieldofView targetTemplate;
     float _timeToShoot = 0;
     IUnit unit;
-    
-    IRangedTargeter target;
-    public Transform CurrentTarget
-    {
-        get
-        {
-            return target.Target;
-        }
-    }
+    [SerializeReference, SubclassSelector]
+    RangedWeapons.Target.ITargetSelection target;
+    public Transform CurrentTarget=>target.CurrentTarget.target;
+    public List<RangedWeapons.Target.ITargetEnemy.Target> Targets=>target.ValidTargets;
     public void Setup(StatSystem.Refactor.PC_Stats character)
     {
         _projectile = character._rangedWeapon._projectile;
@@ -48,6 +42,8 @@ public class RangedWeapon: MonoBehaviour
         minimumDamage = character._rangedWeapon.MinDamage;
         maximumDamage = character._rangedWeapon.MaxDamage;
         accuracy = character.Accuracy;
+        unit = GetComponentInParent<IUnit>();
+        target.Setup(unit);
     }
     private void Start()
     {
@@ -55,10 +51,13 @@ public class RangedWeapon: MonoBehaviour
         ReloadTime *= Mathf.Lerp(1, 0.5f, unit.Stats.ShootSpeed / 20f); 
         targetTemplate= GetComponentInChildren<FieldofView>();
         accuracy = Mathf.Clamp(accuracy, 1, 20);
-        target = GetComponentInChildren<IRangedTargeter>();
+        target.Setup(unit);
+        Battle.Instance.Deploy += () => waitForDeployment = false;
     }
+    [SerializeField] bool waitForDeployment=true;
     void Update()
     {
+        if (waitForDeployment) return;
         if(unit.State != UnitState.Idle)
         {
             _timeToShoot = 0;
@@ -73,9 +72,9 @@ public class RangedWeapon: MonoBehaviour
     void Shoot()
     {
         _timeToShoot = 0;
-        if(target.ValidTargets.Count == 0 || target.Target == null) return;
-        Debug.Log($"Shooting at {target.Target.name}");
-        ShootAt?.Invoke(unit, target.Target.position, target.Target, accuracy);
+        var _target = target.CurrentTarget;
+        if(_target.ValidTarget) 
+            ShootAt?.Invoke(unit, _target.target.transform.position, _target.target, accuracy);
         //Shoot(projectile, Random.Range(minimumDamage, maximumDamage) * 50, target.Target.transform);
     }
     public float ShootPower
@@ -84,9 +83,8 @@ public class RangedWeapon: MonoBehaviour
     }
     private void OnDrawGizmos()
     {
-        if (target== null || target.ValidTargets.Count == 0 || target.Target == null) return;
+        if (target== null || unit == null || unit.State != UnitState.Idle || target.ValidTargets.Count == 0) return;
         Gizmos.color = Color.green;
-        Gizmos.DrawLine(transform.parent.position, target.Target.position);
-        Gizmos.DrawWireSphere(target.Target.position, _projectile.Inaccuracy(Vector2.Distance(transform.parent.position, target.Target.position), accuracy));
+        
     }
 }

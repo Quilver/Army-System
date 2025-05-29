@@ -20,7 +20,11 @@ namespace AISystem
         {
             Vector3 center = Vector3.zero;
             foreach (var unit in GetUnitsToOrder)
-                center += unit.transform.position;
+            {
+                if (unit == null) Debug.LogError($"{name} squad has not removed a destroyed unit");
+                else
+                    center += unit.transform.position;
+            }
             return center / GetUnitsToOrder.Count;
         }
         public virtual Vector2 Direction

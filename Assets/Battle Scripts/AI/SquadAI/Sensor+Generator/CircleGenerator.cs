@@ -51,16 +51,18 @@ namespace AISystem.Generator
         public override List<IUnit> SenseNearbyEnemies()
         {
             List<IUnit> enemies = new();
+            List<IUnit> nearEnemies = new();
             if (squad.SquadArmy == null) return enemies;
             var collisions = Physics2D.OverlapCircleAll(squad.Center, farRadius, 1 << 6);
             foreach (var target in collisions)
             {
                 IUnit unit = target.GetComponent<IUnit>();
                 if (unit == null) continue;
-                if (squad.SquadArmy.Enemies.Contains(unit))
-                    enemies.Add(unit);
+                if (!squad.SquadArmy.Enemies.Contains(unit))continue;
+                enemies.Add(unit);
+                if(Vector2.Distance(unit.transform.position, squad.Center) < shortRadius) nearEnemies.Add(unit);
             }
-
+            map.closeEnemies = nearEnemies;
             return enemies;
         }
         public override List<CapturePoint> SenseNearbyCapturePoints()

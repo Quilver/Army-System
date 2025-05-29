@@ -21,10 +21,11 @@ namespace ModelComponents
         // Update is called once per frame
         void Update()
         {
-            if(_data.Unit.State == UnitState.Moving)
+            if(_data.Unit.State == UnitState.Moving && !_data.Unit.InMelee)
                 transform.up = _modelBody.velocity.normalized;
             else
                 transform.up = _unitBody.transform.up;
         }
+        Vector2 ShiftDirection(Vector2 forward)=> Vector3.MoveTowards(transform.up, forward, Time.deltaTime * 4);
     }
 }

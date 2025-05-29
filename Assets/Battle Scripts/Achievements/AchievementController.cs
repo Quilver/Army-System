@@ -25,7 +25,7 @@ namespace AchievementSystem
             foreach (var unit in Battle.Instance.player.Units)
                 foreach (var pc in BattleReport.DeployedCharacters)
                     if (pc.statBase.UnitName == unit.Stats.UnitName)
-                        foreach (var achievement in _achievementsPC)
+                        foreach (var achievement in pc.statBase.achievements)
                         {
                             CharacterAchievement pcAchievement = Instantiate(achievement);
                             pcAchievement.Initialise(unit, pc);

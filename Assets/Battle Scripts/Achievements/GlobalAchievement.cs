@@ -16,7 +16,7 @@ namespace AchievementSystem
         public override string Description => _description;
         public static GlobalAchievement CreateCustom(CustomGlobalAchievement data)
         {
-            GlobalAchievement globalAchievement = new();
+            GlobalAchievement globalAchievement = ScriptableObject.CreateInstance<GlobalAchievement>();
             globalAchievement.icon = data._icon;
             globalAchievement._description = data._description;
             globalAchievement._requirement = data._requirement;

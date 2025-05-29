@@ -5,10 +5,8 @@ using UnityEngine;
 namespace AISystem.Squads
 {
     [RequireComponent(typeof(ISquad), typeof(InfluenceMap))]
-    public class MoveToNearestCluster : MonoBehaviour
+    public class MoveToNearestCluster : ISquadOrder
     {
-        public ISquad squad;
-        InfluenceMap map;
         public ClusterMap clusterMap;
         [SerializeField]
         Vector2 GoToPosition
@@ -23,21 +21,20 @@ namespace AISystem.Squads
         }
         [SerializeField, Range(1, 10)]
         float speed = 3;
-        void Start()
+        protected override IEnumerator RunOrder()
         {
-            squad = GetComponent<ISquad>();
-            map = GetComponent<InfluenceMap>();
-        }
-
-        private void FixedUpdate()
-        {
-            if (Vector2.Distance(squad.MeanPos(), transform.position) < 10)
+            yield return null;
+            while (enabled)
             {
-                transform.position = Vector3.MoveTowards(transform.position, GoToPosition, speed * Time.fixedDeltaTime);
-                map.directionOfSquadTravel = GoToPosition - (Vector2)transform.position;
+                if (Vector2.Distance(squad.MeanPos(), transform.position) < 10)
+                {
+                    transform.position = Vector3.MoveTowards(transform.position, GoToPosition, speed * Time.fixedDeltaTime);
+                    map.directionOfSquadTravel = GoToPosition - (Vector2)transform.position;
+                }
+                else
+                    map.directionOfSquadTravel = Vector2.zero;
+                yield return new WaitForFixedUpdate();
             }
-            else
-                map.directionOfSquadTravel = Vector2.zero;
 
         }
         private void OnDrawGizmosSelected()
@@ -45,5 +42,7 @@ namespace AISystem.Squads
             if(!enabled) return;
             Gizmos.DrawLine(transform.position, GoToPosition);
         }
+
+        
     }
 }

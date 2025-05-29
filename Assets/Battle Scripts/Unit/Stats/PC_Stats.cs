@@ -9,6 +9,7 @@ namespace StatSystem.Refactor
         [SerializeField]
         IUnit _unitPrefab;
         public IUnit UnitPrefab=> _unitPrefab;
+        public List<AchievementSystem.CharacterAchievement> achievements;
         //public RangedWeapons.IProjectile _projectile;
         public RangedWeapons.IRangedWeaponData _rangedWeapon;
         [SerializeField]    

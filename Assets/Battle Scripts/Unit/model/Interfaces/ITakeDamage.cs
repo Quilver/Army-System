@@ -11,7 +11,7 @@ namespace ModelComponents
             =>kill?.Invoke(attacker, victim);
         
         public abstract void TakeDamage(float damage, Transform attacker);
-        public abstract void TakeDamage(float damage);
+        public abstract void TakeDamage(float damage, Vector2 direction);
 
     }
 }

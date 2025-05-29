@@ -25,6 +25,7 @@ namespace ModelComponents
         #region Properties
         [Header("Properties")]
         [SerializeField, Range(0.05f, 2)] float softFollowRadius;
+        [SerializeField, Range(1, 3)] float MaxDistanceFromPosition;
         [Range(30, 300)]
         public float _springForceK = 100;
         [SerializeField, Range(0, 1)] float _damping = 1;
@@ -36,7 +37,7 @@ namespace ModelComponents
             this.Unit = unit;
             _mover = Unit.GetComponentInChildren<KinematicMovement>(); _moveData = Unit.GetComponentInChildren<KinematicMoveData>();
             _moveData.UpdatePos += UpdateUnitPos;
-            _mover.SetDirection += SpringVelocity;
+            _mover.SetDirection += UpdateForces;
             
             Unit.GetComponent<IUnit>().UnitDestroyed += () => Destroy(this);
             SetPosition(unit.position, offsetPos);
@@ -52,7 +53,7 @@ namespace ModelComponents
         private void OnDestroy()
         {
             _moveData.UpdatePos -= UpdateUnitPos;
-            _mover.SetDirection -= SpringVelocity;
+            _mover.SetDirection -= UpdateForces;
         }
         #endregion
         #region Position Calculation
@@ -78,19 +79,29 @@ namespace ModelComponents
         }
         #endregion
         #region ForceManager
-        Vector2 forwardForce, springForce; float distance;
-        void SpringVelocity(Vector2 dirToMove)
+        Vector2 forwardForce, springForce, lastVelocity; float distance;
+        void UpdateForces(Vector2 dirToMove)
         {
             Vector2 directionToUnit = UnitPosition - (Vector2)transform.position;
             distance = directionToUnit.magnitude;
+            LimitVelocity(directionToUnit, distance);
             //Move along steering behaviour
-            forwardForce = MoveVelocity(dirToMove, distance);
+            forwardForce = MoveForce(dirToMove, distance);
             Body.AddForce(dirToMove);
             //Move back to unit
             springForce = SpringForce(directionToUnit, distance);
             Body.AddForce(Time.fixedDeltaTime * springForce);
+            lastVelocity = Body.velocity;
+            
+            
         }
-        Vector2 MoveVelocity(Vector2 dirToMove, float distanceFromFormation)
+        void LimitVelocity(Vector2 dirToMove, float distanceFromFormation)
+        {
+            if (softFollowRadius > distance) return;
+            if (Vector2.Dot(Body.velocity, dirToMove) > 0.5f) return;
+            //Body.velocity = Vector2.Lerp(Body.velocity, dirToMove.normalized, distance / MaxDistanceFromPosition); //directionToUnit.normalized;
+        }
+        Vector2 MoveForce(Vector2 dirToMove, float distanceFromFormation)
         {
             if (distanceFromFormation < softFollowRadius)
                 return dirToMove;
@@ -106,6 +117,14 @@ namespace ModelComponents
         IEnumerator KnockBackReaction(Vector2 hitDirection, Vector2 constantForceDirection, Vector2 inputDirection)
         {
             yield return null;
+        }
+        private void OnCollisionEnter2D(Collision2D collision)
+        {
+            if(collision.relativeVelocity.sqrMagnitude < 4) return;
+            float dotMultiplier;
+            Vector2 directionToUnit = Unit.position - transform.position;
+            dotMultiplier = -Vector2.Dot(collision.relativeVelocity.normalized, UnitPosition.normalized);
+            //Body.velocity = Vector2.Lerp(lastVelocity, Body.velocity, dotMultiplier);
         }
         #endregion
         #region Gizmo, Debugging data

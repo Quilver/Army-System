@@ -22,7 +22,7 @@ namespace MovementSystem
             Vector2 sumVector = Vector2.zero;
             sumVector += ForceFromSensor(_sensors.Sensors[0]);
             for (int i = 1; i < _sensors.Sensors.Count; i++)
-                sumVector += ForceFromSensor(_sensors.Sensors[i]) * 0.3f;
+                sumVector += ForceFromSensor(_sensors.Sensors[i]) /_sensors.Sensors.Count;
             return sumVector;
         }
         Vector2 ForceFromSensor(RaycastHit2D sensor)

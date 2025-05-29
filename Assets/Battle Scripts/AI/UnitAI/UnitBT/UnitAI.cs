@@ -4,9 +4,7 @@ using UnityEngine;
 namespace AISystem.UnitAI
 {
     public abstract class UnitAI
-    {
-
-        
+    {        
         protected IUnit unit;
         protected ISquad squad;
         protected InfluenceMap influenceMap;
@@ -17,7 +15,6 @@ namespace AISystem.UnitAI
             this.influenceMap = influenceMap;
             SetupUnitBehaviours();
         }
-            
         protected abstract void SetupUnitBehaviours();
         public virtual IEnumerator RunAI()
         {
@@ -29,14 +26,23 @@ namespace AISystem.UnitAI
                 yield return new WaitForSeconds(TimeUntilNextDecision);
             }
         }
-        protected virtual float TimeUntilNextDecision => 3;
+        public virtual void GiveOrder(UnitBehaviour order, IQuery exitCondition) { }
+        
+        protected virtual float TimeUntilNextDecision => 1;
         protected abstract void TakeDecision();
-        [SerializeField]
-        protected string LastBehaviour;
+        [SerializeField, Header("Last action taken")]
+        protected UnitBehaviour LastBehaviour;
+        public string _lastBehaviour;
+        public virtual void DebugGizmos()
+        {
+            if(LastBehaviour != null)
+                LastBehaviour.DrawDebug();
+        }
         protected void ExecuteOrder(UnitBehaviour behaviour)
         {
             behaviour.MakeMove();
-            LastBehaviour = behaviour.GetType().ToString();
+            LastBehaviour = behaviour;
+            _lastBehaviour = behaviour.GetType().ToString();
         }
     }
     

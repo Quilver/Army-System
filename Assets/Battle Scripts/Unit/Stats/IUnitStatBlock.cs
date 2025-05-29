@@ -15,6 +15,7 @@ namespace StatSystem.Refactor
         [SerializeField]
         List<GameObject> _modelPrefabs;
         public List<GameObject> ModelPrefab { get => _modelPrefabs; }
+        public List<RangedWeapons.IProjectile> RangedWeapons;
         #region Fields, Battle Stats
         public abstract int Movement { get; }
         public abstract int ModelCount { get; }

@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
 namespace MovementSystem
 {
@@ -140,7 +141,8 @@ namespace MovementSystem
                 DrawBoxSensorVelocity(_sideWhiskerAngle + forwardAngle);
                 DrawBoxSensorVelocity(360 - _sideWhiskerAngle + forwardAngle);
             }
-            if(Sensors != null)
+            Gizmos.DrawWireSphere(Center, _rayLength);
+            if (Sensors != null)
                 foreach (var sensor in Sensors) if(sensor)Gizmos.DrawLine(Center, sensor.point);
         }
         #endregion
