@@ -32,17 +32,18 @@ public class PlayerOrderUnits : MonoBehaviour
         inputs.CursorControls.Select.canceled += ExecuteSelectOrder;
         inputs.CursorControls.Order.performed += StartMoveOrder;
         inputs.CursorControls.Order.canceled += ExecuteMoveOrder;
-
+        inputs.CursorControls.Pause.performed += Pause;
 
 
     }
     private void OnDisable()
     {
         inputs.Disable();
-        inputs.CursorControls.Select.performed += StartSelectOrder;
-        inputs.CursorControls.Select.canceled += ExecuteSelectOrder;
-        inputs.CursorControls.Order.performed += StartMoveOrder;
-        inputs.CursorControls.Order.canceled += ExecuteMoveOrder;
+        inputs.CursorControls.Select.performed -= StartSelectOrder;
+        inputs.CursorControls.Select.canceled -= ExecuteSelectOrder;
+        inputs.CursorControls.Order.performed -= StartMoveOrder;
+        inputs.CursorControls.Order.canceled -= ExecuteMoveOrder;
+        inputs.CursorControls.Pause.performed -= Pause;
     }
     Vector2? _OrderStart;
     [SerializeField, Range(1, 5)] float _minDistanceForDirection = 2;
@@ -90,6 +91,7 @@ public class PlayerOrderUnits : MonoBehaviour
             UnitSelected.SelectedUnit.GetComponent<OrderTarget>().Order(cursorPosition);
         _OrderStart = null;
     }
+    void Pause(InputAction.CallbackContext value) => Time.timeScale = (Time.timeScale != 1) ? 0 : 1;
     LineRenderer _line;
     private void Update()
     {

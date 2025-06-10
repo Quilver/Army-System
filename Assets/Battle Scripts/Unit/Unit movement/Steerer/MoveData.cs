@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -64,5 +65,7 @@ namespace MovementSystem
                 return (MaxSpeed * Mass * 50);
             }
         }
+
+        public event Action<Vector2> ApplyForce;
     }
 }

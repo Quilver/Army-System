@@ -5,7 +5,7 @@ namespace MovementSystem
 {
     public interface IMovementData 
     {
-        
+        public event System.Action<Vector2> ApplyForce;
         public float Mass { get; }
         public float Force { get; }
         public Vector2 Velocity { get; }    

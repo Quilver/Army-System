@@ -33,7 +33,7 @@ namespace MovementSystem.SteeringBehaviour
                 return PursuitSpeedBonus * (GetMoveOrders.Target.position - Unit.transform.position).normalized;
             //else push as long as it is not too close
             else
-                return Vector2.Lerp(Vector2.zero, direction.normalized, distance / MinPursuitRange);
+                return direction.normalized;// Vector2.Lerp(Vector2.zero, direction.normalized, distance / MinPursuitRange);
             //Vector2.Lerp(Vector2.zero, Unit.transform.up)
             //MoveOrders.Target.
             //return Unit.transform.up;
