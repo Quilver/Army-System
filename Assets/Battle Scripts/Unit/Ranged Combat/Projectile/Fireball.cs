@@ -30,7 +30,7 @@ namespace RangedWeapons
             _startPoint = shooter.transform.position;
             _targetPoint = InaccurateTarget(targetPoint, accuracy);
             Vector2 direction = (_targetPoint - (Vector2)transform.position).normalized;
-            body.velocity = direction * Random.Range(0.9f, 1.1f) * ProjectileSpeed;
+            body.linearVelocity = direction * Random.Range(0.9f, 1.1f) * ProjectileSpeed;
             float desiredAngle = Vector2.SignedAngle(Vector2.up, direction);
             transform.rotation = Quaternion.Euler(0, 0, desiredAngle);
 
@@ -39,7 +39,7 @@ namespace RangedWeapons
         {
             if (Vector2.Distance(transform.position, _startPoint) > Vector2.Distance(_startPoint, _targetPoint))
                 Remove(false);
-            else if (body.velocity.magnitude < ProjectileSpeed / 2)
+            else if (body.linearVelocity.magnitude < ProjectileSpeed / 2)
                 Remove(false);
         }
         void Explode()
@@ -83,7 +83,7 @@ namespace RangedWeapons
         {
             Explode();
             transform.localScale = _blastRadius * Vector3.one;
-            body.velocity = Vector2.zero;
+            body.linearVelocity = Vector2.zero;
             enabled = false;
             base.Remove(hit, timeBeforeDestroy);
         }

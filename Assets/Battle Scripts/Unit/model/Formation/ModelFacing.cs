@@ -22,7 +22,7 @@ namespace ModelComponents
         void Update()
         {
             if(_data.Unit.State == UnitState.Moving && !_data.Unit.InMelee)
-                transform.up = _modelBody.velocity.normalized;
+                transform.up = _modelBody.linearVelocity.normalized;
             else
                 transform.up = _unitBody.transform.up;
         }

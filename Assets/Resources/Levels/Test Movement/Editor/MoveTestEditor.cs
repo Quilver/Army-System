@@ -14,7 +14,7 @@ public class MoveTestEditor : Editor
         if (t.units == null) return;
         for (int i = 0; i < t.units.Length; i++)
         {
-            Handles.Label(t.units[i].TargetPosition, $"Velocity is: {t.bodies[i].velocity.magnitude}");
+            Handles.Label(t.units[i].TargetPosition, $"Velocity is: {t.bodies[i].linearVelocity.magnitude}");
         }
     }
 }

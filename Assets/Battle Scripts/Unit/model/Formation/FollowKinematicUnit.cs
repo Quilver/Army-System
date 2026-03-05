@@ -21,12 +21,23 @@ namespace ModelComponents
                 return _body;
             }
         }
+        [SerializeField]
+        FrictionJoint2D _friction;
+        FrictionJoint2D Friction
+        {
+            get
+            {
+                if (_friction == null) _friction = GetComponentInChildren<FrictionJoint2D>();
+                return _friction;
+            }
+        }
         #endregion
         #region Properties
         [Header("Properties")]
         [SerializeField, Range(0.05f, 1)] float softFollowRadius;
         [SerializeField, Range(0.4f, 2)] float hardFollowRadius;
-        [Range(1, 10)] public float _springForceK = 2;
+        [SerializeField, Range(0.4f, 2)] float secondsToMaxVelocity=1;
+        [SerializeField, Range(1, 10)] float _springForceK = 2;
         #endregion
         #region Setup
         public void SetUp(Rigidbody2D[] pins, Vector2 offsetPos, Transform unit)
@@ -34,6 +45,10 @@ namespace ModelComponents
             this.Unit = unit;
             _mover = Unit.GetComponentInChildren<KinematicMovement>(); _moveData = Unit.GetComponentInChildren<KinematicMoveData>();
             _moveData.UpdatePos += UpdateUnitPos;
+            float maxSpeed = GetComponent<UnitData>().UnitStats.Movement;
+            float mass = Body.mass;
+            float force = mass * maxSpeed;
+            Friction.maxForce = force * GetComponent<UnitData>().UnitStats.MoveForce;
             //_moveData.ApplyForce += (Vector2 force) => Body.AddForce(force);
             _mover.SetDirection += UpdateForces;
             
@@ -50,8 +65,8 @@ namespace ModelComponents
         }
         private void OnDestroy()
         {
-            _moveData.UpdatePos -= UpdateUnitPos;
-            _mover.SetDirection -= UpdateForces;
+            if (_moveData != null) _moveData.UpdatePos -= UpdateUnitPos;
+            if (_mover != null) _mover.SetDirection -= UpdateForces;
         }
         #endregion
         #region Position Calculation
@@ -63,7 +78,7 @@ namespace ModelComponents
         {
             //if (Vector2.Distance(UnitPosition, transform.position) > softFollowRadius)
             Vector2 delta = (Vector2)transform.position - UnitPosition;
-            _moveData.UpdatePosAndFacing(Vector2.ClampMagnitude(delta, 25), Facing, Body.velocity);
+            _moveData.UpdatePosAndFacing(Vector2.ClampMagnitude(delta, 25), Facing, Body.linearVelocity);
         }
         Vector2 Facing
         {
@@ -82,16 +97,16 @@ namespace ModelComponents
         Vector2 MoveVector(Vector2 direction) =>
             direction.magnitude * (FormationDirection + LookAheadFactor * direction).normalized;
 
-        Vector2 MoveForce, idealPos; public float moveSpeed, movedirMag; Color moveType;
+        Vector2 MoveForce, idealPos; public float moveSpeed, moveDirectionMagnitude; Color moveType;
         Vector2 SteerVelocity(Vector2 moveDirection, float maxMoveForce, float maxSpringForce, float accelerationModifier)
         {
             //Gizmo debug
-            moveSpeed= maxMoveForce; movedirMag=moveDirection.magnitude; 
+            moveSpeed= maxMoveForce; moveDirectionMagnitude=moveDirection.magnitude; 
             idealPos = UnitPosition + LookAheadFactor*(moveDirection);moveType = Color.green;
 
             //Code starts here
             MoveForce = IdealVec(moveDirection);
-            float projectedDistanceFromPoint = (MoveForce-LookAheadFactor*Body.velocity).magnitude;
+            float projectedDistanceFromPoint = (MoveForce-LookAheadFactor*Body.linearVelocity).magnitude;
             MoveForce = maxMoveForce * MoveForce.normalized;
             //Out of formation steering force
             
@@ -100,7 +115,7 @@ namespace ModelComponents
                 moveType = Color.red;
                 float hardDeviations = projectedDistanceFromPoint/hardFollowRadius;
                 MoveForce *= hardDeviations * _springForceK;
-                return Vector2.MoveTowards(Body.velocity, MoveForce, (maxMoveForce * hardDeviations * maxSpringForce) * accelerationModifier);
+                return Vector2.MoveTowards(Body.linearVelocity, MoveForce, (maxMoveForce * hardDeviations * maxSpringForce) * accelerationModifier);
             }
             //Arrive steering force
             if (projectedDistanceFromPoint < softFollowRadius && softFollowRadius < Vector2.Distance(transform.position, idealPos))
@@ -108,25 +123,29 @@ namespace ModelComponents
                 moveType = Color.blue;
                 float softDeviations = projectedDistanceFromPoint / softFollowRadius;
                 MoveForce*= softDeviations;
-                return Vector2.MoveTowards(Body.velocity, MoveForce, (maxMoveForce) * accelerationModifier);
+                return Vector2.MoveTowards(Body.linearVelocity, MoveForce, (maxMoveForce) * accelerationModifier);
             }          
                 
                 
             
             //Default steering force
-            return Vector2.MoveTowards(Body.velocity, MoveForce, (maxMoveForce) * accelerationModifier);
+            return Vector2.MoveTowards(Body.linearVelocity, MoveForce, (maxMoveForce) * accelerationModifier);
         }
         void UpdateForces(Vector2 dirToMove, float MaxSpeed)
         {
-            float SecondsToReachMaxVelocity = 0.5f;
-            float acceleration = Time.fixedDeltaTime / SecondsToReachMaxVelocity;
-            Body.velocity = SteerVelocity(MaxSpeed * MoveVector(dirToMove), MaxSpeed, _springForceK, acceleration);
+            Vector2 desiredVelocity = MaxSpeed * dirToMove;
+            float acceleration = Time.fixedDeltaTime / secondsToMaxVelocity;
+            
+            Friction.connectedBody.linearVelocity = SteerVelocity(MaxSpeed * MoveVector(dirToMove), MaxSpeed, _springForceK, acceleration);
+            
 
         }
         #endregion
-        #region Gizmo, Debugging data
+        #if UNITY_EDITOR
+        //Gizmo, Debugging data
         [SerializeField] bool DrawGizmo;
         public float speed;
+        
         void OnDrawGizmos()
         {
             if(!DrawGizmo) return;
@@ -142,7 +161,7 @@ namespace ModelComponents
         void DrawMove()
         {
             Gizmos.color = Color.black;
-            var futurePos = (Vector2)transform.position + Body.velocity;
+            var futurePos = (Vector2)transform.position + Body.linearVelocity;
             Gizmos.DrawCube(futurePos, Vector3.one / 8);
             Gizmos.DrawWireSphere(futurePos, softFollowRadius);
             Gizmos.DrawWireSphere(futurePos, hardFollowRadius);
@@ -159,9 +178,9 @@ namespace ModelComponents
             //Gizmos.DrawLine(transform.position, UnitPosition);
             Gizmos.DrawSphere(UnitPosition, 0.1f);
             Gizmos.color = Color.black;
-            Gizmos.DrawSphere((Vector2)transform.position + Body.velocity, 0.1f);
-            Gizmos.DrawLine(UnitPosition, (Vector2)transform.position + Body.velocity);
+            Gizmos.DrawSphere((Vector2)transform.position + Body.linearVelocity, 0.1f);
+            Gizmos.DrawLine(UnitPosition, (Vector2)transform.position + Body.linearVelocity);
         }
-        #endregion        
+        #endif        
     }
 }

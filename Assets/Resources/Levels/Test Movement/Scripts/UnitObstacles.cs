@@ -66,10 +66,10 @@ namespace MovementSystem
         {
             _raycastDirection = new();
             if(_sensors == null || _sensors.Count != _rayCount)_sensors = new(new RaycastHit2D[_rayCount]);
-            if (Body == null || Body.velocity.sqrMagnitude == 0) { }
+            if (Body == null || Body.linearVelocity.sqrMagnitude == 0) { }
             else
             {
-                float forwardAngle = Vector2.Angle(Vector2.right, Body.velocity.normalized) * Mathf.Deg2Rad;
+                float forwardAngle = Vector2.Angle(Vector2.right, Body.linearVelocity.normalized) * Mathf.Deg2Rad;
                 _forwardSensor=BoxSensorVelocity(forwardAngle);
                 _rWhisker= BoxSensorVelocity(forwardAngle + _sideWhiskerAngle);
                 _lWhisker= BoxSensorVelocity(forwardAngle + 360 - _sideWhiskerAngle);
@@ -99,7 +99,7 @@ namespace MovementSystem
         RaycastHit2D BoxSensorVelocity(float angle)
         {
 
-            Vector3 direction = Quaternion.AngleAxis(angle, transform.forward) * _body.velocity.normalized;
+            Vector3 direction = Quaternion.AngleAxis(angle, transform.forward) * _body.linearVelocity.normalized;
             Vector3 size = FormationData.SizeOfFormation;
             return Physics2D.BoxCast(Center, size, angle, direction, SensorLength - FormationData.SizeOfFormation.y / 2, SensorLayerMask);
 
@@ -111,10 +111,10 @@ namespace MovementSystem
         void DrawBoxSensorVelocity(float angle)
         {
             var angleAdjusted = Quaternion.AngleAxis(angle, transform.forward);
-            var perpendicular = Vector2.Perpendicular(_body.velocity.normalized) * 0.5f * FormationData.SizeOfFormation.x;
+            var perpendicular = Vector2.Perpendicular(_body.linearVelocity.normalized) * 0.5f * FormationData.SizeOfFormation.x;
             var right = Center - angleAdjusted * perpendicular;
             var left = Center + angleAdjusted * perpendicular;
-            Vector3 direction = angleAdjusted * _body.velocity.normalized;
+            Vector3 direction = angleAdjusted * _body.linearVelocity.normalized;
             float length = SensorLength;
 
             if (BoxSensorVelocity(angle))
@@ -135,10 +135,10 @@ namespace MovementSystem
             if (Body == null)
             {
             }
-            else if (Body.velocity.magnitude == 0) { }
+            else if (Body.linearVelocity.magnitude == 0) { }
             else
             {
-                float forwardAngle = Vector2.Angle(Vector2.right, Body.velocity.normalized) * Mathf.Deg2Rad;
+                float forwardAngle = Vector2.Angle(Vector2.right, Body.linearVelocity.normalized) * Mathf.Deg2Rad;
                 DrawBoxSensorVelocity(0 + forwardAngle);
                 DrawBoxSensorVelocity(_sideWhiskerAngle + forwardAngle);
                 DrawBoxSensorVelocity(360 - _sideWhiskerAngle + forwardAngle);

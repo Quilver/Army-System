@@ -14,15 +14,15 @@ namespace MovementSystem.SensorSystem
             } }
         public Vector2 FuturePos
         {
-            get => (Vector2)transform.position + Body.velocity;
+            get => (Vector2)transform.position + Body.linearVelocity;
         }
         public Vector2 ForwardVec
         {
-            get => Body.velocity;
+            get => Body.linearVelocity;
         }
         public RaycastHit2D Forward
         {
-            get =>ISensors.UnitCast(transform.position, Body.velocity, Vector2.one);
+            get =>ISensors.UnitCast(transform.position, Body.linearVelocity, Vector2.one);
         }
         [SerializeField, Range(2, 5)] float _obstacleDetection = 3;
         [SerializeField, Range(12, 36)] int _rayCount;

@@ -16,6 +16,9 @@ namespace StatSystem.Refactor
         Stat _Movement;
         public override int Movement => _Movement.value;
         [SerializeField]
+        Stat _MoveForce;
+        public override int MoveForce => _MoveForce.value;
+        [SerializeField]
         Stat _modelCount;
         public override int ModelCount => _modelCount.value;
         [SerializeField]

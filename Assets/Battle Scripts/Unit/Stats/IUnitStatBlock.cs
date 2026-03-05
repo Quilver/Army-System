@@ -18,6 +18,7 @@ namespace StatSystem.Refactor
         public List<RangedWeapons.IProjectile> RangedWeapons;
         #region Fields, Battle Stats
         public abstract int Movement { get; }
+        public abstract int MoveForce { get; }
         public abstract int ModelCount { get; }
         public abstract int Defence { get; }
         public abstract int Leadership { get; }

@@ -11,6 +11,9 @@ namespace StatSystem.Refactor
         [SerializeField, Range(1, 15)]
         int _Movement = 6;
         public override int Movement => _Movement;
+        [SerializeField, Range(1, 15)]
+        int _MovementForce = 6;
+        public override int MoveForce => _MovementForce;
         [SerializeField, Range(1, 32)]
         int _modelCount = 12;
         public override int ModelCount => _modelCount;

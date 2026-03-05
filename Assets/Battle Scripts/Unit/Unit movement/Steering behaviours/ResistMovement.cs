@@ -31,7 +31,7 @@ namespace MovementSystem.SteeringBehaviour
 
         public override Vector2 GetForce()
         {
-            return -Body.velocity * 5;
+            return -Body.linearVelocity * 5;
         }
     }
 }

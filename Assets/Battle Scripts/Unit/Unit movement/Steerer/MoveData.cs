@@ -26,7 +26,7 @@ namespace MovementSystem
             get
             {
                 if (!_body) _body = GetComponentInParent<Rigidbody2D>();
-                return _body.velocity;
+                return _body.linearVelocity;
             }
         }
         public Vector2 Center
@@ -46,7 +46,7 @@ namespace MovementSystem
             get
             {
                 if (!_body) _body = GetComponentInParent<Rigidbody2D>();
-                return Center+_body.velocity;
+                return Center+_body.linearVelocity;
             }
             }
 

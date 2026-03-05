@@ -52,7 +52,7 @@ namespace MovementSystem
         float previousVelocity_error, error, forceGain, derivative;
         float CalcForce()
         {
-            error = _moveData.MaxSpeed - _body.velocity.magnitude;
+            error = _moveData.MaxSpeed - _body.linearVelocity.magnitude;
             derivative = (error - previousVelocity_error) / Time.deltaTime;
             previousVelocity_error = error;
             return ProportionalGain * error + DerivativeGain * derivative;            

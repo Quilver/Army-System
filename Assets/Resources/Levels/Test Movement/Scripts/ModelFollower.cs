@@ -69,7 +69,7 @@ namespace ModelComponents
         [SerializeField, Range(0, 10)] float _damping = 1;
         void SpringVelocity(Vector2 directionToUnit)
         {
-            Vector2 force = Time.deltaTime * _springForceK * directionToUnit - Body.velocity * _damping;
+            Vector2 force = Time.deltaTime * _springForceK * directionToUnit - Body.linearVelocity * _damping;
             Body.AddForce(force);
             UnitBody.AddForceAtPosition(-force, transform.position);
         }

@@ -38,8 +38,8 @@ namespace ModelComponents
         }
         private void FixedUpdate()
         {
-            var force = sprite.material.GetVector("_HitForce");
-            sprite.material.SetVector("_HitForce", Vector3.MoveTowards(force, Vector3.zero, 2 * Time.deltaTime));
+            //var force = sprite.material.GetVector("_HitForce");
+            //sprite.material.SetVector("_HitForce", Vector3.MoveTowards(force, Vector3.zero, 2 * Time.deltaTime));
         }
     }
 }

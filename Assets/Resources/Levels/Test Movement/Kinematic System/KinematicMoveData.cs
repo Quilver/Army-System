@@ -31,7 +31,7 @@ namespace MovementSystem
             Collider2D[] results = new Collider2D[10];
             ContactFilter2D contactFilter = new();
             contactFilter.SetLayerMask(1 << 6);
-            int overlaps = _collider.OverlapCollider(contactFilter, results);
+            int overlaps = _collider.Overlap(contactFilter, results);
             for (int i = 0; i < overlaps; i++)
             {
                 Debug.Log($"{transform.parent.name} is overlapping with: {results[i].name}");

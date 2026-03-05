@@ -16,6 +16,6 @@ public class TurnTowards : MonoBehaviour
     private void FixedUpdate()
     {
 
-        Body.transform.up = Vector3.MoveTowards(Body.transform.up, Body.velocity.normalized, Time.deltaTime).normalized;
+        Body.transform.up = Vector3.MoveTowards(Body.transform.up, Body.linearVelocity.normalized, Time.deltaTime).normalized;
     }
 }
