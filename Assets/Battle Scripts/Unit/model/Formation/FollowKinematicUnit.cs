@@ -131,13 +131,32 @@ namespace ModelComponents
             //Default steering force
             return Vector2.MoveTowards(Body.linearVelocity, MoveForce, (maxMoveForce) * accelerationModifier);
         }
+        
+        Vector2 GetVelocity(Vector2 direction, float maxUnitSpeed, float maxReturnSpeedFactor, float accelerationModifier)
+        {
+            
+            Vector2 MoveForce = IdealVec(direction);
+            Vector2 returnDirection = (UnitPosition - (Vector2)transform.position);
+            float projectedDistanceFromPoint = returnDirection.magnitude;
+            float ratio = Mathf.Clamp01(projectedDistanceFromPoint / hardFollowRadius);
+            return ((1-ratio) * MoveForce + ratio * maxReturnSpeedFactor * returnDirection.normalized) * maxUnitSpeed;
+        }
+        
+        Vector2 GetFormationSteering(Vector2 unitDirection, float unitSpeed, float maxSpeedFactor)
+        {
+            const float MIN_DISTANCE = 0.005f;
+            Vector2 toPosition = UnitPosition - (Vector2)transform.position;
+            if(toPosition.magnitude < MIN_DISTANCE) return unitDirection* unitSpeed;
+            Vector2 arrivalVelocity = toPosition * Mathf.Min(maxSpeedFactor, toPosition.magnitude);
+            Vector2 desiredVelocity = unitDirection * unitSpeed + arrivalVelocity;
+            return desiredVelocity;
+        }
         void UpdateForces(Vector2 dirToMove, float MaxSpeed)
         {
-            Vector2 desiredVelocity = MaxSpeed * dirToMove;
             float acceleration = Time.fixedDeltaTime / secondsToMaxVelocity;
-            
-            Friction.connectedBody.linearVelocity = SteerVelocity(MaxSpeed * MoveVector(dirToMove), MaxSpeed, _springForceK, acceleration);
-            
+            Friction.connectedBody.linearVelocity =
+                //SteerVelocity(MoveVector(dirToMove), MaxSpeed, _springForceK, acceleration);
+                GetFormationSteering(dirToMove, MaxSpeed, 1.5f);
 
         }
         #endregion

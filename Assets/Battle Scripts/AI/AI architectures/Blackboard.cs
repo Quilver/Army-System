@@ -23,9 +23,7 @@ namespace AISystem
             return knowledge.TryGetValue(typeof(T), out var val) ? (T)val : default;
         }
     }
-    public interface IUnit {
-        IBehaviour lastBehaviour { get; set; }
-    }
+    
     public interface IFormation { }
     public interface IBehaviour
     {
@@ -44,7 +42,7 @@ namespace AISystem
         public Vector2? Target(IUnit unit) => null;
     }
     
-    
+    /*
     class BasicUnitAI
     {
         void UpdateAI(IUnit unit, IFormation formation, Blackboard blackboard)
@@ -67,4 +65,5 @@ namespace AISystem
 
         }
     }
+    */
 }
