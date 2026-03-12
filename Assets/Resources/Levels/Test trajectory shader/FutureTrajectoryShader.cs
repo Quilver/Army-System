@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Mathematics;
 using UnityEngine;
 namespace ComputeShaderTest
 {
@@ -62,6 +63,30 @@ namespace ComputeShaderTest
             UpdateBuffer();
             transform.position = body.position;
             trajectoryComputeShader.Dispatch(kernelID, trajectoryTexture.width / 8, trajectoryTexture.height / 8, 1);
+        }
+        public Vector2 circle, lineStart, velocity;
+        public float _Radius, distance, p1, p2;
+        private void OnDrawGizmos()
+        {
+            Vector2 direction = velocity.normalized;
+            float radius = _Radius + velocity.magnitude * timeStep;
+            Vector2 pixelOffset = circle-lineStart;
+            float closestPointDist = Vector2.Dot(pixelOffset, direction);
+            float distanceSquare = closestPointDist * closestPointDist - pixelOffset.sqrMagnitude;
+            if (distanceSquare < radius * radius)
+                Gizmos.color = Color.red;
+            else Gizmos.color = Color.green;
+            distance = Mathf.Sqrt(radius * radius - distanceSquare);
+            p1 = closestPointDist - distance; p2= closestPointDist + distance;
+            Gizmos.DrawWireSphere(circle, radius);
+            Gizmos.DrawRay(lineStart, velocity.normalized * closestPointDist);
+            Gizmos.color = Color.blue;
+            Gizmos.DrawLine(lineStart, circle);
+            Gizmos.DrawLine(circle, circle+ (lineStart+ velocity.normalized * 
+                closestPointDist-circle).normalized*MathF.Sqrt(distanceSquare));
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawWireSphere(circle, _Radius);
+            Gizmos.DrawRay(lineStart+new Vector2(0,0.05f), velocity * timeStep);
         }
     }
 }

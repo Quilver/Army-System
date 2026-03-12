@@ -27,19 +27,14 @@ float2 RayCircleIntersection(float3 pixelOffset)
 {
     if(length(_Velocity)==0) return float2(-1.0, -1.0);
     float3 direction = normalize(_Velocity);
-    float radius = _Radius * dot(_Velocity, _Velocity);
-    // Quadratic coefficients: at^2 + bt + c = 0
-    float b = -dot(pixelOffset, direction);
-    float c = dot(pixelOffset, pixelOffset) - radius * radius;
-    float discriminant = (b * b) - c;
+    float radius = _Radius + dot(_Velocity, _Velocity) * _Time * _Time;
     
-    if (discriminant < 0.0) return float2(-1.0, -1.0);
-    float sqrtDisc = sqrt(discriminant);
-    
-    float t0 = (-b - sqrtDisc);
-    float t1 = (-b + sqrtDisc);
-    
-    return float2(t0, t1);
+    float closestPointDist = dot(pixelOffset, direction);
+    float distanceSquare = closestPointDist * closestPointDist - dot(pixelOffset, pixelOffset);
+    if (distanceSquare < radius * radius)
+        return float2(-1.0, -1.0);
+    float edgeDistance = sqrt(radius * radius - distanceSquare);
+    return float2(closestPointDist - edgeDistance.x, closestPointDist + edgeDistance.x);
 }
 float2 GetPositionAtTime(float3 pixel, float t)
 {
