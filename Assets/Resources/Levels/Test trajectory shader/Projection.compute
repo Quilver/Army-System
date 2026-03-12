@@ -7,45 +7,43 @@
 
 
 // Each #kernel tells which function to compile; you can have many kernels
-#pragma kernel CSMain
+#pragma kernel ProjectionMap
 
 // Create a RenderTexture with enableRandomWrite flag and set it
 // with cs.SetTexture
 
-RWStructuredBuffer<float4> _Pixels;
-RWStructuredBuffer<float4> _CollisionMesh;
-int _TriangeCount;
+RWTexture2D<float4> _Pixels;
+RWStructuredBuffer<float3> _CollisionMesh;
+int _TriangleCount;
 float3 _Position;
 float3 _Velocity;
 float _Rotation;
 float _Time;
 float _Radius;
-int _Resolution;
+uint _Resolution;
 // Returns float2(t_start, t_end)
 // If no intersection, returns a negative value or a specific 'fail' signal
-float2 RayCircleIntersection(float3 pixel)
+float2 RayCircleIntersection(float3 pixelOffset)
 {
-    float radius = _Radius * length(_Velocity);
-    float4 direction = normalize(-_Velocity);
-    float4 L = pixel - _Position;
-    
+    if(length(_Velocity)==0) return float2(-1.0, -1.0);
+    float3 direction = normalize(_Velocity);
+    float radius = _Radius * dot(_Velocity, _Velocity);
     // Quadratic coefficients: at^2 + bt + c = 0
-    float b = 2.0 * dot(L, direction);
-    float c = dot(L, L) - (radius * radius);
-    float discriminant = (b * b) - (4.0 * c);
+    float b = -dot(pixelOffset, direction);
+    float c = dot(pixelOffset, pixelOffset) - radius * radius;
+    float discriminant = (b * b) - c;
     
-    if (discriminant < 0.0)
-        return float2(-1.0, -1.0);
+    if (discriminant < 0.0) return float2(-1.0, -1.0);
     float sqrtDisc = sqrt(discriminant);
     
-    float t0 = (-b - sqrtDisc) / 2.0;
-    float t1 = (-b + sqrtDisc) / 2.0;
+    float t0 = (-b - sqrtDisc);
+    float t1 = (-b + sqrtDisc);
     
     return float2(t0, t1);
 }
 float2 GetPositionAtTime(float3 pixel, float t)
 {
-    float2 offset = _Position - _Velocity * t;
+    float2 offset = (float2)_Position - (float2) _Velocity * t;
     float rotation = _Rotation * t;
     float s = sin(rotation);
     float c = cos(rotation);
@@ -108,26 +106,28 @@ float2 LineTriangleIntersect(float3 LineStart, float3 LineEnd,
     float t1 = SegmentSegmentIntersectT(LineStart, LineEnd, V0, V1);
     float t2 = SegmentSegmentIntersectT(LineStart, LineEnd, V0, V2);
     float t3 = SegmentSegmentIntersectT(LineStart, LineEnd, V1, V2);
+    //No intersection
     if (t1 < 0 && t2 < 0 && t3 < 0)
         return float2(-1, -1);
-    
-    if (t1 < 0 )
-        if (t2 >= 0)
-            t1 = t2;
-        else
-            t1 = t3;
-    if (t2 < 0 || t1 == t2)
-        t2 = t3;
-    if(t1>t2)
-        return float2(t2, t1);
-    return float2(t1, t2);
+    //Partial
+    if(t1<0&&t2<0 || t1<0&&t3<0 || t2<0&&t3<0)
+        if(t1>0) return float2(t1, t1);
+        else if(t2>0) return float2(t2, t2);
+        else return float2(t3, t3);
+    //Full crossing
+    if (t1 < 0) 
+        return float2(min(t2, t3), max(t2, t3));
+    else if (t2 < 0) 
+        return float2(min(t1, t3), max(t1, t3));
+    else
+        return float2(min(t2, t1), max(t2, t1));
 }
 float4 Intersection(float3 lineStart, float3 lineEnd)
 {
     float segmentLength = length(lineEnd - lineStart);
     float overlap = 0;
     float time = 0;
-    for (int i = 0; i < _TriangeCount; i++)
+    for (int i = 0; i < _TriangleCount; i++)
     {
         float3 v0 = _CollisionMesh[i * 3];
         float3 v1 = _CollisionMesh[i * 3 + 1];
@@ -144,19 +144,28 @@ float4 Intersection(float3 lineStart, float3 lineEnd)
     if (overlap == 0)return float4(0,0,0,0);
     return float4((1 - time) / overlap, 0, time / overlap, overlap);
 }
-[numthreads(8,8,1)]
-void CSMain (uint3 id : SV_DispatchThreadID)
+float4 GetPixelColour(float start, float end)
 {
-    if (id.x > (uint) _Resolution)
-        return;
-    float3 pixelPos = _Position+id;
-    float2 intersectionTimes = RayCircleIntersection(pixelPos);
+    float overlap = end - start;
+    float time = (start+end) / 2;
+    return float4((1 - time) / overlap, 0, time / overlap, overlap);
+}
+[numthreads(8,8,1)]
+void ProjectionMap (uint3 id : SV_DispatchThreadID)
+{
+    float3 offset = id - _Resolution / (float)2;
+    float3 pixelPos = _Position+offset;
+    float2 intersectionTimes = RayCircleIntersection(offset);
     if (intersectionTimes.y < 0)
+    {
+        _Pixels[id.xy] = float4(0, 1, 0, 0.3);
         return;
+    }
     float startTime = intersectionTimes.x;
     float endTime = intersectionTimes.y;
-    float2 lineStart = GetPositionAtTime(pixelPos, startTime);
-    float2 lineEnd = GetPositionAtTime(pixelPos, endTime);
-    _Pixels[id.x][id.y] = Intersection(float3(lineStart, 0), float3(lineEnd, 0));
+    _Pixels[id.xy] = float4(1, 1, 1, 1);//GetPixelColour(startTime, endTime);
+    //float2 lineStart = GetPositionAtTime(pixelPos, startTime);
+    //float2 lineEnd = GetPositionAtTime(pixelPos, endTime);
+    //_Pixels[id.xy] = Intersection(float3(lineStart, 0), float3(lineEnd, 0));
 
 }
