@@ -3,8 +3,8 @@ namespace Test
 {
     public class testSpeed : MonoBehaviour
     {
-        [SerializeField] Vector2 velocity;
-        [SerializeField] float rotation;
+        [SerializeField] public Vector2 velocity;
+        [SerializeField] public float rotation;
         // Start is called once before the first execution of Update after the MonoBehaviour is created
         void Start()
         {

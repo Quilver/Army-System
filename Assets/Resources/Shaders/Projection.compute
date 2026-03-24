@@ -1,0 +1,38 @@
+﻿//PROJECTION COMPUTE SHADER
+//1.Create moving bounding sphere to filter relevant pixels
+//2.for each pixel, create the line in clip space and its 2 intersecting points
+//3.to simulate the Rotation, rotate the pixel for initial time and create n lines splitting the rotational+linear movement
+//4. check for intersections with each tri in the mesh, each intersection is counted 
+
+
+
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel ProjectionMap
+#include "GeometryLib.hlsl"
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+
+float3 _Position, _Direction; //_Direction is the object's normalized velocity
+float _Rotation, _AngularVelocity, _Speed;//_Speed is the distance the object travels
+float _Radius;
+
+RWTexture2D<float4> _Pixels;
+uint _Resolution;
+float _WorldUnits;
+
+
+[numthreads(8,8,1)]
+void ProjectionMap (uint3 id : SV_DispatchThreadID)
+{
+    float3 pixelOffset = getPixelOffset(id, _Resolution, _WorldUnits);
+    //Coarse culling with bounding sphere
+    float2 intersections = getBoundingCircleIntersection(pixelOffset, -_Direction, _Speed, _Radius);
+    
+    if (intersections.y <= 0)
+    {
+        _Pixels[id.xy] = float4(0, 0, 0, 0);
+        return;
+    }
+    _Pixels[id.xy] = GetPixelColour(intersections.x, intersections.y);
+
+}

@@ -1,0 +1,95 @@
+//PROJECTION COMPUTE SHADER
+//1.Create moving bounding sphere to filter relevant pixels
+//2.for each pixel, create the line in clip space and its 2 intersecting points
+//3.to simulate the Rotation, rotate the pixel for initial time and create n lines splitting the rotational+linear movement
+//4. check for intersections with each tri in the mesh, each intersection is counted 
+
+
+
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel BoxProjection
+#include "GeometryLib.hlsl"
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+
+float3 _Position, _Direction; //_Direction is the object's normalized velocity
+float _Rotation, _AngularVelocity, _Speed; //_Speed is the distance the object travels
+//The shape data, radius is used for the bounding sphere, box size is used for the actual intersection test
+float3 _BoxSize;
+float _Radius; 
+
+RWTexture2D<float4> _Pixels;
+uint _Resolution;
+float _WorldUnits;
+
+
+float3 GetPositionAtTime(float t, float2 pixelOffset)
+{
+    float2 offset = pixelOffset.xy - _Direction.xy * _Speed * t;
+    float rotation = -_Rotation + _AngularVelocity * t;
+    float s = sin(rotation);
+    float c = cos(rotation);
+    
+    // Construct the rotation matrix
+    float2x2 rot = float2x2(c, -s, s, c);
+    
+    // Multiply the matrix by the point
+    return float3(mul(rot, offset), 0);
+}
+float2 RotateBy(float angle, float2 direction)
+{
+    float s = sin(angle);
+    float c = cos(angle);
+    
+    // Construct the rotation matrix
+    float2x2 rot = float2x2(c, -s, s, c);
+    
+    // Multiply the matrix by the point
+    return mul(rot, (float2) direction);
+}
+
+
+[numthreads(8, 8, 1)]
+void BoxProjection(uint3 id : SV_DispatchThreadID)
+{
+    //Values 
+    float3 pixelOffset = getPixelOffset(id, _Resolution, _WorldUnits);
+    //Coarse culling with bounding sphere
+    float2 intersections = getBoundingCircleIntersection(pixelOffset, -_Direction, _Speed*2, _Radius);
+    
+    if (intersections.y <= 0)
+    {
+        _Pixels[id.xy] = float4(0, 0, 0, 0);
+        return;
+    }
+    float3 intersectStart = GetPositionAtTime(intersections.x, pixelOffset.xy);
+    float3 direction = -float3(RotateBy(-_Rotation, _Direction.xy), 0);
+    float magnitude = _Speed * (intersections.y - intersections.x);
+    
+    if (abs(_AngularVelocity) < 0.01)
+    {
+        intersections = getBoundingBoxIntersection(intersectStart, direction, _Speed, _BoxSize);
+        if (intersections.y == -1)
+        {
+            _Pixels[id.xy] = float4(0, 0, 0, 0);
+            return;
+        }
+        _Pixels[id.xy] = //float4(0, 0, 0.8, 0.4);
+            GetPixelColour(intersections.x, intersections.y);
+        return;
+    }
+    intersectStart = GetPositionAtTime(intersections.x, pixelOffset.xy);
+    float3 intersectEnd = GetPositionAtTime(intersections.y, pixelOffset.xy);
+    direction = -normalize(intersectEnd - intersectStart);
+    magnitude = length(intersectEnd-intersectStart);
+    intersections = getBoundingBoxIntersection(intersectStart, -direction, magnitude, _BoxSize);
+    if (intersections.y != -1)
+    {
+        _Pixels[id.xy] = GetPixelColour(intersections.x, intersections.y);
+    }
+    else
+    {
+        _Pixels[id.xy] = float4(0, 0, 0, 0);
+    }
+    return;
+}
