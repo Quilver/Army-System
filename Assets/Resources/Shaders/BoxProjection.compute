@@ -47,7 +47,10 @@ float2 RotateBy(float angle, float2 direction)
     // Multiply the matrix by the point
     return mul(rot, (float2) direction);
 }
-
+float3 AngularVelocity(float t)
+{
+    return float3(-sin(_Rotation + _AngularVelocity * t), cos(_Rotation + _AngularVelocity * t), 0);
+}
 
 [numthreads(8, 8, 1)]
 void BoxProjection(uint3 id : SV_DispatchThreadID)
@@ -79,10 +82,8 @@ void BoxProjection(uint3 id : SV_DispatchThreadID)
         return;
     }
     intersectStart = GetPositionAtTime(intersections.x, pixelOffset.xy);
-    float3 intersectEnd = GetPositionAtTime(intersections.y, pixelOffset.xy);
-    direction = -normalize(intersectEnd - intersectStart);
-    magnitude = length(intersectEnd-intersectStart);
-    intersections = getBoundingBoxIntersection(intersectStart, -direction, magnitude, _BoxSize);
+    float3 movement = direction - AngularVelocity(intersections.y*_AngularVelocity+_Rotation);
+    intersections = getBoundingBoxIntersection(intersectStart, -normalize(movement), length(movement), _BoxSize);
     if (intersections.y != -1)
     {
         _Pixels[id.xy] = GetPixelColour(intersections.x, intersections.y);
