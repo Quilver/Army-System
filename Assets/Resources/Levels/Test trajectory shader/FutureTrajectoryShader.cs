@@ -1,8 +1,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Rendering;
 namespace ComputeShaderTest
 {
     public class FutureTrajectoryShader : MonoBehaviour
@@ -17,62 +17,48 @@ namespace ComputeShaderTest
         void Start()
         {
             //trajectoryComputeShader = (ComputeShader)Instantiate(trajectoryComputeShader);
-            context = new ProjectionShaderContext(body, timeStep);
+            context = new ProjectionShaderContext(body);
+            context.projectionType.ComputeShader = (ComputeShader)Instantiate(context.projectionType.ComputeShader);
             context.InitBuffer(kernelID);
-            GetComponent<SpriteRenderer>().sprite= context.GetSprite();
+            //GetComponent<SpriteRenderer>().sprite= context.GetSprite();
             transform.position=body.position;
-            //Invoke("Pause", timeStep);
+            CollisionMapManager.instance.UpdateProjections += () => context.Update(kernelID, body, timeStep);
+            //Invoke("Save", 0.1f);
         }
         private void Update()
         {
-            context.Update(kernelID, body);
+            //context.Update(kernelID, body, timeStep);
             transform.position = body.position;
         }
-        public int steps = 10;
-        public Vector2 pixelOffset=new Vector2(-1,-0.5f);
-        public Vector2 RotatedPos, RotatedDir, nextPos;
-        Vector2 AngularVelocity(float angle)
+        
+        void Save()
         {
-            return new Vector2(-Mathf.Sin(angle * Mathf.Deg2Rad), Mathf.Cos(angle * Mathf.Deg2Rad));
+            context.ReadInResult();
         }
-        void DrawLine(Vector2 point, bool onRect)
+        private IEnumerator ReadPixel()
         {
-            
-            Vector2 vel = (onRect) ? body.linearVelocity*timeStep : -body.linearVelocity*timeStep;
-            float angularVel = (onRect) ? body.angularVelocity*timeStep : -body.angularVelocity * timeStep;
-            float angle = (onRect) ? body.transform.rotation.eulerAngles.z : -body.transform.rotation.eulerAngles.z;
-            Vector2 angleVel = AngularVelocity(angle)*timeStep;
+            // Dispatch the compute shader
+            context.Update(kernelID, body, timeStep);
+            ComputeBuffer outputBuffer = new ComputeBuffer(1, sizeof(float) * 4);
+            // Request the data from the GPU to the CPU
+            AsyncGPUReadbackRequest request = AsyncGPUReadback.Request(outputBuffer);
 
-            //actual starting position and velocity
-            Gizmos.color = Color.white;
-            Gizmos.DrawSphere(body.position + point, 0.1f);
-            Gizmos.DrawRay(body.position + point+angleVel, vel);
-            Gizmos.DrawRay(body.position + point, angleVel);
+            // Wait for the request to complete
+            while (!request.done)
+            {
+                yield return null;
+            }
 
-            //Actual end position
-            Gizmos.color = Color.blue;
-            Vector2 endpos = point + angleVel + vel;
-                //Quaternion.AngleAxis(body.rotation + angularVel, Vector3.forward) * point + (Vector3)vel;
-            Gizmos.DrawSphere(body.position + endpos, 0.1f);
-            //Rotated starting position and velocity
-            Gizmos.color = Color.yellow;
-            RotatedPos = (onRect)?body.transform.rotation * point : Quaternion.Inverse(body.transform.rotation) * point;
-            RotatedDir = (onRect) ? body.transform.rotation * vel : Quaternion.Inverse(body.transform.rotation) * vel;
-            Gizmos.DrawWireCube(body.transform.position, body.transform.localScale);
-            Gizmos.DrawSphere(body.position + RotatedPos, 0.1f);
-            Gizmos.DrawRay(body.position + RotatedPos, RotatedDir);
-            Gizmos.color = Color.red;
-            nextPos = Quaternion.AngleAxis(body.rotation + angularVel, Vector3.forward) * (RotatedPos) +(Vector3)vel;
-            Gizmos.DrawSphere(body.position + nextPos, 0.1f);
-            Gizmos.DrawLine(body.position + RotatedPos, body.position + nextPos);
-        }
-        private void OnDrawGizmos()
-        {
-            DrawLine(new Vector2(0, 1), true);
-            //DrawLine(new Vector2(0, -1), true);
-            //DrawLine(new Vector2(-0.5f, 1), false);
-            
-
+            if (request.hasError)
+            {
+                Debug.Log("GPU readback error detected.");
+            }
+            else
+            {
+                // Extract the color components from the output array
+                float[] outputArray = request.GetData<float>().ToArray();
+                Color color = new Color(outputArray[0], outputArray[1], outputArray[2], outputArray[3]);
+            }
         }
     }
     

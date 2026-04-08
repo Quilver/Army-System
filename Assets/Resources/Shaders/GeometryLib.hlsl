@@ -29,7 +29,7 @@ float2 boxIntersection(float3 rayStart, float3 direction, float3 boxSize)
     float2 t2 = -n + k;
     float tN = max(t1.x, t1.y);
     float tF = min(t2.x, t2.y);
-    if (tN > tF || tN < 0.0)//tF < 0.0 || tN > 0.0)
+    if (tN > tF || tF < 0.0)//tF < 0.0 || tN > 0.0)
         return float2(-1,-1); // no intersection
     return float2(tN, tF);
 }
@@ -75,9 +75,10 @@ float3 getPixelOffset(uint3 pixel, float resolution, float worldUnits)
 }
 float2 NormaliseIntersections(float2 intersections, float magnitude)
 {
-    intersections = intersections / magnitude;
-    if (intersections.x > 1 || intersections.y < 0)
+    
+    if (intersections.x > magnitude || intersections.y < 0)
         return float2(-1, -1);
+    intersections = intersections / magnitude;
     intersections.x = max(intersections.x, 0);
     intersections.y = min(intersections.y, 1);
     return intersections;
@@ -112,13 +113,19 @@ float2 getBoundingBoxIntersection(float3 rayStart, float3 direction, float magni
         if (abs(rayStart.y) > boxSize.y)return float2(-1, -1);
     }
     float2 intersections = boxIntersection(rayStart, direction, boxSize);
-    return intersections;
     return NormaliseIntersections(intersections, magnitude);
 }
-float4 GetPixelColour(float start, float end)
+struct Circle
 {
-    float overlap = end - start;
-    float time = (start + end) / 2;
-    return float4((1 - time) / overlap, 0, time / overlap, overlap);
-}
+    float3 position, direction;
+    float speed, radius;
+};
+struct Box
+{
+    float3 position, direction;
+    float2 size;
+    float speed, rotation, angularVelocity, boundingRadius;
+    int intersectionTests;
+};
+
 #endif

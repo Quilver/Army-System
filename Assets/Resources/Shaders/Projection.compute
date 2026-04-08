@@ -9,8 +9,11 @@
 // Each #kernel tells which function to compile; you can have many kernels
 #pragma kernel ProjectionMap
 #include "GeometryLib.hlsl"
+#include "MaskAndColourLib.hlsl"
 // Create a RenderTexture with enableRandomWrite flag and set it
 // with cs.SetTexture
+
+
 
 float3 _Position, _Direction; //_Direction is the object's normalized velocity
 float _Rotation, _AngularVelocity, _Speed;//_Speed is the distance the object travels
@@ -19,6 +22,11 @@ float _Radius;
 RWTexture2D<float4> _Pixels;
 uint _Resolution;
 float _WorldUnits;
+
+float2 _PixelsPerUnit;
+uint _GridWidth, _GridHeight;
+RWStructuredBuffer<uint> _Occupancy;
+
 
 
 [numthreads(8,8,1)]
@@ -33,6 +41,11 @@ void ProjectionMap (uint3 id : SV_DispatchThreadID)
         _Pixels[id.xy] = float4(0, 0, 0, 0);
         return;
     }
-    _Pixels[id.xy] = GetPixelColour(intersections.x, intersections.y);
-
+    uint mask = BoolOverlapMask(intersections, 0);
+    if(mask != 0)
+        _Pixels[id.xy] = GetPixelColour(mask);
+    int gridIndex = GetGridIndex(_Position.xy, uint2(_GridWidth, _GridHeight), _PixelsPerUnit);
+    if (gridIndex == -1)
+        return;
+    InterlockedOr(_Occupancy[gridIndex], mask);
 }

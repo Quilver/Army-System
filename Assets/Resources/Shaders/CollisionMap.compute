@@ -1,0 +1,22 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+#include "MaskAndColourLib.hlsl"
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+RWStructuredBuffer<uint> _Mask;
+RWTexture2D<float4> _Pixels;
+float2 _cellSize;
+float2 _pixelsPerUnit;
+uint _GridWidth, _GridHeight;
+
+//Share _Mask and let each projection shader add to it and then do a final pass to convert it to colour
+
+[numthreads(8,8,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    int index = id.x/_pixelsPerUnit + id.y * _GridWidth/_pixelsPerUnit;
+    if (index < 0 || index > _GridWidth*_GridHeight)
+        return;
+    _Pixels[id.xy] = GetPixelColour(_Mask[index]);
+    _Mask[index] = 0;
+}
