@@ -6,7 +6,7 @@
 RWStructuredBuffer<uint> _Mask;
 RWTexture2D<float4> _Pixels;
 float2 _cellSize;
-float2 _pixelsPerUnit;
+uint _pixelsPerUnitX, _pixelsPerUnitY;
 uint _GridWidth, _GridHeight;
 
 //Share _Mask and let each projection shader add to it and then do a final pass to convert it to colour
@@ -14,9 +14,14 @@ uint _GridWidth, _GridHeight;
 [numthreads(8,8,1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
 {
-    int index = id.x/_pixelsPerUnit + id.y * _GridWidth/_pixelsPerUnit;
-    if (index < 0 || index > _GridWidth*_GridHeight)
+    int index = 
+        int(id.x / _pixelsPerUnitX)+(id.y / _pixelsPerUnitY)*_GridWidth;
+    if (index < 0 || index > _GridWidth * _GridHeight)
+    {
+        _Pixels[id.xy] = float4(1, 0, 0, 1);
         return;
-    _Pixels[id.xy] = GetPixelColour(_Mask[index]);
+    }
+    else if (_Mask[index] != 0)
+        _Pixels[id.xy] = GetPixelColour(_Mask[index]);
     _Mask[index] = 0;
 }

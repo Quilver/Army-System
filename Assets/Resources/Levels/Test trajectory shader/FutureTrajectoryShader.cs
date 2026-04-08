@@ -20,7 +20,7 @@ namespace ComputeShaderTest
             context = new ProjectionShaderContext(body);
             context.projectionType.ComputeShader = (ComputeShader)Instantiate(context.projectionType.ComputeShader);
             context.InitBuffer(kernelID);
-            //GetComponent<SpriteRenderer>().sprite= context.GetSprite();
+            GetComponent<SpriteRenderer>().sprite= context.GetSprite();
             transform.position=body.position;
             CollisionMapManager.instance.UpdateProjections += () => context.Update(kernelID, body, timeStep);
             //Invoke("Save", 0.1f);

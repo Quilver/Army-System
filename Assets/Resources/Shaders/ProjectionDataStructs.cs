@@ -32,7 +32,7 @@ namespace ComputeShaderTest
             projectionType.ComputeShader.SetBuffer(kernelID, "_Occupancy", CollisionMapManager.instance.occupancyMap);
             projectionType.ComputeShader.SetFloat("_Resolution", resolution);
             projectionType.ComputeShader.SetFloat("_WorldUnits", windowSize);
-            projectionType.ComputeShader.SetFloat("_PixelsPerUnit", CollisionMapManager.instance.resolution);
+            projectionType.ComputeShader.SetVector("_UnitsPerCell", CollisionMapManager.instance.grid.cellSize);
             projectionType.ComputeShader.SetInt("_GridWidth", CollisionMapManager.instance.mapSize.x);
             projectionType.ComputeShader.SetInt("_GridHeight", CollisionMapManager.instance.mapSize.y);
         }

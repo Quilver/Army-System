@@ -11,7 +11,7 @@ public class CollisionMapManager : MonoBehaviour
     {
         public Vector2 gridDimension, cellSize;
     };
-    Grid grid => GetComponent<Grid>();
+    public Grid grid => GetComponent<Grid>();
     [SerializeField]
     public Vector2Int mapSize = Vector2Int.one;
     ComputeShader CollisionMap;
@@ -32,15 +32,18 @@ public class CollisionMapManager : MonoBehaviour
         CollisionMap.SetTexture(0, "_Pixels", heatMap);
         CollisionMap.SetBuffer(0, "_Mask", occupancyMap);
         CollisionMap.SetVector("_cellSize", grid.cellSize);
-        CollisionMap.SetVector("_pixelsPerUnit", new Vector2(resolution, resolution));
+        CollisionMap.SetInt("_pixelsPerUnitX", resolution);
+        CollisionMap.SetInt("_pixelsPerUnitY", resolution);
+        CollisionMap.SetInt("_GridWidth", mapSize.x);
+        CollisionMap.SetInt("_GridHeight", mapSize.y);
         //CollisionMap.SetInts("_pixelsPerUnit", mapSize.x / resolution, mapSize.y / resolution);
-        
+
         GetComponent<SpriteRenderer>().sprite = GetSprite();
     }
     public Action UpdateProjections;
     public void Update()
     {
-        CollisionMap.Dispatch(0, Mathf.CeilToInt(mapSize.x), Mathf.CeilToInt(mapSize.y), 1);
+        CollisionMap.Dispatch(0, heatMap.width/8, heatMap.height/8, 1);
         UpdateProjections?.Invoke();
     }
 

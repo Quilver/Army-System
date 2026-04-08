@@ -23,7 +23,7 @@ RWTexture2D<float4> _Pixels;
 uint _Resolution;
 float _WorldUnits;
 
-float2 _PixelsPerUnit;
+float3 _UnitsPerCell;
 uint _GridWidth, _GridHeight;
 RWStructuredBuffer<uint> _Occupancy;
 
@@ -44,7 +44,10 @@ void ProjectionMap (uint3 id : SV_DispatchThreadID)
     uint mask = BoolOverlapMask(intersections, 0);
     if(mask != 0)
         _Pixels[id.xy] = GetPixelColour(mask);
-    int gridIndex = GetGridIndex(_Position.xy, uint2(_GridWidth, _GridHeight), _PixelsPerUnit);
+    int gridIndex = GetGridIndex(
+        _Position.xy + pixelOffset.xy, 
+        uint2(_GridWidth, _GridHeight), 
+        _UnitsPerCell.xy);
     if (gridIndex == -1)
         return;
     InterlockedOr(_Occupancy[gridIndex], mask);
