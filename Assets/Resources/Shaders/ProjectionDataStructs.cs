@@ -29,7 +29,8 @@ namespace ComputeShaderTest
         public void InitBuffer(int kernelID)
         {
             projectionType.ComputeShader.SetTexture(kernelID, "_Pixels", trajectoryTexture);
-            projectionType.ComputeShader.SetBuffer(kernelID, "_Occupancy", CollisionMapManager.instance.occupancyMap);
+            projectionType.ComputeShader.SetBuffer(kernelID, "_OccupancyMap", CollisionMapManager.instance.occupancyMap);
+            projectionType.ComputeShader.SetBuffer(kernelID, "_CollisionMap", CollisionMapManager.instance.collisionMap);
             projectionType.ComputeShader.SetFloat("_Resolution", resolution);
             projectionType.ComputeShader.SetFloat("_WorldUnits", windowSize);
             projectionType.ComputeShader.SetVector("_UnitsPerCell", CollisionMapManager.instance.grid.cellSize);

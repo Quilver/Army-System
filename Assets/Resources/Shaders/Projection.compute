@@ -25,7 +25,7 @@ float _WorldUnits;
 
 float3 _UnitsPerCell;
 uint _GridWidth, _GridHeight;
-RWStructuredBuffer<uint> _Occupancy;
+RWStructuredBuffer<uint> _OccupancyMap, _CollisionMap;
 
 
 
@@ -50,5 +50,6 @@ void ProjectionMap (uint3 id : SV_DispatchThreadID)
         _UnitsPerCell.xy);
     if (gridIndex == -1)
         return;
-    InterlockedOr(_Occupancy[gridIndex], mask);
+    InterlockedOr(_OccupancyMap[gridIndex], mask);
+    InterlockedAnd(_CollisionMap[gridIndex], mask);
 }

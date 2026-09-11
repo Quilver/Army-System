@@ -21,8 +21,9 @@ uint _Resolution;
 float _WorldUnits;
 const float MaxRotation = 0.2617994; //15 degrees in radians, to prevent precision issues with large rotations
 
-RWTexture2D<uint> _Occupancy;
-float2 _GridSize, _PixelsPerUnit;
+float3 _UnitsPerCell;
+uint _GridWidth, _GridHeight;
+RWStructuredBuffer<uint> _OccupancyMap, _CollisionMap;
 //helper functions, may move to a library later
 float3 GetPositionAtTime(float t, float2 pixelOffset)
 {
@@ -75,6 +76,13 @@ void BoxProjection(uint3 id : SV_DispatchThreadID)
 {
     //Values 
     float3 pixelOffset = getPixelOffset(id, _Resolution, _WorldUnits);
+    int gridIndex = GetGridIndex(
+        _Position.xy + pixelOffset.xy,
+        uint2(_GridWidth, _GridHeight),
+        _UnitsPerCell.xy);
+    if (gridIndex == -1)
+        return;
+    
     //Coarse culling with bounding sphere
     float2 intersections = //float2(0, 1);
     getBoundingCircleIntersection(pixelOffset, -_Direction, _Speed, _Radius);
@@ -91,7 +99,8 @@ void BoxProjection(uint3 id : SV_DispatchThreadID)
     if (abs(_AngularVelocity) < 0.01)
     {
         intersections = NoRotationIntersections(intersections.x, pixelOffset, deltaTime);
-        _Occupancy[id.xy] = BoolOverlapMask(intersections, 0);
+        InterlockedOr(_OccupancyMap[gridIndex], BoolOverlapMask(intersections, 0));
+        InterlockedAnd(_CollisionMap[gridIndex], BoolOverlapMask(intersections, 0));
         _Pixels[id.xy] = GetPixelColour(intersections);
         return;
     }
@@ -101,7 +110,8 @@ void BoxProjection(uint3 id : SV_DispatchThreadID)
         float t = lerp(intersections.x, intersections.y, i / 13.0);
         mask = BoolOverlapMask(RotationIntersections(t, pixelOffset, deltaTime/12, _Rotation), mask);
     }
-    _Occupancy[id.xy] = mask;
+    InterlockedOr(_OccupancyMap[gridIndex], mask);
+    InterlockedAnd(_CollisionMap[gridIndex], mask);
     _Pixels[id.xy] = GetPixelColour(mask);
     
 }

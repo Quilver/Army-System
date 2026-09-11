@@ -22,8 +22,17 @@ namespace ComputeShaderTest
             context.InitBuffer(kernelID);
             GetComponent<SpriteRenderer>().sprite= context.GetSprite();
             transform.position=body.position;
-            CollisionMapManager.instance.UpdateProjections += () => context.Update(kernelID, body, timeStep);
+            CollisionMapManager.instance.UpdateProjections += _ContextUpdate;
             //Invoke("Save", 0.1f);
+        }
+        private void OnDisable()
+        {
+            CollisionMapManager.instance.UpdateProjections -= _ContextUpdate;
+        }
+        private void _ContextUpdate()
+        {
+            Debug.Log("Updating projection for " + body.name);
+            context.Update(kernelID, body, timeStep);
         }
         private void Update()
         {

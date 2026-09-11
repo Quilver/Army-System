@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(c:\\Users\\Quinte\\OneDrive\\Documents\\GitHub\\Army-System/**)",
+      "Read(c:\\Users\\Quinte\\OneDrive\\Documents\\GitHub\\Army-System\\ProjectSettings/**)"
+    ]
+  },
+  "$version": 4
+}

@@ -6,17 +6,12 @@ using UnityEngine.Experimental.Rendering;
 public class CollisionMapManager : MonoBehaviour
 {
     public static CollisionMapManager instance;
-    [StructLayout(LayoutKind.Sequential)]
-    struct ShaderGrid
-    {
-        public Vector2 gridDimension, cellSize;
-    };
     public Grid grid => GetComponent<Grid>();
     [SerializeField]
     public Vector2Int mapSize = Vector2Int.one;
     ComputeShader CollisionMap;
     public RenderTexture heatMap;
-    public ComputeBuffer occupancyMap;
+    public ComputeBuffer occupancyMap, collisionMap;
     public int resolution=8;
     void Awake()
     {
@@ -27,10 +22,13 @@ public class CollisionMapManager : MonoBehaviour
         heatMap.enableRandomWrite = true;
         heatMap.Create();
         occupancyMap = new ComputeBuffer(mapSize.x*mapSize.y, sizeof(uint));//this is a 32 bit uint which forms a boolean map
-        
+        collisionMap = new ComputeBuffer(mapSize.x*mapSize.y, sizeof(uint));
         //pass the data to the compute shader
         CollisionMap.SetTexture(0, "_Pixels", heatMap);
-        CollisionMap.SetBuffer(0, "_Mask", occupancyMap);
+        CollisionMap.SetBuffer(0, "_OccupancyMap", occupancyMap);
+        CollisionMap.SetBuffer(0, "_CollisionMap", collisionMap);
+        CollisionMap.SetBuffer(1, "_OccupancyMap", occupancyMap);
+        CollisionMap.SetBuffer(1, "_CollisionMap", collisionMap);
         CollisionMap.SetVector("_cellSize", grid.cellSize);
         CollisionMap.SetInt("_pixelsPerUnitX", resolution);
         CollisionMap.SetInt("_pixelsPerUnitY", resolution);
@@ -41,10 +39,13 @@ public class CollisionMapManager : MonoBehaviour
         GetComponent<SpriteRenderer>().sprite = GetSprite();
     }
     public Action UpdateProjections;
+    [SerializeField] bool flag = true;  
     public void Update()
     {
+        CollisionMap.Dispatch(1, mapSize.x * mapSize.y / 64, 1, 1);
+        if(flag) 
+            UpdateProjections?.Invoke();
         CollisionMap.Dispatch(0, heatMap.width/8, heatMap.height/8, 1);
-        UpdateProjections?.Invoke();
     }
 
 

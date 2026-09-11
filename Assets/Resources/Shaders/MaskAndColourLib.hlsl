@@ -65,7 +65,7 @@ float4 GetPixelColour(float2 intersections)
 
 uint GetGridIndex(float2 position, uint2 gridDimension, float2 unitsPerCell)
 { //Need to handle units per cell to allow for different grid sizes, but for now we can just assume 1 unit per cell
-    float2 gridSpace = (position + (gridDimension / 2.0f));
+    float2 gridSpace = (position / unitsPerCell + (gridDimension / 2.0f));
     uint2 gridIndex = gridSpace;
     if (gridIndex.x < 0 || gridIndex.y < 0 || gridIndex.x >= gridDimension.x || gridIndex.y >= gridDimension.y)
         return -1;
