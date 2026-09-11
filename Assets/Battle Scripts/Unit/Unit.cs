@@ -44,6 +44,7 @@ class Unit : IUnit
                     model.GetComponentInChildren<ModelComponents.IMeleeTargeter>().ChangedCombat+=ModelsFighting;
                 _MeleeInit = true;
             }
+            RefreshModelsFighting();
             return _modelsFighting > 0;
         }
     }
@@ -52,10 +53,26 @@ class Unit : IUnit
 
     void ModelsFighting(bool enteredMelee)
     {
-        if (enteredMelee) _modelsFighting++;
-        else _modelsFighting--;
-        if(enteredMelee && _modelsFighting == 1) Melee(true);
-        else if(_modelsFighting == 0) Melee(false);
+        RefreshModelsFighting();
+    }
+
+    void RefreshModelsFighting()
+    {
+        var models = GetComponentInChildren<Formation.IFormationData>()?.Models;
+        if (models == null) return;
+
+        int previousCount = _modelsFighting;
+        _modelsFighting = 0;
+        foreach (var model in models)
+        {
+            if (model == null) continue;
+            var targeter = model.GetComponentInChildren<ModelComponents.IMeleeTargeter>();
+            if (targeter != null && targeter.InCombat)
+                _modelsFighting++;
+        }
+
+        if (previousCount == 0 && _modelsFighting > 0) Melee(true);
+        else if (previousCount > 0 && _modelsFighting == 0) Melee(false);
     }
     [SerializeField]
     bool _inMelee;

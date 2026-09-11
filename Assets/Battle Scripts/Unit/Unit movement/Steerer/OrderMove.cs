@@ -1,8 +1,5 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UIElements;
 namespace MovementSystem
 {
     class OrderMove : IMoveOrders
@@ -71,7 +68,7 @@ namespace MovementSystem
             if(faceDirection != null) 
                 transform.up = (Vector3)faceDirection.Value - transform.position;
             InvokeMove(position);
-            FinishedMovement();
+            Halt();
         }
         public override void MoveTo(Transform target)
         {
@@ -89,10 +86,18 @@ namespace MovementSystem
         {
             if(Unit.State == UnitState.Moving && ReachedPoint)
             {
-                _orderedMove = false;
-                FinishedMovement();
-                Unit.State = UnitState.Idle;
+                Halt();
             }
+        }
+
+        public override void Halt()
+        {
+            _orderedMove = false;
+            _target = null;
+            _faceTowards = null;
+            base.Halt();
+            if (Unit.State == UnitState.Moving)
+                Unit.State = UnitState.Idle;
         }
 
         [SerializeField]

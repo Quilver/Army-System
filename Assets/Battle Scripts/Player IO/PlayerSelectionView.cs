@@ -65,7 +65,7 @@ public class PlayerSelectionView : MonoBehaviour
         _moveOrders.OrderReceived -= Order;
         _unit.StateChanged -= Flee;
         _unit.UnitDestroyed -= Death;
-        Invoke("_Death", DeathScreamLength);
+        Invoke(nameof(_Destroy), DeathScreamLength);
     }
     void _Destroy()=>Destroy(gameObject);
     

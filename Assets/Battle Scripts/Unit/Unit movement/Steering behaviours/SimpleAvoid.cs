@@ -13,7 +13,8 @@ namespace MovementSystem
         }
         public override void AddForce()
         {
-            GetSteerDirection.AddForce(GetForce().normalized, GetForce().magnitude);
+            var force = GetForce();
+            GetSteerDirection.AddForce(force.normalized, force.magnitude);
         }
         [SerializeField, Range(1, 10)]
         float _priority;

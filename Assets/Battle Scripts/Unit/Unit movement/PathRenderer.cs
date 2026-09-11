@@ -8,6 +8,8 @@ public class PathRenderer : MonoBehaviour
     LineRenderer lineRenderer;
     IPathfinder _pathfinder;
     IMoveOrders _moveOrder;
+    [SerializeField, Min(0.02f)] float pathRefreshInterval = 0.1f;
+    float _nextPathRefresh;
     // Start is called before the first frame update
     void Start()
     {
@@ -21,8 +23,11 @@ public class PathRenderer : MonoBehaviour
     {
         if(_moveOrder==null || !_moveOrder.IsMoving)
             lineRenderer.enabled = false;
-        else 
+        else if (Time.time >= _nextPathRefresh)
+        {
+            _nextPathRefresh = Time.time + pathRefreshInterval;
             DrawPathToPosition();
+        }
     }
     void DrawPathToPosition()
     {

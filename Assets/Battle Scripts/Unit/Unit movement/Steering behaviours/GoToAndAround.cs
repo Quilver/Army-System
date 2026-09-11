@@ -39,7 +39,7 @@ namespace MovementSystem.SteeringBehaviour
         public override void AddForce()
         {
             _force = GetForce(); _speed = _force.magnitude;
-            GetSteerDirection.AddForce(GetForce(), priority);
+            GetSteerDirection.AddForce(_force, priority);
         }
         
         public override Vector2 GetForce()

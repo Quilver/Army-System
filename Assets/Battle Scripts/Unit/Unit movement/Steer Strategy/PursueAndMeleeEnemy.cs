@@ -7,6 +7,7 @@ namespace MovementSystem.Reaction
     {
         [SerializeField] ISteeringBehaviour pursuit, melee;
         [SerializeField] Transform enemy;
+        System.Action<Vector2> _exitOnMove;
         #region Getters
         IMoveOrders _moverOrders;
         IMoveOrders MoveOrders
@@ -40,14 +41,14 @@ namespace MovementSystem.Reaction
         {
             //Unit.EnteredMelee += Enter;
             //Unit.ExitedMelee += Exit;
-            MoveOrders.moving += (Vector2 pos) => Exit();
+            _exitOnMove ??= _ => Exit();
+            MoveOrders.moving += _exitOnMove;
             MoveOrders.pursuing += Moving;
         }
         protected override void DisableEvents()
         {
             if (Unit == null) return;
-            //Unit.EnteredMelee -= Enter;
-            //Unit.ExitedMelee -= Exit;
+            MoveOrders.moving -= _exitOnMove;
             MoveOrders.pursuing -= Moving;
         }
         void Melee(bool combat)

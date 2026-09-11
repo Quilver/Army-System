@@ -69,7 +69,7 @@ namespace MovementSystem
             if (Body == null || Body.linearVelocity.sqrMagnitude == 0) { }
             else
             {
-                float forwardAngle = Vector2.Angle(Vector2.right, Body.linearVelocity.normalized) * Mathf.Deg2Rad;
+                float forwardAngle = Vector2.Angle(Vector2.right, Body.linearVelocity.normalized);
                 _forwardSensor=BoxSensorVelocity(forwardAngle);
                 _rWhisker= BoxSensorVelocity(forwardAngle + _sideWhiskerAngle);
                 _lWhisker= BoxSensorVelocity(forwardAngle + 360 - _sideWhiskerAngle);
@@ -138,7 +138,7 @@ namespace MovementSystem
             else if (Body.linearVelocity.magnitude == 0) { }
             else
             {
-                float forwardAngle = Vector2.Angle(Vector2.right, Body.linearVelocity.normalized) * Mathf.Deg2Rad;
+                float forwardAngle = Vector2.Angle(Vector2.right, Body.linearVelocity.normalized);
                 DrawBoxSensorVelocity(0 + forwardAngle);
                 DrawBoxSensorVelocity(_sideWhiskerAngle + forwardAngle);
                 DrawBoxSensorVelocity(360 - _sideWhiskerAngle + forwardAngle);

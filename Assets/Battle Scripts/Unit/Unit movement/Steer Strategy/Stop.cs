@@ -43,7 +43,7 @@ namespace MovementSystem.Reaction
             }
             else if(state == UnitState.Moving || state == UnitState.Fighting || state== UnitState.Fleeing)
             {
-                
+                Exit();
             }
         }
         protected override void DisableEvents()

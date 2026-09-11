@@ -1,8 +1,6 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using static UnityEngine.UI.CanvasScaler;
 namespace ModelComponents
 {
     class MeleeTargeter : MonoBehaviour, IMeleeTargeter
@@ -20,8 +18,13 @@ namespace ModelComponents
         public List<ITakeDamage> Targets
         {
             get {
+                if (_inCombatWith == null)
+                    return new List<ITakeDamage>();
+                bool wasInCombat = _inCombatWith != null && _inCombatWith.Count > 0;
                 _inCombatWith.RemoveAll(item => item == null);
                 //_inCombatWith.RemoveAll(enemy => Vector2.Distance(transform.position, enemy.transform.position) > MaxRange);
+                if (wasInCombat && _inCombatWith.Count == 0)
+                    ChangedCombat?.Invoke(false);
                 return _inCombatWith;
             }
         }
@@ -47,9 +50,9 @@ namespace ModelComponents
         {
             var collUnit = collision.gameObject.GetComponent<ITakeDamage>();
             if(collUnit == null || !Targets.Contains(collUnit)) return;
-            int currentEnemyCount = Targets.Count;
-            Targets.Remove(collUnit);
-            if (_inCombatWith.Count == 0) ChangedCombat?.Invoke(false);
+            bool wasInCombat = _inCombatWith.Count > 0;
+            _inCombatWith.Remove(collUnit);
+            if (wasInCombat && _inCombatWith.Count == 0) ChangedCombat?.Invoke(false);
         }
     }
 }

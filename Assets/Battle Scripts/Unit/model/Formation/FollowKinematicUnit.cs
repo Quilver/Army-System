@@ -49,7 +49,6 @@ namespace ModelComponents
             float mass = Body.mass;
             float force = mass * maxSpeed;
             Friction.maxForce = force * GetComponent<UnitData>().UnitStats.MoveForce;
-            //_moveData.ApplyForce += (Vector2 force) => Body.AddForce(force);
             _mover.SetDirection += UpdateForces;
             
             Unit.GetComponent<IUnit>().UnitDestroyed += () => Destroy(this);

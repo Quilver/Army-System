@@ -54,7 +54,7 @@ namespace MovementSystem
             }
             if (_body != null || _body.linearVelocity.sqrMagnitude > 0)
             {
-                float forwardAngle = Vector2.Angle(Vector2.right, _body.linearVelocity.normalized) * Mathf.Deg2Rad;
+                float forwardAngle = Vector2.Angle(Vector2.right, _body.linearVelocity.normalized);
                 AddSensorVelocity(forwardAngle);
                 AddSensorVelocity(forwardAngle + 45);
                 AddSensorVelocity(forwardAngle + 315);
@@ -127,7 +127,7 @@ namespace MovementSystem
             if(_body==null)_body=GetComponentInParent<Rigidbody2D>();
             if (_body != null || _body.linearVelocity.sqrMagnitude > 0.05f)
             {
-                float forwardAngle = Vector2.Angle(Vector2.right, _body.linearVelocity.normalized) * Mathf.Deg2Rad;
+                float forwardAngle = Vector2.Angle(Vector2.right, _body.linearVelocity.normalized);
                 DrawBoxSensorVelocity(0 + forwardAngle, _body.linearVelocity.magnitude, _body.linearVelocity.normalized);
                 DrawBoxSensorVelocity(45 + forwardAngle, _body.linearVelocity.magnitude, _body.linearVelocity.normalized);
                 DrawBoxSensorVelocity(315 + forwardAngle, _body.linearVelocity.magnitude, _body.linearVelocity.normalized);
