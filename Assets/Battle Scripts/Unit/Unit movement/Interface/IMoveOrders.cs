@@ -4,12 +4,12 @@ using System.Collections.Generic;
 using UnityEngine;
 namespace MovementSystem
 {
-    public abstract class IMoveOrders: MonoBehaviour
+    public abstract class IMoveOrders : MonoBehaviour
     {
         #region Events
         //Unit reached position
         public event Action finishedMovement;
-        protected void FinishedMovement()=>finishedMovement?.Invoke();
+        protected void FinishedMovement() => finishedMovement?.Invoke();
         public static event Action<Transform> unitFinishedMovement;
         public void InvokeReached(Transform transform)
         {
@@ -36,10 +36,11 @@ namespace MovementSystem
             pursuingUnit?.Invoke(target, transform);
         }
         #endregion
-        public virtual void Halt()=>FinishedMovement();
+        public virtual void Halt() => FinishedMovement();
         public abstract void MoveTo(Vector2 position, Vector2? faceDirection = null);
         public abstract void MoveTo(Transform target);
         public abstract bool IsMoving { get; }
+        public abstract bool HasReachedPosition { get; }
         public abstract Vector2 TargetPosition { get; }
         public abstract Transform Target { get; }
         public abstract Vector2? FaceTowards { get; }

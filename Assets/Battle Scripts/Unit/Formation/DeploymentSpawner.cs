@@ -64,9 +64,10 @@ namespace Formation
                 _models[i]=model;
                 model.GetComponent<ModelComponents.IUnitData>().Setup(GetComponentInParent<IUnit>());
                 model.transform.position = _position.GetModelPosition(i);
-                model.GetComponent<ModelComponents.IModelFormation>().SetUp(transform.parent.GetComponentsInChildren<Rigidbody2D>(), _position.GetModelOffsetPosition(i), transform.parent);
+                model.GetComponent<ModelComponents.IModelFormation>().SetUp(transform, _position.GetModelOffsetPosition(i), transform.parent);
                 ModelComponents.ModelContainer.AddModel(model.transform);
             }
+            MovementSystem.UnitSeparation.IgnoreCollisionsWithin(transform.parent);
         }
 
     }

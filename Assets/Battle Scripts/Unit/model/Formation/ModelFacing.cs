@@ -18,16 +18,13 @@ namespace ModelComponents
             
         }
 
-        // Update is called once per frame
-        void Update()
+        void FixedUpdate()
         {
-            if(_data.Unit.State == UnitState.Moving && !_data.Unit.InMelee)
-            {
-                if (_modelBody.linearVelocity.sqrMagnitude > 0.0001f)
-                    transform.up = _modelBody.linearVelocity.normalized;
-            }
-            else
-                transform.up = _unitBody.transform.up;
+            if (_unitBody == null || _modelBody == null) return;
+
+            _modelBody.angularVelocity = 0f;
+            if (Mathf.Abs(Mathf.DeltaAngle(_modelBody.rotation, _unitBody.rotation)) > 0.1f)
+                _modelBody.MoveRotation(_unitBody.rotation);
         }
         Vector2 ShiftDirection(Vector2 forward)=> Vector3.MoveTowards(transform.up, forward, Time.deltaTime * 4);
     }

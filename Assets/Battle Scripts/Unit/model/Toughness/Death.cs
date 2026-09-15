@@ -14,6 +14,7 @@ namespace ModelComponents
         public override void Die()
         {
             UnitDeath();
+            GetComponent<FollowKinematicUnit>()?.DetachFromFormation();
             Destroy(GetComponent<ModelFacing>());
             Dead?.Invoke();
             sprite.color = Desaturate(0.4f, sprite.color);

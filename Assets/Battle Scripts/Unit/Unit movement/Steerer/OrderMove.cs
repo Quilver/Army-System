@@ -34,13 +34,21 @@ namespace MovementSystem
         public override Transform Target => _target;
         [SerializeField, Range(0.1f, 1)]
         float _maxReachedRange;
+        [SerializeField, Range(0.1f, 10f)]
+        float _maxReachedAngle = 2f;
+        public override bool HasReachedPosition =>
+            Vector2.Distance(transform.position, TargetPosition) < _maxReachedRange;
         bool ReachedPoint
         {
             get
             {
                 if (!IsMoving) return true;
-                else if (Vector2.Distance(transform.position, TargetPosition) < _maxReachedRange) return true;
-                return false;
+                if (!HasReachedPosition) return false;
+                if (!_faceTowards.HasValue) return true;
+
+                Vector2 facing = _faceTowards.Value - (Vector2)transform.position;
+                return facing.sqrMagnitude <= 0.0001f
+                    || Vector2.Angle(transform.up, facing) <= _maxReachedAngle;
             }
         }
         #endregion
