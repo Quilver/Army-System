@@ -8,9 +8,7 @@ namespace ModelComponents
     {
         [SerializeField] Transform Unit, Formation;
         [SerializeField, Range(0.1f, 2f)] float arriveTime = 0.25f;
-        [SerializeField, Range(0.1f, 5f)] float hardFollowRadius = 1f;
-        [SerializeField, Min(0.1f)] float arrivePriority = 3f;
-        [SerializeField, Min(0.1f)] float matchVelocityPriority = 1f;
+        [SerializeField, Range(1f, 3f)] float recoverySpeedMultiplier = 2f;
         [SerializeField, Min(0.01f)] float velocityBlendTime = 0.08f;
         [SerializeField, Min(0.001f)] float slotDeadband = 0.03f;
 
@@ -97,45 +95,37 @@ namespace ModelComponents
         {
             Vector2 toSlot = UnitPosition - (Vector2)transform.position;
             Vector2 matchVelocity = MatchUnitVelocityAtPosition();
-            Vector2 arriveVelocity = ArriveAtUnitPosition(matchVelocity);
             float displacement = toSlot.magnitude;
-            float arriveWeight = arrivePriority * Mathf.Clamp01(displacement / hardFollowRadius);
-            float matchWeight = matchVelocityPriority;
-            Vector2 desired = arriveWeight <= 0f
-                ? matchVelocity
-                : (arriveVelocity * arriveWeight + matchVelocity * matchWeight) / (arriveWeight + matchWeight);
+            float followerMaxSpeed = _maxSpeed * recoverySpeedMultiplier;
+            Vector2 desired = Vector2.ClampMagnitude(
+                matchVelocity + Vector2.ClampMagnitude(toSlot / arriveTime, followerMaxSpeed),
+                followerMaxSpeed);
 
             _commandedVelocity = Vector2.SmoothDamp(
                 _commandedVelocity,
                 desired,
                 ref _velocityBlend,
                 velocityBlendTime,
-                maxSpeed,
+                Mathf.Max(maxSpeed, followerMaxSpeed),
                 Time.fixedDeltaTime);
-            if (maxSpeed <= 0.0001f && displacement <= slotDeadband)
+            if (displacement <= slotDeadband && matchVelocity.sqrMagnitude <= 0.0001f)
+            {
                 _commandedVelocity = Vector2.zero;
+                _velocityBlend = Vector2.zero;
+            }
             if (Friction.connectedBody != null)
                 Friction.connectedBody.linearVelocity = _commandedVelocity;
         }
 
-        Vector2 ArriveAtUnitPosition(Vector2 matchVelocity)
-        {
-            Vector2 toSlot = UnitPosition - (Vector2)transform.position;
-            if (toSlot.sqrMagnitude <= slotDeadband * slotDeadband)
-                return matchVelocity;
-            return matchVelocity + Vector2.ClampMagnitude(toSlot / arriveTime, Mathf.Max(_maxSpeed, 1f));
-        }
-
         Vector2 MatchUnitVelocityAtPosition()
         {
-            var unitBody = Unit == null ? null : Unit.GetComponent<Rigidbody2D>();
-            if (unitBody == null)
+            if (_unitBody == null)
                 return Vector2.zero;
 
             Vector2 offset = UnitPosition - (Vector2)Unit.position;
-            float angularVelocity = unitBody.angularVelocity * Mathf.Deg2Rad;
+            float angularVelocity = _unitBody.CurrentAngularVelocity * Mathf.Deg2Rad;
             Vector2 tangentialVelocity = new Vector2(-offset.y, offset.x) * angularVelocity;
-            return unitBody.linearVelocity + tangentialVelocity;
+            return _unitBody.CurrentVelocity + tangentialVelocity;
         }
 
         Vector2 Facing

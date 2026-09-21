@@ -18,6 +18,8 @@ namespace MovementSystem
         [SerializeField, Range(15f, 180f)] float turnInPlaceAngle = 60f;
         [SerializeField, Range(0f, 15f)] float turnHysteresis = 5f;
         [SerializeField, Min(0.1f)] float minimumTurnRadius = 0.5f;
+        [SerializeField, Range(1f, 3f)] float turnSpeedMultiplier = 1.5f;
+        [SerializeField, Range(0.25f, 1f)] float wheelSpeedFraction = 0.75f;
         UnitSteering steering;
         UnitCohesion cohesion;
         Formation.IShape _formation;
@@ -32,6 +34,7 @@ namespace MovementSystem
 
         public event System.Action<Vector2, float> MoveUpdate;
         public Vector2 CurrentVelocity { get; private set; }
+        public float CurrentAngularVelocity { get; private set; }
         public UnitMovementRegime MovementRegime { get; private set; }
 
         void Awake()
@@ -89,6 +92,7 @@ namespace MovementSystem
                 MoveUpdate?.Invoke(Vector2.zero, steering.MaxSpeed);
                 ClearSeparationVelocity();
                 CurrentVelocity = Vector2.zero;
+                CurrentAngularVelocity = 0f;
                 return;
             }
 
@@ -107,7 +111,9 @@ namespace MovementSystem
                 _ => (Vector2)_body.transform.up * desiredVelocity.magnitude
             };
             Vector2 velocity = locomotionVelocity
-                + (cohesion == null ? Vector2.zero : cohesion.GiveGround)
+                + (cohesion == null || _unit == null || !_unit.InMelee
+                    ? Vector2.zero
+                    : cohesion.GiveGround)
                 + ConsumeSeparationVelocity();
             velocity = Vector2.ClampMagnitude(velocity, steering.MaxSpeed);
 
@@ -119,10 +125,15 @@ namespace MovementSystem
                 float turnRate = MovementRegime == UnitMovementRegime.Free
                     ? maxTurnRate
                     : FormationLimitedTurnRate(MovementRegime == UnitMovementRegime.Turn
-                        ? steering.MaxSpeed
-                        : desiredVelocity.magnitude);
+                        ? steering.MaxSpeed * turnSpeedMultiplier
+                        : desiredVelocity.magnitude * wheelSpeedFraction);
                 float angle = Mathf.MoveTowardsAngle(_body.rotation, targetAngle, turnRate * Time.fixedDeltaTime);
+                CurrentAngularVelocity = Mathf.DeltaAngle(_body.rotation, angle) / Time.fixedDeltaTime;
                 _body.MoveRotation(angle);
+            }
+            else
+            {
+                CurrentAngularVelocity = 0f;
             }
 
             float moveSpeed = velocity.magnitude;
@@ -154,6 +165,21 @@ namespace MovementSystem
             if (_formation != null)
                 formationRadius = Mathf.Max(formationRadius, _formation.SizeOfFormation.magnitude * 0.5f);
             return Mathf.Min(maxTurnRate, speed / formationRadius * Mathf.Rad2Deg);
+        }
+
+        public Vector2 PredictLocomotionVelocity(Vector2 facing, float speed, float horizon)
+        {
+            float signedError = Vector2.SignedAngle(_body.transform.up, facing);
+            float facingError = Mathf.Abs(signedError);
+            bool mustTurn = facingError >= turnInPlaceAngle
+                || (MovementRegime == UnitMovementRegime.Turn
+                    && facingError > turnInPlaceAngle - turnHysteresis);
+            float turnRate = FormationLimitedTurnRate(mustTurn
+                ? steering.MaxSpeed * turnSpeedMultiplier
+                : speed * wheelSpeedFraction);
+            float predictedTurn = Mathf.Clamp(signedError, -turnRate * horizon, turnRate * horizon);
+            Vector2 predictedForward = Quaternion.AngleAxis(predictedTurn, Vector3.forward) * _body.transform.up;
+            return predictedForward * speed;
         }
 
         public void AddSeparationVelocity(Vector2 velocity)

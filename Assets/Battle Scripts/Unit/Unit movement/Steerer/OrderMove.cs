@@ -84,6 +84,17 @@ namespace MovementSystem
             {
                 return;
             }
+            IUnit targetUnit = target == null ? null : target.GetComponentInParent<IUnit>();
+            Army ownArmy = GetComponentInParent<Army>();
+            Army targetArmy = targetUnit == null ? null : targetUnit.GetComponentInParent<Army>();
+            if (targetUnit == null
+                || targetUnit == Unit
+                || ownArmy == null
+                || targetArmy == null
+                || targetArmy == ownArmy)
+            {
+                return;
+            }
             _orderedMove = true;
             _faceTowards = null;
             _target = target;

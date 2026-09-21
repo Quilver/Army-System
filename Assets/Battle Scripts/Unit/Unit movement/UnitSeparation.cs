@@ -18,11 +18,13 @@ namespace MovementSystem
         IUnit _unit;
         UnitBody _body;
         Collider2D _formationCollider;
+        Army _army;
 
         void Awake()
         {
             _unit = GetComponentInParent<IUnit>();
             _body = GetComponent<UnitBody>();
+            _army = GetComponentInParent<Army>();
             if (_unit != null)
             {
                 Rigidbody2D unitBody = _unit.GetComponent<Rigidbody2D>();
@@ -47,13 +49,19 @@ namespace MovementSystem
 
         void FixedUpdate()
         {
+            if (_formationCollider == null)
+                _formationCollider = FindFormationCollider();
             if (_formationCollider == null || !isActiveAndEnabled)
                 return;
 
             for (int i = 0; i < Active.Count; i++)
             {
                 UnitSeparation other = Active[i];
-                if (other == null || other == this || other._formationCollider == null)
+                if (other == null || other == this)
+                    continue;
+                if (other._formationCollider == null)
+                    other._formationCollider = other.FindFormationCollider();
+                if (other._formationCollider == null)
                     continue;
                 if (GetInstanceID() > other.GetInstanceID())
                     continue;
@@ -92,17 +100,38 @@ namespace MovementSystem
         }
 
         bool IsEngaged(UnitSeparation other) =>
-            (_unit != null && _unit.InMelee) || (other._unit != null && other._unit.InMelee);
+            _army != null
+            && other._army != null
+            && _army != other._army
+            && _unit != null
+            && other._unit != null
+            && _unit.InMelee
+            && other._unit.InMelee;
 
         UnitSeparation SelectYieldingUnit(UnitSeparation other)
         {
             float thisSpeed = _body == null ? 0f : _body.CurrentVelocity.sqrMagnitude;
             float otherSpeed = other._body == null ? 0f : other._body.CurrentVelocity.sqrMagnitude;
-            if (thisSpeed > otherSpeed + 0.0001f)
+            bool thisMoving = thisSpeed > 0.0001f;
+            bool otherMoving = otherSpeed > 0.0001f;
+            if (thisMoving && !otherMoving)
                 return this;
-            if (otherSpeed > thisSpeed + 0.0001f)
+            if (otherMoving && !thisMoving)
                 return other;
             return GetInstanceID() > other.GetInstanceID() ? this : other;
+        }
+
+        Collider2D FindFormationCollider()
+        {
+            if (_unit == null)
+                return null;
+            Rigidbody2D unitBody = _unit.GetComponent<Rigidbody2D>();
+            foreach (var collider in _unit.GetComponentsInChildren<BoxCollider2D>())
+            {
+                if (collider.attachedRigidbody == unitBody)
+                    return collider;
+            }
+            return null;
         }
 
         public static void IgnoreCollisionsWithin(Transform root)

@@ -15,6 +15,7 @@ namespace MovementSystem
         readonly Dictionary<MonoBehaviour, Vector2> _slotDisplacements = new();
         readonly List<MonoBehaviour> _staleSlots = new();
         Vector2 _averageDisplacement;
+        float _averageDisorder;
 
         public Vector2 AverageDisplacement => _averageDisplacement;
         public Vector2 GiveGround
@@ -33,7 +34,7 @@ namespace MovementSystem
         {
             get
             {
-                float displacement = Mathf.Max(0f, _averageDisplacement.magnitude - displacementThreshold);
+                float displacement = Mathf.Max(0f, _averageDisorder - displacementThreshold);
                 return Mathf.Lerp(1f, minimumCohesion, Mathf.Clamp01(displacement / fullDisplacement));
             }
         }
@@ -66,8 +67,17 @@ namespace MovementSystem
                 _slotDisplacements.Remove(slot);
 
             Vector2 target = _slotDisplacements.Count == 0 ? Vector2.zero : total / _slotDisplacements.Count;
+            float disorder = 0f;
+            if (_slotDisplacements.Count > 0)
+            {
+                foreach (var slot in _slotDisplacements)
+                    disorder += (slot.Value - target).magnitude;
+                disorder /= _slotDisplacements.Count;
+            }
+
             float blend = 1f - Mathf.Exp(-Time.fixedDeltaTime / displacementSmoothing);
             _averageDisplacement = Vector2.Lerp(_averageDisplacement, target, blend);
+            _averageDisorder = Mathf.Lerp(_averageDisorder, disorder, blend);
         }
     }
 }
