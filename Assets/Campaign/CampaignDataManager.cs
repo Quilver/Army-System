@@ -1,6 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
-using UnityEditor;
+//using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngineInternal;
@@ -14,7 +14,6 @@ namespace Campaign
         bool LoadData, SaveData;
         [SerializeField]
         CampaignData data;
-        
         public static CampaignData Data
         {
             get
@@ -33,6 +32,7 @@ namespace Campaign
             }
         }
         CampaignDataManager _manager;
+        
         public static CampaignDataManager instance { get; private set; }
         FileDataHandler SaverLoader;
         private void Awake()
@@ -74,5 +74,6 @@ namespace Campaign
         {
             SaveGame();
         }
+
     }
 }

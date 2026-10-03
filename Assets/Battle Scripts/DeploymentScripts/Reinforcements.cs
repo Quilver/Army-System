@@ -5,14 +5,11 @@ using UnityEngine;
 
 public class Reinforcements : MonoBehaviour
 {
-    [SerializeField, Range(1, 120)]
-    float firstDeploymentTime;
-    [SerializeField]
-    bool PlayerReinforcements;
     [SerializeField]
     Vector2 DeployTo;
     [SerializeField]
     GameObject unitsToDeploy;
+    [SerializeField]
     Army army;
     private void OnDrawGizmosSelected()
     {
@@ -20,27 +17,13 @@ public class Reinforcements : MonoBehaviour
         Gizmos.DrawLine(DeployTo, transform.position);
         Gizmos.DrawCube(DeployTo, new(8, 2));
     }
-    void Start()
+    bool CanReinforce
     {
-        if (PlayerReinforcements)
-            army = Battle.Instance.player;
-        else
-            army = Battle.Instance.enemy1;
-        Invoke("Reinforce", firstDeploymentTime);
-        
+        get => overlaps == 0;
     }
-    void Reinforce()
+    public void Spawn()
     {
-        if (overlaps == 0)
-            Spawn();
-        else blah += Spawn;
-    }
-    void Spawn()
-    {
-        var unit = GameObject.Instantiate(unitsToDeploy, army.transform);
-        unit.transform.position = transform.position;
-        army.AddUnit(unit.GetComponent<UnitBase>());
-        Destroy(gameObject);
+        throw new NotImplementedException();
     }
     [SerializeField]
     int overlaps = 0;

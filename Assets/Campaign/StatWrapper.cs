@@ -5,25 +5,6 @@ using UnityEngine;
 namespace Campaign
 {
     [System.Serializable]
-    public class StatWrapper
-    {
-        [Range(0, 1000)]
-        public int XP = 0;
-        [Range(5, 50)]
-        public int CostToField = 10;
-        public StatSystem.UnitStats statBase;
-        [SerializeField]
-        SerializableDictionary<string, StatSystem.Stat> statsGained;
-        public void Update()
-        {
-
-        }
-        public void Load(UnitStats stats)
-        {
-
-        }
-    }
-    [System.Serializable]
     class SerializableDictionary<TKey, TValue>: Dictionary<TKey, TValue>, ISerializationCallbackReceiver
     {
         [SerializeField] List<TKey> keys;

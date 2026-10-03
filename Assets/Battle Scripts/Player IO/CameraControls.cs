@@ -20,11 +20,12 @@ namespace PlayerControls
         float minOrtho = 5.0f;
         [SerializeField, Range(10, 30)]
         float maxOrtho = 20.0f;
-        Player inputs;
+        PlayerInputMap inputs;
         void Awake()
         {
             targetOrtho = Camera.main.orthographicSize;
-            inputs = new Player();
+            inputs = new PlayerInputMap();
+            
         }
         private void OnEnable()
         {
@@ -55,7 +56,9 @@ namespace PlayerControls
         float scroll;
         void ZoomCamera(InputAction.CallbackContext context)
         {
-            scroll = context.ReadValue<float>();
+            scroll = (context.ReadValue<float>() > 0)? 1 : -1;
+            if (context.ReadValue<float>() == 0) scroll = 0;
+            //scroll = context.ReadValue<float>();
         }
         Vector2 direction= Vector2.zero;
         void MoveCamera(InputAction.CallbackContext context)

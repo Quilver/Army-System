@@ -18,6 +18,7 @@ namespace Campaign
                 try
                 {
                     string dataToLoad = "";
+                    Debug.Log("Loading at: " + fullPath);
                     using (FileStream stream = new FileStream(fullPath, FileMode.Open))
                     {
                         using (StreamReader reader = new StreamReader(stream))

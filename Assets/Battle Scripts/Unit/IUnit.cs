@@ -1,32 +1,56 @@
 using System.Collections;
 using System.Collections.Generic;
-using UnitMovement;
 using UnityEngine;
-//Interface for the unit during the battles
-public abstract class IUnit : MonoBehaviour
+using UnityEngine.Events;
+
+public abstract class IUnit: MonoBehaviour
 {
-    //Stores the information around the unit
-    public StatSystem.UnitStats Stats;
-    //Represents if the unit is Idle, Moving, Fighting
-    protected UnitState _state;
-    public UnitState State {
-        get { return _state; }
-        set
-        {
-            _state = value;
+    public event System.Action<UnitState> StateChanged;
+    public UnityEvent<Transform> DeadModel;
+    public event System.Action UnitDestroyed, EnteredMelee, ExitedMelee;
+    public static event System.Action<IUnit> OnUnitDestroyed;
+    static void InvokeUnitDestroyed(IUnit unit)
+    {
+        unit.UnitDestroyed?.Invoke();
+        OnUnitDestroyed?.Invoke(unit);
+    }
+    public abstract StatSystem.Refactor.IUnitStatBlock Stats { get; set; }
+    public abstract UnitState State { get; set; }
+    public abstract bool InMelee { get; }
+    
+    
+    
+    protected void ChangeState(UnitState state)=>StateChanged?.Invoke(state); 
+    protected void Melee(bool enter)
+    {
+        if(enter)EnteredMelee?.Invoke();
+        else ExitedMelee?.Invoke();
+    }
+    public void KillUnit()
+    {
+        InvokeUnitDestroyed(this);
+        Destroy(gameObject);
+    }
+    private void OnDestroy()
+    {
+        
+    }
+    //public static LayerMask walkMask = 1 << 3 | LayerMask.GetMask("Unit") | LayerMask.GetMask("Terrain");
+    LayerMask walkMask()=> 1 << 3 | LayerMask.GetMask("Unit") | LayerMask.GetMask("Terrain");
+    LayerMask sightMask()=> LayerMask.GetMask("Unit") | LayerMask.GetMask("Terrain");
+    Formation.IShape _formation;
+    public RaycastHit2D UnitRaycast(Vector2 atPosition, Vector2 direction, bool shooting = false)
+    {
+        if (_formation == null) {
+            _formation = GetComponentInChildren<Formation.IShape>();
         } 
+        Vector3 size = _formation.SizeOfFormation;
+        float angle = Vector2.SignedAngle(Vector2.up, direction.normalized);
+        if(shooting)
+            return Physics2D.BoxCast(atPosition, size, angle, direction, (direction - atPosition).magnitude, sightMask());
+        return Physics2D.BoxCast(atPosition, size, angle, direction, (direction - atPosition).magnitude, walkMask());
+
+
     }
-    //Holds the units current position information, and logic for moving 
-    public IMovement Movement { get; protected set; }
-    //Handles damage, melee and ranged combat
-    public ICombat Combat { get; protected set; }
-    private void Start()
-    {
-        Init();
-    }
-    public abstract void Init();
-    public override string ToString()
-    {
-        return Stats.ToString();
-    }
+
 }

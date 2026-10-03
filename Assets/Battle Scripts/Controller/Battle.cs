@@ -1,25 +1,68 @@
-﻿using System.Collections;
+﻿using Campaign;
+using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
+using UnityEngine.Events;
+using UnityEngine.SceneManagement;
 
 public class Battle : MonoBehaviour {
     public static Battle Instance;
-    public InfluenceMap.HighLevelMap highLevelMap;
-    public Dictionary<UnitBase, Army> unitArmy;
-    public Army player, enemy1;
+    public event Action Deploy;
+    [SerializeField]
+    UnityEvent _Deploy;
+    public Army player, enemy;
+    [SerializeField]
+    bool UseDeployedTroops;
+    [ExecuteAlways]
     void Awake () {
         if(Instance != null)
         {
+            Debug.LogError("Multiple battle controllers");
             return;
         }
         else
         {
             Instance = this;
         }
-        unitArmy = new Dictionary<UnitBase, Army>();
+        UpdateToBattleData();
     }
-    public bool Enemies(UnitBase unit1, UnitBase unit2)
+    #region DeploymentSytem
+    [SerializeField]
+    int invalidDeployments = 0;
+    public void StartBattle()
     {
-        return unitArmy[unit1] != unitArmy[unit2];
+        if(invalidDeployments!=0) return;
+        _Deploy?.Invoke();
+        Deploy?.Invoke();
+    }
+    public void UpdateUnitDeployment(bool validDeployment)
+    {
+        if (validDeployment) invalidDeployments--;
+        else invalidDeployments++;
+    }
+    #endregion
+    void UpdateToBattleData()
+    {
+        if (!UseDeployedTroops) return;
+        Debug.Log("checking deployment system");
+        throw new NotImplementedException();
+    }
+    public bool Enemies(IUnit unit1, IUnit unit2)
+    {
+        return unit1.transform.parent != unit2.transform.parent;
+    }
+    public event System.Action<bool> BattleOver;
+    public void EndBattle(bool win)
+    {
+        BattleOver?.Invoke(win);
+        if (win)
+            SceneManager.LoadScene(2);
+        else
+        {
+            Destroy(Campaign.CampaignDataManager.instance.gameObject);
+            SceneManager.LoadScene(0);
+        }
     }
 }
