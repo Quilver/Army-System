@@ -6,19 +6,32 @@ using UnityEngine;
 using UnityEngine.AI;
 namespace MovementSystem
 {
-    class NavPathfinder : MonoBehaviour, IPathfinder
+    public class NavPathfinder : MonoBehaviour, IPathfinder
     {
         //Needed for pathfinder, I don't know why it is this value though
         public static int MASK = -1;
         NavMeshPath path;
-        [SerializeField]
-        LayerMask _layerMask;
+        [SerializeField] LayerMask _layerMask;
+        Vector2 _navigationSize;
+
+        void Awake()
+        {
+            if (_layerMask.value == 0)
+                _layerMask = LayerMask.GetMask("Terrain", "Water", "Water/flat impassible terrain", "Impassable Terrain", "Impassable");
+        }
+
+        public void SetNavigationSize(Vector2 size)
+        {
+            _navigationSize = size;
+        }
+
         public bool CanMoveTo(Vector2 location)
         {
             Vector2 direction = location - (Vector2)transform.position;
             float angle = Vector2.SignedAngle(Vector2.up, direction);
             float distance = direction.magnitude;
-            var hit = Physics2D.BoxCast(transform.position, transform.localScale * 0.5f, angle, direction, distance, _layerMask);
+            Vector2 size = _navigationSize.sqrMagnitude > 0.0001f ? _navigationSize : (Vector2)transform.localScale * 0.5f;
+            var hit = Physics2D.BoxCast(transform.position, size, angle, direction, distance, _layerMask);
             return !hit;
         }
         public List<Vector2> GetPath(Vector2 position)
@@ -29,9 +42,12 @@ namespace MovementSystem
                 route.Add(position);
                 return route;
             }
-            path = new();
-            //agent.CalculatePath(destination, path);
-            NavMesh.CalculatePath(transform.parent.position, position, MASK, path);
+            path = new NavMeshPath();
+            Vector3 origin = transform.parent != null ? transform.parent.position : transform.position;
+            if (!NavMesh.CalculatePath(origin, position, MASK, path)
+                || path.status == NavMeshPathStatus.PathInvalid
+                || path.corners.Length == 0)
+                return new List<Vector2>();
             return Convert(path.corners);
         }
         List<Vector2> Convert(Vector3[] path)
@@ -45,7 +61,7 @@ namespace MovementSystem
         bool DrawGizmo;
         private void OnDrawGizmos()
         {
-            if(!DrawGizmo || path == null)
+            if(!DrawGizmo || path == null || path.corners.Length == 0)
                 return;
             var corner = path.corners[0];
             for (int i = 1; i < path.corners.Length; i++)
