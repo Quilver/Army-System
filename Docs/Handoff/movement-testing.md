@@ -72,9 +72,7 @@ Compute these in the overlay or in the CSV analysis:
 ## Test scenes
 
 - Levels in `Assets/Resources/Levels/` for realistic layouts, terrain and choke points.
-- `Level 1 Troop Test` with `TroopBenchmarkHarness` (auto-started in that scene). It builds the 19 benchmark cases from
-  `TroopBenchmarkCases.cs`, side by side, with pause, single-step, slow motion, case focus, gizmos and an inspection
-  panel. The Flock Boid Showcase scene was removed.
+- `TroopSoldierShowcase` for controlled setups.
 - Use the diagnostics seed for runs that are compared before and after a fix.
 
 ## Features to test

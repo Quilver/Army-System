@@ -26,6 +26,9 @@ public abstract class IUnit: MonoBehaviour
         if(enter)EnteredMelee?.Invoke();
         else ExitedMelee?.Invoke();
     }
+    // Raises the destroyed events without destroying the object (a routed Troop counts as destroyed, spec §5.4).
+    protected void RaiseUnitDestroyed() => InvokeUnitDestroyed(this);
+
     public void KillUnit()
     {
         InvokeUnitDestroyed(this);

@@ -20,6 +20,10 @@
 - Keep changes scoped to source assets. Do not commit or rely on generated/editor directories such as `Library/`, `Temp/`, `Obj/`, `Build/`, `Builds/`, `Logs/`, `UserSettings/`, `.vs/`, or generated solution/project files.
 - When changing compute-shader behavior, check the paired `.compute`, C# binding, and serialized scene/prefab assets; the collision and trajectory systems share GPU buffers managed through `CollisionMapManager`.
 
+## Specification Log
+
+- Record every change to battle behaviour, tuning or UI, and every assumption made to fill a gap in `Docs/Battle/specifications.md`, as a new entry at the top of `Docs/Battle/SpecificationUpdate.md` (next SU-number, marked Decision or Assumption). Do not edit `specifications.md` itself unless asked.
+
 ## Verification
 
 - After C# or asset changes, let Unity finish importing and compiling, then check the Console for errors before running the affected scene.

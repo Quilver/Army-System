@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// A player order to stand in a battle line: turns the troop to face the line, and marches to the line centre. While
-// the troop is stationary after the order, its soldiers fill a line along its local Y axis (see SoldierFieldPlanner).
-// The order stays active until the troop arrives or is overridden.
+// A player order to stand in a battle line (spec §3.3 trigger 2, §6.2): the troop turns to the ordered facing, marches its
+// pivot to the line centre, and holds the line while stationary (HasIdleLine). The order lasts until the player gives
+// the troop another order, or the troop breaks.
 public sealed class TroopLineOrder
 {
     readonly Troop _troop;
@@ -17,41 +17,30 @@ public sealed class TroopLineOrder
 
     public bool IsActive { get; private set; }
 
-    // True from the moment a line order is given until the troop arrives: the soldiers hold a line shape while idle.
-    public bool HasIdleLine { get; private set; }
+    // The troop holds the ordered line whenever it is stationary under the order.
+    public bool HasIdleLine => IsActive;
+
+    public Vector2 Center { get; private set; }
+    public Vector2 Facing { get; private set; } = Vector2.right;
+    public float Length { get; private set; }
 
     public void Cancel() => IsActive = false;
 
-    // Reached the destination: soldiers relax back into a blob and an ordered (non-threat) formation is dropped.
-    public void CompleteOnArrival()
+    // facing is the ordered front direction; length is already clamped by the caller.
+    public void Order(Vector2 center, Vector2 facing, float length)
     {
-        if (!IsActive) return;
-        IsActive = false;
-        HasIdleLine = false;
-        _troop.FormationState.ClearOrderedFormation();
+        if (facing.sqrMagnitude < 0.001f) facing = _troop.transform.right;
+        facing.Normalize();
+
+        Center = center;
+        Facing = facing;
+        Length = Mathf.Max(0.1f, length);
+        IsActive = true;
+
+        RotateKeepingSoldiersInPlace(facing);
     }
 
-    public void Order(Vector2 center, Vector2 tangent, float width, Vector2 enemyHint)
-    {
-        if (tangent.sqrMagnitude < 0.001f)
-            tangent = _troop.LineAxis;
-        tangent.Normalize();
-
-        _troop.LineWidth = Mathf.Clamp(width, _troop.MinimumLineWidth, _troop.Radius * 1.8f);
-        IsActive = true;
-        HasIdleLine = true;
-
-        Vector2 forward = new(tangent.y, -tangent.x);
-        Vector2 towardEnemy = enemyHint - center;
-        if (towardEnemy.sqrMagnitude > 0.001f && Vector2.Dot(forward, towardEnemy) < 0f)
-            forward = -forward;
-
-        RotateKeepingSoldiersInPlace(forward);
-        _troop.MoveTo(center);
-        IsActive = true;
-    }
-
-    // Rotates the troop transform without moving any soldier in world space.
+    // Rotates the troop transform so its local X axis is the facing, without moving any soldier in world space.
     void RotateKeepingSoldiersInPlace(Vector2 forward)
     {
         Transform transform = _troop.transform;

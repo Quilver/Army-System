@@ -36,12 +36,12 @@ public sealed class TroopSoldierShowcase : MonoBehaviour
     void EnsureTroopProfile()
     {
         if (_troopProfile != null) return;
-        _troopProfile = TroopProfile.CreateRuntimeProfile(100f, new List<TroopProfileCount>
+        _troopProfile = TroopProfile.CreateRuntimeProfile(CombatStatLimits.Default, new List<TroopProfileCount>
         {
             new() { Profile = _squareProfile, Count = 12 },
             new() { Profile = _triangleProfile, Count = 6 },
             new() { Profile = _circleProfile, Count = 8 }
-        }, 16.5f, 22f);
+        }, 16.5f);
         _ownsTroopProfile = true;
     }
 
@@ -70,9 +70,9 @@ public sealed class TroopSoldierShowcase : MonoBehaviour
     void IssueOrders()
     {
         if (_leftTroop == null || _lowerLeftTroop == null || _rightTroop == null) return;
-        _leftTroop.OrderLine(new Vector2(-0.5f, 13.5f), Vector2.up, 22f, new Vector2(0.5f, 0f));
-        _lowerLeftTroop.OrderLine(new Vector2(-0.5f, -13.5f), Vector2.up, 22f, new Vector2(0.5f, 0f));
-        _rightTroop.OrderLine(new Vector2(0.5f, 0f), Vector2.up, 22f, new Vector2(-0.5f, 0f));
+        _leftTroop.OrderLine(new Vector2(-0.5f, 13.5f), Vector2.right, _leftTroop.NaturalLineLength);
+        _lowerLeftTroop.OrderLine(new Vector2(-0.5f, -13.5f), Vector2.right, _lowerLeftTroop.NaturalLineLength);
+        _rightTroop.OrderLine(new Vector2(0.5f, 0f), Vector2.left, _rightTroop.NaturalLineLength);
     }
 
     void OnGUI()
@@ -83,7 +83,7 @@ public sealed class TroopSoldierShowcase : MonoBehaviour
         GUILayout.Label("Profiles use square, triangle, and circle sprites.");
         GUILayout.Label("Soldiers steer toward their line, align, cohere, and separate.");
         if (_leftTroop != null && _rightTroop != null)
-            GUILayout.Label($"Shock A: {_leftTroop.Shock:0}/{_leftTroop.Morale:0}   Enemy: {_rightTroop.LivingSoldierCount} soldiers");
+            GUILayout.Label($"Shock A: {_leftTroop.Shock:0}/{_leftTroop.EffectiveMorale:0}   Enemy: {_rightTroop.LivingSoldierCount} soldiers");
         GUILayout.EndArea();
     }
 

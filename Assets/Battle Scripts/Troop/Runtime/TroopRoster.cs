@@ -38,7 +38,34 @@ public sealed class TroopRoster : MonoBehaviour
 
     internal void Clear() => _soldiers.Clear();
 
-    public bool Contains(SoldierAgentState soldier) => _soldiers.Contains(soldier);
+    // Bruise heals for every soldier. Runs once per frame from Troop.Update.
+    internal void TickHealing(float deltaTime, float healPerSecond)
+    {
+        for (int i = 0; i < _soldiers.Count; i++)
+            _soldiers[i].TickHealing(deltaTime, healPerSecond);
+    }
+
+    public bool Contains(SoldierAgentState soldier) => soldier != null && _soldiers.Contains(soldier);
+
+    // Living soldier furthest from the pivot, measured in troop-local space (for blob footprints).
+    public float FurthestLivingDistance()
+    {
+        float furthest = 0f;
+        foreach (var soldier in _soldiers)
+            if (soldier.IsAlive) furthest = Mathf.Max(furthest, soldier.Position.magnitude);
+        return furthest;
+    }
+
+    // True when any soldier carries a ranged weapon (spec §4.7, Q-51).
+    public bool HasRangedSoldiers
+    {
+        get
+        {
+            foreach (var soldier in _soldiers)
+                if (soldier.IsAlive && soldier.Profile != null && soldier.Profile.RangedWeapon != null) return true;
+            return false;
+        }
+    }
 
     // Replaces the soldiers with one per unit in the composition, scattered in a gaussian blob around the pivot.
     internal void Spawn(IReadOnlyList<TroopProfileCount> composition)
@@ -72,6 +99,22 @@ public sealed class TroopRoster : MonoBehaviour
             if (soldier.IsAlive && soldier.Profile != null)
                 max = Mathf.Max(max, valueSelector(soldier.Profile));
         return max;
+    }
+
+    // Lowest integer stat over all soldiers with a profile, dead ones included so Move does not change when soldiers die.
+    // Returns zero when there are none.
+    public int MinProfileValue(System.Func<SoldierProfile, int> valueSelector)
+    {
+        bool found = false;
+        int min = 0;
+        foreach (var soldier in _soldiers)
+        {
+            if (soldier.Profile == null) continue;
+            int value = valueSelector(soldier.Profile);
+            min = found ? Mathf.Min(min, value) : value;
+            found = true;
+        }
+        return min;
     }
 
     public float DistanceToNearestSoldier(Vector2 worldPosition)
@@ -111,9 +154,10 @@ public sealed class TroopRoster : MonoBehaviour
     Vector2 RandomBlobOffset()
     {
         float radius = _troop.Radius;
-        Vector2 direction = Random.insideUnitCircle.normalized;
+        ITroopRandom random = _troop.TroopRandom;
+        Vector2 direction = random.InsideUnitCircle().normalized;
         if (direction.sqrMagnitude < 0.001f) direction = Vector2.up;
-        float gaussianRadius = Mathf.Sqrt(-2f * Mathf.Log(Mathf.Max(0.0001f, Random.value))) * radius * 0.22f;
+        float gaussianRadius = Mathf.Sqrt(-2f * Mathf.Log(Mathf.Max(0.0001f, random.Value()))) * radius * 0.22f;
         return direction * Mathf.Min(gaussianRadius, radius * 0.85f);
     }
 }

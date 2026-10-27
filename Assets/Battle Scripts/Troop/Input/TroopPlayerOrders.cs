@@ -1,22 +1,24 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-// Controller for player control of troops: reads the mouse, then delegates to selection and order planning.
+// Controller for player control of troops (spec §6): reads the new Input System directly, then delegates to selection
+// and order planning. Every threshold is in screen pixels, so it does not depend on zoom.
+//   LMB click / drag      select (box select from BoxSelectMinDragPixels); Shift toggles
+//   RMB click / drag      Pursue (on an enemy), Move (on ground), or a battle line (from OrderDragMinPixels)
+//   Alt                   force unlink of chained troops / keep reserves from linking (spec §6.3)
+// The first selected troop is shown on the scene's unit card (TroopSelectionCard).
 public sealed class TroopPlayerOrders : MonoBehaviour
 {
     [SerializeField] int _playerTeamId;
-    [SerializeField, Min(1f)] float _selectionDragThreshold = 10f;
-    [SerializeField, Min(0.1f)] float _clickSelectionRadius = 0.6f;
-    [SerializeField, Min(0.1f)] float _clickOrderThreshold = 0.5f;
 
     readonly TroopSelection _selection = new();
-    readonly System.Collections.Generic.List<Vector2> _previewDots = new();
+    readonly TroopSelectionCard _card = new();
     TroopOrderPlanner _planner;
     Camera _camera;
     Vector2? _selectionStart;
     Vector2? _orderStart;
     Vector2 _mousePosition;
-    bool _addToSelection;
+    bool _toggleSelection;
 
     void Awake()
     {
@@ -33,17 +35,18 @@ public sealed class TroopPlayerOrders : MonoBehaviour
         _selection.PlayerTeamId = _playerTeamId;
         _selection.Refresh();
         _selection.RemoveDestroyed();
+        _card.Show(_selection.Selected);
 
         var mouse = Mouse.current;
         if (mouse == null) return;
         _mousePosition = mouse.position.ReadValue();
-        bool overHud = TroopScreenSpace.OverHud(_mousePosition);
+        bool overHud = TroopScreenSpace.OverHud(_mousePosition) || _card.Contains(_mousePosition);
         _selection.UpdateHover(overHud ? null : ScreenToWorld(_mousePosition));
 
         if (mouse.leftButton.wasPressedThisFrame && !overHud)
         {
             _selectionStart = _mousePosition;
-            _addToSelection = IsShiftHeld();
+            _toggleSelection = IsShiftHeld();
         }
         if (mouse.leftButton.wasReleasedThisFrame && _selectionStart.HasValue)
         {
@@ -55,8 +58,7 @@ public sealed class TroopPlayerOrders : MonoBehaviour
             _orderStart = _mousePosition;
         if (mouse.rightButton.wasReleasedThisFrame && _orderStart.HasValue)
         {
-            _planner.FinishOrder(
-                ScreenToWorld(_orderStart.Value), ScreenToWorld(_mousePosition), _clickOrderThreshold, _clickSelectionRadius);
+            _planner.FinishOrder(_orderStart.Value, _mousePosition, _camera, IsAltHeld());
             _orderStart = null;
         }
     }
@@ -65,10 +67,12 @@ public sealed class TroopPlayerOrders : MonoBehaviour
 
     void FinishSelection(Vector2 start, Vector2 end)
     {
-        if ((end - start).sqrMagnitude >= _selectionDragThreshold * _selectionDragThreshold)
-            _selection.SelectBox(ScreenToWorld(start), ScreenToWorld(end), _addToSelection);
+        TroopTuning tuning = TroopTuning.Active;
+        if (OrderClassifier.IsBoxSelect(start, end, tuning.BoxSelectMinDragPixels))
+            _selection.SelectBox(ScreenToWorld(start), ScreenToWorld(end), _toggleSelection);
         else
-            _selection.SelectAtPoint(ScreenToWorld(end), _clickSelectionRadius, _addToSelection);
+            _selection.SelectAtPoint(ScreenToWorld(end),
+                TroopScreenSpace.PixelsToWorld(_camera, end, tuning.ClickPickRadiusPixels), _toggleSelection);
     }
 
     Vector2 ScreenToWorld(Vector2 screenPosition) => TroopScreenSpace.ScreenToWorld(_camera, screenPosition);
@@ -79,32 +83,59 @@ public sealed class TroopPlayerOrders : MonoBehaviour
         return keyboard != null && (keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed);
     }
 
+    static bool IsAltHeld()
+    {
+        var keyboard = Keyboard.current;
+        return keyboard != null && (keyboard.leftAltKey.isPressed || keyboard.rightAltKey.isPressed);
+    }
+
     void OnGUI()
     {
         TroopOrderOverlay.DrawHelp(_selection.Selected.Count);
 
         if (_selectionStart.HasValue && Mouse.current != null)
             TroopOrderOverlay.DrawSelectionBox(_selectionStart.Value, _mousePosition);
-        if (_orderStart.HasValue && Mouse.current != null)
+        if (_orderStart.HasValue && Mouse.current != null && _camera != null && _selection.Selected.Count > 0)
             DrawOrderPreview(_orderStart.Value, _mousePosition);
     }
 
+    // Ghost preview while the right button is held: each troop's projected footprint and facing, the shared joints of
+    // a multi-troop line, and the tether to any chain neighbour outside the order.
     void DrawOrderPreview(Vector2 screenStart, Vector2 screenEnd)
     {
-        Vector2 worldStart = ScreenToWorld(screenStart);
-        Vector2 worldEnd = ScreenToWorld(screenEnd);
-        Vector2 guiStart = TroopScreenSpace.ToGui(screenStart);
-        int count = _selection.Selected.Count;
-        if (count == 0 || (worldEnd - worldStart).magnitude < _clickOrderThreshold)
+        bool alt = IsAltHeld();
+        OrderKind kind = _planner.Preview(screenStart, screenEnd, _camera, alt);
+        if (kind == OrderKind.Line)
+            TroopOrderOverlay.DrawPlainLine(TroopScreenSpace.ToGui(screenStart), TroopScreenSpace.ToGui(screenEnd));
+
+        var placements = _planner.Placements;
+        Vector2 drag = ScreenToWorld(screenEnd) - ScreenToWorld(screenStart);
+        for (int i = 0; i < placements.Count; i++)
         {
-            TroopOrderOverlay.DrawPlainLine(guiStart, TroopScreenSpace.ToGui(screenEnd));
-            return;
+            var placement = placements[i];
+            if (kind == OrderKind.Line)
+            {
+                float halfWidth = LineGeometry.RankHalfWidth(placement.Length, placement.Troop.LivingSoldierCount)
+                    + TroopConstants.SoldierRadius;
+                TroopFootprint ghost = TroopFootprint.Rect(
+                    TroopOrderPlanner.PlannedLinePoint(placement, TroopConstants.RightEnd),
+                    TroopOrderPlanner.PlannedLinePoint(placement, TroopConstants.LeftEnd), placement.Facing, halfWidth);
+                TroopOrderOverlay.DrawFootprint(_camera, ghost, placement.Troop.ArmyColor);
+                if (i + 1 < placements.Count)
+                {
+                    TroopOrderPlanner.AdjacentEnds(placement, drag, out int end, out _);
+                    TroopOrderOverlay.DrawJoint(TroopScreenSpace.WorldToGui(_camera, TroopOrderPlanner.PlannedLinePoint(placement, end)));
+                }
+            }
+            else
+            {
+                TroopOrderOverlay.DrawMarker(TroopScreenSpace.WorldToGui(_camera, placement.Center), placement.Troop.ArmyColor);
+            }
+            TroopOrderOverlay.DrawFacing(_camera, placement.Center, placement.Facing, placement.Troop.NaturalLineLength * 0.25f);
         }
 
-        _planner.ComputeLineLayout(worldStart, worldEnd, out Vector2 lineEnd, out _, out bool clamped);
-        _previewDots.Clear();
-        for (int i = 0; i < count; i++)
-            _previewDots.Add(TroopScreenSpace.WorldToGui(_camera, TroopOrderPlanner.LinePoint(worldStart, lineEnd, i, count)));
-        TroopOrderOverlay.DrawLayout(guiStart, TroopScreenSpace.WorldToGui(_camera, lineEnd), clamped, _previewDots);
+        foreach (var tether in _planner.Tethers)
+            TroopOrderOverlay.DrawTether(TroopScreenSpace.WorldToGui(_camera, tether.From),
+                TroopScreenSpace.WorldToGui(_camera, tether.To), tether.StaysLinked && !alt);
     }
 }

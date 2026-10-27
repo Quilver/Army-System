@@ -1,17 +1,25 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// The retreat a troop performs when it breaks: the pivot slips back from the attacker while each soldier falls back
-// with a delay (front soldiers last), holds, then returns. Soldiers near a linked line end retreat less.
+// The accordion retreat a troop performs when it breaks (spec §5.5, FaultSlipMotion). The pivot slips back by the
+// retreat distance (TroopTuning.RetreatDistance) at once, but every soldier holds its ground until its own start time
+// and then falls back to its place in the new line. Start times run as a wave from the rear (the side away from the
+// attacker) to the front: the rearmost soldier moves at once and the frontmost one RetreatWaveDelaySeconds later, so the
+// troop stretches out and then closes up again (accordion). Each soldier takes RetreatSoldierMoveSeconds to fall back.
+// The same motion carries a sympathetic retreat of a chained neighbour (spec §3.4 shared retreat), which costs no morale.
 public sealed class FaultSlipMotion
 {
-    const float MaximumDelay = 1f;
-    const float RearMoveDuration = 0.5f;
-    const float FrontMoveDuration = 1f;
-    const float HoldDuration = 0.26f;
-    const float ReturnDuration = 0.88f;
     const float PivotSlipTime = 0.14f;
-    public const float SlipDuration = MaximumDelay + FrontMoveDuration + HoldDuration + ReturnDuration;
+    // Time after the last soldier arrives before the troop counts as recovered (Fleeing -> Idle) and can break again.
+    const float SettleDuration = 0.5f;
+    const float ArrivalTolerance = 0.05f;
+    const float ArrivalGrace = 1f;
+
+    static TroopTuning Tuning => TroopTuning.Active;
+
+    // Length of the retreat motion: the wave delay, one soldier's move, then the settle time.
+    public static float SlipDuration =>
+        Tuning.RetreatWaveDelaySeconds + Tuning.RetreatSoldierMoveSeconds + SettleDuration;
 
     readonly Troop _troop;
     readonly List<SoldierAgentState> _living = new();
@@ -28,15 +36,19 @@ public sealed class FaultSlipMotion
     }
 
     public bool IsActive => _age >= 0f;
+    // True while the active motion is a sympathetic retreat (no morale cost).
+    public bool IsSympathetic { get; private set; }
     // Unit vector from the troop toward the attacker; the retreat travels along its negative.
     public Vector2 Axis => _axis;
+    // Distance the pivot travels in the current retreat.
+    public float Distance => _pivotDistance;
 
-    public void Begin(Vector2 attackerPivotPosition, float chargeDistance)
+    // Starts a retreat of distance units along retreatDirection (away from the attacker).
+    public void Begin(Vector2 retreatDirection, float distance, bool sympathetic = false)
     {
         Transform transform = _troop.transform;
-        Vector2 towardWinner = attackerPivotPosition - (Vector2)transform.position;
-        if (towardWinner.sqrMagnitude < 0.001f) towardWinner = transform.right;
-        _axis = towardWinner.normalized;
+        if (retreatDirection.sqrMagnitude < 0.001f) retreatDirection = -(Vector2)transform.right;
+        _axis = -retreatDirection.normalized;
         Vector2 localAxis = transform.InverseTransformVector(_axis).normalized;
 
         _living.Clear();
@@ -44,12 +56,12 @@ public sealed class FaultSlipMotion
             if (soldier.IsAlive) _living.Add(soldier);
         AssignSoldierMotion(localAxis);
 
-        _distance = Mathf.Min(Mathf.Max(chargeDistance * 1.8f, _troop.Radius * 0.9f), _troop.Radius * 1.5f);
-        _pivotDistance = _distance * AverageRetreatScale();
+        IsSympathetic = sympathetic;
+        _distance = Mathf.Max(0f, distance);
+        _pivotDistance = _distance;
         _pivotDisplacement = 0f;
         _age = 0f;
         _recoveryRemaining = SlipDuration;
-        TroopDiagnostics.RecordRetreatBegin(_troop, _axis, _distance, _pivotDistance, _living);
     }
 
     // Counts down the recovery period; true on the frame it finishes.
@@ -60,40 +72,47 @@ public sealed class FaultSlipMotion
         return _recoveryRemaining <= 0f;
     }
 
+    // Each soldier's target starts at the ground it stood on (its home in the new line, moved forward by the distance the
+    // pivot has slipped) and eases back to its home once its start time comes. FaultOffset is how much of that distance
+    // is still to cover. The steering arrives at the target, so the soldier slows to a stop at its new place.
     public void Tick(float deltaTime)
     {
         if (!IsActive) return;
         _age += deltaTime;
         SlipPivot();
 
-        bool recovered = true;
+        Vector2 localAxis = _troop.transform.InverseTransformVector(_axis).normalized;
+        bool arrived = true;
         foreach (var soldier in _troop.Roster.SoldierList)
         {
             if (!soldier.IsAlive) continue;
-            float previousOffset = soldier.FaultOffset;
-            soldier.FaultOffset = OffsetAt(soldier);
-            TroopDiagnostics.RecordRetreatStep(_troop, soldier, previousOffset, soldier.FaultOffset);
-            float retreatStep = soldier.FaultOffset - previousOffset;
-            if (Mathf.Abs(retreatStep) > 0f)
-                soldier.Position += (Vector2)_troop.transform.InverseTransformVector(-_axis * retreatStep);
-            if (soldier.FaultOffset >= 1f) recovered = false;
+            soldier.FaultOffset = RemainingAt(soldier);
+            Vector2 target = soldier.FaultHome + localAxis * soldier.FaultOffset;
+            Vector2 targetVelocity = deltaTime > 0f ? (target - soldier.FaultTargetPosition) / deltaTime : Vector2.zero;
+            soldier.SetFaultTarget(target, targetVelocity);
+            if ((soldier.Position - target).sqrMagnitude > ArrivalTolerance * ArrivalTolerance) arrived = false;
         }
 
-        if (_age <= SlipDuration || !recovered) return;
-        TroopDiagnostics.RecordRetreatEnd(_troop, _age);
+        // Finish once every soldier has arrived. The grace period stops a soldier that cannot reach its place from
+        // holding the troop in the retreat state.
+        if (_age <= SlipDuration || (!arrived && _age <= SlipDuration + ArrivalGrace)) return;
         _age = -1f;
+        IsSympathetic = false;
         foreach (var soldier in _troop.Roster.SoldierList)
         {
             soldier.FaultOffset = 0f;
             soldier.SetFaultMotion(0f, 0.01f);
             soldier.FaultDelayRemaining = 0f;
             soldier.FaultRetreatScale = 1f;
+            soldier.EndFaultTracking();
         }
     }
 
-    // Front soldiers (nearest the attacker) start late and move slowly; rear soldiers start at once.
+    // The wave: rear soldiers (furthest from the attacker) start at once, front soldiers (nearest it) start last.
     void AssignSoldierMotion(Vector2 localAxis)
     {
+        float waveDelay = Tuning.RetreatWaveDelaySeconds;
+        float moveDuration = Tuning.RetreatSoldierMoveSeconds;
         float rearDepth = float.PositiveInfinity;
         float frontDepth = float.NegativeInfinity;
         foreach (var soldier in _living)
@@ -109,19 +128,11 @@ public sealed class FaultSlipMotion
             float frontness = frontDepth - rearDepth > 0.0001f
                 ? Mathf.InverseLerp(rearDepth, frontDepth, depth)
                 : 0f;
-            if (soldier.IsCharging) TroopDiagnostics.RecordChargeEnd(_troop, soldier, "fault slip", float.NaN);
             soldier.CancelCharge();
-            soldier.SetFaultMotion(frontness * MaximumDelay, Mathf.Lerp(RearMoveDuration, FrontMoveDuration, frontness));
-            soldier.FaultRetreatScale = LinkedEndRetreat.ScaleFor(_troop, soldier);
+            soldier.SetFaultMotion(frontness * waveDelay, moveDuration);
+            soldier.FaultRetreatScale = 1f;
+            soldier.BeginFaultTracking();
         }
-    }
-
-    float AverageRetreatScale()
-    {
-        if (_living.Count == 0) return 1f;
-        float total = 0f;
-        foreach (var soldier in _living) total += soldier.FaultRetreatScale;
-        return total / _living.Count;
     }
 
     // The pivot eases back over PivotSlipTime; soldiers are compensated so they do not move with it.
@@ -134,22 +145,19 @@ public sealed class FaultSlipMotion
         Vector2 pivotDelta = -_axis * pivotStep;
         _troop.transform.position += (Vector3)pivotDelta;
         Vector2 localCompensation = (Vector2)_troop.transform.InverseTransformVector(-pivotDelta);
+        // Homes stay in troop-local space: a soldier's target is the new line, which the pivot has moved back.
         foreach (var soldier in _troop.Roster.SoldierList)
             soldier.Position += localCompensation;
         _pivotDisplacement = pivotDisplacement;
     }
 
-    // Retreat offset: wait for the delay, ease out, hold, then ease back.
-    float OffsetAt(SoldierAgentState soldier)
+    // Distance (along the attack axis, ahead of its home) the soldier's target still has to fall back. Before its start
+    // time the target stays on the ground the soldier held, so it covers the pivot's slip; then it eases back over the
+    // move duration. A soldier with a FaultRetreatScale below 1 falls back only that fraction of the distance.
+    float RemainingAt(SoldierAgentState soldier)
     {
-        float full = _distance * soldier.FaultRetreatScale;
         float localTime = _age - soldier.FaultDelayRemaining;
-        float move = soldier.FaultMoveDuration;
-        if (localTime <= 0f) return 0f;
-        if (localTime < move) return full * Mathf.SmoothStep(0f, 1f, localTime / move);
-        if (localTime < move + HoldDuration) return full;
-        if (localTime < move + HoldDuration + ReturnDuration)
-            return full * (1f - Mathf.SmoothStep(0f, 1f, (localTime - move - HoldDuration) / ReturnDuration));
-        return 0f;
+        float progress = localTime <= 0f ? 0f : Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(localTime / soldier.FaultMoveDuration));
+        return _pivotDisplacement * (1f - Mathf.Clamp01(soldier.FaultRetreatScale) * progress);
     }
 }

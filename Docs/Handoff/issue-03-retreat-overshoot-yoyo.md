@@ -1,6 +1,6 @@
 # Issue 03: Soldiers That Retreat Last Overshoot and Yo-Yo
 
-**Status:** Not confirmed. **Logging:** Retreat, Soldier (see [movement-testing.md](movement-testing.md)).
+**Status:** Not confirmed. 
 
 ## Summary
 

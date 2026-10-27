@@ -5,7 +5,6 @@ using UnityEngine;
 public sealed class TroopPathFollower
 {
     const float WaypointReachedDistance = 0.2f;
-    const float RebuildInterval = 0.5f;
     const float TargetMovedSquared = 0.04f;
 
     readonly Troop _troop;
@@ -70,6 +69,6 @@ public sealed class TroopPathFollower
         _path = _pathfinder.GetPath(destination);
         _pathIndex = _path != null && _path.Count > 1 ? 1 : 0;
         _invalid = false;
-        _nextRebuild = Time.time + RebuildInterval;
+        _nextRebuild = Time.time + TroopTuning.Active.PathRebuildIntervalSeconds;
     }
 }

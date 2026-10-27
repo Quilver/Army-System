@@ -12,9 +12,9 @@ public sealed class TroopRegistry
 
     public bool Contains(Troop troop) => _troops.Contains(troop);
 
-    public void Refresh()
+    public void Refresh(bool force = false)
     {
-        if (Time.unscaledTime < _nextRefresh) return;
+        if (!force && Time.unscaledTime < _nextRefresh) return;
         _nextRefresh = Time.unscaledTime + RefreshInterval;
         _troops.Clear();
         _troops.AddRange(Object.FindObjectsByType<Troop>(FindObjectsSortMode.None));

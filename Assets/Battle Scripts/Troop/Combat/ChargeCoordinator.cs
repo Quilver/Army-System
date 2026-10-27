@@ -1,29 +1,21 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// Decides when soldiers start, keep or cancel a charge at an enemy soldier. Charging spreads through a troop like an
-// Ising model: soldiers are more likely to charge when their neighbours already are.
+// Charge scheduler (spec §4.3, §4.4). Each frame every soldier of an engaged troop charges with probability
+// 1 - exp(-rate x dt), rate = EffectiveAggression / ActionWindowSeconds, so it makes about Aggression charges per window
+// (Aggression + 5 during Assault). There is no neighbour contagion and no cooldown after a charge (Q-29, Q-30).
+//   Target: one of the ChargeCandidateCount nearest enemy soldiers within the charge range (7.8 units), at random.
+//   Followers: the troop's Discipline nearest same-troop soldiers each follow with ChargeFollowProbability. They are
+//   passive: they stay near the charger and support its clash, and return to the line when the charge ends.
+//   Cancel: the target dies, the charger's troop breaks, or ChargeTimeoutSeconds passes (no retargeting, Q-27).
+// Candidate search uses the contact index (a spatial query), not a loop over every soldier.
 public sealed class ChargeCoordinator
 {
     readonly SoldierContactIndex _index;
     readonly TroopRegistry _registry;
-    readonly List<ChargeRequest> _pending = new();
-
-    readonly struct ChargeRequest
-    {
-        public readonly SoldierAgentState Source;
-        public readonly SoldierAgentState Target;
-        public readonly Troop TargetTroop;
-        public readonly Troop SourceTroop;
-
-        public ChargeRequest(Troop sourceTroop, SoldierAgentState source, SoldierAgentState target, Troop targetTroop)
-        {
-            SourceTroop = sourceTroop;
-            Source = source;
-            Target = target;
-            TargetTroop = targetTroop;
-        }
-    }
+    readonly List<int> _nearby = new();
+    readonly List<(int index, float distance)> _candidates = new();
+    readonly List<(SoldierAgentState soldier, float distance)> _friends = new();
 
     public ChargeCoordinator(SoldierContactIndex index, TroopRegistry registry)
     {
@@ -31,118 +23,121 @@ public sealed class ChargeCoordinator
         _registry = registry;
     }
 
-    public void Update(float actionDistance, float deltaTime)
+    public void Update(float deltaTime)
     {
-        TickActiveCharges(actionDistance, deltaTime);
-        CollectNewCharges(actionDistance, deltaTime);
-        foreach (var charge in _pending)
-        {
-            float duration = Random.Range(0.75f, 1.15f);
-            float cooldown = Random.Range(1.2f, 3f);
-            charge.Source.SetCharge(charge.Target, charge.TargetTroop, duration, cooldown);
-            TroopDiagnostics.RecordChargeStart(charge.SourceTroop, charge.Source, charge.TargetTroop, charge.Target,
-                Vector2.Distance(charge.SourceTroop.WorldPosition(charge.Source), charge.TargetTroop.WorldPosition(charge.Target)),
-                duration);
-        }
+        TickActiveCharges(deltaTime);
+        StartNewCharges(deltaTime);
     }
 
-    void TickActiveCharges(float actionDistance, float deltaTime)
+    void TickActiveCharges(float deltaTime)
     {
         foreach (var troop in _registry.Troops)
         {
             if (troop == null) continue;
+            bool broken = troop.IsFaultSlipping || troop.IsRouted;
             foreach (var soldier in troop.Soldiers)
             {
+                if (soldier.ChargeRole == ChargeRole.None) continue;
                 soldier.TickCharge(deltaTime);
-                if (soldier.ChargeTarget == null) continue;
-                bool targetValid = soldier.ChargeTargetTroop != null
-                    && soldier.ChargeTargetTroop.TeamId != troop.TeamId
-                    && _registry.Contains(soldier.ChargeTargetTroop)
-                    && soldier.ChargeTarget.IsAlive
-                    && soldier.ChargeTargetTroop.Roster.Contains(soldier.ChargeTarget);
-                float distance = targetValid
-                    ? Vector2.Distance(troop.WorldPosition(soldier), soldier.ChargeTargetTroop.WorldPosition(soldier.ChargeTarget))
-                    : float.PositiveInfinity;
-                // Same cancel condition as before, split so the end reason can be logged.
-                bool invalidTarget = !targetValid;
-                bool faultSlipping = troop.IsFaultSlipping;
-                bool timedOut = soldier.ChargeTimeRemaining <= 0f;
-                bool outOfRange = distance > actionDistance * 1.7f;
-                if (invalidTarget || faultSlipping || timedOut || outOfRange)
+                if (!soldier.IsAlive || broken || soldier.ChargeTimeRemaining <= 0f)
                 {
-                    string reason = invalidTarget ? "invalid target" : faultSlipping ? "fault slip" : timedOut ? "time out" : "out of range";
-                    TroopDiagnostics.RecordChargeEnd(troop, soldier, reason, distance);
-                    soldier.CancelCharge(1.1f);
+                    soldier.CancelCharge();
+                    continue;
+                }
+
+                if (soldier.ChargeRole == ChargeRole.Charger)
+                {
+                    Troop targetTroop = soldier.ChargeTargetTroop;
+                    bool valid = targetTroop != null
+                        && targetTroop.TeamId != troop.TeamId
+                        && soldier.ChargeTarget != null
+                        && soldier.ChargeTarget.IsAlive
+                        && targetTroop.Roster.Contains(soldier.ChargeTarget);
+                    if (!valid) soldier.CancelCharge();
+                }
+                else
+                {
+                    // A follower returns to the line once its charger's charge has ended.
+                    SoldierAgentState leader = soldier.ChargeLeader;
+                    if (leader == null || !leader.IsAlive || !leader.IsCharging) soldier.CancelCharge();
                 }
             }
         }
     }
 
-    void CollectNewCharges(float actionDistance, float deltaTime)
+    void StartNewCharges(float deltaTime)
     {
-        _pending.Clear();
-        var contacts = _index.Contacts;
-        for (int i = 0; i < contacts.Count; i++)
+        if (deltaTime <= 0f) return;
+        TroopTuning tuning = TroopTuning.Active;
+        float now = Time.time;
+        foreach (var troop in _registry.Troops)
         {
-            SoldierContact source = contacts[i];
-            SoldierProfile profile = source.Soldier.Profile;
-            if (profile == null || profile.Aggression <= 0f || source.Troop.IsPulseLocked
-                || source.Troop.State == UnitState.Fleeing || source.Soldier.ChargeTarget != null
-                || source.Soldier.ChargeCooldownRemaining > 0f)
-                continue;
+            if (troop == null || !troop.IsEngaged || troop.IsRouted || troop.IsFaultSlipping) continue;
+            ITroopRandom random = troop.TroopRandom;
+            IReadOnlyList<SoldierAgentState> soldiers = troop.Soldiers;
+            for (int i = 0; i < soldiers.Count; i++)
+            {
+                SoldierAgentState soldier = soldiers[i];
+                if (!soldier.IsAlive || soldier.Profile == null || soldier.IsCommitted) continue;
 
-            SoldierContact? target = FindChargeTarget(source, actionDistance);
-            if (!target.HasValue) continue;
+                float chance = ChargeRules.ChargeProbability(troop.EffectiveAggression(soldier.Profile),
+                    tuning.ActionWindowSeconds, deltaTime);
+                if (random.Value() >= chance) continue;
 
-            float localCharge = LocalChargeFraction(source);
-            float aggression = profile.Aggression / TroopConstants.MaxAggression;
-            float field = aggression * 2.4f - 1.7f + localCharge * 2.4f;
-            float isingProbability = 1f / (1f + Mathf.Exp(-field));
-            float rate = aggression * (0.08f + 0.25f * isingProbability + 0.4f * localCharge);
-            if (Random.value >= 1f - Mathf.Exp(-rate * deltaTime)) continue;
-            _pending.Add(new ChargeRequest(source.Troop, source.Soldier, target.Value.Soldier, target.Value.Troop));
+                Vector2 position = troop.WorldPosition(soldier);
+                if (!TryPickTarget(troop, position, tuning.ChargeRange, tuning.ChargeCandidateCount, random,
+                        out SoldierContact target))
+                    continue;
+
+                soldier.BeginCharge(target.Soldier, target.Troop, tuning.ChargeTimeoutSeconds, now);
+                troop.MeleeMetrics.RecordChargeStarted();
+                PickFollowers(troop, soldier, position, tuning, random, now);
+            }
         }
     }
 
-    // Fraction of the source's troop-mates within range that are already charging.
-    float LocalChargeFraction(SoldierContact source)
+    // A random pick among the nearest candidateCount enemy soldiers within range.
+    bool TryPickTarget(Troop troop, Vector2 position, float range, int candidateCount, ITroopRandom random,
+        out SoldierContact target)
     {
-        int neighbors = 0;
-        int chargingNeighbors = 0;
+        target = default;
+        _index.GatherWithin(position, range, _nearby);
+        _candidates.Clear();
         var contacts = _index.Contacts;
-        for (int i = 0; i < contacts.Count; i++)
+        foreach (int i in _nearby)
         {
-            SoldierContact ally = contacts[i];
-            if (ally.Troop != source.Troop || ally.Soldier == source.Soldier) continue;
-            if (Vector2.Distance(source.Position, ally.Position) > 5.3f) continue;
-            neighbors++;
-            if (ally.Soldier.ChargeTarget != null) chargingNeighbors++;
+            SoldierContact contact = contacts[i];
+            if (contact.Troop == null || contact.Troop.TeamId == troop.TeamId || !contact.Soldier.IsAlive) continue;
+            _candidates.Add((i, (contact.Position - position).sqrMagnitude));
         }
-        return neighbors > 0 ? (float)chargingNeighbors / neighbors : 0f;
+        if (_candidates.Count == 0) return false;
+
+        _candidates.Sort((a, b) => a.distance.CompareTo(b.distance));
+        int pool = Mathf.Min(Mathf.Max(1, candidateCount), _candidates.Count);
+        int pick = Mathf.Min(pool - 1, Mathf.FloorToInt(random.Value() * pool));
+        target = contacts[_candidates[pick].index];
+        return true;
     }
 
-    SoldierContact? FindChargeTarget(SoldierContact source, float actionDistance)
+    // The Discipline nearest living, uncommitted soldiers of the same troop (Q-9) each follow with the follow chance.
+    void PickFollowers(Troop troop, SoldierAgentState charger, Vector2 chargerPosition, TroopTuning tuning,
+        ITroopRandom random, float now)
     {
-        float nearestDistance = actionDistance;
-        SoldierContact? nearest = null;
-        Vector2 facing = source.Troop.Formation != null
-            ? source.Troop.Formation.Facing
-            : (Vector2)source.Troop.transform.right;
-        float frontDepth = Vector2.Dot(source.Position - (Vector2)source.Troop.transform.position, facing);
-        if (frontDepth < -source.Troop.Radius * 0.12f) return null;
-
-        var contacts = _index.Contacts;
-        for (int i = 0; i < contacts.Count; i++)
+        int count = Mathf.Max(0, troop.Discipline);
+        if (count == 0) return;
+        _friends.Clear();
+        foreach (var soldier in troop.Soldiers)
         {
-            SoldierContact candidate = contacts[i];
-            if (candidate.Troop.TeamId == source.Troop.TeamId) continue;
-            Vector2 offset = candidate.Position - source.Position;
-            float distance = offset.magnitude;
-            if (distance >= nearestDistance || distance <= 0.0001f) continue;
-            if (Vector2.Dot(offset / distance, facing) < 0.15f) continue;
-            nearestDistance = distance;
-            nearest = candidate;
+            if (soldier == charger || !soldier.IsAlive || soldier.IsCommitted) continue;
+            _friends.Add((soldier, (troop.WorldPosition(soldier) - chargerPosition).sqrMagnitude));
         }
-        return nearest;
+        _friends.Sort((a, b) => a.distance.CompareTo(b.distance));
+        int limit = Mathf.Min(count, _friends.Count);
+        for (int i = 0; i < limit; i++)
+        {
+            if (random.Value() >= tuning.ChargeFollowProbability) continue;
+            _friends[i].soldier.BeginFollow(charger, tuning.ChargeTimeoutSeconds, now);
+            troop.MeleeMetrics.RecordFollowerJoined();
+        }
     }
 }

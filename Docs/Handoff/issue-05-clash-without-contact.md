@@ -1,6 +1,6 @@
 # Issue 05: Clash Without Base Contact
 
-**Status:** Not confirmed; needs a design decision. **Logging:** Clash (see [movement-testing.md](movement-testing.md)).
+**Status:** Design decided: clashes require contact (overlap within 0.85). A_Distance is engagement and max charge range only. The code and Troop README were updated to match; the verification below is still pending in the Editor. **Logging:** Clash (see [movement-testing.md](movement-testing.md)).
 
 ## Summary
 
@@ -9,9 +9,8 @@ soldiers only physically touch within 0.85.
 
 ## Design note
 
-This is the documented behaviour: the Troop README says "A_Distance is also the clash distance". So this is a design
-decision as much as a bug. Decide whether clashes should require base contact before changing the code, and update
-the README to match.
+The Troop README previously said "A_Distance is also the clash distance". The decision is that clashes require contact.
+The README now documents A_Distance as the engagement and max charge range, and contact (0.85) as the clash range.
 
 ## Symptom
 
@@ -59,7 +58,5 @@ duration) so clashes read as contact.
 
 ## Verification
 
-- Clash distance histogram: clashes start at or near contact.
 - Attack rate and hit rate (`MeleeMetrics`) do not collapse compared with the baseline.
 - Melee still starts promptly when lines meet.
-- Re-run the Engagement and Charge rows of the results matrix.

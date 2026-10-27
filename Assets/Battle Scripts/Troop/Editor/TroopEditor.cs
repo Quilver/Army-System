@@ -1,6 +1,7 @@
 using UnityEditor;
 using UnityEngine;
 
+// Troop Inspector: live morale (spec §5), formation state, engagement and melee/ranged statistics in Play mode.
 [CustomEditor(typeof(Troop))]
 public sealed class TroopEditor : Editor
 {
@@ -12,8 +13,16 @@ public sealed class TroopEditor : Editor
         var troop = (Troop)target;
         using (new EditorGUI.DisabledScope(true))
         {
-            EditorGUILayout.FloatField("Shock", troop.Shock);
-            EditorGUILayout.FloatField("Fault Pressure", troop.FaultPressure);
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("State", EditorStyles.boldLabel);
+            EditorGUILayout.EnumPopup("Formation Mode", troop.FormationMode);
+            EditorGUILayout.Toggle("Engaged", troop.IsEngaged);
+            EditorGUILayout.FloatField("Assault (s)", troop.AssaultTimeRemaining);
+            EditorGUILayout.Toggle("Chained", troop.IsChained);
+            EditorGUILayout.Toggle("Chain Suppressed", troop.ChainSuppressed);
+            EditorGUILayout.IntField("Move", troop.Move);
+            EditorGUILayout.FloatField("L_nat", troop.NaturalLineLength);
+            TroopMoraleEditor.DrawMorale(troop.MoraleState, troop);
         }
 
         DrawMeleeMetrics(troop);
@@ -25,28 +34,22 @@ public sealed class TroopEditor : Editor
         MeleeMetrics.Summary s = troop.MeleeMetrics.Snapshot(troop.LivingSoldierCount);
 
         EditorGUILayout.Space();
-        EditorGUILayout.LabelField($"Melee (last {s.Window:0} s)", EditorStyles.boldLabel);
+        EditorGUILayout.LabelField($"Combat (last {s.Window:0} s)", EditorStyles.boldLabel);
         using (new EditorGUI.DisabledScope(true))
         {
-            EditorGUILayout.FloatField("Attacks / s (troop)", s.AttacksPerSecond);
-            EditorGUILayout.FloatField("Attacks / s (per soldier)", s.AttacksPerSecondPerSoldier);
-            EditorGUILayout.FloatField("Hit Rate (%)", s.HitRate * 100f);
+            EditorGUILayout.IntField("Charges", s.Charges);
+            EditorGUILayout.FloatField("Charges / soldier / window", s.ChargesPerSoldierPerWindow);
+            EditorGUILayout.IntField("Followers joined", s.Followers);
             EditorGUILayout.IntField("Clashes", s.Clashes);
-            EditorGUILayout.IntField("Attacks", s.Attacks);
-            EditorGUILayout.IntField("Hits", s.Hits);
-            EditorGUILayout.FloatField("Damage Done", s.DamageDone);
-            EditorGUILayout.FloatField("Damage Done / s", s.DamageDonePerSecond);
-            EditorGUILayout.FloatField("Damage Received", s.DamageReceived);
-            EditorGUILayout.FloatField("Damage Received / s", s.DamageReceivedPerSecond);
+            EditorGUILayout.IntField("Duels won", s.DuelWins);
+            EditorGUILayout.FloatField("Duel win rate (%)", s.DuelWinRate * 100f);
+            EditorGUILayout.FloatField("Damage done", s.DamageDone);
+            EditorGUILayout.FloatField("Damage received", s.DamageReceived);
+            EditorGUILayout.IntField("Shots", s.Shots);
+            EditorGUILayout.FloatField("Hit rate (%)", s.HitRate * 100f);
         }
 
-        using (new EditorGUI.DisabledScope(true))
-        {
-            EditorGUILayout.IntField("Ready Attacks (now)", troop.ReadyMeleeAttacks);
-            EditorGUILayout.IntField("Held Attacks (now)", troop.HeldMeleeAttacks);
-        }
-
-        if (GUILayout.Button("Reset Melee Metrics"))
+        if (GUILayout.Button("Reset Combat Metrics"))
             troop.ResetMeleeMetrics();
     }
 }

@@ -1,44 +1,67 @@
 using System;
 using UnityEngine;
-using UnityEngine.Serialization;
 
-// A soldier's current charge at an enemy soldier, and the cooldown before it may charge again.
+public enum ChargeRole
+{
+    None,
+    Charger,   // running at an enemy soldier (spec §4.3)
+    Follower   // passive support following a charger (spec §4.4)
+}
+
+// A soldier's charge (spec §4.3, §4.4). A charger runs at one enemy soldier until it makes contact (one charge = one
+// clash), its target dies, its troop breaks or the timeout passes. A follower stays near its charger and supports its
+// clash without starting clashes of its own; it returns to the line when the charge ends.
+// Runtime state only: the references are not serialized.
 [Serializable]
 public sealed class SoldierChargeState
 {
-    [SerializeField] float _cooldownRemaining;
-    [SerializeField] SoldierAgentState _target;
-    [SerializeField, FormerlySerializedAs("_targetFlock")] Troop _targetTroop;
+    [SerializeField] ChargeRole _role;
     [SerializeField] float _timeRemaining;
+    [SerializeField] float _startTime;
 
-    public float CooldownRemaining => _cooldownRemaining;
-    public SoldierAgentState Target => _target;
-    public Troop TargetTroop => _targetTroop;
+    [NonSerialized] SoldierAgentState _target;
+    [NonSerialized] Troop _targetTroop;
+    [NonSerialized] SoldierAgentState _leader;
+
+    public ChargeRole Role => _role;
+    public SoldierAgentState Target => _role == ChargeRole.Charger ? _target : null;
+    public Troop TargetTroop => _role == ChargeRole.Charger ? _targetTroop : null;
+    public SoldierAgentState Leader => _role == ChargeRole.Follower ? _leader : null;
     public float TimeRemaining => _timeRemaining;
+    // Time.time when the charge began. Decides which soldier is A when both are charging (Q-28).
+    public float StartTime => _startTime;
 
-    public void TickCooldown(float deltaTime)
+    public void BeginCharge(SoldierAgentState target, Troop targetTroop, float timeout, float startTime)
     {
-        _cooldownRemaining = Mathf.Max(0f, _cooldownRemaining - deltaTime);
-    }
-
-    public void Begin(SoldierAgentState target, Troop targetTroop, float duration, float cooldown)
-    {
+        _role = ChargeRole.Charger;
         _target = target;
         _targetTroop = targetTroop;
-        _timeRemaining = Mathf.Max(0f, duration);
-        _cooldownRemaining = Mathf.Max(0f, cooldown);
+        _leader = null;
+        _timeRemaining = Mathf.Max(0f, timeout);
+        _startTime = startTime;
+    }
+
+    public void BeginFollow(SoldierAgentState leader, float timeout, float startTime)
+    {
+        _role = ChargeRole.Follower;
+        _leader = leader;
+        _target = null;
+        _targetTroop = null;
+        _timeRemaining = Mathf.Max(0f, timeout);
+        _startTime = startTime;
     }
 
     public void Tick(float deltaTime)
     {
-        if (_target != null) _timeRemaining = Mathf.Max(0f, _timeRemaining - deltaTime);
+        if (_role != ChargeRole.None) _timeRemaining = Mathf.Max(0f, _timeRemaining - deltaTime);
     }
 
-    public void Cancel(float cooldown = 0f)
+    public void End()
     {
+        _role = ChargeRole.None;
         _target = null;
         _targetTroop = null;
+        _leader = null;
         _timeRemaining = 0f;
-        _cooldownRemaining = Mathf.Max(_cooldownRemaining, cooldown);
     }
 }

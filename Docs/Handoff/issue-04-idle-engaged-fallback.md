@@ -40,13 +40,6 @@ The idle defender's pivot drifts away from the attacker while the attacker holds
 - **Soldier-level knock-back:** clash knock-back and bounces in `ClashResolver` and `SoldierContactResolver` move
   soldiers, not the pivot.
 
-## Logging needed
-
-For the engaged pair, every frame:
-- Barrier: penetration, both advances, both shares, restore, both applied forces.
-- Pivot: both troops' `_pivotVelocity`, `LinePushVelocity` and displacement, and the defender's state and orders.
-- LinePressure: both efforts and forces, to confirm the defender's contact force is 0.
-
 ## Confirmation criteria
 
 Confirmed if the defender's pivot displacement happens on frames where:

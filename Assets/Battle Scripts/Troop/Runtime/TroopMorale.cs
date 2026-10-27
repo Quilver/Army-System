@@ -1,76 +1,103 @@
 using UnityEngine;
 
-// The troop's will to fight. Damage adds shock (the damage taken since the troop last broke) and lost clashes add fault
-// pressure. When shock exceeds morale the troop breaks (see Troop.TryBeginFaultSlip) and shock is reset. Disable to
-// stop new shock, pressure and breaks; a retreat that has already started still finishes.
+// The troop's will to fight (spec §5). It holds Shock, the count of retreats and surrounded breaks, and the initial
+// soldier count used by the rout threshold. Shock rises with applied hits and decays continuously; there is no fault
+// pressure, clash cooldown, break cooldown or charge lock. Whether the troop breaks is decided by Troop.EvaluateBreak.
+// Disable to stop new shock and breaks; a retreat already under way finishes.
 [DisallowMultipleComponent]
 public sealed class TroopMorale : MonoBehaviour
 {
-    const float DecayTime = 22f;
-    const float ClashCooldown = 0.3f;
-    const float BreakCooldown = 1.6f;
-    const float PulseLockDuration = 1.2f;
-    const float MinimumBreakThreshold = 0.1f;
-    const float DefaultMorale = 100f;  // used only when the troop has no profile
-    const float DefaultChargeDistance = TroopDamageReceiver.DefaultChargeDistance;
+    const int DefaultBaseMorale = CombatStatLimits.Default;  // used only when the troop has no profile
 
     Troop _troop;
     float _shock;
-    float _faultPressure;
-    float _faultCooldownRemaining;
-    float _clashCooldownRemaining;
-    float _pulseCooldownRemaining;
+    int _initialSoldiers;
+    int _retreatCount;
+    int _surroundedBreakCount;
     Vector2 _lastAttackerPivotPosition;
-    float _lastChargeDistance = DefaultChargeDistance;
+    bool _hasAttacker;
 
-    public float Value => _troop != null && _troop.Profile != null ? _troop.Profile.Morale : DefaultMorale;
+    TroopTuning Tuning => TroopTuning.Active;
+
+    public int BaseMorale => _troop != null && _troop.Profile != null ? _troop.Profile.BaseMorale : DefaultBaseMorale;
+    public int InitialSoldierCount => _initialSoldiers;
+    public int RetreatCount => _retreatCount;
+    public int SurroundedBreakCount => _surroundedBreakCount;
     public float Shock => _shock;
-    public float FaultPressure => _faultPressure;
-    public float BreakCooldownRemaining => _faultCooldownRemaining;
-    // While true, soldiers do not start new charges.
-    public bool IsPulseLocked => enabled && _pulseCooldownRemaining > 0f;
-    public bool ShouldBreak => _shock > Mathf.Max(MinimumBreakThreshold, Value) && _faultCooldownRemaining <= 0f;
+
+    // EffectiveMorale = BaseMorale x living soldiers minus the break penalties (spec §5.1).
+    public float EffectiveMorale => MoraleRules.EffectiveMorale(
+        BaseMorale,
+        _troop != null ? _troop.LivingSoldierCount : 0,
+        _retreatCount,
+        _surroundedBreakCount,
+        Tuning.RetreatMoralePenalty,
+        Tuning.SurroundedMoralePenalty);
+
+    // BaseMorale x the soldiers the troop deployed with. The rout threshold is a fraction of this.
+    public float InitialEffectiveMorale => MoraleRules.InitialEffectiveMorale(BaseMorale, _initialSoldiers);
+
+    // Shock lost per second at the current EffectiveMorale.
+    public float DecayPerSecond => MoraleRules.DecayPerSecond(EffectiveMorale, Tuning.ShockDecayFractionPerWindow, Tuning.ActionWindowSeconds);
+
     public Vector2 LastAttackerPivotPosition => _lastAttackerPivotPosition;
-    public float LastChargeDistance => _lastChargeDistance;
+    public bool HasAttacker => _hasAttacker;
 
     internal void Bind(Troop troop) => _troop = troop;
 
-    // Cooldowns run down and fault pressure fades over time. Shock does not fade: it is the damage taken so far, and is
-    // only cleared when the troop breaks.
+    // Called once when the soldiers are spawned. Resets the battle record.
+    internal void CaptureInitialSoldiers(int count)
+    {
+        _initialSoldiers = Mathf.Max(0, count);
+        _shock = 0f;
+        _retreatCount = 0;
+        _surroundedBreakCount = 0;
+        _hasAttacker = false;
+    }
+
+    // Shock decays at all times, including in melee, and is clamped at zero.
     internal void Tick(float deltaTime)
     {
-        _faultCooldownRemaining = Mathf.Max(0f, _faultCooldownRemaining - deltaTime);
-        _clashCooldownRemaining = Mathf.Max(0f, _clashCooldownRemaining - deltaTime);
-        _pulseCooldownRemaining = Mathf.Max(0f, _pulseCooldownRemaining - deltaTime);
-        _faultPressure *= Mathf.Exp(-deltaTime / DecayTime);
+        _shock = MoraleRules.DecayShock(
+            _shock,
+            EffectiveMorale,
+            Tuning.ShockDecayFractionPerWindow,
+            Tuning.ActionWindowSeconds,
+            deltaTime);
     }
 
-    // Returns false while the loser is still inside its clash cooldown, which also blocks the winner's damage.
-    internal bool RecordClashLoss(float pressureMargin)
+    // Adds the applied points (bruise plus bleed, overflow excluded). Flanked hits are multiplied (spec §5.2).
+    internal void AddShock(float points, bool flanked, Vector2 attackerPivotPosition)
     {
-        if (!enabled) return true;
-        if (_clashCooldownRemaining > 0f) return false;
-        _clashCooldownRemaining = ClashCooldown;
-        float threshold = 1f + _troop.AverageProfileValue(profile => profile.MeleeSkill) / 100f * 0.45f;
-        float pressure = 0.28f + Mathf.Clamp01(pressureMargin) * 0.22f;
-        _faultPressure = Mathf.Min(threshold * 2.5f, _faultPressure + pressure);
-        return true;
-    }
-
-    internal void AddShock(float damage, Vector2 attackerPivotPosition, float chargeDistance)
-    {
-        if (!enabled) return;
-        _shock += damage;
+        if (!enabled || points <= 0f) return;
+        _shock += points * (flanked ? Tuning.FlankShockMultiplier : 1f);
         _lastAttackerPivotPosition = attackerPivotPosition;
-        _lastChargeDistance = chargeDistance;
+        _hasAttacker = true;
     }
 
-    // The troop has just broken: shock is spent, pressure drops by one morale's worth, and new breaks and charges wait.
-    internal void OnBroke()
+    // The case that would apply if the troop broke now (for the Inspector), or None when it would not break.
+    public BreakCase Preview(bool surrounded) =>
+        MoraleRules.Evaluate(_shock, EffectiveMorale, InitialEffectiveMorale, surrounded, Tuning.RoutMoraleThresholdFraction);
+
+    // The case that applies if the troop would break with this Shock, ignoring whether it is breaking now.
+    public BreakCase CaseIfBroken(bool surrounded) =>
+        MoraleRules.Evaluate(float.PositiveInfinity, EffectiveMorale, InitialEffectiveMorale, surrounded,
+            Tuning.RoutMoraleThresholdFraction);
+
+    // A normal retreat (case B): shock resets and EffectiveMorale drops by the retreat penalty.
+    internal void RecordRetreat()
     {
         _shock = 0f;
-        _faultPressure = Mathf.Max(0f, _faultPressure - Mathf.Max(MinimumBreakThreshold, Value));
-        _faultCooldownRemaining = BreakCooldown;
-        _pulseCooldownRemaining = PulseLockDuration;
+        _retreatCount++;
     }
+
+    // A surrounded break (case C): shock resets and EffectiveMorale drops by the surrounded penalty.
+    internal void RecordSurroundedBreak()
+    {
+        _shock = 0f;
+        _surroundedBreakCount++;
+    }
+
+    // Test hook: set Shock directly.
+    internal void SetShockForTests(float shock) => _shock = Mathf.Max(0f, shock);
 }

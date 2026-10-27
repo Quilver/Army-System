@@ -37,11 +37,27 @@ public sealed class SoldierMotionConstraints
             if (soldier.IsAlive) ConstrainToRadius(soldier);
     }
 
+    // The clamp radius. A stretched line (longer than the troop is wide) widens it to reach its line points: soldiers of a
+    // linked, stretched line may sit outside TroopRadius (Q-11 option a, working assumption). A routed troop scatters.
+    public float EffectiveRadius
+    {
+        get
+        {
+            float radius = _troop.Radius;
+            if (_troop.IsRouted) return radius * TroopTuning.Active.RoutScatterRadiusScale;
+            TroopFormationData formation = _troop.Formation;
+            if (formation == null) return radius;
+            Vector2 pivot = _troop.transform.position;
+            float reach = Mathf.Max(Vector2.Distance(pivot, formation.Start), Vector2.Distance(pivot, formation.End));
+            return Mathf.Max(radius, reach + TroopConstants.LineSpacing);
+        }
+    }
+
     public void ConstrainToRadius(SoldierAgentState soldier)
     {
-        // Retreating and charging soldiers may leave the troop radius.
-        if (soldier.FaultOffset > 0f || soldier.IsCommitted) return;
-        float radius = _troop.Radius;
+        // Retreating and committed soldiers may leave the troop radius.
+        if (soldier.IsRetreatTracking || soldier.IsCommitted) return;
+        float radius = EffectiveRadius;
         float distance = soldier.Position.magnitude;
         if (distance <= radius) return;
         Vector2 normal = soldier.Position / distance;

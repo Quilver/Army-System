@@ -1,36 +1,54 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// Allied endpoint links: a stiff spring with a small dead zone plus relative-velocity matching.
+// Pulls linked troops toward each other so their natural line points meet at the joint (spec §3.4.1 pinned anchor):
+// a spring with a small dead zone plus relative-velocity matching. The force is applied only to the unengaged side:
+// tension never moves an engaged troop out of melee. If the stretch or hinge limit is exceeded the link snaps
+// (ChainLinker) instead of dragging the engaged troop. Pending links have no tension.
 public static class AlliedLinkTension
 {
-    const float LinkSlack = 0.1f;
-    const float LinkStiffness = 5f;
-    const float LinkMaxForce = 10.4f;
     const float LinkVelocityMatching = 1f;
 
     public static void Apply(IReadOnlyList<Troop> troops, Dictionary<Troop, Vector2> forces)
     {
+        TroopTuning tuning = TroopTuning.Active;
         foreach (var troop in troops)
         {
             if (troop == null) continue;
-            for (int end = 0; end < 2; end++)
+            for (int end = 0; end < TroopConstants.MaxChainLinks; end++)
             {
+                if (!troop.IsLinkActive(end)) continue;
                 TroopEndpointLink link = troop.GetLineLink(end);
-                if (link == null || link.Other == null || troop.GetInstanceID() >= link.Other.GetInstanceID()) continue;
-                if (!forces.ContainsKey(link.Other)) continue;
-                float gap = link.Tension.magnitude;
-                float extension = Mathf.Max(0f, gap - LinkSlack);
-                float tension = Mathf.Min(LinkMaxForce, extension * LinkStiffness);
-                Vector2 force = gap > 0.0001f ? link.Tension / gap * tension : Vector2.zero;
-                TroopDiagnostics.RecordTension(troop, end, link.Other, link.OtherEnd, link.Tension, tension);
+                Troop other = link.Other;
+                if (troop.GetInstanceID() >= other.GetInstanceID() || !forces.ContainsKey(other)) continue;
 
-                // Damp relative motion so linked troops travel together instead of oscillating or peeling apart.
-                Vector2 relativeVelocity = link.Other.PivotVelocity - troop.PivotVelocity;
-                force += relativeVelocity * LinkVelocityMatching;
+                bool troopFree = !troop.IsEngaged && !troop.IsRouted;
+                bool otherFree = !other.IsEngaged && !other.IsRouted;
+                if (!troopFree && !otherFree) continue;
+
+                float gap = link.Tension.magnitude;
+                float extension = Mathf.Max(0f, gap - tuning.LinkSlack);
+                float tension = Mathf.Min(tuning.LinkMaxForce, extension * tuning.LinkStiffness);
+                Vector2 force = gap > 0.0001f ? link.Tension / gap * tension : Vector2.zero;
+
+                // Damp relative motion so linked troops travel together, but only when neither side is pinned.
+                if (troopFree && otherFree)
+                    force += (other.PivotVelocity - troop.PivotVelocity) * LinkVelocityMatching;
                 if (force.sqrMagnitude <= 0.000001f) continue;
-                forces[troop] += force;
-                forces[link.Other] -= force;
+
+                if (troopFree && otherFree)
+                {
+                    forces[troop] += force;
+                    forces[other] -= force;
+                }
+                else if (troopFree)
+                {
+                    forces[troop] += force * 2f;
+                }
+                else
+                {
+                    forces[other] -= force * 2f;
+                }
             }
         }
     }

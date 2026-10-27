@@ -1,12 +1,12 @@
 using UnityEngine;
 
-// Moves the troop pivot: marching to a destination, pursuing an enemy troop, or being pushed by allied line links
-// while retreating.
+// Moves the troop pivot: marching to a destination (Move, or the centre of a line order), pursuing an enemy troop,
+// fleeing after a rout, and the line-push drift from line pressure and link tension.
+// Pivot speed is the troop's Move x SpeedUnitsPerStatPoint (spec §1.3, §3.2); Move is the slowest soldier's Speed.
 public sealed class TroopPivotMover
 {
     const float ArrivalDistanceSquared = 0.0004f;
     const float ArrivalPushSquared = 0.0025f;
-    const float MaxPivotSpeedCap = 6.24f;
 
     readonly Troop _troop;
     readonly TroopPathFollower _path;
@@ -24,11 +24,17 @@ public sealed class TroopPivotMover
     }
 
     public bool IsMoving => _hasDestination || _pursuitActive;
+    public bool IsPursuing => _pursuitActive;
+    public Troop PursuitTarget => _pursuitActive ? _pursuitTarget : null;
     public bool HasPlainDestination => _hasDestination && !_pursuitActive;
     public Vector2 Destination => _destination;
     public Vector2 PivotVelocity => _pivotVelocity + _linePushVelocity;
+    public Vector2 MarchVelocity => _pivotVelocity;
     public Vector2 LinePushVelocity => _linePushVelocity;
     public void SetLinePushVelocity(Vector2 velocity) => _linePushVelocity = velocity;
+
+    // Pivot speed in units/s.
+    public float PivotSpeed => _troop.Move * TroopTuning.Active.SpeedUnitsPerStatPoint;
 
     public void MoveTo(Vector2 worldPosition)
     {
@@ -47,7 +53,7 @@ public sealed class TroopPivotMover
         _path.RequestRebuild();
     }
 
-    // Drops every movement order (used when the troop breaks and retreats).
+    // Drops every movement order (used when the troop breaks or routs).
     public void CancelOrders()
     {
         _hasDestination = false;
@@ -59,14 +65,20 @@ public sealed class TroopPivotMover
 
     public void Tick(float deltaTime)
     {
-        Transform transform = _troop.transform;
-        Vector2 before = transform.position;
-        if (_troop.State == UnitState.Fleeing)
-            transform.position += (Vector3)(_linePushVelocity * deltaTime); // linked neighbours keep hold during retreat
+        if (_troop.IsRouted)
+            Flee(deltaTime);
+        else if (_troop.IsFaultSlipping)
+            _troop.transform.position += (Vector3)(_linePushVelocity * deltaTime); // linked neighbours keep hold during retreat
         else
             MoveToDestination(deltaTime);
-        TroopDiagnostics.RecordPivot(_troop, _hasDestination, _pursuitTarget, _pivotVelocity, _linePushVelocity,
-            (Vector2)transform.position - before);
+    }
+
+    void Flee(float deltaTime)
+    {
+        _pivotVelocity = _troop.RoutFleeDirection * PivotSpeed;
+        Vector2 position = _troop.transform.position;
+        Vector2 step = _pivotVelocity * deltaTime;
+        _troop.transform.position = position + step;
     }
 
     void MoveToDestination(float deltaTime)
@@ -85,7 +97,7 @@ public sealed class TroopPivotMover
             }
             else if (deltaTime > 0f && offset.sqrMagnitude > 0.000001f)
             {
-                Vector2 step = _path.Step(position, _destination, MaxPivotSpeed(), deltaTime);
+                Vector2 step = _path.Step(position, _destination, PivotSpeed, deltaTime);
                 _pivotVelocity = step / deltaTime;
                 position += step;
             }
@@ -94,15 +106,17 @@ public sealed class TroopPivotMover
         _troop.transform.position = (Vector3)position + (Vector3)(_linePushVelocity * deltaTime);
     }
 
+    // Pursuit ends when the target dies (or routs and despawns) or the player gives a new order (Q-24).
     void UpdatePursuit()
     {
         if (!_pursuitActive) return;
-        if (_pursuitTarget == null)
+        if (_pursuitTarget == null || _pursuitTarget.LivingSoldierCount == 0)
         {
             _pursuitActive = false;
             _hasDestination = false;
+            _pursuitTarget = null;
             _path.Invalidate();
-            _troop.State = UnitState.Idle;
+            _troop.OnOrderComplete();
             return;
         }
         _destination = _pursuitTarget.transform.position;
@@ -113,10 +127,7 @@ public sealed class TroopPivotMover
     void Arrive()
     {
         _hasDestination = false;
-        _troop.State = UnitState.Idle;
         _path.Invalidate();
-        _troop.LineOrder.CompleteOnArrival();
+        _troop.OnOrderComplete();
     }
-
-    float MaxPivotSpeed() => Mathf.Min(MaxPivotSpeedCap, _troop.Roster.MaxProfileValue(profile => profile.MaxSpeed) * 0.65f);
 }

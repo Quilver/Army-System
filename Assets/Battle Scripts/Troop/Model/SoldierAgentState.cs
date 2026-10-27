@@ -9,7 +9,7 @@ public sealed class SoldierAgentState
     [SerializeField] int _id;
     [SerializeField] SoldierProfile _profile;
     [SerializeField] SoldierLifeState _lifeState;
-    [SerializeField] float _health;
+    [SerializeField] SoldierHealth _health;
     [SerializeField] Vector2 _position;
     [SerializeField] Vector2 _velocity;
     [SerializeField] Vector2 _facing = Vector2.right;
@@ -18,13 +18,21 @@ public sealed class SoldierAgentState
     [SerializeField] SoldierFaultMotionState _fault = new();
     [SerializeField] SoldierClashPulseState _clashPulse = new();
     [SerializeField] SoldierSeparationState _separation = new();
-    [SerializeField] SoldierMeleeState _melee = new();
+    [SerializeField] float _clashCooldownRemaining;
 
     public int Id => _id;
     public SoldierProfile Profile => _profile;
     public SoldierLifeState LifeState => _lifeState;
-    public float Health => _health;
+    public SoldierHealth Health => _health;
+    public int CurrentHp => _health.CurrentHp;
+    public int MaxHp => _health.MaxHp;
     public bool IsAlive => _lifeState != SoldierLifeState.Dead;
+
+    // Alive and not fatigued: the soldier can take part in supporting its neighbours.
+    public bool CanSupport => IsAlive && _lifeState != SoldierLifeState.Fatigued;
+
+    // Defence plus the armour bonus. Without a profile or armour, only the soldier's Defence (or 0) counts.
+    public int TotalDefence => _profile == null ? 0 : _profile.Defence + (_profile.Armour != null ? _profile.Armour.DefenceBonus : 0);
     public Vector2 Position { get => _position; internal set => _position = value; }
     public Vector2 Velocity { get => _velocity; internal set => _velocity = value; }
     public Vector2 Facing { get => _facing; internal set => _facing = value; }
@@ -36,17 +44,29 @@ public sealed class SoldierAgentState
     public bool IsClashColorPulsing => _clashPulse.IsPulsing;
     public float ClashColorPulseProgress => _clashPulse.Progress;
 
-    // Charge
-    public float ChargeCooldownRemaining => _charge.CooldownRemaining;
+    // Charge (spec §4.3, §4.4)
+    public ChargeRole ChargeRole => _charge.Role;
     public SoldierAgentState ChargeTarget => _charge.Target;
     public Troop ChargeTargetTroop => _charge.TargetTroop;
+    public SoldierAgentState ChargeLeader => _charge.Leader;
     public float ChargeTimeRemaining => _charge.TimeRemaining;
+    public float ChargeStartTime => _charge.StartTime;
+
+    // Per-soldier clash rate limit for contacts that are not charges (spec §4.5, Q-26).
+    public float ClashCooldownRemaining => _clashCooldownRemaining;
 
     // Retreat
     public float FaultOffset { get => _fault.Offset; internal set => _fault.Offset = value; }
     public float FaultRetreatScale { get => _fault.RetreatScale; internal set => _fault.RetreatScale = value; }
     public float FaultDelayRemaining { get => _fault.DelayRemaining; internal set => _fault.DelayRemaining = value; }
     public float FaultMoveDuration => _fault.MoveDuration;
+    public bool IsRetreatTracking => _fault.Tracking;
+    public Vector2 FaultHome => _fault.Home;
+    public Vector2 FaultTargetPosition => _fault.TargetPosition;
+    public Vector2 FaultTargetVelocity => _fault.TargetVelocity;
+    internal void BeginFaultTracking() => _fault.BeginTracking(_position);
+    internal void EndFaultTracking() => _fault.EndTracking();
+    internal void SetFaultTarget(Vector2 position, Vector2 velocity) => _fault.SetTarget(position, velocity);
 
     // Separation from other troops
     public Vector2 ExternalSeparation => _separation.External;
@@ -56,50 +76,66 @@ public sealed class SoldierAgentState
         _id = id;
         _profile = profile;
         _lifeState = SoldierLifeState.Active;
-        _health = profile != null ? profile.MaxHealth : 1f;
+        _health = new SoldierHealth(profile != null ? profile.MaxHealth : CombatStatLimits.HpDefault);
         _position = position;
     }
 
-    public void TickCooldowns(float deltaTime) => _charge.TickCooldown(deltaTime);
+    public void TickCooldowns(float deltaTime) =>
+        _clashCooldownRemaining = Mathf.Max(0f, _clashCooldownRemaining - deltaTime);
 
-    // Melee attack accrual and discipline timing (see SoldierMeleeState).
-    public SoldierMeleeState Melee => _melee;
+    public void StartClashCooldown(float seconds) =>
+        _clashCooldownRemaining = Mathf.Max(_clashCooldownRemaining, seconds);
 
-    // Spends a ready melee attack. Dead soldiers cannot attack.
-    public bool TrySpendMeleeAttack() => IsAlive && _melee.TrySpendAttack();
-    public bool HasMeleeAttack => IsAlive && _melee.ReadyAttacks > 0;
+    // A soldier charging an enemy soldier.
+    public bool IsCharging => _charge.Role == ChargeRole.Charger && _charge.Target != null;
 
-    // Committed soldiers are charging an enemy or lunging at one. They move toward it and may leave the troop radius.
-    public bool IsCommitted => ChargeTarget != null || _melee.IsLunging;
+    // A passive follower of a charger (spec §4.4).
+    public bool IsFollowing => _charge.Role == ChargeRole.Follower && _charge.Leader != null;
 
-    // A soldier charging an enemy. Charging soldiers slip between other soldiers instead of being pushed apart.
-    public bool IsCharging => ChargeTarget != null;
+    // Chargers and followers are committed: they leave the field, may leave the troop radius, and are exempt from
+    // separation, density spreading and drive pressure in both directions (spec §2.3).
+    public bool IsCommitted => IsCharging || IsFollowing;
 
     public void BeginClashColorPulse(float duration) => _clashPulse.Begin(duration);
     public bool TickClashColorPulse(float deltaTime) => _clashPulse.Tick(deltaTime);
 
-    public void SetCharge(SoldierAgentState target, Troop targetTroop, float duration, float cooldown) =>
-        _charge.Begin(target, targetTroop, duration, cooldown);
+    public void BeginCharge(SoldierAgentState target, Troop targetTroop, float timeout, float startTime) =>
+        _charge.BeginCharge(target, targetTroop, timeout, startTime);
+    public void BeginFollow(SoldierAgentState leader, float timeout, float startTime) =>
+        _charge.BeginFollow(leader, timeout, startTime);
     public void TickCharge(float deltaTime) => _charge.Tick(deltaTime);
-    public void CancelCharge(float cooldown = 0f) => _charge.Cancel(cooldown);
+    public void CancelCharge() => _charge.End();
 
     public void SetFaultMotion(float delay, float moveDuration) => _fault.Set(delay, moveDuration);
 
     public void AddExternalSeparation(Vector2 force) => _separation.Add(force);
     public void ClearExternalSeparation() => _separation.Clear();
 
-    public float ApplyDamage(float damage)
+    // Takes the rolled hit. Bleed and bruise are clamped to the HP that remains; overflow is applied last, so it cannot
+    // push out bruise. Returns what was applied.
+    public AppliedDamage ApplyMitigation(MitigationResult mitigation)
     {
-        if (!IsAlive || damage <= 0f)
-            return 0f;
+        if (!IsAlive) return default;
 
-        float appliedDamage = Mathf.Min(_health, damage);
-        _health -= appliedDamage;
-        _lifeState = _health <= 0f
+        int shockBleed = _health.ApplyBleed(mitigation.Bled);
+        int bruised = _health.ApplyBruise(mitigation.Bruised);
+        int overflowBled = _health.ApplyBleed(mitigation.Overflow);
+        SyncLifeState();
+        return new AppliedDamage(bruised, shockBleed + overflowBled, shockBleed + bruised);
+    }
+
+    // Advances bruise healing by one frame's time. Called once per frame by the troop after its morale tick.
+    internal void TickHealing(float deltaTime, float healPerSecond)
+    {
+        if (!IsAlive) return;
+        if (_health.TickBruiseHealing(deltaTime, healPerSecond) > 0) SyncLifeState();
+    }
+
+    void SyncLifeState()
+    {
+        _lifeState = _health.IsDead
             ? SoldierLifeState.Dead
-            : _health < (_profile != null ? _profile.MaxHealth : 1f)
-                ? SoldierLifeState.Injured
-                : SoldierLifeState.Active;
-        return appliedDamage;
+            : _health.IsFatigued(TroopTuning.Active.FatigueFraction) ? SoldierLifeState.Fatigued : SoldierLifeState.Active;
+        if (_lifeState == SoldierLifeState.Dead) _charge.End();
     }
 }

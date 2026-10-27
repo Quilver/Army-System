@@ -62,7 +62,7 @@ public sealed class TroopSoldierViews
     public void DestroyAll()
     {
         foreach (var renderer in _renderers)
-            if (renderer != null) Object.Destroy(renderer.gameObject);
+            if (renderer != null) TroopObjects.Destroy(renderer.gameObject);
         _renderers.Clear();
     }
 

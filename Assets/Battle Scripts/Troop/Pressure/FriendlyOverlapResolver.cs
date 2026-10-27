@@ -1,14 +1,16 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// Allied troops may close up to link lines and to surround an enemy from different sides, but their centres may not
-// stack. A soft force cannot hold them apart against pursuit/line drive, so overlap is resolved by moving the pivots
-// directly. Only the separation along the line between the two centres is corrected, so flanking is not obstructed.
+// Pivots of friendly troops (same army) keep at least PivotSeparationScale x (r_A + r_B) apart (spec §2.4), which stops
+// troops blobbing onto one point. A soft force cannot hold them apart against pursuit or line drive, so the overlap is
+// resolved by moving the pivots directly along the line between them. Only pivots are checked: line points are never
+// part of this, so endpoint attachment is never blocked. Linked pairs are not exempt (Q-15).
 public static class FriendlyOverlapResolver
 {
-    // Minimum distance between allied troop centres, in units of the (average) troop radius. Shared with line orders.
-    public const float MinimumFriendlySpacingRadii = 0.5f;
     const int FriendlyOverlapPasses = 3;
+
+    public static float MinimumSpacing(Troop a, Troop b) =>
+        TroopTuning.Active.PivotSeparationScale * (a.Radius + b.Radius);
 
     public static void Resolve(IReadOnlyList<Troop> troops)
     {
@@ -21,8 +23,9 @@ public static class FriendlyOverlapResolver
                 Troop first = troops[i];
                 Troop second = troops[j];
                 if (first == null || second == null || first.TeamId != second.TeamId) continue;
+                if (first.IsRouted || second.IsRouted) continue;
 
-                float minimumDistance = (first.Radius + second.Radius) * 0.5f * MinimumFriendlySpacingRadii;
+                float minimumDistance = MinimumSpacing(first, second);
                 Vector2 offset = (Vector2)first.transform.position - (Vector2)second.transform.position;
                 float distance = offset.magnitude;
                 if (distance >= minimumDistance) continue;
@@ -30,9 +33,11 @@ public static class FriendlyOverlapResolver
                 Vector2 direction = distance > 0.0001f
                     ? offset / distance
                     : (first.GetInstanceID() < second.GetInstanceID() ? Vector2.right : Vector2.left);
-                Vector2 correction = direction * ((minimumDistance - distance) * 0.5f);
-                first.ShiftPivot(correction);
-                second.ShiftPivot(-correction);
+                float correction = minimumDistance - distance;
+                // An engaged troop is not pushed; its friend gives way.
+                float firstShare = first.IsEngaged == second.IsEngaged ? 0.5f : first.IsEngaged ? 0f : 1f;
+                first.ShiftPivot(direction * (correction * firstShare));
+                second.ShiftPivot(-direction * (correction * (1f - firstShare)));
                 moved = true;
             }
             if (!moved) break;

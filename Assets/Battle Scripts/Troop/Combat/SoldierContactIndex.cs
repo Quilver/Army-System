@@ -21,6 +21,23 @@ public sealed class SoldierContactIndex
 
     public bool TryGetBucket(Vector2Int cell, out List<int> bucket) => _buckets.TryGetValue(cell, out bucket);
 
+    // Indices of every contact within radius of position (spatial query, not a loop over all contacts).
+    public void GatherWithin(Vector2 position, float radius, List<int> results)
+    {
+        results.Clear();
+        if (radius <= 0f) return;
+        Vector2Int center = CellFor(position);
+        int reach = Mathf.CeilToInt(radius / CellSize);
+        float radiusSquared = radius * radius;
+        for (int x = -reach; x <= reach; x++)
+        for (int y = -reach; y <= reach; y++)
+        {
+            if (!_buckets.TryGetValue(new Vector2Int(center.x + x, center.y + y), out var bucket)) continue;
+            foreach (int index in bucket)
+                if ((_contacts[index].Position - position).sqrMagnitude <= radiusSquared) results.Add(index);
+        }
+    }
+
     public void Rebuild(IReadOnlyList<Troop> troops)
     {
         foreach (var bucket in _buckets.Values)

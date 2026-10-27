@@ -1,14 +1,15 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// Rolling record of one troop's melee over the last Window seconds. The troop is the attacker for attacks it makes and
-// the defender for damage it takes. Samples older than the window are dropped; Reset starts a fresh record.
+// Rolling record of one troop's melee over the last Window seconds: charges started by its soldiers, clashes they took
+// part in, duels they won, and damage dealt and taken. Samples older than the window are dropped; Reset starts a fresh
+// record. The charge rate per soldier is the check for spec §4.3 (about Aggression charges per ActionWindowSeconds).
 public sealed class MeleeMetrics
 {
     public const float DefaultWindow = 30f;
 
     readonly Queue<Sample> _samples = new();
-    float _window;
+    readonly float _window;
     float _startTime;
 
     public MeleeMetrics(float window = DefaultWindow)
@@ -17,17 +18,17 @@ public sealed class MeleeMetrics
         _startTime = Time.time;
     }
 
-    // An attack is a soldier spending a banked attack to start a clash.
-    public void RecordAttack()
-    {
-        Add(new Sample { Time = Time.time, Attacks = 1 });
-    }
+    public float Window => _window;
 
-    // A hit is a clash the troop's soldier won.
-    public void RecordHit()
-    {
-        Add(new Sample { Time = Time.time, Hits = 1 });
-    }
+    public void RecordChargeStarted() => Add(new Sample { Time = Time.time, Charges = 1 });
+
+    public void RecordFollowerJoined() => Add(new Sample { Time = Time.time, Followers = 1 });
+
+    // A clash the troop took part in (either side).
+    public void RecordClash() => Add(new Sample { Time = Time.time, Clashes = 1 });
+
+    // A duel this troop's soldier won.
+    public void RecordDuelWin() => Add(new Sample { Time = Time.time, DuelWins = 1 });
 
     public void RecordDamageDone(float damage)
     {
@@ -41,11 +42,7 @@ public sealed class MeleeMetrics
         Add(new Sample { Time = Time.time, DamageReceived = damage });
     }
 
-    // A clash the troop took part in, whether or not an attack was spent in it.
-    public void RecordClash()
-    {
-        Add(new Sample { Time = Time.time, Clashes = 1 });
-    }
+    public void RecordShot(bool hit) => Add(new Sample { Time = Time.time, Shots = 1, ShotHits = hit ? 1 : 0 });
 
     public void Reset()
     {
@@ -59,11 +56,14 @@ public sealed class MeleeMetrics
         var summary = new Summary { Window = _window, LivingSoldiers = livingSoldiers };
         foreach (var sample in _samples)
         {
-            summary.Attacks += sample.Attacks;
-            summary.Hits += sample.Hits;
+            summary.Charges += sample.Charges;
+            summary.Followers += sample.Followers;
+            summary.Clashes += sample.Clashes;
+            summary.DuelWins += sample.DuelWins;
             summary.DamageDone += sample.DamageDone;
             summary.DamageReceived += sample.DamageReceived;
-            summary.Clashes += sample.Clashes;
+            summary.Shots += sample.Shots;
+            summary.ShotHits += sample.ShotHits;
         }
         // Until a full window has passed, rates use the time actually recorded so they are not understated.
         summary.Elapsed = Mathf.Min(_window, Time.time - _startTime);
@@ -86,11 +86,14 @@ public sealed class MeleeMetrics
     struct Sample
     {
         public float Time;
-        public int Attacks;
-        public int Hits;
+        public int Charges;
+        public int Followers;
+        public int Clashes;
+        public int DuelWins;
         public float DamageDone;
         public float DamageReceived;
-        public int Clashes;
+        public int Shots;
+        public int ShotHits;
     }
 
     public struct Summary
@@ -98,15 +101,21 @@ public sealed class MeleeMetrics
         public float Window;
         public float Elapsed;
         public int LivingSoldiers;
-        public int Attacks;
-        public int Hits;
+        public int Charges;
+        public int Followers;
+        public int Clashes;
+        public int DuelWins;
         public float DamageDone;
         public float DamageReceived;
-        public int Clashes;
+        public int Shots;
+        public int ShotHits;
 
-        public float AttacksPerSecond => Elapsed > 0f ? Attacks / Elapsed : 0f;
-        public float AttacksPerSecondPerSoldier => LivingSoldiers > 0 ? AttacksPerSecond / LivingSoldiers : 0f;
-        public float HitRate => Attacks > 0 ? (float)Hits / Attacks : 0f;
+        public float ChargesPerSecond => Elapsed > 0f ? Charges / Elapsed : 0f;
+        // Charges per soldier, scaled to a full window: compare with Aggression (spec §4.3).
+        public float ChargesPerSoldierPerWindow =>
+            LivingSoldiers > 0 && Elapsed > 0f ? Charges / Elapsed * Window / LivingSoldiers : 0f;
+        public float DuelWinRate => Clashes > 0 ? (float)DuelWins / Clashes : 0f;
+        public float HitRate => Shots > 0 ? (float)ShotHits / Shots : 0f;
         public float DamageDonePerSecond => Elapsed > 0f ? DamageDone / Elapsed : 0f;
         public float DamageReceivedPerSecond => Elapsed > 0f ? DamageReceived / Elapsed : 0f;
     }

@@ -37,11 +37,12 @@ public sealed class TroopFormationStateEditor : TroopModuleEditor
         var state = (TroopFormationState)target;
         var formation = state.Formation;
         EditorGUILayout.Toggle("Has Line", formation != null);
+        EditorGUILayout.Toggle("Threat Within S_Distance", state.HasThreat);
         EditorGUILayout.Toggle("Threat Facing", state.IsThreatFacing);
         if (formation != null)
         {
-            EditorGUILayout.Vector2Field("Start", formation.Start);
-            EditorGUILayout.Vector2Field("End", formation.End);
+            EditorGUILayout.Vector2Field("Start (right)", formation.Start);
+            EditorGUILayout.Vector2Field("End (left)", formation.End);
             EditorGUILayout.Vector2Field("Facing", formation.Facing);
         }
         EditorGUILayout.Vector2Field("Threat Heading", state.Heading);
@@ -49,16 +50,30 @@ public sealed class TroopFormationStateEditor : TroopModuleEditor
     }
 }
 
+// Morale (spec §5): EffectiveMorale, the initial value, Shock and its decay, the break counts, and the case that would
+// apply if the troop broke now.
 [CustomEditor(typeof(TroopMorale))]
 public sealed class TroopMoraleEditor : TroopModuleEditor
 {
     protected override void DrawRuntimeState()
     {
         var morale = (TroopMorale)target;
-        EditorGUILayout.FloatField("Morale", morale.Value);
+        DrawMorale(morale, morale.GetComponent<Troop>());
+    }
+
+    public static void DrawMorale(TroopMorale morale, Troop troop)
+    {
+        if (morale == null) return;
+        bool surrounded = troop != null && troop.IsSurrounded();
+        EditorGUILayout.LabelField("Morale", EditorStyles.boldLabel);
+        EditorGUILayout.FloatField("Effective Morale", morale.EffectiveMorale);
+        EditorGUILayout.FloatField("Initial Effective Morale", morale.InitialEffectiveMorale);
         EditorGUILayout.FloatField("Shock", morale.Shock);
-        EditorGUILayout.FloatField("Fault Pressure", morale.FaultPressure);
-        EditorGUILayout.FloatField("Break Cooldown", morale.BreakCooldownRemaining);
-        EditorGUILayout.Toggle("Pulse Locked", morale.IsPulseLocked);
+        EditorGUILayout.FloatField("Shock Decay / s", morale.DecayPerSecond);
+        EditorGUILayout.IntField("Retreats", morale.RetreatCount);
+        EditorGUILayout.IntField("Surrounded Breaks", morale.SurroundedBreakCount);
+        EditorGUILayout.Toggle("Surrounded", surrounded);
+        EditorGUILayout.EnumPopup("Case If Broken Now", morale.CaseIfBroken(surrounded));
+        if (troop != null) EditorGUILayout.Toggle("Routed", troop.IsRouted);
     }
 }
