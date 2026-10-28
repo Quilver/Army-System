@@ -149,6 +149,42 @@ public sealed class TroopScenarioTests
         Assert.AreEqual(TroopTuning.Active.RetreatDistance, moved, 0.05f, "Retreat distance");
     }
 
+    // SU-14: the rear ranks start first and move faster; the front ranks start later and move slower (accordion).
+    [Test]
+    public void Retreat_RearRanksFallBackFirstAndFaster()
+    {
+        Troop troop = CreateTroop("Accordion", 0, Vector2.zero, soldiers: 30);
+        troop.OrderLine(Vector2.zero, Vector2.right, troop.NaturalLineLength);
+        Simulate(2f);
+
+        var living = new List<SoldierAgentState>();
+        foreach (var soldier in troop.Soldiers)
+            if (soldier.IsAlive) living.Add(soldier);
+        // No attacker: the retreat runs along -Facing (-x), so the rear is the lowest x and the front the highest.
+        living.Sort((a, b) => World(troop, a).x.CompareTo(World(troop, b).x));
+        int third = living.Count / 3;
+        var start = new Dictionary<SoldierAgentState, float>();
+        foreach (var soldier in living) start[soldier] = World(troop, soldier).x;
+
+        troop.SetShockForTests(troop.EffectiveMorale + 1f);
+        Assert.IsTrue(troop.IsRetreating);
+        Simulate(0.8f);
+
+        float MeanFallBack(int from, int to)
+        {
+            float sum = 0f;
+            for (int i = from; i < to; i++) sum += start[living[i]] - World(troop, living[i]).x;
+            return sum / (to - from);
+        }
+        float rear = MeanFallBack(0, third);
+        float front = MeanFallBack(living.Count - third, living.Count);
+        Assert.Greater(rear, 2f, "Rear third has fallen back most of the way");
+        Assert.Less(front, 1f, "Front third has barely started");
+        Assert.Greater(rear - front, 1.5f, "The troop stretches out (accordion)");
+    }
+
+    static Vector2 World(Troop troop, SoldierAgentState soldier) => troop.transform.TransformPoint(soldier.Position);
+
     [Test]
     public void SurroundedBreak_DoesNotRetreat_AndCostsTwenty()
     {

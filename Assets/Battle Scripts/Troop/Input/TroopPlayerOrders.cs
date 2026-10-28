@@ -4,7 +4,8 @@ using UnityEngine.InputSystem;
 // Controller for player control of troops (spec §6): reads the new Input System directly, then delegates to selection
 // and order planning. Every threshold is in screen pixels, so it does not depend on zoom.
 //   LMB click / drag      select (box select from BoxSelectMinDragPixels); Shift toggles
-//   RMB click / drag      Pursue (on an enemy), Move (on ground), or a battle line (from OrderDragMinPixels)
+//   RMB click / drag      Pursue (on an enemy), Move (on ground); a drag from OrderDragMinPixels is a battle line for
+//                         two or more troops and a Move for one troop (a single troop is never given a facing)
 //   Alt                   force unlink of chained troops / keep reserves from linking (spec §6.3)
 // The first selected troop is shown on the scene's unit card (TroopSelectionCard).
 public sealed class TroopPlayerOrders : MonoBehaviour

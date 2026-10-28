@@ -5,13 +5,20 @@ using UnityEngine;
 public sealed class OrderClassifierTests
 {
     [Test] public void SevenPixelsOnEnemy_IsPursue() =>
-        Assert.AreEqual(OrderKind.Pursue, OrderClassifier.Classify(Vector2.zero, new Vector2(7f, 0f), 8f, true));
+        Assert.AreEqual(OrderKind.Pursue, OrderClassifier.Classify(Vector2.zero, new Vector2(7f, 0f), 8f, true, 1));
 
     [Test] public void SevenPixelsOnGround_IsMove() =>
-        Assert.AreEqual(OrderKind.Move, OrderClassifier.Classify(Vector2.zero, new Vector2(7f, 0f), 8f, false));
+        Assert.AreEqual(OrderKind.Move, OrderClassifier.Classify(Vector2.zero, new Vector2(7f, 0f), 8f, false, 1));
 
-    [Test] public void NinePixels_IsLine() =>
-        Assert.AreEqual(OrderKind.Line, OrderClassifier.Classify(Vector2.zero, new Vector2(9f, 0f), 8f, true));
+    [Test] public void NinePixels_SeveralTroops_IsLine() =>
+        Assert.AreEqual(OrderKind.Line, OrderClassifier.Classify(Vector2.zero, new Vector2(9f, 0f), 8f, true, 2));
+
+    // SU-16/17: a single troop is never given a facing, so its drag is a Move (even when released on an enemy).
+    [Test] public void NinePixels_SingleTroop_IsMove()
+    {
+        Assert.AreEqual(OrderKind.Move, OrderClassifier.Classify(Vector2.zero, new Vector2(9f, 0f), 8f, false, 1));
+        Assert.AreEqual(OrderKind.Move, OrderClassifier.Classify(Vector2.zero, new Vector2(9f, 0f), 8f, true, 1));
+    }
 
     [Test] public void BoxSelect_StartsAtEightPixels()
     {

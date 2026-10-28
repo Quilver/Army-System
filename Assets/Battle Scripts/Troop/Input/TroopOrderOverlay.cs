@@ -34,7 +34,7 @@ public static class TroopOrderOverlay
         };
         string text =
             "LMB click / drag: select (Shift toggles)   Alt + order: unlink / keep reserves unlinked\n" +
-            "RMB: enemy = pursue, ground = move, drag = battle line   Selected: " + selectedCount + "\n" +
+            "RMB: enemy = pursue, ground = move, drag = move (1 troop) / battle line (2+)   Selected: " + selectedCount + "\n" +
             "Tether: green = stays chained, dashed red = link breaks on release";
 
         // Centred, and no wider than the gap between the screen's left edge and the right-hand status panel allows.

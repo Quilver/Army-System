@@ -7,6 +7,46 @@ change work; confirm or replace). `specifications.md` itself is not edited; fold
 
 ---
 
+## 2026-10-27 (3): Stronger retreat accordion, no facing orders for a single troop
+
+### SU-14 Retreat move time grows from rear to front (Decision, revises SU-12 and SU-13)
+- Spec §2.3, §5.5 step 1; §7.2 retreat tuning.
+- The rear soldiers now start first **and** move fastest; the front soldiers start last **and** move slowest, so the
+  troop stretches out much further before it closes up again.
+- `RetreatSoldierMoveSeconds` (1.2 s, one value for everyone) is replaced by **`RetreatRearMoveSeconds`** (default
+  **0.8 s**) and **`RetreatFrontMoveSeconds`** (default **1.8 s**). Each soldier's move time is interpolated by how far
+  forward it stands along the attack axis, the same measure as its start delay.
+- `RetreatWaveDelaySeconds` default raised from 0.6 s to **1.0 s**. With the defaults the rearmost soldier has reached
+  its new place before the frontmost one starts, so the stretch reaches the full retreat distance.
+- Retreat (Fleeing) length is now `RetreatWaveDelaySeconds + max(rear, front move) + 0.5 s settle` = **3.3 s** with the
+  defaults (was 2.3 s). The troop still cannot break again until it ends (D-30).
+- Code: `TroopTuning` (`RetreatRearMoveSeconds`, `RetreatFrontMoveSeconds`, `RetreatMoveSecondsAt`),
+  `FaultSlipMotion.AssignSoldierMotion` / `SlipDuration`.
+
+### SU-15 Retreat acceleration headroom 3x -> 6x (Assumption, consequence of SU-14)
+- Spec §5.5.
+- A soldier's acceleration (8) with 3x headroom cannot cover a 5-unit retreat in 0.8 s; the rear would lag its schedule
+  and the rear/front speed difference would be lost. `SoldierSteering.RetreatAccelerationHeadroom` is raised to 6x so
+  the rear ranks keep to `RetreatRearMoveSeconds`. Speed headroom (1.5x the scheduled speed) is unchanged.
+
+### SU-16 A single troop cannot be given a facing; its drag is a Move (Decision, revises spec §6.2 "Single troop")
+- Spec §6.2 "Drag at or above `OrderDragMinPixels`", §3.3 triggers.
+- With one troop selected, an RMB drag at or above `OrderDragMinPixels` is a plain **Move** to the release point, not a
+  battle line. The troop gets no line order and no ordered facing. Its line forms, and faces the threat, automatically
+  when an enemy comes within `S_Distance` (§3.3 trigger 1).
+- Drags with two or more troops selected are unchanged: a chained battle line with the Q-17 facing.
+- `Troop.OrderLine` itself is unchanged and still used by scripted setups and tests; only player input stops issuing it
+  for a single troop.
+- Code: `OrderClassifier.Classify` takes the selected count; `TroopOrderPlanner` (single-troop line branch removed);
+  help text in `TroopOrderOverlay`.
+
+### SU-17 A single-troop drag released on an enemy is a Move, not a Pursue (Assumption)
+- Spec §6.2.
+- Pursue stays a click (below `OrderDragMinPixels`) on an enemy troop. A drag is always a Move for a single troop,
+  wherever it is released. Change `OrderClassifier.Classify` if a drag onto an enemy should pursue instead.
+
+---
+
 ## 2026-10-27 (2): Engagement gap, retreat distance, retreat wave
 
 ### SU-07 EngagementGap replaces LineGap (Decision)
