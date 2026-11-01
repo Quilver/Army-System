@@ -10,6 +10,39 @@ public static class TroopOrderOverlay
     static readonly Color TetherOutside = new(1f, 0.25f, 0.2f, 0.95f);
     static readonly Color JointColor = new(1f, 1f, 1f, 0.95f);
     static Texture2D _dotTexture;
+<<<<<<< HEAD
+=======
+    static GUIStyle _helpStyle;
+    static Rect _helpRect;
+
+    // Where the help panel was last drawn (GUI space). Clicks inside it do not select or issue orders.
+    public static Rect HelpRect => _helpRect;
+
+    public static void DrawHelp(int selectedCount)
+    {
+        _helpStyle ??= new GUIStyle(GUI.skin.label)
+        {
+            fontSize = Mathf.RoundToInt(HelpBaseFontSize * HelpScale),
+            wordWrap = true,
+            richText = false
+        };
+        string text =
+            "LMB click / drag: select (Shift toggles)   Alt + order: unlink / keep reserves unlinked\n" +
+            "RMB: enemy = pursue, ground = move, drag = move (1 troop) / battle line (2+)   Selected: " + selectedCount + "\n" +
+            "Tether: green = stays chained, dashed red = link breaks on release";
+
+        // Centred, and no wider than the gap between the screen's left edge and the right-hand status panel allows.
+        float rightPanelLeft = Screen.width * (1f - RightPanelWidthFraction) - HelpMargin;
+        float maxWidth = 2f * (rightPanelLeft - HelpMargin - Screen.width * 0.5f);
+        float width = Mathf.Max(200f, Mathf.Min(HelpBaseWidth * HelpScale, maxWidth));
+        float textHeight = _helpStyle.CalcHeight(new GUIContent(text), width - 2f * HelpPadding);
+        _helpRect = new Rect((Screen.width - width) * 0.5f, HelpMargin, width, textHeight + 2f * HelpPadding);
+
+        GUI.Box(_helpRect, GUIContent.none);
+        GUI.Label(new Rect(_helpRect.x + HelpPadding, _helpRect.y + HelpPadding, width - 2f * HelpPadding, textHeight),
+            text, _helpStyle);
+    }
+>>>>>>> 3d6160f0ae6d113d825a20452525e7614893f92e
 
     // Start and end are screen positions (origin bottom-left), as read from the mouse.
     public static void DrawSelectionBox(Vector2 start, Vector2 end)

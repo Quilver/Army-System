@@ -3,9 +3,10 @@ using UnityEngine;
 
 // Turns a right-button release into orders for the selected troops (spec §6.2, §6.3):
 //   Pursue  click on an enemy troop: every selected troop pursues it (Assault applies on engagement).
-//   Move    click on ground: the troops keep their relative offsets and translate to the target; they arrive Idle.
-//   Line    drag: a battle line along the drag. One troop takes the whole drag; several troops split the span in order
-//           along the drag, adjacent line points meet at joints, and the order creates their links explicitly (Q-19).
+//   Move    click on ground, or any drag with a single troop selected: the troops keep their relative offsets and
+//           translate to the release point; they arrive Idle. A single troop is never given a facing (SU-16).
+//   Line    drag with several troops: a battle line along the drag. The troops split the span in order along the drag,
+//           adjacent line points meet at joints, and the order creates their links explicitly (Q-19).
 // Chain rules for a troop linked to a troop that is not part of the order: inside the envelope (stretch <= 3.0 x L_nat,
 // inner angle >= 65 degrees) the link stays; outside it, or with Alt held, the link is severed when the order is issued
 // and the troop is ChainSuppressed. Alt on an unlinked troop suppresses auto-linking until its order completes (Q-23).
@@ -52,7 +53,8 @@ public sealed class TroopOrderPlanner
         float pickRadius = TroopScreenSpace.PixelsToWorld(camera, releaseScreen, Tuning.ClickPickRadiusPixels);
         Troop enemy = _selection.TroopAtPoint(worldEnd, pickRadius, _selection.PlayerTeamId, sameTeam: false);
 
-        switch (OrderClassifier.Classify(pressScreen, releaseScreen, Tuning.OrderDragMinPixels, enemy != null))
+        switch (OrderClassifier.Classify(pressScreen, releaseScreen, Tuning.OrderDragMinPixels, enemy != null,
+            selected.Count))
         {
             case OrderKind.Pursue:
                 foreach (Troop troop in selected)
@@ -89,7 +91,8 @@ public sealed class TroopOrderPlanner
         var selected = LiveSelection();
         Vector2 worldStart = TroopScreenSpace.ScreenToWorld(camera, pressScreen);
         Vector2 worldEnd = TroopScreenSpace.ScreenToWorld(camera, currentScreen);
-        OrderKind kind = OrderClassifier.Classify(pressScreen, currentScreen, Tuning.OrderDragMinPixels, false);
+        OrderKind kind = OrderClassifier.Classify(pressScreen, currentScreen, Tuning.OrderDragMinPixels, false,
+            selected.Count);
         if (kind == OrderKind.Line) PlanLine(selected, worldStart, worldEnd);
         else PlanMove(selected, worldEnd);
 
@@ -121,8 +124,8 @@ public sealed class TroopOrderPlanner
         }
     }
 
-    // One troop takes the whole drag (clamped to [MinimumLineLength, L_nat], spec §6.2). Several troops split the span
-    // in order along the drag (Q-18); each length is its share, clamped to [0.7, 3.0] x L_nat.
+    // Several troops split the span in order along the drag (Q-18); each length is its share, clamped to
+    // [0.7, 3.0] x L_nat. The player never orders a single troop into a line (SU-16: a single-troop drag is a Move).
     public void PlanLine(List<Troop> selected, Vector2 start, Vector2 end)
     {
         _placements.Clear();
@@ -139,19 +142,6 @@ public sealed class TroopOrderPlanner
             int alongLine = aPosition.CompareTo(bPosition);
             return alongLine != 0 ? alongLine : a.GetInstanceID().CompareTo(b.GetInstanceID());
         });
-
-        if (selected.Count == 1)
-        {
-            Troop troop = selected[0];
-            _placements.Add(new Placement
-            {
-                Troop = troop,
-                Center = (start + end) * 0.5f,
-                Facing = facing,
-                Length = Mathf.Clamp(span, troop.MinimumLineLength, troop.NaturalLineLength)
-            });
-            return;
-        }
 
         float share = span / selected.Count;
         for (int i = 0; i < selected.Count; i++)

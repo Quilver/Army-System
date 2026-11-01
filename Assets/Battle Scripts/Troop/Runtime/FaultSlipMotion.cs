@@ -4,8 +4,9 @@ using UnityEngine;
 // The accordion retreat a troop performs when it breaks (spec §5.5, FaultSlipMotion). The pivot slips back by the
 // retreat distance (TroopTuning.RetreatDistance) at once, but every soldier holds its ground until its own start time
 // and then falls back to its place in the new line. Start times run as a wave from the rear (the side away from the
-// attacker) to the front: the rearmost soldier moves at once and the frontmost one RetreatWaveDelaySeconds later, so the
-// troop stretches out and then closes up again (accordion). Each soldier takes RetreatSoldierMoveSeconds to fall back.
+// attacker) to the front: the rearmost soldier moves at once and the frontmost one RetreatWaveDelaySeconds later. Move
+// time also grows toward the front: the rear runs back in RetreatRearMoveSeconds, the front takes RetreatFrontMoveSeconds,
+// so the troop stretches out hard and then closes up again (accordion).
 // The same motion carries a sympathetic retreat of a chained neighbour (spec §3.4 shared retreat), which costs no morale.
 public sealed class FaultSlipMotion
 {
@@ -17,9 +18,9 @@ public sealed class FaultSlipMotion
 
     static TroopTuning Tuning => TroopTuning.Active;
 
-    // Length of the retreat motion: the wave delay, one soldier's move, then the settle time.
+    // Length of the retreat motion: the wave delay, the slowest soldier's move, then the settle time.
     public static float SlipDuration =>
-        Tuning.RetreatWaveDelaySeconds + Tuning.RetreatSoldierMoveSeconds + SettleDuration;
+        Tuning.RetreatWaveDelaySeconds + Tuning.RetreatSlowestMoveSeconds + SettleDuration;
 
     readonly Troop _troop;
     readonly List<SoldierAgentState> _living = new();
@@ -110,11 +111,11 @@ public sealed class FaultSlipMotion
         }
     }
 
-    // The wave: rear soldiers (furthest from the attacker) start at once, front soldiers (nearest it) start last.
+    // The wave: rear soldiers (furthest from the attacker) start at once and move fastest; front soldiers (nearest it)
+    // start last and move slowest.
     void AssignSoldierMotion(Vector2 localAxis)
     {
         float waveDelay = Tuning.RetreatWaveDelaySeconds;
-        float moveDuration = Tuning.RetreatSoldierMoveSeconds;
         float rearDepth = float.PositiveInfinity;
         float frontDepth = float.NegativeInfinity;
         foreach (var soldier in _living)
@@ -130,7 +131,12 @@ public sealed class FaultSlipMotion
             float frontness = frontDepth - rearDepth > 0.0001f
                 ? Mathf.InverseLerp(rearDepth, frontDepth, depth)
                 : 0f;
+<<<<<<< HEAD
             soldier.SetFaultMotion(frontness * waveDelay, moveDuration);
+=======
+            soldier.CancelCharge();
+            soldier.SetFaultMotion(frontness * waveDelay, Tuning.RetreatMoveSecondsAt(frontness));
+>>>>>>> 3d6160f0ae6d113d825a20452525e7614893f92e
             soldier.FaultRetreatScale = 1f;
             soldier.BeginFaultTracking();
         }
