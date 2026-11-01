@@ -21,16 +21,10 @@ public sealed class SoldierSteering
     // Retreat arrival: the position stiffness is this fraction of the velocity gain. Below 0.25 the approach is
     // overdamped, so a retreating soldier slows to its place without overshooting it.
     const float RetreatArrivalStiffness = 0.2f;
-    // Retreating soldiers may move faster than their normal top speed to keep up with the scheduled retreat. The
-    // acceleration headroom lets the rear ranks keep to their short move time (RetreatRearMoveSeconds).
+    // Retreating soldiers may move faster than their normal top speed to keep up with the scheduled retreat.
     const float RetreatSpeedHeadroom = 1.5f;
-<<<<<<< HEAD
     const float RetreatAccelerationHeadroom = 3f;
     const float SeparationGain = 2.5f;   // separation strength relative to TroopTuning.SoldierSeparation
-=======
-    const float RetreatAccelerationHeadroom = 6f;
-    const float SeparationGain = 2.5f;   // separation strength relative to SoldierProfile.Separation
->>>>>>> 3d6160f0ae6d113d825a20452525e7614893f92e
     // Soldiers try to keep their centres this far apart. Neighbours closer than this push each other out, and the
     // minimum is enforced exactly by ResolveMinimumSeparation.
     const float SeparationDistance = TroopConstants.SeparationRadius;
