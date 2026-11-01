@@ -7,6 +7,7 @@ using UnityEngine.InputSystem;
 //   RMB click / drag      Pursue (on an enemy), Move (on ground); a drag from OrderDragMinPixels is a battle line for
 //                         two or more troops and a Move for one troop (a single troop is never given a facing)
 //   Alt                   force unlink of chained troops / keep reserves from linking (spec §6.3)
+//   P / gamepad Start     pause and resume (Time.timeScale); no selection or orders while paused
 // The first selected troop and the troop under the cursor are shown on troop cards (TroopCardHud), and the soldier under
 // the cursor gets a small HP bar over its head (SoldierHealthBar). A hovered troop with ranged weapons shows a
 // transparent mask of where it can shoot (TroopRangeMask). A hovered troop with a Move, Line or Attack order shows the
@@ -16,6 +17,7 @@ using UnityEngine.InputSystem;
 public sealed class TroopPlayerOrders : MonoBehaviour
 {
     [SerializeField] int _playerTeamId;
+    [SerializeField, Tooltip("Shown while the battle is paused (P or gamepad Start).")] GameObject _pausedIndicator;
 
     [Header("Range mask (hovered ranged troop)")]
     [SerializeField, Tooltip("Fill colour. Its alpha is ignored: see the fill alphas.")]
@@ -55,6 +57,9 @@ public sealed class TroopPlayerOrders : MonoBehaviour
     Vector2? _orderStart;
     Vector2 _mousePosition;
     bool _toggleSelection;
+    bool _paused;
+
+    public bool IsPaused => _paused;
 
     public EngagementViewMode EngagementView
     {
@@ -96,6 +101,15 @@ public sealed class TroopPlayerOrders : MonoBehaviour
         if (keyboard != null && keyboard.f5Key.wasPressedThisFrame) _engagementView = NextEngagementView(_engagementView);
         _engagementViewMesh.Update(_selection.Troops, _engagementView, EngagementStyle());
 
+        if (PausePressed(keyboard)) SetPaused(!_paused);
+        // No selection or orders while paused.
+        if (_paused)
+        {
+            _selectionStart = null;
+            _orderStart = null;
+            return;
+        }
+
         if (mouse.leftButton.wasPressedThisFrame && !overHud)
         {
             _selectionStart = _mousePosition;
@@ -123,8 +137,24 @@ public sealed class TroopPlayerOrders : MonoBehaviour
         _engagementViewMesh.Hide();
     }
 
+    // Pauses or resumes the battle. Does nothing while something else (a cutscene) has stopped time.
+    public void SetPaused(bool paused)
+    {
+        if (paused == _paused) return;
+        if (paused && Time.timeScale == 0f) return;
+        _paused = paused;
+        Time.timeScale = paused ? 0f : 1f;
+        if (_pausedIndicator != null) _pausedIndicator.SetActive(paused);
+    }
+
+    // Same keys as the Pause action in PlayerInputMap: P, or Start on a gamepad.
+    static bool PausePressed(Keyboard keyboard) =>
+        (keyboard != null && keyboard.pKey.wasPressedThisFrame) ||
+        (Gamepad.current != null && Gamepad.current.startButton.wasPressedThisFrame);
+
     void OnDestroy()
     {
+        if (_paused) Time.timeScale = 1f;
         _rangeMask.Destroy();
         _engagementViewMesh.Destroy();
     }

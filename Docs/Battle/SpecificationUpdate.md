@@ -70,6 +70,13 @@ change work; confirm or replace). `specifications.md` itself is not edited; fold
   sound on each volley, a death grunt per soldier killed, and an optional projectile-hit sound. Assumptions: each sound
   type is limited to one every 0.08 s; sounds are not positioned.
 
+### SU-66 Pause in the troop controls; battle canvas leftovers removed (Decision + Assumptions, spec §6)
+- Decision: P (or Start on a gamepad), the old Pause binding, pauses and resumes the battle (`Time.timeScale`) and shows
+  the canvas's "Paused" text. Assumptions: no selection or orders while paused; pausing does nothing while a cutscene has
+  stopped time.
+- Decision: the Deploy button (old deployment phase) and the unused "Victory and Defeat" text are removed from the
+  battle canvas, and Level 1's "Dynamic Obstacle" (old Unit layer) from the scene.
+
 ### SU-65 Old tabbed prep menu removed (Decision)
 - The tab-based Battle Preparation UI (`PreparationContoller`, `ToBattleButton`, the tabs, buy/sell/unit selection
   views, `UISelectionNavigation`) and its prefabs are deleted; the tent hub replaces it. `PreparationData`, `BuyOrders`

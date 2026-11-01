@@ -22,7 +22,12 @@ public static class LegacySceneCleanup
     const string VisualiserPrefab = Profiles + "Troop Visualiser.prefab";
     const string SoundPrefab = "Assets/AudioSystem/Battle scripts/Model SFX.prefab";
     const string LegacyPlayerController = "Assets/Battle Scripts/Player IO/Player controller.prefab";
+    const string BattleCanvasPrefab = "Assets/Battle Scripts/Player IO/BattleUI/Canvas.prefab";
     const int EnemyTeam = 1;
+    // Removed from the battle canvas prefab: the old deployment phase button and an unused result text.
+    static readonly string[] CanvasLeftovers = { "Deploy", "Victory and Defeat" };
+    // Removed from Level 1: a physics circle on the old Unit layer.
+    static readonly string[] Level1Leftovers = { "Dynamic Obstacle" };
 
     static readonly string[] LegacyUnitPrefabs =
     {
@@ -44,16 +49,18 @@ public static class LegacySceneCleanup
     static void Run()
     {
         if (!EditorUtility.DisplayDialog("Legacy scene cleanup",
-                "This edits and saves Level 1, Level 2, Level 1 Troop Test and Battle Preparation:\n\n" +
+                "This edits and saves the battle Canvas prefab, Level 1, Level 2, Level 1 Troop Test and Battle Preparation:\n\n" +
                 "- removes old units, old player controllers, the shooting cursor, missing AI prefabs and the old prep menu canvas\n" +
                 "- removes components whose script is missing\n" +
-                "- gives Level 1 and 2 a troop combat world, troop player orders, battle sounds and enemy troops where the old units stood\n\n" +
+                "- gives Level 1 and 2 a troop combat world, troop player orders, battle sounds and enemy troops where the old units stood\n" +
+                "- removes the Deploy button and 'Victory and Defeat' text (battle canvas) and Level 1's 'Dynamic Obstacle'\n\n" +
                 "Everything is on the legacy-removal branch, so it can be reverted with git.", "Run", "Cancel")) return;
         if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
         Log.Clear();
         SceneSetup[] setup = EditorSceneManager.GetSceneManagerSetup();
         try
         {
+            CleanBattleCanvasPrefab();
             CleanPreparation();
             CleanTroopTest();
             RebuildLevel(Level1);
@@ -66,6 +73,56 @@ public static class LegacySceneCleanup
             if (setup.Length > 0) EditorSceneManager.RestoreSceneManagerSetup(setup);
         }
         Debug.Log("[Legacy Removal] Scene cleanup done. Log: " + System.IO.Path.GetFullPath(LogPath));
+    }
+
+    // --- Battle canvas prefab ---
+
+    static void CleanBattleCanvasPrefab()
+    {
+        Log.AppendLine().AppendLine("=== " + BattleCanvasPrefab);
+        GameObject root = PrefabUtility.LoadPrefabContents(BattleCanvasPrefab);
+        try
+        {
+            foreach (Transform t in root.GetComponentsInChildren<Transform>(true).ToArray())
+                if (t != null && CanvasLeftovers.Contains(t.name))
+                {
+                    Log.AppendLine("  removed " + PathOf(t));
+                    Object.DestroyImmediate(t.gameObject);
+                }
+            PrefabUtility.SaveAsPrefabAsset(root, BattleCanvasPrefab);
+        }
+        finally
+        {
+            PrefabUtility.UnloadPrefabContents(root);
+        }
+    }
+
+    // Scene objects with these names that are not inside a prefab instance (added in the scene).
+    static void RemoveNamed(Scene scene, IEnumerable<string> names, string why)
+    {
+        var set = new HashSet<string>(names);
+        foreach (GameObject root in scene.GetRootGameObjects())
+            foreach (Transform t in root.GetComponentsInChildren<Transform>(true).ToArray())
+                if (t != null && set.Contains(t.name)) Remove(t.gameObject, why);
+    }
+
+    // TroopPlayerOrders shows the canvas's "Paused" text while paused.
+    static void WirePausedIndicator(Scene scene)
+    {
+        var orders = FindInScene<TroopPlayerOrders>(scene);
+        if (orders == null) return;
+        Transform paused = scene.GetRootGameObjects().SelectMany(r => r.GetComponentsInChildren<Transform>(true))
+            .FirstOrDefault(t => t.name == "Paused" && t.GetComponentInParent<Canvas>(true) != null);
+        if (paused == null)
+        {
+            Log.AppendLine("  ! no 'Paused' text found for TroopPlayerOrders");
+            return;
+        }
+        var so = new SerializedObject(orders);
+        so.FindProperty("_pausedIndicator").objectReferenceValue = paused.gameObject;
+        so.ApplyModifiedPropertiesWithoutUndo();
+        paused.gameObject.SetActive(false);
+        Log.AppendLine("  TroopPlayerOrders shows " + PathOf(paused) + " while paused");
     }
 
     // --- Battle Preparation: the old tabbed menu canvas (inactive, its scripts deleted). ---
@@ -96,8 +153,10 @@ public static class LegacySceneCleanup
             }
         }
         RemoveLegacyObjects(scene, out _);
+        RemoveNamed(scene, CanvasLeftovers, "unused battle canvas object");
         RemoveMissingScripts(scene);
         EnsureSound(scene);
+        WirePausedIndicator(scene);
         Save(scene);
     }
 
@@ -117,6 +176,8 @@ public static class LegacySceneCleanup
         Section(scene);
 
         RemoveLegacyObjects(scene, out List<OldUnit> oldUnits);
+        RemoveNamed(scene, CanvasLeftovers, "unused battle canvas object");
+        if (path == Level1) RemoveNamed(scene, Level1Leftovers, "old physics obstacle");
         RemoveMissingScripts(scene);
 
         if (FindInScene<TroopCombatWorld>(scene) == null && world != null)
@@ -137,6 +198,7 @@ public static class LegacySceneCleanup
             Log.AppendLine("  added Player controller (TroopPlayerOrders)");
         }
         EnsureSound(scene);
+        WirePausedIndicator(scene);
 
         Army enemy = FindInScene<Battle>(scene)?.enemy;
         foreach (OldUnit unit in oldUnits.Where(u => u.Enemy))
