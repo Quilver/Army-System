@@ -17,7 +17,7 @@ public static class SoldierSpriteLibrary
         get
         {
             if (_modelMaterial == null)
-                _modelMaterial = Resources.Load<Material>("Battle prefabs/Model prefabs/ModelMat");
+                _modelMaterial = Resources.Load<Material>("Battle/Soldiers/ModelMat");
             return _modelMaterial;
         }
     }
