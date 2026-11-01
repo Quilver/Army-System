@@ -5,7 +5,7 @@ using UnityEngine;
 // - Growths: the % chance that each stat goes up on a level-up (StatGrowths, default 20 %).
 // - Caps: come from the character's class (CharacterClass.StatCaps). A character without a class uses the StatCaps
 //   defaults (20, HP 40). Weapon skills are capped per weapon class.
-// - Achievements that give EXP towards level-ups will be added here later.
+// - Achievements: set up for the character's troop in each battle it is deployed in (AchievementController).
 // The battle system reads only the CharacterProfile part, so a campaign character fights exactly like any other
 // character and can sit in any TroopProfile.
 [CreateAssetMenu(menuName = "Troops/Campaign Character")]
@@ -15,6 +15,11 @@ public sealed class CampaignCharacter : CharacterProfile
     [SerializeField] StatGrowths _growths = new();
 
     public StatGrowths Growths => _growths;
+
+    [Header("Campaign: achievements in every battle this character fights")]
+    [SerializeField] List<AchievementSystem.CharacterAchievement> _achievements = new();
+
+    public IReadOnlyList<AchievementSystem.CharacterAchievement> Achievements => _achievements;
 
     // Growth chance (%) of a stat.
     public int GrowthFor(CharacterStat stat) => _growths.For(stat);

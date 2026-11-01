@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Text;
-using BattleUI;
 using UnityEngine;
 
 // Troop cards (spec §6.1), drawn with IMGUI by TroopPlayerOrders:
@@ -359,8 +358,6 @@ public sealed class TroopCardHud
     {
         if (Time.unscaledTime < _nextLegacySearch) return;
         _nextLegacySearch = Time.unscaledTime + LegacySearchInterval;
-        foreach (var card in Object.FindObjectsByType<UnitCard>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
-            card.gameObject.SetActive(false);
         foreach (var rect in Object.FindObjectsByType<RectTransform>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
             if (rect.name == LegacyCardObjectName) rect.gameObject.SetActive(false);
     }

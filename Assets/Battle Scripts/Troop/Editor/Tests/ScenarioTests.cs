@@ -137,8 +137,8 @@ public sealed class TroopScenarioTests
         Troop enemy = CreateTroop("Enemy", 1, new Vector2(60f, 0f));
         int destroyedEvents = 0;
         int routedEvents = 0;
-        void OnDestroyed(IUnit unit) { if (unit == troop) destroyedEvents++; }
-        IUnit.OnUnitDestroyed += OnDestroyed;
+        void OnDestroyed(Troop defeated) { if (defeated == troop) destroyedEvents++; }
+        BattleEvents.TroopDefeated += OnDestroyed;
         try
         {
             troop.Routed += _ => routedEvents++;
@@ -165,7 +165,7 @@ public sealed class TroopScenarioTests
         }
         finally
         {
-            IUnit.OnUnitDestroyed -= OnDestroyed;
+            BattleEvents.TroopDefeated -= OnDestroyed;
         }
         Assert.IsTrue(enemy != null);
     }

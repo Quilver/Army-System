@@ -1,77 +1,66 @@
-using System.Collections;
 using System.Collections.Generic;
+using Campaign;
 using UnityEngine;
-using UnityEngine.TextCore.Text;
+
 namespace Deployment
 {
+    // Spawns one troop for each character deployed in the pre-battle tent (BattleReport.DeployedRoster), in a grid
+    // across this object's area (its lossy scale), facing this object's up. Every character fights as its own troop
+    // until pairing is built (TentHub.md PB-Q4). Bridge between campaign and battle (Tween system).
     public class DeployUnitFromBattleReport : MonoBehaviour
     {
-        [SerializeField]
-        Army armyData;
-        Vector3 Range;
-        [SerializeField, Range(3, 10)] float unitSpacing = 6;
-        private void Awake()
+        [SerializeField] Army armyData;
+        [SerializeField, Tooltip("Team id of the spawned troops; the player team in TroopPlayerOrders.")] int _teamId;
+        [SerializeField, Range(3, 40), Tooltip("Distance between troop centres.")] float unitSpacing = 20f;
+        [SerializeField, Min(0.1f), Tooltip("Troop radius of each spawned troop.")] float _troopRadius = 16.5f;
+
+        const string VisualiserPrefabPath = "Troop and Character Profiles/Troop Visualiser";
+
+        readonly List<TroopProfile> _runtimeProfiles = new();
+
+        void Awake()
         {
-            Range = transform.lossyScale/2;
-            EvenDeployment();
+            if (!BattleReport.Exists) return;
+            EvenDeployment(BattleReport.DeployedRoster);
         }
-        void EvenDeployment()
+
+        void OnDestroy()
         {
-            var characters = BattleReport.DeployedCharacters;
-            int files = (characters.Count * unitSpacing > Range.x) ? characters.Count  : (int)(Range.x / unitSpacing);
-            int rows = characters.Count / files;
+            foreach (var profile in _runtimeProfiles)
+                if (profile != null) Destroy(profile);
+        }
+
+        void EvenDeployment(IReadOnlyList<RosterCharacter> characters)
+        {
+            if (characters == null || characters.Count == 0) return;
+            Vector2 range = transform.lossyScale;
+            int files = Mathf.Max(1, Mathf.Min(characters.Count, Mathf.FloorToInt(range.x / unitSpacing) + 1));
+            int rows = Mathf.CeilToInt(characters.Count / (float)files);
             for (int i = 0; i < characters.Count; i++)
             {
-                var xPos = (i % files * unitSpacing - Range.x/2) * transform.right;
-                var yPos = (Range.y/2 - i / files * unitSpacing) * transform.up;
-                Vector3 position = transform.position + xPos + yPos;
-                DeployUnit(characters[i], position);
+                int file = i % files;
+                int row = i / files;
+                float x = (file - (files - 1) * 0.5f) * unitSpacing;
+                float y = ((rows - 1) * 0.5f - row) * unitSpacing;
+                Vector3 position = transform.position + transform.right * x + transform.up * y;
+                DeployTroop(characters[i], position);
             }
+        }
 
-        }
-        void RandomDeployment()
+        void DeployTroop(RosterCharacter character, Vector3 position)
         {
-            var characters = BattleReport.DeployedCharacters;
-            foreach (var character in characters)
-                DeployUnit(character, transform.position + new Vector3(Random.Range(-Range.x, Range.x), Random.Range(-Range.y, Range.y)));
-        }
-        void DeployUnit(Campaign.PCWrapper character, Vector3 position)
-        {
-            var unit = Instantiate(character.statBase.UnitPrefab, position, Quaternion.identity);
-            unit.gameObject.name = character.statBase.UnitName;
-            unit.transform.parent=armyData.transform;
-            unit.Stats =character.GetStatsForBattle();
-            _SetRangedCombat(unit, character);
-            _SetWidth(unit, character);
+            if (character == null || character.character == null) return;
+            var profile = TroopProfile.CreateRuntimeProfile(new CharacterProfile[] { character.character }, _troopRadius);
+            profile.name = character.Name;
+            _runtimeProfiles.Add(profile);
 
-            
-        }
-        void _SetRangedCombat(IUnit unit, Campaign.PCWrapper character)
-        {
-            var rangedWeapon = unit.transform.GetComponentInChildren<RangedWeapon>();
-            if (character.statBase._rangedWeapon != null)
-            {
-                rangedWeapon.Setup(character.statBase);
-                rangedWeapon.gameObject.SetActive(true);
-            }
-            else
-            {
-                rangedWeapon.gameObject.SetActive(false);
-            }
-        }
-        void _SetWidth(IUnit unit, Campaign.PCWrapper character)
-        {
-            int width = 1;
-            int models = character.statBase.ModelCount;
-            if (models > 24) width = 8;
-            else if (models > 18) width = 7;
-            else if (models > 12) width = 6;
-            else if (models > 10) width = 5;
-            else if(models > 6) width = 4;
-            else if(models > 3) width = 3;
-            else if(models > 2) width = 2;
-            else width = 1;
-            unit.GetComponentInChildren<Formation.DeployFormationData>()._width = width;
+            var root = new GameObject(character.Name);
+            root.transform.SetParent(armyData != null ? armyData.transform : null, false);
+            root.transform.SetPositionAndRotation(position, transform.rotation);
+            var visualiser = Resources.Load<TroopVisualiser>(VisualiserPrefabPath);
+            if (visualiser != null) Instantiate(visualiser, root.transform).name = visualiser.name;
+            var troop = root.AddComponent<Troop>();
+            troop.Configure(_teamId, profile);
         }
     }
 }

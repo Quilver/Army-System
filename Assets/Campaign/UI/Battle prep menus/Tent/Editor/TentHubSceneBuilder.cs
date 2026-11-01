@@ -13,7 +13,7 @@ namespace BattlePrep.Tent.EditorTools
 {
     // Builds the pre-battle tent hub (Docs/PreBattle/TentHub.md) into the Battle Preparation scene:
     //  - sets the placeholder art in Tent/Art to readable, uncompressed sprites;
-    //  - copies the PreparationData list from the old PreparationContoller and deactivates the old tab canvas;
+    //  - keeps the PreparationData list of a previous Tent Hub;
     //  - creates the "Tent Hub" canvas (tent objects, tooltip, panels, dialogue box) and wires every reference.
     // Safe to run again: an existing "Tent Hub" is replaced. Menu: Leveraged Wars > Pre-Battle > Build Tent Hub.
     public static class TentHubSceneBuilder
@@ -58,15 +58,8 @@ namespace BattlePrep.Tent.EditorTools
             var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
             var log = new List<string>();
 
-            // Mission data from the old controller (or a previous build).
+            // Mission data from a previous build.
             var data = new List<PreparationData>();
-            foreach (var old in Object.FindObjectsByType<PreparationContoller>(FindObjectsInactive.Include, FindObjectsSortMode.None))
-            {
-                var list = new SerializedObject(old).FindProperty("preparationData");
-                for (int i = 0; i < list.arraySize; i++)
-                    data.Add(list.GetArrayElementAtIndex(i).objectReferenceValue as PreparationData);
-                if (data.Count > 0) break;
-            }
             foreach (var root in scene.GetRootGameObjects())
             {
                 if (root.name != HubName) continue;
@@ -80,18 +73,6 @@ namespace BattlePrep.Tent.EditorTools
                 log.Add("Replaced the previous Tent Hub.");
             }
             if (data.Count == 0) Debug.LogWarning("Tent: no PreparationData found; assign them on Tent Hub > TentHubController.");
-
-            // Retire the old tabbed menu (TentHub.md §8).
-            var retire = new HashSet<GameObject>();
-            foreach (var c in Object.FindObjectsByType<PreparationContoller>(FindObjectsInactive.Include, FindObjectsSortMode.None)) retire.Add(TopCanvasObject(c.transform));
-            foreach (var c in Object.FindObjectsByType<ToBattleButton>(FindObjectsInactive.Include, FindObjectsSortMode.None)) retire.Add(TopCanvasObject(c.transform));
-            foreach (var c in Object.FindObjectsByType<TopLineView>(FindObjectsInactive.Include, FindObjectsSortMode.None)) retire.Add(TopCanvasObject(c.transform));
-            foreach (var go in retire)
-                if (go.activeSelf)
-                {
-                    go.SetActive(false);
-                    log.Add($"Deactivated old menu object '{go.name}' (delete it once the tent is approved).");
-                }
 
             EnsureEventSystem(log);
             var hub = BuildHub(layout, data);
@@ -726,15 +707,6 @@ namespace BattlePrep.Tent.EditorTools
             if (Object.FindObjectsByType<EventSystem>(FindObjectsInactive.Exclude, FindObjectsSortMode.None).Length > 0) return;
             new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
             log.Add("Added an EventSystem (the old one was inside the retired menu).");
-        }
-
-        // The top-most Canvas object above t, or t's own object when it is not under a canvas.
-        static GameObject TopCanvasObject(Transform t)
-        {
-            GameObject top = t.gameObject;
-            for (var p = t; p != null; p = p.parent)
-                if (p.GetComponent<Canvas>() != null) top = p.gameObject;
-            return top;
         }
 
         static GameObject Prefab(string file)

@@ -78,14 +78,18 @@ public sealed class DuelResolver
         Vector2 pushDirection)
     {
         CharacterProfile profile = winner.Soldier.Character;
-        if (profile == null || winner.Troop.State == UnitState.Fleeing) return;
+        if (profile == null || winner.Troop.State == TroopState.Fleeing) return;
         bool lanceDouble = profile.HasLance && winner.Soldier.IsCharging;
         int raw = DamageRules.RawDamage(profile.Strength, profile.MeleeWeaponDamage, domination, lanceDouble);
         if (raw <= 0) return;
-        int applied = loser.Troop.ApplyDamage(loser.Soldier, raw, winner.Troop.transform.position, loserFlanked);
+        int applied = loser.Troop.ApplyDamage(loser.Soldier, raw, winner.Troop.transform.position, loserFlanked, winner.Troop);
         winner.Troop.MeleeMetrics.RecordDamageDone(applied);
         loser.Troop.MeleeMetrics.RecordDamageReceived(applied);
-        if (applied > 0) loser.Troop.PlayHitSquash(loser.Soldier, pushDirection);
+        if (applied > 0)
+        {
+            loser.Troop.PlayHitSquash(loser.Soldier, pushDirection);
+            BattleEvents.RaiseSoldierStruck(winner.Troop, loser.Troop, loser.Troop.WorldPosition(loser.Soldier));
+        }
     }
 
     // One charge = one clash: the charge ends on contact and the charger's followers return to the line.

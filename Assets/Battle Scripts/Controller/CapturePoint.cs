@@ -1,7 +1,7 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
+// A point the armies fight over. Every living soldier inside the point's 2D collider pulls control toward its army;
+// control moves at a rate set by the difference in soldiers (capped at 30) and is captured past triggerThreshold.
 public class CapturePoint : MonoBehaviour
 {
     public enum PointController
@@ -10,16 +10,7 @@ public class CapturePoint : MonoBehaviour
         Player,
         Enemy
     }
-    public PointController Controller
-    {
-        get
-        {
-            if(holder > triggerThreshold) return PointController.Player;
-            else if(holder < triggerThreshold) return PointController.Enemy;
-            else return PointController.Neutral;
-        }
-    }
-    public static System.Action<CapturePoint, Army> CapturedBy;
+
     public enum CapturePointType
     {
         Fortress,
@@ -27,62 +18,93 @@ public class CapturePoint : MonoBehaviour
         Banner,
         Misc
     }
-    [SerializeField]
-    Color PlayerControlled, NeutralControlled, AIControlled;
-    [SerializeField, Range(-1, 1)]
-    float holder;
-    [SerializeField, Range(0, 1)]
-    float triggerThreshold = 0.8f;
-    public event System.Action<bool> capturedBy;
+
+    const int MaxSoldierDifference = 30;
+    const float CountInterval = 0.25f;
+
+    [SerializeField] Color PlayerControlled, NeutralControlled, AIControlled;
+    [SerializeField, Range(-1, 1)] float holder;
+    [SerializeField, Range(0, 1)] float triggerThreshold = 0.8f;
+    [SerializeField, Tooltip("Used when the point has no Collider2D.")] float _radius = 5f;
+
+    // Raised when an army takes the point (Battle.player or Battle.enemy).
+    public static System.Action<CapturePoint, Army> CapturedBy;
     public static event System.Action<CapturePoint, bool> PointCaptured;
-    void InvokeCapture(bool playerCaptured)
+    public event System.Action<bool> capturedBy;
+
+    SpriteRenderer _sprite;
+    Collider2D _area;
+    int _soldierDifference;
+    float _nextCount;
+    PointController _controller;
+
+    public PointController Controller => _controller;
+
+    void Start()
     {
-        capturedBy?.Invoke(playerCaptured);
-        PointCaptured?.Invoke(this, playerCaptured);
+        _sprite = GetComponent<SpriteRenderer>();
+        _area = GetComponent<Collider2D>();
+        _controller = ControllerFor(holder);
     }
-    int counter = 0;
-    SpriteRenderer sprite;
-    private void Start()
-    {
-        sprite = GetComponent<SpriteRenderer>();
-    }
+
     void Update()
     {
-        bool belowThreshold = Mathf.Abs(holder) > triggerThreshold;
-
-        CalculateHolder();
+        if (Time.time >= _nextCount)
+        {
+            _nextCount = Time.time + CountInterval;
+            _soldierDifference = CountSoldiers();
+        }
+        float gradient = Mathf.Clamp(_soldierDifference, -MaxSoldierDifference, MaxSoldierDifference) * Time.deltaTime / 50f;
+        holder = Mathf.Clamp(holder + gradient, -1f, 1f);
         UpdateColour();
-        if (belowThreshold && Mathf.Abs(holder) > triggerThreshold)
-            InvokeCapture(holder > 0);
+
+        PointController controller = ControllerFor(holder);
+        if (controller == _controller) return;
+        _controller = controller;
+        if (controller == PointController.Neutral) return;
+        bool player = controller == PointController.Player;
+        capturedBy?.Invoke(player);
+        PointCaptured?.Invoke(this, player);
+        if (Battle.Instance != null) CapturedBy?.Invoke(this, player ? Battle.Instance.player : Battle.Instance.enemy);
     }
-    void CalculateHolder()
+
+    PointController ControllerFor(float value)
     {
-        float gradient = Mathf.Clamp(counter, -30, 30) * Time.deltaTime / 50;
-        holder = Mathf.Clamp(holder + gradient, -1, 1);
+        if (value >= triggerThreshold) return PointController.Player;
+        if (value <= -triggerThreshold) return PointController.Enemy;
+        return PointController.Neutral;
     }
+
+    // Player soldiers inside minus enemy soldiers inside.
+    int CountSoldiers()
+    {
+        Battle battle = Battle.Instance;
+        if (battle == null) return 0;
+        return Count(battle.player) - Count(battle.enemy);
+    }
+
+    int Count(Army army)
+    {
+        if (army == null) return 0;
+        int count = 0;
+        foreach (var troop in army.Troops)
+        {
+            if (troop.IsDefeated) continue;
+            foreach (var soldier in troop.Soldiers)
+                if (soldier.IsAlive && Contains(troop.WorldPosition(soldier))) count++;
+        }
+        return count;
+    }
+
+    bool Contains(Vector2 point) => _area != null
+        ? _area.OverlapPoint(point)
+        : ((Vector2)transform.position - point).sqrMagnitude <= _radius * _radius;
+
     void UpdateColour()
     {
-        if (holder > 0)
-            sprite.color = Color.Lerp(NeutralControlled, PlayerControlled, holder);
-        else
-            sprite.color = Color.Lerp(NeutralControlled, AIControlled, -holder);
-        if (holder > 0.8f) CapturedBy?.Invoke(this, Battle.Instance.player);
-        else if (holder < -0.8) CapturedBy?.Invoke(this, Battle.Instance.enemy);
+        if (_sprite == null) return;
+        _sprite.color = holder > 0
+            ? Color.Lerp(NeutralControlled, PlayerControlled, holder)
+            : Color.Lerp(NeutralControlled, AIControlled, -holder);
     }
-    private void OnTriggerEnter2D(Collider2D collision)
-    {
-        var model = collision.GetComponent<ModelComponents.IUnitData>();
-        if (model.Unit.GetComponentInParent<Army>() == Battle.Instance.player) 
-            counter++;
-        else counter--;
-    }
-    private void OnTriggerExit2D(Collider2D collision)
-    {
-        var model = collision.GetComponent<ModelComponents.IUnitData>();
-        if(model == null || model.Unit == null || model.Unit.GetComponentInParent<Army>()) return;
-        if (model.Unit.GetComponentInParent<Army>() == Battle.Instance.player)
-            counter--;
-        else counter++;
-    }
-
 }

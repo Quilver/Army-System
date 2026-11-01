@@ -72,9 +72,10 @@ public sealed class TroopProjectiles
         ITroopRandom random = shooter != null ? shooter.TroopRandom : targetTroop.TroopRandom;
         bool hit = random.Value() < projectile.HitChance;
         if (shooter != null) shooter.MeleeMetrics.RecordShot(hit);
+        BattleEvents.RaiseProjectileLanded(shooter, targetTroop, hit, targetTroop.WorldPosition(projectile.Target));
         if (!hit) return;
         Vector2 origin = shooter != null ? (Vector2)shooter.transform.position : projectile.From;
-        int applied = targetTroop.ApplyDamage(projectile.Target, projectile.Damage, origin, flanked: false);
+        int applied = targetTroop.ApplyDamage(projectile.Target, projectile.Damage, origin, flanked: false, shooter);
         if (shooter != null) shooter.MeleeMetrics.RecordDamageDone(applied);
         targetTroop.MeleeMetrics.RecordDamageReceived(applied);
     }

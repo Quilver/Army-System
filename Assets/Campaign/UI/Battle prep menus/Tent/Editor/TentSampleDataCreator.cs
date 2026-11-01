@@ -107,7 +107,6 @@ namespace BattlePrep.Tent.EditorTools
                     Repayment("Harvest loan", 120, 5, 1, "Last season's loan to feed the levies. Due next month."),
                     Repayment("Armourer's credit", 80, 3, 3, "Mail and helmets bought on credit before the last battle."),
                 },
-                Characters = new List<Campaign.PCWrapper>(),
                 Roster = new List<Campaign.RosterCharacter>(),
             };
             int[] level = { 3, 1, 2, 4, 1, 2, 5, 1 };

@@ -1,7 +1,7 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+
 namespace AchievementSystem
 {
     [CreateAssetMenu(menuName = "Achievements/Character Achievement")]
@@ -13,34 +13,40 @@ namespace AchievementSystem
         List<Reward> rewards;
         [SerializeField, TextArea]
         string _description;
-        public override string Description => _pcs.statBase.UnitName + " " + _description;
 
-        //Specific to instance
-        Campaign.PCWrapper _pcs;
-        public void Initialise(IUnit _units, Campaign.PCWrapper pcs)
+        public override string Description => (_character != null ? _character.Name + " " : "") + _description;
+
+        // Specific to instance
+        Campaign.RosterCharacter _character;
+
+        public void Initialise(Troop troop, Campaign.RosterCharacter character)
         {
-            _pcs = pcs;
-            name = _pcs.statBase.name + " " + name; 
-            _requirement.Setup(_pcs, _units);
-            if(_requirement.Valid())
+            _character = character;
+            name = character.Name + " " + name;
+            _requirement.Setup(character, troop);
+            if (_requirement.Valid())
                 BattleReport.Achievements.Add(this);
         }
+
         public override bool Achieved() => _requirement.Succeeded() > 0;
+
         public override void Reward()
         {
             foreach (var reward in rewards)
-                reward.GiveReward(_pcs, _requirement.Succeeded());
+                reward.GiveReward(_character, _requirement.Succeeded());
         }
+
         public static CharacterAchievement CreateCustom(CustomCharacterAchievement data)
         {
-            CharacterAchievement globalAchievement = ScriptableObject.CreateInstance<CharacterAchievement>();
-            globalAchievement.icon = data._icon;
-            globalAchievement._description = data._description;
-            globalAchievement._requirement = data._requirement;
-            globalAchievement.rewards = data.rewards;
-            return globalAchievement;
+            CharacterAchievement achievement = ScriptableObject.CreateInstance<CharacterAchievement>();
+            achievement.icon = data._icon;
+            achievement._description = data._description;
+            achievement._requirement = data._requirement;
+            achievement.rewards = data.rewards;
+            return achievement;
         }
     }
+
     [Serializable]
     public class CustomCharacterAchievement
     {

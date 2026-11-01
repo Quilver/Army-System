@@ -1,27 +1,36 @@
-﻿using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
-public class Army : MonoBehaviour {
-    public Color ArmyColour;
-    [SerializeField]
-    List<IUnit> _units;
-    
-    public List<IUnit> Units
+// One side of a battle: the troops under this object. Gives its troops their colour and names the opposing army.
+public class Army : MonoBehaviour
+{
+    public Color ArmyColour = Color.white;
+    [SerializeField] Army _enemy;
+
+    readonly List<Troop> _troops = new();
+
+    public Army Enemy => _enemy;
+
+    // Every troop under this army, including routed troops that have not left the field yet.
+    public IReadOnlyList<Troop> Troops
     {
         get
         {
-            if (transform == null) return null;
-            if (_units == null || _units.Count != transform.childCount) _units = GetComponentsInChildren<IUnit>().ToList();
-            else _units = _units.Where(x => x != null).ToList();
-            return _units;
+            _troops.Clear();
+            GetComponentsInChildren(false, _troops);
+            return _troops;
         }
     }
-    [SerializeField]
-    Army _enemy;
-    public List<IUnit> Enemies
+
+    // Troops still in the battle: not routed and not wiped out.
+    public int ActiveTroopCount
     {
-        get => _enemy.Units;
+        get
+        {
+            int count = 0;
+            foreach (var troop in Troops)
+                if (!troop.IsDefeated) count++;
+            return count;
+        }
     }
 }

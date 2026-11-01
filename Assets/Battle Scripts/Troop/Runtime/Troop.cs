@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using StatSystem.Refactor;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -12,10 +11,9 @@ using UnityEngine.Serialization;
 //                  TroopSoldierViews
 // Battle-wide systems (engagement, chains, pressure, charges, clashes, ranged fire) run in TroopCombatWorld.
 [RequireComponent(typeof(TroopRoster), typeof(TroopFormationState), typeof(TroopMorale))]
-public sealed class Troop : IUnit
+public sealed class Troop : MonoBehaviour
 {
-    [SerializeField] IUnitStatBlock _legacyStats;
-    [SerializeField] UnitState _state = UnitState.Idle;
+    [SerializeField] TroopState _state = TroopState.Idle;
     [SerializeField] int _teamId;
     [SerializeField] TroopProfile _profile;
     [SerializeField, HideInInspector, Min(0.1f), FormerlySerializedAs("_flockRadius")] float _troopRadius = 16.5f;
@@ -56,8 +54,15 @@ public sealed class Troop : IUnit
 
     public event Action<SoldierAgentState> SoldierDied;
 
-    // Raised once when the troop routs (spec §5.4). The legacy IUnit destroyed event is raised at the same time.
+    // Raised once when the troop routs (spec §5.4).
     public event Action<Troop> Routed;
+    // Raised once when the troop is out of the battle: at rout, or when its last soldier dies before it routs. The
+    // battle-wide BattleEvents.TroopDefeated is raised at the same time.
+    public event Action<Troop> Defeated;
+    public event Action<TroopState> StateChanged;
+    public event Action EnteredMelee, ExitedMelee;
+    bool _defeated;
+    public bool IsDefeated => _defeated;
 
     // --- Randomness ---
 
@@ -92,28 +97,24 @@ public sealed class Troop : IUnit
 
     // --- Identity and configuration ---
 
-    public override IUnitStatBlock Stats
-    {
-        get => _legacyStats;
-        set => _legacyStats = value;
-    }
-
-    public override UnitState State
+    public TroopState State
     {
         get => _state;
         set
         {
             if (_state == value) return;
             _state = value;
-            ChangeState(value);
+            StateChanged?.Invoke(value);
         }
     }
 
-    public override bool InMelee => _inMelee;
+    public bool InMelee => _inMelee;
     public int TeamId => _teamId;
     public TroopProfile Profile => _profile;
     public float Radius => Mathf.Max(0.1f, _profile != null ? _profile.TroopRadius : _troopRadius);
     public Color ArmyColor => _army != null ? _army.ArmyColour : Color.white;
+    // The army this troop belongs to (its parent Army), or null.
+    public Army Army => _army;
     static TroopTuning Tuning => TroopTuning.Active;
 
     // Natural line length L_nat (spec §3.3). Independent of the living soldier count.
@@ -374,7 +375,7 @@ public sealed class Troop : IUnit
         if (_roster.enabled) _roster.TickHealing(deltaTime, Tuning.BruiseHealPerSecond);
         _assault.Tick(deltaTime);
         _lineLinks.TickRelax(deltaTime, Tuning.ChainEndpointRelaxSpeed);
-        if (_faultSlip.TickRecovery(deltaTime) && !IsRouted) State = UnitState.Idle;
+        if (_faultSlip.TickRecovery(deltaTime) && !IsRouted) State = TroopState.Idle;
         EvaluateBreak();
         _faultSlip.Tick(deltaTime);
         EvaluateBreak();
@@ -414,7 +415,7 @@ public sealed class Troop : IUnit
         if (IsRouted || IsRetreating) return;
         _lineOrder.Cancel();
         _mover.MoveTo(worldPosition);
-        State = UnitState.Moving;
+        State = TroopState.Moving;
     }
 
     public void Pursue(Troop target)
@@ -422,7 +423,7 @@ public sealed class Troop : IUnit
         if (IsRouted || IsRetreating || target == null || target == this || target.TeamId == TeamId) return;
         _lineOrder.Cancel();
         _mover.Pursue(target);
-        State = UnitState.Moving;
+        State = TroopState.Moving;
     }
 
     // Marches to center, turns to facing and holds a line of the given length (clamped to the stretch envelope).
@@ -431,13 +432,13 @@ public sealed class Troop : IUnit
         if (IsRouted || IsRetreating) return;
         _lineOrder.Order(center, facing, Mathf.Clamp(length, MinimumLineLength, MaximumLineLength));
         _mover.MoveTo(center);
-        State = UnitState.Moving;
+        State = TroopState.Moving;
     }
 
     // The current Move or Pursue order finished (arrival, or the pursued troop is gone). A line order keeps holding.
     internal void OnOrderComplete()
     {
-        if (!IsRouted && !IsFaultSlipping) State = UnitState.Idle;
+        if (!IsRouted && !IsFaultSlipping) State = TroopState.Idle;
         if (_chainSuppressed) SetChainSuppressed(false);
     }
 
@@ -445,10 +446,14 @@ public sealed class Troop : IUnit
 
     // Melee or ranged raw damage in whole points. It is rolled against the target's armour, then applied. Returns the
     // applied HP. A flanked hit adds x3 Shock (spec §4.8).
-    public int ApplyDamage(SoldierAgentState target, int rawDamage, Vector2 attackerPivotPosition, bool flanked)
+    // attacker (optional) is credited with the kill in BattleEvents.SoldierKilled.
+    public int ApplyDamage(SoldierAgentState target, int rawDamage, Vector2 attackerPivotPosition, bool flanked,
+        Troop attacker = null)
     {
         if (target == null || rawDamage <= 0 || !target.IsAlive) return 0;
-        return _damage.Apply(target, Mitigate(target, rawDamage), attackerPivotPosition, flanked).Total;
+        int applied = _damage.Apply(target, Mitigate(target, rawDamage), attackerPivotPosition, flanked).Total;
+        if (!target.IsAlive) BattleEvents.RaiseSoldierKilled(this, target, attacker);
+        return applied;
     }
 
     // Armour rolls use this troop's stream, since the troop being hit is the one that owns the target soldier.
@@ -472,7 +477,8 @@ public sealed class Troop : IUnit
     {
         if (_inMelee == inMelee) return;
         _inMelee = inMelee;
-        Melee(inMelee);
+        if (inMelee) EnteredMelee?.Invoke();
+        else ExitedMelee?.Invoke();
     }
 
     internal void RaiseSoldierDied(SoldierAgentState soldier) => SoldierDied?.Invoke(soldier);
@@ -482,17 +488,20 @@ public sealed class Troop : IUnit
     internal void PlayHitSquash(SoldierAgentState soldier, Vector2 worldPushDirection) =>
         _views?.PlayHitSquash(soldier, worldPushDirection);
 
-    // Every soldier is dead. A routed troop already raised the destroyed event, so it is only removed.
+    // Every soldier is dead. A routed troop was already defeated, so it is only removed.
     internal void OnAllSoldiersDead()
     {
         ChainLinker.BreakAllLinks(this, ChainBreakReason.Invalid);
-        if (IsRouted) TroopObjects.Destroy(gameObject);
-        else if (Application.isPlaying) KillUnit();
-        else
-        {
-            RaiseUnitDestroyed();
-            TroopObjects.Destroy(gameObject);
-        }
+        RaiseDefeated();
+        TroopObjects.Destroy(gameObject);
+    }
+
+    void RaiseDefeated()
+    {
+        if (_defeated) return;
+        _defeated = true;
+        Defeated?.Invoke(this);
+        BattleEvents.RaiseTroopDefeated(this);
     }
 
     // --- Breaks (spec §5.3) ---
@@ -530,7 +539,7 @@ public sealed class Troop : IUnit
         Vector2 away = RetreatDirection();
         float distance = Tuning.RetreatDistance;
         _faultSlip.Begin(away, distance);
-        State = UnitState.Fleeing;
+        State = TroopState.Fleeing;
         ChainLinker.OnTroopRetreat(this, away, distance);
     }
 
@@ -562,9 +571,9 @@ public sealed class Troop : IUnit
         _assault.Clear();
         ChainLinker.BreakAllLinks(this, ChainBreakReason.Rout);
         _rout.Begin(AwayFromNearestEnemy());
-        State = UnitState.Fleeing;
+        State = TroopState.Fleeing;
         Routed?.Invoke(this);
-        RaiseUnitDestroyed();
+        RaiseDefeated();
     }
 
     void TickRout(float deltaTime)

@@ -1,32 +1,27 @@
-using Campaign;
-using System.Collections;
 using System.Collections.Generic;
+using Campaign;
 using UnityEngine;
+
 namespace EndGameUI
 {
+    // Post-battle screen: one card per roster character.
     public class UnitManager : MonoBehaviour
     {
         [SerializeField]
         GameObject unitCard;
-        [SerializeField]
-        List<PCWrapper> units;
+
         void Start()
         {
-            InitUnits(Campaign.CampaignDataManager.Data.Characters);
-            /*
-            if (BattleReport.statWrappers == null)
-                InitUnits(units);
-            else
-                InitUnits(BattleReport.statWrappers);
-            */
+            InitUnits(CampaignDataManager.Data.Roster);
         }
-        void InitUnits(List<PCWrapper> units)
+
+        void InitUnits(List<RosterCharacter> characters)
         {
-            this.units = units;
-            foreach (var unit in units)
+            if (characters == null) return;
+            foreach (var character in characters)
             {
-                var card = GameObject.Instantiate(unitCard, transform);
-                card.GetComponent<UnitCard>().Set(unit);
+                var card = Instantiate(unitCard, transform);
+                card.GetComponent<UnitCard>().Set(character);
             }
         }
     }

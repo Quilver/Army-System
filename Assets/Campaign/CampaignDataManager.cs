@@ -20,7 +20,10 @@ namespace Campaign
             {
                 if (CampaignDataManager.instance.LoadData || CampaignDataManager.instance.data == null)
                 {
-                    CampaignDataManager.instance.data = CampaignDataManager.instance.SaverLoader.Load();
+                    // No save: keep the starting data set on the DataManager prefab (or an empty campaign).
+                    CampaignData loaded = CampaignDataManager.instance.SaverLoader.Load();
+                    if (loaded != null) CampaignDataManager.instance.data = loaded;
+                    else CampaignDataManager.instance.data ??= new CampaignData();
                     CampaignDataManager.instance.LoadData = false;
                     Debug.Log("Loading game");
                 }

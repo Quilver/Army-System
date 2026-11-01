@@ -1,11 +1,13 @@
 using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
+using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+
 namespace EndGameUI
 {
+    // Post-battle card for one roster character: portrait, name, stats, and an XP bar that fills up to the XP the
+    // character has after the battle's rewards, playing the level-up sound each time it wraps.
     public class UnitCard : MonoBehaviour
     {
         [SerializeField]
@@ -14,128 +16,72 @@ namespace EndGameUI
         RectTransform levelBar, XPBar;
         [SerializeField]
         TextMeshProUGUI unitName, stats, levelUps;
-        [SerializeField] FloatText textFloater;
-
-        Campaign.PCWrapper unit;
         [SerializeField]
-        AudioSource LevelUp, GainStat, xpRising; 
-        public void Set(Campaign.PCWrapper unit)
-        {
-            this.unit = unit;
-            BattleReport.CharacterUpdate += CharacterUpdate;
-            portrait.sprite = unit.statBase.Portrait;
-            unitName.text = unit.statBase.UnitName;
-            stats.text = unit.statBase.StatString();
-            levelUps.text = unit.LevelBonuses();
-            InitTrackers();
-        }
-        void InitTrackers()
-        {
-            StartCoroutine(TrackXP());
-            totalOfStatsGained = new();
-            _statsGained = new();
-            unit.LevelledUp += GainedLevel;
-            unit.GainedStatBonus += GainedStat;
-            StartCoroutine(TrackLevelBonuses());
-        }
-        
-        int _lazyXP;
+        AudioSource LevelUp, xpRising;
         [SerializeField, Range(0.2f, 1)] float _minTrackerUpdateSpeed = 0.3f;
         [SerializeField, Range(1, 10)] float _maxTrackerCompletionTime = 5;
-        
+
+        Campaign.RosterCharacter unit;
+        int _lazyXP;
+
+        public void Set(Campaign.RosterCharacter character)
+        {
+            unit = character;
+            BattleReport.CharacterUpdate += CharacterUpdate;
+            portrait.sprite = character.Portrait;
+            unitName.text = character.Name;
+            stats.text = StatString(character);
+            levelUps.text = $"Level {character.level}";
+            StartCoroutine(TrackXP());
+        }
+
+        void OnDestroy() => BattleReport.CharacterUpdate -= CharacterUpdate;
+
+        static string StatString(Campaign.RosterCharacter character)
+        {
+            CampaignCharacter c = character.character;
+            if (c == null) return "";
+            var sb = new StringBuilder();
+            if (!string.IsNullOrEmpty(c.ClassName)) sb.Append(c.ClassName).Append('\n');
+            sb.Append($"Soldiers {c.Numbers}  Speed {c.Speed}  Morale {c.Morale}  Discipline {c.Discipline}\n");
+            sb.Append($"Strength {c.Strength}  Defence {c.Defence}  Charge {c.Charge}  HP {c.MaxHealth}");
+            return sb.ToString();
+        }
+
         IEnumerator TrackXP()
-        {   
-            _lazyXP = unit.CurrentXP;
-            float width = unit.PercentToNextLevel(_lazyXP) * levelBar.sizeDelta.x;
-            XPBar.sizeDelta = new Vector2(width, levelBar.sizeDelta.y);
+        {
+            // Start from the XP before this battle's rewards are counted in, if the card was set before them.
+            _lazyXP = unit.TotalXp;
+            SetBar(_lazyXP);
             yield return new WaitForSecondsRealtime(Random.Range(0.05f, 0.2f));
             while (enabled)
             {
-                if (unit.CurrentXP > _lazyXP)
+                if (unit.TotalXp > _lazyXP)
                 {
                     _lazyXP++;
-                    
-                    width = unit.PercentToNextLevel(_lazyXP) * levelBar.sizeDelta.x;
-                    XPBar.sizeDelta = new Vector2(width, levelBar.sizeDelta.y);
-                    if (unit.PercentToNextLevel(_lazyXP) == 0)
-                        ApplyGainedLevel();
-                    else
-                        xpRising.Play();
+                    SetBar(_lazyXP);
+                    if (Campaign.RosterCharacter.FractionToNextLevel(_lazyXP) == 0)
+                    {
+                        if (LevelUp != null) LevelUp.Play();
+                        levelUps.text = $"Level {_lazyXP / Campaign.RosterCharacter.XpPerLevel + 1}";
+                    }
+                    else if (xpRising != null) xpRising.Play();
                 }
-                float xpDelta = unit.CurrentXP - _lazyXP;
-                float waitTime = Mathf.Min(_minTrackerUpdateSpeed * xpDelta, _maxTrackerCompletionTime) / xpDelta;
-                yield return new WaitForSecondsRealtime(waitTime);
+                float xpDelta = Mathf.Max(1, unit.TotalXp - _lazyXP);
+                yield return new WaitForSecondsRealtime(Mathf.Min(_minTrackerUpdateSpeed * xpDelta, _maxTrackerCompletionTime) / xpDelta);
             }
         }
-        Dictionary<StatSystem.Refactor.StatType, int> totalOfStatsGained;
-        List<Dictionary<StatSystem.Refactor.StatType, int>> _statsGained;
-        int _levelGainedIndex = 0;
-        void GainedLevel() => _statsGained.Add(new Dictionary<StatSystem.Refactor.StatType, int>());
-        void GainedStat(StatSystem.Refactor.StatType type, int amount)
+
+        void SetBar(int totalXp)
         {
-            var list = _statsGained[_statsGained.Count - 1];
-            if(list.ContainsKey(type)) 
-                list[type] += amount;
-            else
-                list.Add(type, amount);
+            float width = Campaign.RosterCharacter.FractionToNextLevel(totalXp) * levelBar.sizeDelta.x;
+            XPBar.sizeDelta = new Vector2(width, levelBar.sizeDelta.y);
         }
-        void ApplyGainedLevel()
+
+        void CharacterUpdate(Campaign.RosterCharacter character)
         {
-            if (_statsGained[_levelGainedIndex].Count == 0) return;
-            LevelUp.Play();
-            foreach(var stat in _statsGained[_levelGainedIndex].Keys)
-            {
-                int bonus = _statsGained[_levelGainedIndex][stat];
-                if (totalOfStatsGained.ContainsKey(stat))
-                    totalOfStatsGained[stat] += bonus;
-                else 
-                    totalOfStatsGained.Add(stat,bonus);
-            }
-            _levelGainedIndex += 1;
-        }
-        void UpdateBonusStats(Dictionary<StatSystem.Refactor.StatType, int> statsGained)
-        {
-            string bonuses = "";
-            foreach (var statBonus in statsGained)
-            {
-                bonuses += $"{statBonus.Key.ToString()}: {statBonus.Value}, ";
-            }
-            if(bonuses.Length > 0) 
-                bonuses = bonuses.Remove(bonuses.Length - 1);
-            levelUps.text = bonuses;
-        }
-        IEnumerator TrackLevelBonuses()
-        {
-            Dictionary<StatSystem.Refactor.StatType, int> lazyBonuses = new();
-            yield return new WaitForSecondsRealtime(Random.Range(0.05f, 0.2f));
-            while (enabled)
-            {
-                float bonuses = 0;
-                foreach (var bonus in totalOfStatsGained.Values)
-                    bonuses += bonus;
-                if(bonuses > 0)
-                {
-                    GainStat.Play();
-                    bonuses--;
-                    var key = totalOfStatsGained.ToList()[Random.Range(0, totalOfStatsGained.Count - 1)];
-                    totalOfStatsGained[key.Key]--;
-                    FloatText.FireText(textFloater, transform, $"+{key.Value} to {key.Key.ToString()}", Random.Range(0.5f, 5));
-                    if (lazyBonuses.ContainsKey(key.Key)) lazyBonuses[key.Key]++;
-                    else lazyBonuses.Add(key.Key, 1);
-                    UpdateBonusStats(lazyBonuses);
-                    if (totalOfStatsGained[key.Key] == 0) totalOfStatsGained.Remove(key.Key);
-                }
-                
-                float waitTime = Mathf.Min(_minTrackerUpdateSpeed * bonuses, _maxTrackerCompletionTime) / bonuses;
-                yield return new WaitForSecondsRealtime(waitTime);
-            }
-        }
-        
-        void CharacterUpdate(Campaign.PCWrapper unit)
-        {
-            if (this.unit != unit) return;
-            stats.text = unit.statBase.StatString();
-            //levelUps.text = unit.LevelBonuses();
+            if (unit != character) return;
+            stats.text = StatString(character);
         }
     }
 }

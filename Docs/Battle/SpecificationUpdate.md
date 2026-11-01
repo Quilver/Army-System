@@ -7,6 +7,76 @@ change work; confirm or replace). `specifications.md` itself is not edited; fold
 
 ---
 
+## 2026-11-01 (12): Legacy Unit/Model system removed (Docs/Battle/Plan/11-legacy-removal.md)
+
+### SU-57 Troops stand alone; the legacy Unit/Model code is deleted (Decision, answers part of Q-49)
+- Decision: the old `Unit/` scripts (units, models, formations, unit movement, old ranged combat, old stats), the old
+  Player IO controllers (`PlayerController`, `PlayerSelectUnits`, `PlayerUnitOrders`, `PlayerOrderUnits`,
+  `PlayerSelectionView`, `PlayerCursor`), the uGUI `BattleUI/UnitCard`, `PCWrapper`/`StatWrapper`, `Reinforcements`
+  and the old audio hooks are deleted. `NavPathfinder`/`IPathfinder` moved to `Pathfinding/` (same GUIDs).
+- `Troop` is a plain MonoBehaviour. `TroopState` (Idle, Moving, Fleeing; old enum values kept) replaces `UnitState`;
+  the legacy stats field is gone (Architecture §11 #13). `Troop` raises `StateChanged`, `EnteredMelee`/`ExitedMelee`,
+  `Routed` and `Defeated`, and exposes `Army`.
+- New `BattleEvents` (battle-wide, cleared on entering play mode): `TroopDefeated`, `SoldierKilled` (with the attacking
+  troop), `SoldierStruck`, `VolleyFired`, `ProjectileLanded`. The simulation only raises them.
+- Assumption: a troop is **defeated** once, at rout or when its last soldier dies before it routs. This replaces the
+  old `IUnit.OnUnitDestroyed` and keeps its timing (Q-36, D-32).
+- Code: `Runtime/Troop.cs`, `Runtime/TroopState.cs`, `Combat/BattleEvents.cs`, `DuelResolver`, `TroopProjectiles`,
+  `RangedFireController`. Test: `Rout_RaisesTheDestroyedEventOnce_AndDespawnsLater` now listens to `TroopDefeated`.
+
+### SU-58 Battle end, report and scene flow on troops (Decision + Assumptions, answers part of Q-49)
+- `Army` lists its child troops; `ActiveTroopCount` counts troops not yet defeated.
+- `Rout` ends the battle when every troop of its army is defeated (was: one unit left).
+- `Battle` no longer loads scenes or touches campaign data. It raises `Started` and `Ended`; the new `BattleFlow`
+  (battle-to-campaign bridge) loads Post battle (index 2) on victory, and on defeat discards the campaign data and loads
+  the Main menu (index 0), as before.
+- Assumption: the battle report counts **kills** as enemy soldiers that died and **deaths** as player soldiers that
+  died, whoever dealt the blow. Time taken is from the battle scene's start to the end of the battle.
+
+### SU-59 Capture points count soldiers (Assumption, answers part of Q-49)
+- A capture point counts the living soldiers of each army inside its 2D collider (or a radius without one) four times a
+  second. Control moves at (player soldiers - enemy soldiers, capped at ±30) / 50 per second, as before.
+- Assumptions: the point belongs to the player at `holder ≥ threshold`, to the enemy at `holder ≤ -threshold`, neutral
+  between (the old enemy test compared against `+threshold`). `capturedBy`, `PointCaptured` and `CapturedBy` fire once
+  when the controller changes (`CapturedBy` used to fire every frame above 0.8).
+
+### SU-60 Deploying the tent's roster (Assumption, answers part of PB-Q4)
+- `DeployUnitFromBattleReport` spawns one troop per character in `BattleReport.DeployedRoster`, each with a runtime
+  `TroopProfile` holding just that character, in a grid across the deployment zone, facing the zone's up, team 0.
+- Assumptions: 20 units between troop centres; troop radius 16.5 (the `TroopProfile` default); the troop visualiser
+  prefab is added to each troop. Pairing into composite troops still waits on PB-Q4.
+
+### SU-61 Character achievements on the new character system (Assumptions)
+- Each `CampaignCharacter` lists its character achievements; the achievement controller sets them up for the troop the
+  deployed character leads. Rewards go to the `RosterCharacter`.
+- Assumptions: **Kill tracker** counts enemy soldiers whose killing blow came from the character's troop (melee or
+  ranged). **Character survived** means the troop was not defeated. **Capture points** counts points held by the
+  troop's army. The old PC data assets' achievement lists are not carried over; assign achievements on the campaign
+  characters.
+
+### SU-62 XP and levels for roster characters (Assumption, open item)
+- `RosterCharacter.AddXp`: 100 XP per level (`XpPerLevel`), carried over. The post-battle card fills its XP bar and plays
+  the level-up sound when it wraps.
+- Open item: stat growth on level-up (growth chances and class caps, spec §1.1) is **not applied yet**, so the
+  post-battle card no longer lists stat gains.
+
+### SU-63 Save system reset (Decision)
+- Saves go to `campaign.json` with `SaveVersion` 2. A save with another version is deleted and a new game starts; the
+  old `data.game` is deleted on start-up. The roster is saved by campaign character asset name (object references do not
+  survive a JSON save) and resolved on load. `CampaignData.Characters` (`PCWrapper`) is removed.
+
+### SU-64 Battle sounds from troop events (Assumption)
+- `ModelSoundEffects` (the Model SFX prefab, one per battle) plays the strike sound on a damaging melee hit, the shot
+  sound on each volley, a death grunt per soldier killed, and an optional projectile-hit sound. Assumptions: each sound
+  type is limited to one every 0.08 s; sounds are not positioned.
+
+### SU-65 Old tabbed prep menu removed (Decision)
+- The tab-based Battle Preparation UI (`PreparationContoller`, `ToBattleButton`, the tabs, buy/sell/unit selection
+  views, `UISelectionNavigation`) and its prefabs are deleted; the tent hub replaces it. `PreparationData`, `BuyOrders`
+  and `SellOrder` stay.
+
+---
+
 ## 2026-11-01 (11): Roster always holds the campaign characters
 
 ### SU-56 The tent fills the roster from Characters/Campaign (Decision + Assumption, amends SU-52)

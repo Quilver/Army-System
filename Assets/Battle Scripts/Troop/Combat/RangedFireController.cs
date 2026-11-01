@@ -61,6 +61,7 @@ public sealed class RangedFireController
 
         FireVolley(projectiles, tuning);
         Volleys++;
+        BattleEvents.RaiseVolleyFired(_troop);
         _cooldown = RangedRules.FireInterval(fireRate, tuning.ActionWindowSeconds, tuning.FireRateJitterFraction, _troop.TroopRandom);
     }
 

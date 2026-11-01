@@ -1,7 +1,6 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+
 namespace AchievementSystem
 {
     [Serializable]
@@ -12,52 +11,53 @@ namespace AchievementSystem
         public abstract void Setup();
         public abstract int Succeeded();
     }
+
     [Serializable]
     public class Default : RequirementGlobal
     {
-        public override void Setup()
-        {
-            
-        }
         [SerializeField, Min(0)] int _successLevel;
+        public override void Setup() { }
         public override int Succeeded() => _successLevel;
     }
+
     [Serializable]
     public class Victory : RequirementGlobal
     {
         bool _victory;
+
         public override void Setup()
         {
-            Battle.Instance.BattleOver += EndBattle;
+            if (Battle.Instance != null) Battle.Instance.BattleOver += EndBattle;
         }
+
         void EndBattle(bool victory)
         {
             _victory = victory;
-            UpdateSuccess(_victory);    
+            UpdateSuccess(_victory);
         }
-        public override int Succeeded()
-        {
-            return (_victory) ? 1 : 0;
-        }
+
+        public override int Succeeded() => _victory ? 1 : 0;
     }
+
+    // Every troop of the army is out of the battle.
     [Serializable]
     public class ArmyDestroyed : RequirementGlobal
     {
         [SerializeField] Army _army;
-        bool _destroyed = false;
+        bool _destroyed;
+
         public override void Setup()
         {
-            IUnit.OnUnitDestroyed += CheckIfArmyIsDestroyed;
+            BattleEvents.TroopDefeated += CheckIfArmyIsDestroyed;
         }
-        void CheckIfArmyIsDestroyed(IUnit unit) 
+
+        void CheckIfArmyIsDestroyed(Troop troop)
         {
-            if(_army.Units.Count > 1)return; 
+            if (_army == null || _army.ActiveTroopCount > 0) return;
             _destroyed = true;
-            IUnit.OnUnitDestroyed -= CheckIfArmyIsDestroyed;
+            BattleEvents.TroopDefeated -= CheckIfArmyIsDestroyed;
         }
-        public override int Succeeded()
-        {
-            return (_destroyed) ? 1 : 0;
-        }
+
+        public override int Succeeded() => _destroyed ? 1 : 0;
     }
 }

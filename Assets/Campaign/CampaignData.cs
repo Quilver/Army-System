@@ -44,8 +44,19 @@ namespace Campaign
         [Range(1, 10)]
         public int CurrentLevel;
         public List<BattlePrep.BuyOrders> BuyOrders;
-        public List<PCWrapper> Characters;
-        // Roster on the new character system (CampaignCharacter). Used by the pre-battle tent (SU-52).
+        // The player's characters (CampaignCharacter assets plus level, XP and cost to field).
         public List<RosterCharacter> Roster = new();
+
+        // Saves with another version are discarded (FileDataHandler). Bump when the save format changes.
+        public const int CurrentSaveVersion = 2;
+        public int SaveVersion = CurrentSaveVersion;
+
+        // Restores asset references after loading from JSON.
+        public void ResolveReferences()
+        {
+            Roster ??= new List<RosterCharacter>();
+            foreach (var character in Roster) character?.ResolveCharacter();
+            Roster.RemoveAll(r => r == null || r.character == null);
+        }
     }
 }
