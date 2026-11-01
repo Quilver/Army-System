@@ -46,6 +46,13 @@ namespace Campaign
             SaverLoader= new FileDataHandler();
             DontDestroyOnLoad(gameObject);
         }
+        // Pre-battle tent sample (Docs/PreBattle/TentHub.md): use in-memory data, never load or save a file.
+        public void UseSampleData(CampaignData sample)
+        {
+            data = sample;
+            LoadData = false;
+            SaveData = false;
+        }
         public void NewGame()
         {
             Debug.Log("New game");

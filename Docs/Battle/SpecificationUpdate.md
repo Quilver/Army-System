@@ -7,6 +7,104 @@ change work; confirm or replace). `specifications.md` itself is not edited; fold
 
 ---
 
+## 2026-11-01 (11): Roster always holds the campaign characters
+
+### SU-56 The tent fills the roster from Characters/Campaign (Decision + Assumption, amends SU-52)
+- Fix: the roster was empty whenever the campaign data had no `Roster` (a real save from the main menu, or a sample
+  made before SU-52).
+- Decision: every `CampaignCharacter` in `Resources/Troop and Character Profiles/Characters/Campaign` is in the
+  roster. At tent start (`TentHubController.EnsureRoster`): an empty roster is first copied from the sample's roster
+  (mock level, XP, cost); then any character from that folder still missing is added at level 1, 0 XP, cost 25.
+- Assumption: this is for the mock phase. `_fillRosterFromCampaignFolder` on the controller turns it off once the
+  campaign recruits characters itself.
+
+---
+
+## 2026-11-01 (10): Tent roster on the new character system; book panels
+
+### SU-52 The tent roster uses the new character system (Decision + Assumptions, answers part of PB-Q4)
+- Decision: roster and deployment in the tent use `CampaignCharacter` assets, not `PCWrapper`.
+- New `Campaign.RosterCharacter`: a `CampaignCharacter` plus campaign progress the asset does not hold: `level`,
+  `xp` (0-99, 100 per level) and `costToField` (5-50 gold). Stored in the new `CampaignData.Roster`.
+- Deployed characters go to the new `BattleReport.DeployedRoster` (`TentDeployment`: deploy costs gold, undeploy
+  refunds, cap of 5).
+- The sample roster is every `CampaignCharacter` in `Resources/Troop and Character Profiles/Characters/Campaign`
+  (8), with mock level, XP and cost. Mock court: Lyra (tactician), Jagen (captain), Robin (dispatch-bearer).
+- Assumptions / open:
+  - XP is 100 per level (Fire Emblem style); level-ups do not change the asset's stats yet.
+  - **The battle does not read `DeployedRoster` yet.** Level scenes still spawn from the old
+    `DeployedCharacters`, which the tent no longer fills, so marching out from the tent gives no player troops
+    until the battle spawns troops from `DeployedRoster` (next step of PB-Q4).
+  - A real save has an empty `Roster` until the campaign moves to the new system. JsonUtility saves asset references
+    as instance IDs, which do not survive a restart; the save format needs asset paths or GUIDs.
+
+### SU-53 Loans and debts are cards taped into a book (Decision + Assumption, amends TentHub.md §4.1)
+- Decision: the Debts panel is an open book. Loan offers are cards taped to the left page, debts owed to the right
+  page. Each card: title, terms, a status line (what a click does, or why it cannot), and the lender's note. A
+  stamp shows TAKEN / REPAID. The cover shows gold and prestige. Replaces the old Sell / Buy prefabs.
+- Rules unchanged from SellView / BuyView, plus an assumption: a taken loan can only be given back while its gold is
+  still in the chest (before, giving it back could take gold you had already spent, clamping to 0).
+
+### SU-54 Roster Ledger is a book, one character per page (Decision, amends TentHub.md §4.2)
+- Decision: the Ledger is an open book with one character per page, two per spread. Page turning: corner buttons,
+  Q / E, Page Up / Down, gamepad shoulders.
+- Each page: portrait, name, class, level and XP bar, soldier stats with class caps (Soldiers, HP, Morale,
+  Discipline, Speed, Defence, Strength, Support, Charge, Aggression), weapon skills with caps, melee / ranged /
+  armour, cost to field and whether the character is deployed.
+
+### SU-55 Deployment shows gold remaining and gold spent (Decision, amends TentHub.md §4.3)
+- Decision: next to the deployed troops, the Map shows gold remaining and gold spent on troops; each deployed card
+  shows its own cost. The roster and deployed cards are remade to fit the 1280 x 720 screen (roster card 600 x 68,
+  deployed card 470 x 56).
+
+---
+
+## 2026-11-01 (9): Deploy cap and tent sample data
+
+### SU-50 At most 5 characters can be deployed (Decision, pre-battle rules, amends TentHub.md §5)
+- Decision: a mission takes 2 to 5 deployed characters. Deploying a sixth is refused, like deploying one you cannot
+  afford. The Map shows "Deployed troops (n/5)" and the ready text shows the count.
+- Code: `LaunchRules.MaximumDeployed`, checked in `UnitSelectionView.Select`.
+
+### SU-51 Tent sample data for playing Battle Preparation directly (Decision + Assumptions)
+- Fixes a NullReferenceException in `TentHubController.Awake` when the scene was played without coming from the main
+  menu: there was no `CampaignDataManager`.
+- The controller now reads campaign data in `Start` (after every Awake). With no `CampaignDataManager` it creates one
+  from its `TentSampleData` (`CampaignDataManager.UseSampleData`, never loads or saves a file) and a `BattleReport`
+  if none exists.
+- Menu **Leveraged Wars > Pre-Battle > Create Tent Sample Data** creates `Tent/Sample/`: a 5-line mock briefing, court
+  lines (the tactician has a 2-line flow), the quest cue on, 3 loan offers, 2 open repayments, 200 gold, prestige
+  20/40, and a roster of every PC_Stats asset (6) with mixed XP and cost, using the first LevelTable found.
+- Assumptions:
+  - Mock court: Mannus as tactician, Sir Jeagan as captain, Robin Shering as dispatch-bearer.
+  - The sample manager stays alive (DontDestroyOnLoad) for the rest of that play session, so moving on to other
+    scenes keeps the sample data.
+
+---
+
+## 2026-11-01 (8): Pre-battle tent hub
+
+### SU-49 Battle Preparation becomes a diegetic tent hub (Decision + Assumptions, pre-battle UI)
+- Decision: the tabbed Battle Preparation menu is replaced by Prince Julian's command tent: briefing as dialogue boxes,
+  then clickable people and objects (Gold Chest, Weapon Rack, Merchant, Debts, three Court members, Ledger, Tactical Map,
+  Tent Flaps). Launch from the Map or the Tent Flaps.
+- Decision: Inventory, Shop, Court relationships/quests and Composite Troop pairing are stubs for now.
+- Full spec, assumptions and open questions (PB-Q1 to PB-Q7): `Docs/PreBattle/TentHub.md`. Deployment rules (cost to
+  field, at least 2 characters) are unchanged.
+- Code: `Assets/Campaign/UI/Battle prep menus/Tent/` (TentHubController, TentHotspot + Gold Chest / Debts / Court / Tent
+  Flaps hotspots, TentTooltip, DialogueBox, LaunchRules, panels Debts / Ledger / Map / Stub, DeployedTroopCard).
+  `PreparationData` gains briefingFlow, briefingSpeaker, court[3] (CourtMember) and questAvailable. Scene built by
+  menu **Leveraged Wars > Pre-Battle > Build Tent Hub**, which also deactivates the old tab canvas (not deleted).
+  Placeholder art: `Tent/Art/Tent_*.png` + `TentLayout.json`, split from the SVG mock-up at 2x.
+- Assumptions made while building:
+  - With no briefingFlow, the existing `briefing` text plays as one dialogue line, speaker "Briefing".
+  - Court members with no dialogue assigned say a default placeholder line; names default to Tactician / Captain /
+    Dispatch-bearer.
+  - Clicking the Tent Flaps when the deployment is invalid does nothing; the hover text already gives the reason.
+  - Esc / right click / gamepad East close panels and skip dialogue; arrows / A-D / d-pad start object navigation.
+
+---
+
 ## 2026-11-01 (7): Chain engagement lock
 
 The clip "Chain engagement lock" showed three allied troops on three sides of one enemy, chained into a U, holding each

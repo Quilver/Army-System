@@ -34,7 +34,9 @@ namespace BattlePrep
             selected = !selected;
             if (selected)
             {
-                if(unit.CostToField > Campaign.CampaignDataManager.Data.Money)
+                // Deploy cap (SU-50) and cost to field.
+                if(BattleReport.DeployedCharacters.Count >= Tent.LaunchRules.MaximumDeployed ||
+                   unit.CostToField > Campaign.CampaignDataManager.Data.Money)
                 {
                     selected= false;
                     return;

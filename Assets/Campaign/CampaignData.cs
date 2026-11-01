@@ -45,5 +45,7 @@ namespace Campaign
         public int CurrentLevel;
         public List<BattlePrep.BuyOrders> BuyOrders;
         public List<PCWrapper> Characters;
+        // Roster on the new character system (CampaignCharacter). Used by the pre-battle tent (SU-52).
+        public List<RosterCharacter> Roster = new();
     }
 }

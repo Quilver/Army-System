@@ -52,6 +52,15 @@ public class BattleReport: MonoBehaviour
         get { return instance._deployedCharacters; }
         set { instance._deployedCharacters = value; }
     }
+    // Characters deployed in the pre-battle tent, on the new character system (SU-52). The battle does not read
+    // these yet: spawning troops from them is the next step of the roster migration (TentHub.md PB-Q4).
+    [SerializeField]
+    List<Campaign.RosterCharacter> _deployedRoster = new();
+    public static List<Campaign.RosterCharacter> DeployedRoster
+    {
+        get { return instance._deployedRoster; }
+        set { instance._deployedRoster = value; }
+    }
     public static UpdateCharacter CharacterUpdate;
     public delegate void UpdateCharacter(Campaign.PCWrapper character);
     public static void Reset()
@@ -61,5 +70,6 @@ public class BattleReport: MonoBehaviour
         deaths = 0;
         Achievements = new();
         DeployedCharacters = new();
+        DeployedRoster = new();
     }
 }
