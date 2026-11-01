@@ -832,6 +832,66 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
+--- !u!1 &302360763
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 302360765}
+  - component: {fileID: 302360764}
+  m_Layer: 0
+  m_Name: Player controller
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &302360764
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 302360763}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6f313be066f4db2b8da1836be1115b9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _playerTeamId: 0
+  _pausedIndicator: {fileID: 4621665488726340517}
+  _rangeMaskFillColor: {r: 0.15, g: 0.7, b: 0.6, a: 1}
+  _rangeMaskMinFillAlpha: 0.15
+  _rangeMaskMaxFillAlpha: 0.55
+  _rangeMaskHeatDarken: 0.45
+  _rangeMaskOutline: {r: 0.05, g: 0.4, b: 0.85, a: 1}
+  _rangeMaskOutlinePixels: 3
+  _orderPathMoveColor: {r: 0.95, g: 0.95, b: 0.85, a: 0.95}
+  _orderPathAttackColor: {r: 1, g: 0.3, b: 0.2, a: 0.95}
+  _engagementView: 0
+  _engagementHeatLight: {r: 1, g: 0.35, b: 0.3, a: 1}
+  _engagementHeatDark: {r: 0.45, g: 0, b: 0, a: 1}
+  _engagementHeatMaxAlpha: 0.75
+  _engagementHeatEndFade: 2
+  _engagementReachSlack: 0.45
+--- !u!4 &302360765
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 302360763}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &429245018
 GameObject:
   m_ObjectHideFlags: 0
@@ -5010,6 +5070,12 @@ RectTransform:
     type: 3}
   m_PrefabInstance: {fileID: 4621665488726340515}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &4621665488726340517 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8028064518068765604, guid: 3cd01f44ee58f9e4b978c5ff13fb6e38,
+    type: 3}
+  m_PrefabInstance: {fileID: 4621665488726340515}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -5033,3 +5099,4 @@ SceneRoots:
   - {fileID: 2031088552}
   - {fileID: 906096829}
   - {fileID: 1828624724}
+  - {fileID: 302360765}
