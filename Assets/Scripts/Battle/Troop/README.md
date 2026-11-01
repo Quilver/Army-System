@@ -5,8 +5,9 @@ fighters simulated as plain state and steered by the troop's vector field. The r
 `Docs/Battle/specifications.md` (v0.9). The class-by-class description is in `Docs/Battle/Architecture.md`; decisions
 and open items are in `Docs/Battle/Decisions.md` and `Docs/Battle/Questions.md`.
 
-Troops are used by two test scenes only (`Assets/Resources/Levels/Test/Level 1 Troop Test.unity` and
-`Flock Boid Showcase.unity`). Real battles still run on the legacy `Unit` system (Q-49).
+Troops are the only battle units: Level 1, Level 2 and `Assets/Resources/Levels/Test/Level 1 Troop Test.unity` use them.
+The battle-wide events in `Combat/BattleEvents.cs` are how the rest of the game (battle end, achievements, the battle
+report, sounds) follows a battle; Troop code never references the campaign.
 
 ## How a battle frame runs
 
@@ -28,7 +29,7 @@ Troops are used by two test scenes only (`Assets/Resources/Levels/Test/Level 1 T
 | Folder | Contents |
 |---|---|
 | `Rules/` | Pure maths with no Unity lifecycle: morale, duel, support, damage, mitigation, charge rate, footprints and gaps, faces, surround path, line geometry, chain geometry and topology, ranged rules, formation priority, composite troops, seeded random. Covered by EditMode tests. |
-| `Model/` | Profiles (`TroopProfile`, `SoldierProfile`, `WeaponProfile` (abstract) / `MeleeWeaponProfile` / `RangedWeaponProfile`, `ArmourProfile`), `TroopTuning` (every §7.2 value), runtime state (`SoldierAgentState`, `SoldierHealth`, `SoldierChargeState`, ...). |
+| `Model/` | Profiles (`TroopProfile`, `SoldierProfile`, `WeaponProfile` (abstract) / `MeleeWeaponProfile` / `RangedWeaponProfile`, `ArmourProfile`), `TroopTuning` (every §7.2 value), character classes (`CharacterClass`, `StatCaps`, `CharacterStat`), runtime state (`SoldierAgentState`, `SoldierHealth`, `SoldierChargeState`, ...). |
 | `Runtime/` | `Troop` and its modules: `TroopRoster`, `TroopMorale`, `TroopFormationState`, `TroopLineOrder`, `TroopLineLinks`, `TroopPivotMover`, `FaultSlipMotion` (retreat), `TroopRout`, `AssaultState`, `TroopDamageReceiver`, `MeleeMetrics`. |
 | `Combat/` | `TroopCombatWorld`, engagement, charges, contacts, duels, support, ranged fire, projectiles, gizmos. |
 | `Formation/` | `ChainLinker`, `TroopFootprintBuilder`. |
@@ -37,12 +38,12 @@ Troops are used by two test scenes only (`Assets/Resources/Levels/Test/Level 1 T
 | `Input/` | Selection and hover, order classification and planning, chain order rules, the order overlay. |
 | `View/` | Soldier sprites, projectile sprites, troop visualiser, showcase driver, troop cards (`TroopCardHud`: selected troop bottom left, hovered troop bottom right), the hovered troop's order path (`TroopOrderPathView`) and the engagement view (`TroopEngagementView`). |
 | `Diagnostics/` | `TroopDebugOverlay` (F4 gizmos: footprints, faces, gaps, joints, charges) and `TroopDebugSnapshot`. |
-| `Campaign/` | Campaign-only character data: `CampaignCharacter` (a `CharacterProfile` with growth chances, `StatGrowths`), `CharacterClass` (stat caps, `StatCaps`) and `CharacterStat`. Battle code never needs these. |
 | `Editor/` | Inspectors (morale, state, combat metrics), the Phase 01 sample-data generator, the CLI smoke test, and `Tests/`. |
 
-## Controls (Level 1 Troop Test)
+## Controls (battle scenes)
 
 - **LMB** click or drag (8 px): select player troops. **Shift** toggles.
+- **P** (or gamepad Start): pause and resume. No selection or orders while paused.
 - **RMB** on an enemy: pursue (Assault on contact). **RMB** on ground: move, keeping offsets; troops arrive Idle.
 - **RMB drag** (8 px): battle line. Several troops split the line in order along the drag and are linked into a chain.
   The front faces the nearest enemy, or the right-hand side of the drag.

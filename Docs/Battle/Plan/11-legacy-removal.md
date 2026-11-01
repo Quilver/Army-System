@@ -22,9 +22,12 @@ comes later), and the scripts move into `Assets/Scripts/` split by system.
 | `Scripts/Battle/` | Troop system, `Battle`, `Army`, `CapturePoint`, battle-end conditions, `Pathfinding/`, battle sounds, new AI |
 | `Scripts/Campaign/` | Campaign data and save, tent hub, post-battle screens, cutscenes, main menu |
 | `Scripts/Tween/` | Campaign characters (`CampaignCharacter`, classes, caps, growths, `RosterCharacter`), achievements, `BattleReport`, `BattleFlow`, roster deployment |
-| `Scripts/Misc/` | Shared UI (hover tips, float text), camera controls, input map, music |
+| `Scripts/Misc/` | Shared UI (hover tips, float text), camera controls, input map |
 
-Dependency rule: Misc ← Battle ← Tween ← Campaign. Battle never references Tween or Campaign.
+Battle prefabs that lived in script folders moved to `Assets/Prefabs/Battle/`; soldier art to `Resources/Battle/Soldiers/`.
+
+Dependency rule: Battle and Misc never reference Tween or Campaign. Tween and Campaign may reference each other
+(rewards change campaign data; the campaign stores roster characters). Editor tools may cross the line.
 
 ## Steps
 
@@ -33,14 +36,17 @@ Dependency rule: Misc ← Battle ← Tween ← Campaign. Battle never references
 - [x] 2. Troop independent of `Unit/` (`TroopState`, `BattleEvents`, `Army`, pathfinder moved).
 - [x] 3. Battle glue on troops: battle end, battle flow, capture points, deployment, achievements, sounds (SU-58 to SU-64).
 - [x] 4. Campaign on `RosterCharacter`; `PCWrapper` removed; save reset (SU-62, SU-63).
-- [ ] 5. Scenes: clean old objects, give Level 1 and 2 troops (`Tools > Legacy Removal > 3`), delete old test scenes.
-- [ ] 6. Delete old resources (unit prefabs, NPC/PC data, old weapons, model prefabs); move soldier sprites and
+- [x] 5. Scenes: clean old objects, give Level 1 and 2 troops (`Tools > Legacy Removal > 3`), delete old test scenes.
+- [x] 6. Delete old resources (unit prefabs, NPC/PC data, old weapons, model prefabs); move soldier sprites and
   `ModelMat` out of `Model prefabs/`; delete the GPU prototype.
-- [ ] 7. Move scripts into `Assets/Scripts/` by system.
-- [ ] 8. Docs: `AGENTS.md`, `Architecture.md`, `Troop/README.md`, `Questions.md` (Q-49).
-- [ ] 9. Delete `Assets/Editor/Legacy Removal/`.
+- [x] 7. Move scripts into `Assets/Scripts/` by system.
+- [x] 8. Docs: `AGENTS.md`, `Architecture.md`, `Troop/README.md`, `Questions.md` (Q-49).
+- [x] 9. Delete `Assets/Editor/Legacy Removal/`.
 
 ## Known issues
+
+- New folders (`Assets/Scripts/...`, `Assets/Prefabs/...`) get their `.meta` files from the Editor on the next refresh;
+  commit them.
 
 - `TroopScenarioTests.Retreat_RearRanksFallBackFirstAndFaster` was already failing before this work (12:43 run).
 - Stat growth on level-up is not applied yet (SU-62).

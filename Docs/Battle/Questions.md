@@ -282,6 +282,9 @@ Confirm whether these are in scope for this handoff, or separate specs:
 - AI for enemy Troops. None exists.
 - Adding the Troop test scenes to Build Settings.
 > **Current assumption:** **All five are out of scope.** This handoff covers `Assets/Battle Scripts/Troop/` only.
+> **Resolved (2026-11-01, Plan 11):** characters are deployed as troops from the tent roster (SU-60); battle end runs on
+> troops (SU-58); capture points count soldiers (SU-59). Still open: enemy AI (a new system is planned) and Build
+> Settings (Level 1 and Level 2 are the real battles; the troop test scene stays out of Build Settings).
 
 ---
 

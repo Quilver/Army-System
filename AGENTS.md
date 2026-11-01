@@ -8,17 +8,32 @@
 
 ## Project Structure
 
-- Gameplay is under `Assets/Battle Scripts/`: `Controller/` orchestrates battles and armies, `Unit/` contains unit/combat/movement code, `AI/` contains influence-map and squad/unit AI, `Pathfinding/` contains 2D NavMesh code, and `Player IO/` contains input, selection, ordering, and camera controls.
-- Campaign state and menus are under `Assets/Campaign/`; `CampaignDataManager` persists across scenes and saves JSON through `Application.persistentDataPath`.
-- Runtime-loaded assets must remain under `Assets/Resources/` and use the existing `Resources.Load` paths, especially `Resources/Shaders/` and `Resources/Levels/`.
-- The main battle flow uses build-settings scene indices: campaign code loads scene `1`, and `Battle.EndBattle` loads scene `2` on victory or scene `0` on defeat. Keep scene ordering synchronized with code when changing Build Settings.
+- Scripts live under `Assets/Scripts/`, split by system:
+  - `Battle/`: the battle simulation. `Troop/` is the troop and soldier system (see `Troop/README.md` and
+    `Docs/Battle/Architecture.md`), `Controller/` holds `Battle`, `Army` and `CapturePoint`, `Battle End/` the win/lose
+    conditions, `Pathfinding/` the 2D NavMesh code, `Audio/` the battle sounds. There is no enemy AI yet.
+  - `Tween/`: what passes between battle and campaign: campaign characters (`CampaignCharacter`, `RosterCharacter`),
+    achievements, `BattleReport`, `BattleFlow` (scene changes after a battle) and roster deployment.
+  - `Campaign/`: campaign data and saving, the pre-battle tent hub, post-battle screens, cutscenes and the main menu.
+  - `Misc/`: shared UI (hover tips, floating text), the input map and camera controls.
+- Dependency rule: `Battle/` and `Misc/` never reference `Tween/` or `Campaign/`; the battle reports through events
+  (`BattleEvents`, `Battle.Started`/`Ended`) that `Tween/` listens to. Editor tools may cross this line.
+- Battle prefabs (capture point, deployment zone, battle canvas) are in `Assets/Prefabs/Battle/`; campaign UI art and
+  prefabs stay under `Assets/Campaign/`.
+- `CampaignDataManager` persists across scenes and saves `campaign.json` in `Application.persistentDataPath`. Bump
+  `CampaignData.CurrentSaveVersion` when the save format changes; older saves are deleted.
+- Runtime-loaded assets must remain under `Assets/Resources/` and use the existing `Resources.Load` paths, especially
+  `Resources/Battle Tuning/`, `Resources/Battle/Soldiers/` (soldier material and shaders), `Resources/Shaders/`,
+  `Resources/Troop and Character Profiles/` and `Resources/Levels/`.
+- The main battle flow uses build-settings scene indices: campaign code loads scene `1`, and `BattleFlow` loads scene
+  `2` on victory or scene `0` on defeat. Keep scene ordering synchronized with code when changing Build Settings.
 
 ## Editing Rules
 
+- Asset serialization is Force Text: scenes, prefabs and assets are YAML and can be read and diffed.
 - Unity scenes, prefabs, ScriptableObjects, and other serialized assets must be edited through Unity when possible; preserve their adjacent `.meta` files and do not hand-edit YAML unless necessary.
-- `Assets/Battle Scripts/Player IO/PlayerInputMap.cs` is generated from `PlayerInputMap.inputactions`. Change the `.inputactions` asset and let Unity regenerate the wrapper rather than editing the generated C# directly.
+- `Assets/Scripts/Misc/Input/PlayerInputMap.cs` is generated from `PlayerInputMap.inputactions`. Change the `.inputactions` asset and let Unity regenerate the wrapper rather than editing the generated C# directly.
 - Keep changes scoped to source assets. Do not commit or rely on generated/editor directories such as `Library/`, `Temp/`, `Obj/`, `Build/`, `Builds/`, `Logs/`, `UserSettings/`, `.vs/`, or generated solution/project files.
-- When changing compute-shader behavior, check the paired `.compute`, C# binding, and serialized scene/prefab assets; the collision and trajectory systems share GPU buffers managed through `CollisionMapManager`.
 
 ## Specification Log
 

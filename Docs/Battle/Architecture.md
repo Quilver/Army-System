@@ -1,6 +1,6 @@
 # Troop System: Architecture
 
-This document describes how the code under `Assets/Battle Scripts/Troop/` is structured after Phases 01–10 of the plan.
+This document describes how the code under `Assets/Scripts/Battle/Troop/` is structured after Phases 01–10 of the plan.
 For the rules, see `specifications.md` (v0.9). For decisions and working assumptions, see `Decisions.md` and
 `Questions.md`. For the folder overview, controls and how to run the tests, see `Troop/README.md`.
 
@@ -8,14 +8,16 @@ For the rules, see `specifications.md` (v0.9). For decisions and working assumpt
 
 ## 1. Scope & Dependencies
 
-- **Location:** `Assets/Battle Scripts/Troop/`. It compiles into **Assembly-CSharp** (no `.asmdef`, decision D-41). The
+- **Location:** `Assets/Scripts/Battle/Troop/`. It compiles into **Assembly-CSharp** (no `.asmdef`, decision D-41). The
   `Editor/` subfolder (inspectors, data generator, CLI smoke test, tests) compiles into Assembly-CSharp-Editor.
-- **Dependencies on the rest of the project:**
-  - `IUnit` and `UnitState` (`Unit/`): `Troop` derives from `IUnit`. `IUnit.RaiseUnitDestroyed()` (added for the rout
-    event) raises the destroyed events without destroying the object.
-  - `Army` (`Controller/Army.cs`) for the army colour; `StatSystem.Refactor.IUnitStatBlock` for the legacy stats field.
+- **Dependencies on the rest of the project** (all in `Assets/Scripts/Battle/`):
+  - `Army` (`Controller/Army.cs`) for the army colour and `Troop.Army`.
   - `MovementSystem.NavPathfinder` (`Pathfinding/`) for marching paths.
-- Nothing outside Troop uses it at runtime except through `IUnit`. Battle wiring for Troops is out of scope (Q-49).
+- **What uses it:** `Battle`, `Army`, `CapturePoint` and the battle-end conditions (`Battle End/`), and through
+  `BattleEvents` (`Combat/BattleEvents.cs`) the Tween system: achievements, the battle report and battle flow, and roster
+  deployment (`Assets/Scripts/Tween/`). Troop code never references Tween or Campaign code (SU-57, SU-58).
+- **Character classes:** `CharacterClass`, `StatCaps` and `CharacterStat` sit in `Model/` because `CharacterProfile`
+  holds a class. `CampaignCharacter` and `StatGrowths` are campaign data in `Assets/Scripts/Tween/Characters/`.
 
 ## 2. Design Rules
 
@@ -105,7 +107,7 @@ in Edit mode at a fixed frame time.
   A retreating or routed troop does not break again (Q-34).
 - `Troop.IsSurrounded`: `SurroundTest.RetreatPath` (box behind the rear face, RetreatDistance long) overlaps an enemy
   footprint, or `Physics2D.OverlapBox` hits the obstacle mask. Friendly troops never block (Q-33).
-- Rout (`TroopRout`): final. Breaks every link, cancels orders, raises `Troop.Routed` and `IUnit.OnUnitDestroyed` once,
+- Rout (`TroopRout`): final. Breaks every link, cancels orders, raises `Troop.Routed`, `Troop.Defeated` and `BattleEvents.TroopDefeated` once,
   flees away from the nearest enemy at Move speed, scatters (`FormationMode.Rout`), despawns after 60 s without raising
   the event again. Orders are ignored.
 
@@ -231,10 +233,12 @@ in Edit mode at a fixed frame time.
 
 ## 10. Scenes
 
-- `Level 1 Troop Test.unity`: 7 troops, `TroopCombatWorld`, `TroopPlayerOrders`, `TroopDebugOverlay`, plus legacy
-  battle objects. The scene is binary-serialized; its old `_sDistance 5` / `_aDistance 2` overrides are no longer read
-  because the distances moved to `TroopTuning`.
-- `Flock Boid Showcase.unity`: `TroopSoldierShowcase` spawns three troops and orders lines.
+- `Level 1` and `Level 2`: real battles. Enemy troops are placed in the scene; the player's troops are spawned from the
+  roster deployed in the pre-battle tent (`DeployUnitFromBattleReport`, SU-60). Each has `TroopCombatWorld`,
+  `TroopPlayerOrders`, `TroopProfileSpriteDefaults` and the battle sounds.
+- `Level 1 Troop Test.unity`: Level 1 with seven placed troops (no roster needed), `TroopDebugOverlay` and the CLI smoke
+  test scene. Not in Build Settings.
+- All scenes are text-serialized (Force Text).
 
 ## 11. Known Issues and Limits
 
@@ -244,7 +248,7 @@ in Edit mode at a fixed frame time.
 | 2 | Pathfinding is not exercised by the tests (no NavMesh in the test setup). |
 | 3 | Physical obstruction tests rely on the `Terrain` layer existing (it does in this project). |
 | 4 | The manual checklist for §6 (Plan 08) still needs a person in the Editor. |
-| 5 | `Troop._legacyStats` stays: `IUnit.Stats` is abstract. |
+| 5 | There is no enemy AI: enemy troops stand still until ordered. A new AI system is planned. |
 
 ## 12. Where to Change Things
 
