@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-namespace AchievementSystem.EndBattle
+namespace BattleEnd
 {
     public class CapturedPoint : MonoBehaviour
     {

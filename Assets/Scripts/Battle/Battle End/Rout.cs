@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace AchievementSystem.EndBattle
+namespace BattleEnd
 {
     // Ends the battle when every troop of the army is out of the battle (routed or wiped out).
     public class Rout : MonoBehaviour
