@@ -1066,33 +1066,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4182462745959460307, guid: 8114fb246603f9b418faeb7bcb0e6f63,
         type: 3}
-      propertyPath: data.regiments.Array.size
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 4182462745959460307, guid: 8114fb246603f9b418faeb7bcb0e6f63,
-        type: 3}
-      propertyPath: data.characters.Array.size
-      value: 3
-      objectReference: {fileID: 0}
-    - target: {fileID: 4182462745959460307, guid: 8114fb246603f9b418faeb7bcb0e6f63,
-        type: 3}
-      propertyPath: 'data.regiments.Array.data[0]'
-      value: 
-      objectReference: {fileID: 11400000, guid: b2d2f7d9b077af741b74d252a0922f28,
-        type: 2}
-    - target: {fileID: 4182462745959460307, guid: 8114fb246603f9b418faeb7bcb0e6f63,
-        type: 3}
-      propertyPath: 'data.regiments.Array.data[1]'
-      value: 
-      objectReference: {fileID: 11400000, guid: 2a6639f1004014e4cbcbb9bfca870a76,
-        type: 2}
-    - target: {fileID: 4182462745959460307, guid: 8114fb246603f9b418faeb7bcb0e6f63,
-        type: 3}
-      propertyPath: data.characters.Array.data[1].XP
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4182462745959460307, guid: 8114fb246603f9b418faeb7bcb0e6f63,
-        type: 3}
       propertyPath: data.BuyOrders.Array.data[0].Cost
       value: 300
       objectReference: {fileID: 0}
@@ -1123,24 +1096,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4182462745959460307, guid: 8114fb246603f9b418faeb7bcb0e6f63,
         type: 3}
-      propertyPath: data.characters.Array.data[0].statBase
-      value: 
-      objectReference: {fileID: 11400000, guid: 7598177067be62a498e23456c7343226,
-        type: 2}
-    - target: {fileID: 4182462745959460307, guid: 8114fb246603f9b418faeb7bcb0e6f63,
-        type: 3}
-      propertyPath: data.characters.Array.data[1].statBase
-      value: 
-      objectReference: {fileID: 11400000, guid: 2b8b61bd13648ac4e806d3f126d16d9b,
-        type: 2}
-    - target: {fileID: 4182462745959460307, guid: 8114fb246603f9b418faeb7bcb0e6f63,
-        type: 3}
-      propertyPath: data.characters.Array.data[2].statBase
-      value: 
-      objectReference: {fileID: 11400000, guid: 6360005454de03f42b8ea6b8abed593e,
-        type: 2}
-    - target: {fileID: 4182462745959460307, guid: 8114fb246603f9b418faeb7bcb0e6f63,
-        type: 3}
       propertyPath: data.BuyOrders.Array.data[0].orderDetails
       value: 'When travelling to X I had to secure this loan to afford the journey
         by boat and have enough money to raise a small force to begin my conquest.
@@ -1153,21 +1108,6 @@ PrefabInstance:
       value: 'I need to pay bay the video brokers
 
 '
-      objectReference: {fileID: 0}
-    - target: {fileID: 4182462745959460307, guid: 8114fb246603f9b418faeb7bcb0e6f63,
-        type: 3}
-      propertyPath: data.characters.Array.data[0].CostToField
-      value: 5
-      objectReference: {fileID: 0}
-    - target: {fileID: 4182462745959460307, guid: 8114fb246603f9b418faeb7bcb0e6f63,
-        type: 3}
-      propertyPath: data.characters.Array.data[1].CostToField
-      value: 20
-      objectReference: {fileID: 0}
-    - target: {fileID: 4182462745959460307, guid: 8114fb246603f9b418faeb7bcb0e6f63,
-        type: 3}
-      propertyPath: data.characters.Array.data[2].CostToField
-      value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 4182462745959460307, guid: 8114fb246603f9b418faeb7bcb0e6f63,
         type: 3}

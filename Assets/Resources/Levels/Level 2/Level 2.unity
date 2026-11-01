@@ -2853,16 +2853,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 2238863835414832472, guid: 0597daefb86d0674797ed0fd1521c89b,
-        type: 3}
-      propertyPath: holder
-      value: -1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2238863835414832472, guid: 0597daefb86d0674797ed0fd1521c89b,
-        type: 3}
-      propertyPath: triggerThreshold
-      value: 0.7
-      objectReference: {fileID: 0}
     - target: {fileID: 6200080511725383879, guid: 0597daefb86d0674797ed0fd1521c89b,
         type: 3}
       propertyPath: m_Name
@@ -3576,48 +3566,6 @@ PrefabInstance:
       propertyPath: _achievements.Array.size
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 2930595629069799993, guid: 8114fb246603f9b418faeb7bcb0e6f63,
-        type: 3}
-      propertyPath: _deployedCharacters.Array.size
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2930595629069799993, guid: 8114fb246603f9b418faeb7bcb0e6f63,
-        type: 3}
-      propertyPath: _deployedCharacters.Array.data[0].XP
-      value: 119
-      objectReference: {fileID: 0}
-    - target: {fileID: 2930595629069799993, guid: 8114fb246603f9b418faeb7bcb0e6f63,
-        type: 3}
-      propertyPath: _deployedCharacters.Array.data[0].statBase
-      value: 
-      objectReference: {fileID: 11400000, guid: f21c9199c805d5e48914f4c032ea3350,
-        type: 2}
-    - target: {fileID: 2930595629069799993, guid: 8114fb246603f9b418faeb7bcb0e6f63,
-        type: 3}
-      propertyPath: _deployedCharacters.Array.data[0].levelTable
-      value: 
-      objectReference: {fileID: 11400000, guid: 0c273df009d8df645a6e0232ee461573,
-        type: 2}
-    - target: {fileID: 2930595629069799993, guid: 8114fb246603f9b418faeb7bcb0e6f63,
-        type: 3}
-      propertyPath: _deployedCharacters.Array.data[0].CostToField
-      value: 6
-      objectReference: {fileID: 0}
-    - target: {fileID: 4182462745959460307, guid: 8114fb246603f9b418faeb7bcb0e6f63,
-        type: 3}
-      propertyPath: data.characters.Array.size
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4182462745959460307, guid: 8114fb246603f9b418faeb7bcb0e6f63,
-        type: 3}
-      propertyPath: data.characters.Array.data[0].CostToField
-      value: 5
-      objectReference: {fileID: 0}
-    - target: {fileID: 4182462745959460307, guid: 8114fb246603f9b418faeb7bcb0e6f63,
-        type: 3}
-      propertyPath: data.characters.Array.data[1].CostToField
-      value: 8
-      objectReference: {fileID: 0}
     - target: {fileID: 5391157433311076479, guid: 8114fb246603f9b418faeb7bcb0e6f63,
         type: 3}
       propertyPath: m_Name
@@ -4280,61 +4228,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 2630677947297891302, guid: 3cd01f44ee58f9e4b978c5ff13fb6e38,
-        type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.size
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2630677947297891302, guid: 3cd01f44ee58f9e4b978c5ff13fb6e38,
-        type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2630677947297891302, guid: 3cd01f44ee58f9e4b978c5ff13fb6e38,
-        type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_Mode
-      value: 6
-      objectReference: {fileID: 0}
-    - target: {fileID: 2630677947297891302, guid: 3cd01f44ee58f9e4b978c5ff13fb6e38,
-        type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
-      value: 
-      objectReference: {fileID: 534580057}
-    - target: {fileID: 2630677947297891302, guid: 3cd01f44ee58f9e4b978c5ff13fb6e38,
-        type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_Target
-      value: 
-      objectReference: {fileID: 174343660}
-    - target: {fileID: 2630677947297891302, guid: 3cd01f44ee58f9e4b978c5ff13fb6e38,
-        type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_CallState
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 2630677947297891302, guid: 3cd01f44ee58f9e4b978c5ff13fb6e38,
-        type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
-      value: StartBattle
-      objectReference: {fileID: 0}
-    - target: {fileID: 2630677947297891302, guid: 3cd01f44ee58f9e4b978c5ff13fb6e38,
-        type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_MethodName
-      value: SetActive
-      objectReference: {fileID: 0}
-    - target: {fileID: 2630677947297891302, guid: 3cd01f44ee58f9e4b978c5ff13fb6e38,
-        type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: Battle, Assembly-CSharp
-      objectReference: {fileID: 0}
-    - target: {fileID: 2630677947297891302, guid: 3cd01f44ee58f9e4b978c5ff13fb6e38,
-        type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_TargetAssemblyTypeName
-      value: UnityEngine.GameObject, UnityEngine
-      objectReference: {fileID: 0}
-    - target: {fileID: 2630677947297891302, guid: 3cd01f44ee58f9e4b978c5ff13fb6e38,
-        type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_Arguments.m_ObjectArgumentAssemblyTypeName
-      value: UnityEngine.Object, UnityEngine
-      objectReference: {fileID: 0}
     - target: {fileID: 6368599512294638855, guid: 3cd01f44ee58f9e4b978c5ff13fb6e38,
         type: 3}
       propertyPath: m_Pivot.x
@@ -4434,11 +4327,6 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6949635578777941204, guid: 3cd01f44ee58f9e4b978c5ff13fb6e38,
-        type: 3}
-      propertyPath: m_IsActive
-      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8127947057638607606, guid: 3cd01f44ee58f9e4b978c5ff13fb6e38,
         type: 3}
