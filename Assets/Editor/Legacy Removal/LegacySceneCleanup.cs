@@ -150,6 +150,11 @@ public static class LegacySceneCleanup
             {
                 PrefabUtility.UnpackPrefabInstance(root, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
                 Log.AppendLine("  unpacked " + root.name + " (keeps TroopPlayerOrders)");
+                if (root.TryGetComponent<SpriteRenderer>(out var cursorSprite))
+                {
+                    Object.DestroyImmediate(cursorSprite);
+                    Log.AppendLine("  removed the old cursor SpriteRenderer from " + root.name);
+                }
             }
         }
         RemoveLegacyObjects(scene, out _);
@@ -200,7 +205,7 @@ public static class LegacySceneCleanup
         EnsureSound(scene);
         WirePausedIndicator(scene);
 
-        Army enemy = FindInScene<Battle>(scene)?.enemy;
+        Army enemy = Armies(scene).enemy;
         foreach (OldUnit unit in oldUnits.Where(u => u.Enemy))
             AddEnemyTroop(path, enemy, unit);
 
@@ -255,7 +260,7 @@ public static class LegacySceneCleanup
     static void RemoveLegacyObjects(Scene scene, out List<OldUnit> oldUnits)
     {
         oldUnits = new List<OldUnit>();
-        Army enemy = FindInScene<Battle>(scene)?.enemy;
+        Army enemy = Armies(scene).enemy;
         var doomed = new List<(GameObject go, string why)>();
         foreach (GameObject root in scene.GetRootGameObjects())
             foreach (Transform t in root.GetComponentsInChildren<Transform>(true))
@@ -277,8 +282,8 @@ public static class LegacySceneCleanup
                 else if (IsInstanceOf(go, LegacyPlayerController) && PrefabUtility.IsOutermostPrefabInstanceRoot(go)
                          && go.GetComponent<TroopPlayerOrders>() == null)
                     doomed.Add((go, "old player controller"));
-                else if (go.name == "ShootingCursor" || (go.name == "Player controller" && go.GetComponent<SpriteRenderer>() != null
-                                                          && HasMissingScripts(go, false)))
+                else if (go.GetComponent<TroopPlayerOrders>() == null && (go.name == "ShootingCursor" ||
+                         (go.name == "Player controller" && go.GetComponent<SpriteRenderer>() != null && HasMissingScripts(go, false))))
                     doomed.Add((go, "old shooting cursor"));
             }
         foreach (var (go, why) in doomed)
@@ -303,6 +308,27 @@ public static class LegacySceneCleanup
                 Log.AppendLine($"  removed {count} missing script(s) from {PathOf(t)}");
             }
         if (removed == 0) Log.AppendLine("  no missing scripts left");
+    }
+
+    // The scene's player and enemy armies: Battle.player / Battle.enemy, or the Army objects named PLAYER / ENEMY ARMY,
+    // which are then assigned to the Battle.
+    static (Army player, Army enemy) Armies(Scene scene)
+    {
+        var battle = FindInScene<Battle>(scene);
+        Army player = battle != null ? battle.player : null;
+        Army enemy = battle != null ? battle.enemy : null;
+        var armies = scene.GetRootGameObjects().SelectMany(r => r.GetComponentsInChildren<Army>(true)).ToList();
+        if (player == null) player = armies.FirstOrDefault(a => a.name.ToUpperInvariant().Contains("PLAYER"));
+        if (enemy == null) enemy = armies.FirstOrDefault(a => a.name.ToUpperInvariant().Contains("ENEMY"));
+        if (battle != null && (battle.player != player || battle.enemy != enemy))
+        {
+            var so = new SerializedObject(battle);
+            so.FindProperty("player").objectReferenceValue = player;
+            so.FindProperty("enemy").objectReferenceValue = enemy;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            Log.AppendLine($"  Battle armies set: player {player?.name}, enemy {enemy?.name}");
+        }
+        return (player, enemy);
     }
 
     static void EnsureSound(Scene scene)
