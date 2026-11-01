@@ -34,8 +34,10 @@ public static class FriendlyOverlapResolver
                     ? offset / distance
                     : (first.GetInstanceID() < second.GetInstanceID() ? Vector2.right : Vector2.left);
                 float correction = minimumDistance - distance;
-                // An engaged troop is not pushed; its friend gives way.
-                float firstShare = first.IsEngaged == second.IsEngaged ? 0.5f : first.IsEngaged ? 0f : 1f;
+                // An engaged or attacking troop is not pushed; its friend gives way (SU-46).
+                bool firstCommitted = first.IsCommitted;
+                bool secondCommitted = second.IsCommitted;
+                float firstShare = firstCommitted == secondCommitted ? 0.5f : firstCommitted ? 0f : 1f;
                 first.ShiftPivot(direction * (correction * firstShare));
                 second.ShiftPivot(-direction * (correction * (1f - firstShare)));
                 moved = true;

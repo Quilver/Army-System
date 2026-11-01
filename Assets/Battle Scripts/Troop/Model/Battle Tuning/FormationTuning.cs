@@ -16,6 +16,8 @@ public sealed class FormationTuning : ScriptableObject
     float _aDistance = 5.2f;
     [SerializeField, Min(0f), Tooltip("EngagementGap: clear footprint gap two engaged lines hold between them. Replaces LineGap (0.3).")]
     float _engagementGap = 2f;
+    [SerializeField, Min(0f), Tooltip("Engagement hold (exit hysteresis, Q-16): troops that are engaged stay engaged until their footprint gap passes A_Distance + this.")]
+    float _engagementHoldMargin = 1f;
 
     [Header("Formation and movement (spec §3)")]
     [SerializeField, Min(0.1f), Tooltip("L_nat = this x TroopRadius. Provisional (Q-12).")]
@@ -37,6 +39,7 @@ public sealed class FormationTuning : ScriptableObject
     public float SDistanceExitHysteresis => _sDistanceExitHysteresis;
     public float ADistance => _aDistance;
     public float EngagementGap => _engagementGap;
+    public float EngagementHoldMargin => _engagementHoldMargin;
 
     public float NaturalLineRadiusScale => _naturalLineRadiusScale;
     public float BlobRadiusScale => _blobRadiusScale;

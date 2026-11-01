@@ -2,9 +2,10 @@ using System.Collections.Generic;
 using UnityEngine;
 
 // Pulls linked troops toward each other so their natural line points meet at the joint (spec §3.4.1 pinned anchor):
-// a spring with a small dead zone plus relative-velocity matching. The force is applied only to the unengaged side:
-// tension never moves an engaged troop out of melee. If the stretch or hinge limit is exceeded the link snaps
-// (ChainLinker) instead of dragging the engaged troop. Pending links have no tension.
+// a spring with a small dead zone plus relative-velocity matching. The force is applied only to a free side: tension
+// never moves a committed troop (engaged, within the engagement hold, or carrying an attack order; SU-46), so it can
+// neither drag a troop out of melee nor hold an attacker back. If the stretch or hinge limit is exceeded the link snaps
+// (ChainLinker) instead. Pending links have no tension.
 public static class AlliedLinkTension
 {
     const float LinkVelocityMatching = 1f;
@@ -22,8 +23,8 @@ public static class AlliedLinkTension
                 Troop other = link.Other;
                 if (troop.GetInstanceID() >= other.GetInstanceID() || !forces.ContainsKey(other)) continue;
 
-                bool troopFree = !troop.IsEngaged && !troop.IsRouted;
-                bool otherFree = !other.IsEngaged && !other.IsRouted;
+                bool troopFree = !troop.IsCommitted && !troop.IsRouted;
+                bool otherFree = !other.IsCommitted && !other.IsRouted;
                 if (!troopFree && !otherFree) continue;
 
                 float gap = link.Tension.magnitude;

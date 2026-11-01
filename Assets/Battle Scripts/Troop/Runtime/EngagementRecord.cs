@@ -1,7 +1,7 @@
 // One opposing troop near this troop, measured this frame (spec §4.1, §4.8).
 //   Gap      footprint gap between the two troops (the single engagement metric, Q-16).
 //   Face     which of this troop's faces the opponent is attacking (Q-31).
-//   Engaged  Gap <= A_Distance.
+//   Engaged  Gap <= A_Distance, or Gap <= A_Distance + EngagementHoldMargin if the pair was engaged last frame (SU-45).
 public readonly struct EngagementRecord
 {
     public readonly Troop Opponent;

@@ -12,7 +12,7 @@ time of writing; check them before relying on them.
 | ---------------------------------------------------------------------------------------- | ------------------------------------ | --------------------- | ------------------------------- |
 | [movement-testing.md](movement-testing.md)                                               | Logging infrastructure and test pass | Not started           | -                               |
 | [issue-01-chain-exit-controls.md](issue-01-chain-exit-controls.md)                       | Known issue                          | Not confirmed         | Testing (Chain, Pivot logging)  |
-| [issue-02-flank-snapping-breaks-surround.md](issue-02-flank-snapping-breaks-surround.md) | Known issue                          | Not confirmed         | Testing (Chain, Pivot logging)  |
+| [issue-02-flank-snapping-breaks-surround.md](issue-02-flank-snapping-breaks-surround.md) | Known issue                          | Fixed (SU-45 to SU-48) | Testing (Chain, Pivot logging)  |
 | [issue-03-retreat-overshoot-yoyo.md](issue-03-retreat-overshoot-yoyo.md)                 | Known issue                          | Not confirmed         |                                 |
 | [issue-04-idle-engaged-fallback.md](issue-04-idle-engaged-fallback.md)                   | Known issue (diagnosis)              | Suspected cause found |                                 |
 | [barrier-intrusion-tracking.md](barrier-intrusion-tracking.md)                           | Fix                                  | Completed             | Issue 04                        |

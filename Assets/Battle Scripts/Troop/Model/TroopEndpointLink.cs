@@ -6,6 +6,8 @@ using UnityEngine;
 //   Joint    the shared joint J solved this frame.
 //   Pending  a link created by a multi-troop line order (spec §6.2, Q-19). It reserves both line points but has no
 //            geometry until both troops have reached their places, so marching troops are not dragged into line.
+//   FromOrder  made by a player line order rather than by auto-linking. Only automatic links break when the troops'
+//            facings drift apart (SU-47).
 [Serializable]
 public sealed class TroopEndpointLink
 {
@@ -14,4 +16,5 @@ public sealed class TroopEndpointLink
     public Vector2 Tension;
     public Vector2 Joint;
     public bool Pending;
+    public bool FromOrder;
 }

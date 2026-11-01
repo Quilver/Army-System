@@ -6,9 +6,12 @@ using UnityEngine;
 //   2. Solves each shared joint J (weighted average of the two natural line points, the engaged side pinned) and breaks
 //      links that are over-stretched (> ChainMaxStretchScale x L_nat), over-bent (inner angle < 65 degrees), or
 //      obstructed by impassable terrain. A broken line point relaxes back to its natural place at 2 units/s.
-//   3. Attaches free line points: complementary wings, facing the same way, within R_AttachScale x L_nat, with a clear
-//      line of sight, never closing a loop, never taking an already linked point, ties broken by distance then lower
-//      instance id.
+//   3. Attaches free line points: complementary wings, facings within AutoLinkMaxFacingDeg (45) of each other, within
+//      R_AttachScale x L_nat, with a clear line of sight, never closing a loop, never taking an already linked point,
+//      ties broken by distance then lower instance id. A troop with an attack order never auto-links (SU-48), and an
+//      automatic link breaks once the facings are more than AutoLinkBreakFacingDeg (60) apart (SU-47).
+// Engaged or attacking troops are pinned: a joint stays on their line point and they never retreat with the chain
+// (Troop.IsCommitted, SU-46).
 //   4. Publishes each troop's final line and its formation state (Idle, Column, Line, Chain, Rout).
 // Links exist only between troops of the same team.
 public static class ChainLinker
@@ -51,8 +54,8 @@ public static class ChainLinker
         BreakLink(b, endB, ChainBreakReason.PlayerOrder);
         RebuildTopology(TroopCombatWorld.Current != null ? TroopCombatWorld.Current.Troops : null);
         if (!Topology.CanLink(a.GetInstanceID(), b.GetInstanceID())) return false;
-        a.LineLinkState.Set(endA, b, endB, pending: true);
-        b.LineLinkState.Set(endB, a, endA, pending: true);
+        a.LineLinkState.Set(endA, b, endB, pending: true, fromOrder: true);
+        b.LineLinkState.Set(endB, a, endA, pending: true, fromOrder: true);
         return true;
     }
 
@@ -82,9 +85,9 @@ public static class ChainLinker
         if (active) StartRelax(other, otherEnd, joint);
     }
 
-    // Shared retreat (spec §3.4): when a troop retreats by distance, each unengaged neighbour whose link would be
-    // stretched past ChainRetreatStretchThreshold x L_nat or bent past ChainRetreatHingeBendDeg retreats too, passing on
-    // (1 - falloff) of the distance per hop. Engaged neighbours hold (Q-20). It stops at broken links.
+    // Shared retreat (spec §3.4): when a troop retreats by distance, each free neighbour whose link would be stretched past
+    // ChainRetreatStretchThreshold x L_nat or bent past ChainRetreatHingeBendDeg retreats too, passing on (1 - falloff) of
+    // the distance per hop. Engaged or attacking neighbours hold (Q-20, SU-46). It stops at broken links.
     public static void OnTroopRetreat(Troop source, Vector2 direction, float distance)
     {
         if (source == null || distance <= 0f) return;
@@ -112,7 +115,7 @@ public static class ChainLinker
                 Vector2 troopFar = troop.SegmentEndpoint(1 - end) + direction.normalized * moved;
                 float stretch = Vector2.Distance(neighbourFar, joint) / Mathf.Max(0.01f, neighbour.NaturalLineLength);
                 float bend = ChainGeometry.HingeBend(joint, neighbourFar, troopFar);
-                if (!ChainLinkRules.ShouldRetreatSympathetically(neighbour.IsEngaged, stretch, bend,
+                if (!ChainLinkRules.ShouldRetreatSympathetically(neighbour.IsCommitted, stretch, bend,
                         Tuning.ChainRetreatStretchThreshold, Tuning.ChainRetreatHingeBendDeg))
                     continue;
                 if (neighbour.BeginSympatheticRetreat(direction, next))
@@ -187,7 +190,7 @@ public static class ChainLinker
             };
         }
 
-        // Joints from the natural points, the engaged side pinned (spec §3.4.1 pinned anchor).
+        // Joints from the natural points, the committed (engaged or attacking) side pinned (spec §3.4.1 pinned anchor).
         foreach (var troop in troops)
         {
             if (troop == null || !Endpoints.ContainsKey(troop)) continue;
@@ -199,7 +202,9 @@ public static class ChainLinker
                 if (troop.GetInstanceID() > other.GetInstanceID() || !Endpoints.ContainsKey(other)) continue;
                 Vector2 own = Endpoints[troop][end];
                 Vector2 theirs = Endpoints[other][link.OtherEnd];
-                float weight = troop.IsEngaged == other.IsEngaged ? 0.5f : troop.IsEngaged ? 1f : 0f;
+                bool troopPinned = troop.IsCommitted;
+                bool otherPinned = other.IsCommitted;
+                float weight = troopPinned == otherPinned ? 0.5f : troopPinned ? 1f : 0f;
                 Vector2 joint = ChainGeometry.Joint(own, theirs, weight);
                 link.Joint = joint;
                 other.GetLineLink(link.OtherEnd).Joint = joint;
@@ -229,6 +234,11 @@ public static class ChainLinker
                     other.NaturalLineLength, angle, Tuning.ChainMaxStretchScale, Tuning.ChainMinInnerAngleDeg);
                 if (reason == ChainBreakReason.None && IsObstructed(troop, other, joint))
                     reason = ChainBreakReason.Obstruction;
+                // An automatic link holds only while the two troops face roughly the same way (SU-47).
+                if (reason == ChainBreakReason.None && !link.FromOrder
+                    && ChainLinkRules.BreaksOnFacing(troop.NaturalFormation.Facing, other.NaturalFormation.Facing,
+                        Tuning.AutoLinkBreakFacingDeg))
+                    reason = ChainBreakReason.Facing;
                 if (reason != ChainBreakReason.None)
                 {
                     BreakLink(troop, end, reason);
@@ -295,7 +305,7 @@ public static class ChainLinker
                     Vector2 pointA = Endpoints[a][endA];
                     Vector2 pointB = Endpoints[b][endB];
                     if (!ChainLinkRules.CanAttach(pointA, endA, a.NaturalFormation.Facing, pointB, endB,
-                            b.NaturalFormation.Facing, attach))
+                            b.NaturalFormation.Facing, attach, Tuning.AutoLinkMaxFacingDeg))
                         continue;
                     Candidates.Add(new ChainLinkCandidate(a.GetInstanceID(), endA, b.GetInstanceID(), endB,
                         Vector2.Distance(pointA, pointB)));
@@ -322,8 +332,10 @@ public static class ChainLinker
         }
     }
 
+    // A troop with an attack order does not auto-link until the attack ends (SU-48): it would snap onto any free line
+    // point it passes and be held short of its target. Links it already had are kept.
     static bool CanAutoLink(Troop troop) =>
-        troop != null && !troop.IsRouted && !troop.ChainSuppressed && !troop.IsRetreating
+        troop != null && !troop.IsRouted && !troop.ChainSuppressed && !troop.IsRetreating && !troop.IsPursuing
         && troop.NaturalFormation != null && Endpoints.ContainsKey(troop) && troop.HasFreeLineEnd;
 
     static void RebuildTopology(IReadOnlyList<Troop> troops)

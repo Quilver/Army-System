@@ -7,6 +7,76 @@ change work; confirm or replace). `specifications.md` itself is not edited; fold
 
 ---
 
+## 2026-11-01 (7): Chain engagement lock
+
+The clip "Chain engagement lock" showed three allied troops on three sides of one enemy, chained into a U, holding each
+other out of melee. `ChainEngagementScenarioTests` reproduces it with the project's Formation Tuning (A_Distance =
+EngagementGap = 2). The barrier holds engaged lines right on the engagement edge, so 'engaged' flickered. Each time a
+fighter dropped to 'free', chain tension pulled it toward its chain neighbours (about 6 units in the test). An attacking
+troop that passed a free chain end snapped onto it and was held at the joint. Diagrams:
+`Docs/Battle/MovementEdgeCases/24-chain-wraps-enemy.svg`, `25-engagement-hold.svg` and `26-attacker-passes-chain.svg`
+(26 settles the open question in 23).
+
+### SU-45 Engagement hold (Decision + Assumption, answers Q-16, amends spec §4.1)
+- Decision: engagement has an exit hold. It applies to everything that reads 'engaged': charges, facing lock, Assault,
+  ranged fire, chain pinning (SU-46), the heat map and the troop card.
+- Two opposing troops become engaged at a footprint gap of A_Distance or less, as before. Once engaged they stay engaged
+  until the gap passes A_Distance + `EngagementHoldMargin`. There is no hold on entry: a pair that is not engaged has to
+  come back within A_Distance.
+- Assumptions:
+  - `EngagementHoldMargin` = 1.0 units (new, Formation Tuning). With the project's A_Distance of 2.0 the hold edge is 3.0.
+  - The hold is per enemy: each engagement record remembers whether that pair was engaged the frame before. Both troops of
+    a pair release in the same frame.
+  - A held enemy keeps its engagement record even when S_Distance is smaller than A_Distance + the margin.
+  - Assault still starts only when a troop enters engagement, so a fight that stays inside the hold no longer retriggers
+    it.
+- Code: `TroopEngagementSystem`, `EngagementRecord`, `Troop.WasEngagedWith`, `FormationTuning`, `TroopTuning`. Tests:
+  `ChainEngagementScenarioTests`.
+
+### SU-46 Friends never move an engaged or attacking troop (Decision + Assumption, amends spec §2.4, §3.4, §3.4.1)
+- Decision: chain tension and pivot separation never hold back a troop that is engaged or attacking. A free friend in its
+  way gives way instead.
+- `Troop.IsCommitted`: not routed, and either engaged (with the SU-45 hold) or carrying an attack (Pursue) order. It
+  replaces 'engaged' in:
+  - `AlliedLinkTension`: the spring and velocity matching act only on a troop that is not committed.
+  - Joint weight: the joint stays on a committed troop's line point. When both or neither are committed it is the
+    midpoint.
+  - Shared retreat (spec §3.4): committed neighbours do not retreat with their chain.
+  - `FriendlyOverlapResolver` (spec §2.4): the free troop takes the whole correction. When both or neither are committed
+    they share it.
+- Assumption: an attacking troop counts as committed before it is engaged. A free troop still linked to an attacker is
+  pulled along until the link snaps at 3.0 x L_nat (the pinned anchor rule). The order planner already breaks an
+  attacker's links to troops outside the selection, so this matters mostly for orders given in code (the AI).
+- Code: `Troop`, `AlliedLinkTension`, `FriendlyOverlapResolver`, `ChainLinker`. Tests: `ChainEngagementScenarioTests`.
+
+### SU-47 Auto-links need facings within 45 degrees (Decision + Assumption, amends spec §3.4 Linking and Breaking)
+- Decision: two free line points auto-link only when the troops' facings are within `AutoLinkMaxFacingDeg` = 45 degrees.
+  The spec rule was F_A . F_B > 0, so any angle under 90. Troops on adjacent sides of one enemy (about 90 degrees apart) no
+  longer chain round it. Links made by a player line order keep the old rules (the stretch and hinge envelope only).
+- Assumptions:
+  - An automatic link breaks when the facings drift more than `AutoLinkBreakFacingDeg` = 60 degrees apart, so there are
+    15 degrees of hysteresis. New break reason: `ChainBreakReason.Facing`.
+  - The facings compared are each troop's own facing (toward its threat, or the ordered facing), not the facing of the
+    bent chain line.
+  - Each link records whether a line order made it (`TroopEndpointLink.FromOrder`).
+- Both values are on Chain Tuning.
+- Code: `ChainLinkRules`, `ChainLinker`, `TroopEndpointLink`, `TroopLineLinks`, `ChainTuning`, `TroopTuning`. Tests:
+  `ChainLinkRulesTests`, `ChainEngagementScenarioTests`.
+
+### SU-48 No auto-link while attacking (Decision, amends spec §3.4 Linking, fixes issue 02)
+- A troop with an attack (Pursue) order does not auto-link until the order ends: its target is destroyed, or it gets a new
+  order. Links it already had are kept, so chained troops ordered to attack together stay chained.
+- Code: `ChainLinker.CanAutoLink`. Tests: `ChainEngagementScenarioTests`.
+
+### Tuning and test notes (no behaviour change)
+- The three new values are not in the Battle Tuning assets yet. They use their code defaults (1.0, 45, 60) until Formation
+  Tuning and Chain Tuning are next saved in the Inspector.
+- `TroopScenarioTests.Retreat_RearRanksFallBackFirstAndFaster` (SU-14) fails at commit 4be238d, independently of this
+  change. That merge kept a uniform `RetreatSoldierMoveSeconds` and `RetreatAccelerationHeadroom` 3 in `FaultSlipMotion` /
+  `SoldierSteering`, so the rear ranks no longer move faster than the front.
+
+---
+
 ## 2026-11-01 (6): Steady outline; charges survive a retreat
 
 ### SU-43 Charges are completed through a retreat, then the soldier rushes back (Decision + Assumption, amends spec §4.3, §5.5)

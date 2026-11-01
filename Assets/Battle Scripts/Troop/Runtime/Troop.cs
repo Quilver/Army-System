@@ -213,6 +213,9 @@ public sealed class Troop : IUnit
     public TroopFootprint Outline => _outline.IsSeeded ? _outline.At(transform.position) : _footprint;
     public IReadOnlyList<EngagementRecord> Engagements => _engagements;
     public bool IsEngaged => _engaged;
+    // Engaged (with the engagement hold) or carrying an attack order. Chain tension, shared joints, shared retreat and
+    // friendly pivot separation never move a committed troop: its friends give way instead (SU-46).
+    public bool IsCommitted => !IsRouted && (_engaged || IsPursuing);
     public bool IsAssaulting => _assault.IsActive;
     public float AssaultTimeRemaining => _assault.TimeRemaining;
 
@@ -242,6 +245,15 @@ public sealed class Troop : IUnit
     }
 
     public bool IsFlankedBy(Troop opponent) => FaceAttackedBy(opponent).IsFlanked();
+
+    // Whether this troop was engaged with the given enemy in its current records (last frame's while the engagement
+    // system is measuring). Used for the engagement hold (SU-45).
+    public bool WasEngagedWith(Troop opponent)
+    {
+        foreach (var record in _engagements)
+            if (record.Opponent == opponent) return record.Engaged;
+        return false;
+    }
 
     internal void SetFootprint(in TroopFootprint footprint) => _footprint = footprint;
     internal void UpdateOutline(float deltaTime) => _outline.Update(this, deltaTime);
@@ -522,10 +534,11 @@ public sealed class Troop : IUnit
         ChainLinker.OnTroopRetreat(this, away, distance);
     }
 
-    // Shared retreat of a chain (spec §3.4): pulled back with a neighbour, at no morale cost. Engaged troops never move.
+    // Shared retreat of a chain (spec §3.4): pulled back with a neighbour, at no morale cost. Engaged or attacking troops
+    // never move (SU-46).
     internal bool BeginSympatheticRetreat(Vector2 direction, float distance)
     {
-        if (IsRouted || IsFaultSlipping || IsEngaged || distance <= 0f) return false;
+        if (IsRouted || IsFaultSlipping || IsCommitted || distance <= 0f) return false;
         _faultSlip.Begin(direction, distance, sympathetic: true);
         return true;
     }

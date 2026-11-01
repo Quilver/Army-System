@@ -5,9 +5,12 @@ using UnityEngine;
 // A_Distance and faces all use the same metric:
 //   - engagement records (gap, attacking face, engaged) for each troop, which also start Assault;
 //   - the threat heading from enemies within S_Distance, which turns the troop's line toward them.
-// No hysteresis on engagement entry or exit. S_Distance has exit hysteresis (see ExitMargin): forming a line changes a
-// troop's footprint from a circle to a thin rectangle, which widens the gap, so without it a troop at the S_Distance edge
-// would flick between Line and Idle / Column every few frames.
+// Engagement starts at A_Distance and has an exit hold (SU-45, Q-16): two troops that were engaged last frame stay engaged
+// until their gap passes A_Distance + EngagementHoldMargin. Engaged lines are held at EngagementGap by the barrier, which can
+// equal A_Distance, so without the hold a fight would flick in and out of 'engaged' (charges, facing lock, chain pinning).
+// S_Distance has exit hysteresis too (see ExitMargin): forming a line changes a troop's footprint from a circle to a thin
+// rectangle, which widens the gap, so without it a troop at the S_Distance edge would flick between Line and Idle / Column
+// every few frames.
 public sealed class TroopEngagementSystem
 {
     struct Threat
@@ -41,17 +44,20 @@ public sealed class TroopEngagementSystem
             Vector2 heading = troop.PivotVelocity.sqrMagnitude > 0.0025f ? troop.PivotVelocity.normalized : troop.Facing;
             bool threatened = troop.HasThreatWithinSDistance;
             float nearestPivot = float.PositiveInfinity;
+            float holdRange = tuning.ADistance + tuning.EngagementHoldMargin;
 
             foreach (var other in troops)
             {
                 if (other == null || other == troop || other.TeamId == troop.TeamId) continue;
                 TroopFootprint theirs = other.Footprint;
                 float gap = FootprintGap.Gap(own, theirs);
+                // troop.Engagements still holds last frame's records here (SetEngagements runs after this loop).
+                bool held = gap <= holdRange && troop.WasEngagedWith(other);
                 float sensing = tuning.SDistance + (threatened ? ExitMargin(troop, other, tuning) : 0f);
-                if (gap > sensing) continue;
+                if (gap > sensing && !held) continue;
 
                 TroopFace face = FaceClassifier.Classify(own, pivot, theirs, tuning.FrontFaceHalfAngleDeg, tuning.RearFaceAngleDeg);
-                _records.Add(new EngagementRecord(other, gap, face, gap <= tuning.ADistance));
+                _records.Add(new EngagementRecord(other, gap, face, gap <= tuning.ADistance || held));
                 if (other.IsRouted) continue;
 
                 Vector2 offset = (Vector2)other.transform.position - pivot;

@@ -10,7 +10,8 @@ public enum ChainBreakReason
     Obstruction,
     Rout,
     PlayerOrder,
-    Invalid
+    Invalid,
+    Facing
 }
 
 // One possible new link between two free line points. Sorted by distance, then by the lower troop instance id, so a
@@ -56,13 +57,26 @@ public static class ChainLinkRules
     public static float AttachDistance(float naturalLengthA, float naturalLengthB, float attachScale) =>
         attachScale * (naturalLengthA + naturalLengthB) * 0.5f;
 
+    // Auto-link test: complementary wings, facings within maxFacingDeg of each other (AutoLinkMaxFacingDeg, 45 by default;
+    // the spec's F_A . F_B > 0 was any angle under 90, SU-47), line points within attachDistance.
     public static bool CanAttach(Vector2 pointA, int endA, Vector2 facingA, Vector2 pointB, int endB, Vector2 facingB,
-        float attachDistance)
+        float attachDistance, float maxFacingDeg)
     {
         if (!AreComplementary(endA, endB)) return false;
-        if (Vector2.Dot(facingA, facingB) <= 0f) return false;
+        if (!FacingsWithin(facingA, facingB, maxFacingDeg)) return false;
         return Vector2.Distance(pointA, pointB) <= attachDistance;
     }
+
+    // Facings within maxDeg of each other, and never 90 degrees or more apart.
+    public static bool FacingsWithin(Vector2 facingA, Vector2 facingB, float maxDeg)
+    {
+        float angle = Vector2.Angle(facingA, facingB);
+        return angle <= maxDeg && angle < 90f;
+    }
+
+    // An automatic link breaks when the troops' facings drift more than breakDeg apart (AutoLinkBreakFacingDeg, SU-47).
+    public static bool BreaksOnFacing(Vector2 facingA, Vector2 facingB, float breakDeg) =>
+        Vector2.Angle(facingA, facingB) > breakDeg;
 
     public static ChainBreakReason Evaluate(float requiredLengthA, float naturalLengthA, float requiredLengthB,
         float naturalLengthB, float innerAngleDeg, float maxStretchScale, float minInnerAngleDeg)

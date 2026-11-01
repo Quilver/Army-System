@@ -53,15 +53,33 @@ public sealed class ChainLinkRulesTests
 {
     const float NaturalLength = 10f;
 
-    static bool Attaches(float distanceInNatural, int endA = 1, int endB = 0, Vector2? facingB = null) =>
+    const float MaxFacingDeg = 45f;
+
+    static Vector2 Facing(float degrees) =>
+        new(Mathf.Cos(degrees * Mathf.Deg2Rad), Mathf.Sin(degrees * Mathf.Deg2Rad));
+
+    static bool Attaches(float distanceInNatural, int endA = 1, int endB = 0, Vector2? facingB = null,
+        float maxFacingDeg = MaxFacingDeg) =>
         ChainLinkRules.CanAttach(Vector2.zero, endA, Vector2.right, new Vector2(0f, distanceInNatural * NaturalLength), endB,
-            facingB ?? Vector2.right, ChainLinkRules.AttachDistance(NaturalLength, NaturalLength, 0.25f));
+            facingB ?? Vector2.right, ChainLinkRules.AttachDistance(NaturalLength, NaturalLength, 0.25f), maxFacingDeg);
 
     [Test] public void At0_24_Attaches() => Assert.IsTrue(Attaches(0.24f));
     [Test] public void At0_26_DoesNotAttach() => Assert.IsFalse(Attaches(0.26f));
     [Test] public void SameWing_DoesNotAttach() => Assert.IsFalse(Attaches(0.1f, 1, 1));
     [Test] public void PerpendicularFacing_DoesNotAttach() => Assert.IsFalse(Attaches(0.1f, 1, 0, Vector2.up));
     [Test] public void OppositeFacing_DoesNotAttach() => Assert.IsFalse(Attaches(0.1f, 1, 0, Vector2.left));
+
+    // SU-47: auto-links need facings within 45 degrees. Perpendicular lines never attach, whatever the limit.
+    [Test] public void FacingsFortyApart_Attach() => Assert.IsTrue(Attaches(0.1f, 1, 0, Facing(40f)));
+    [Test] public void FacingsFiftyApart_DoNotAttach() => Assert.IsFalse(Attaches(0.1f, 1, 0, Facing(50f)));
+    [Test] public void PerpendicularFacing_NeverAttaches() => Assert.IsFalse(Attaches(0.1f, 1, 0, Vector2.up, 90f));
+
+    [Test]
+    public void AutomaticLink_BreaksOncePastSixtyDegrees()
+    {
+        Assert.IsFalse(ChainLinkRules.BreaksOnFacing(Vector2.right, Facing(55f), 60f));
+        Assert.IsTrue(ChainLinkRules.BreaksOnFacing(Vector2.right, Facing(65f), 60f));
+    }
 
     [Test]
     public void TieBreak_ShortestDistance_ThenLowerInstanceId()

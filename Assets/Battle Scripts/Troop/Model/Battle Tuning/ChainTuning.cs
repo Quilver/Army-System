@@ -16,6 +16,10 @@ public sealed class ChainTuning : ScriptableObject
     float _chainMinInnerAngleDeg = 65f;
     [SerializeField, Min(0f), Tooltip("Endpoint-to-endpoint attach distance, x L_nat.")]
     float _attachScale = 0.25f;
+    [SerializeField, Range(0f, 89f), Tooltip("Auto-link only when the two troops' facings are within this angle. Links made by a line order do not use it.")]
+    float _autoLinkMaxFacingDeg = 45f;
+    [SerializeField, Range(0f, 180f), Tooltip("An automatic link breaks when the two troops' facings drift further apart than this. Links made by a line order do not use it.")]
+    float _autoLinkBreakFacingDeg = 60f;
     [SerializeField, Min(0f), Tooltip("ChainSuppressed ends this long after the troop leaves every attach radius (Q-22).")]
     float _chainSuppressCooldownSeconds = 3f;
     [SerializeField, Min(1f), Tooltip("Stretch (x L_nat) that makes an unengaged neighbour retreat with its chain.")]
@@ -39,6 +43,8 @@ public sealed class ChainTuning : ScriptableObject
     public float ChainMaxStretchScale => _chainMaxStretchScale;
     public float ChainMinInnerAngleDeg => _chainMinInnerAngleDeg;
     public float AttachScale => _attachScale;
+    public float AutoLinkMaxFacingDeg => _autoLinkMaxFacingDeg;
+    public float AutoLinkBreakFacingDeg => _autoLinkBreakFacingDeg;
     public float ChainSuppressCooldownSeconds => _chainSuppressCooldownSeconds;
     public float ChainRetreatStretchThreshold => _chainRetreatStretchThreshold;
     public float ChainRetreatHingeBendDeg => _chainRetreatHingeBendDeg;

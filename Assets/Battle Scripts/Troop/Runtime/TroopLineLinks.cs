@@ -22,10 +22,13 @@ public sealed class TroopLineLinks
         return link != null && link.Other != null && !link.Pending;
     }
 
-    public void Set(int end, Troop other, int otherEnd, bool pending)
+    public void Set(int end, Troop other, int otherEnd, bool pending, bool fromOrder = false)
     {
         int index = Mathf.Clamp(end, 0, 1);
-        _links[index] = new TroopEndpointLink { Other = other, OtherEnd = Mathf.Clamp(otherEnd, 0, 1), Pending = pending };
+        _links[index] = new TroopEndpointLink
+        {
+            Other = other, OtherEnd = Mathf.Clamp(otherEnd, 0, 1), Pending = pending, FromOrder = fromOrder
+        };
         _relaxOffsets[index] = Vector2.zero;
     }
 

@@ -1,6 +1,9 @@
 # Issue 02: Snapping into Chains When Flanking Breaks the Surround
 
-**Status:** Not confirmed. **Logging:** Chain, Pivot, Engagement (see [movement-testing.md](movement-testing.md)).
+**Status:** Fixed on 2026-11-01 (`Docs/Battle/SpecificationUpdate.md` SU-45 to SU-48). Confirmed by
+`ChainEngagementScenarioTests`: attacking troops no longer auto-link, auto-links need facings within 45 degrees, and
+chain tension never moves an engaged or attacking troop. **Logging:** Chain, Pivot, Engagement (see
+[movement-testing.md](movement-testing.md)).
 
 ## Summary
 

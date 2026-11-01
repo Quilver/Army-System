@@ -119,6 +119,7 @@ public sealed class TroopTuning
     public float SDistanceExitHysteresis => Formation.SDistanceExitHysteresis;
     public float ADistance => Formation.ADistance;
     public float EngagementGap => Formation.EngagementGap;
+    public float EngagementHoldMargin => Formation.EngagementHoldMargin;
     public float NaturalLineRadiusScale => Formation.NaturalLineRadiusScale;
     public float BlobRadiusScale => Formation.BlobRadiusScale;
     public float PivotSeparationScale => Formation.PivotSeparationScale;
@@ -163,6 +164,8 @@ public sealed class TroopTuning
     public float ChainMaxStretchScale => Chain.ChainMaxStretchScale;
     public float ChainMinInnerAngleDeg => Chain.ChainMinInnerAngleDeg;
     public float AttachScale => Chain.AttachScale;
+    public float AutoLinkMaxFacingDeg => Chain.AutoLinkMaxFacingDeg;
+    public float AutoLinkBreakFacingDeg => Chain.AutoLinkBreakFacingDeg;
     public float ChainSuppressCooldownSeconds => Chain.ChainSuppressCooldownSeconds;
     public float ChainRetreatStretchThreshold => Chain.ChainRetreatStretchThreshold;
     public float ChainRetreatHingeBendDeg => Chain.ChainRetreatHingeBendDeg;
