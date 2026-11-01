@@ -16,6 +16,8 @@ MonoBehaviour:
   _chainMaxStretchScale: 3
   _chainMinInnerAngleDeg: 65
   _attachScale: 0.25
+  _autoLinkMaxFacingDeg: 45
+  _autoLinkBreakFacingDeg: 60
   _chainSuppressCooldownSeconds: 3
   _chainRetreatStretchThreshold: 1.4
   _chainRetreatHingeBendDeg: 30
