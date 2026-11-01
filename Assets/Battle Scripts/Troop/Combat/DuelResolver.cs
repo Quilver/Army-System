@@ -44,7 +44,8 @@ public sealed class DuelResolver
         SoldierContact loser = outcome.AWins ? b : a;
         bool loserFlanked = outcome.AWins ? bFlanked : aFlanked;
         winner.Troop.MeleeMetrics.RecordDuelWin();
-        ApplyDamage(winner, loser, outcome.Domination, loserFlanked);
+        ApplyDamage(winner, loser, outcome.Domination, loserFlanked,
+            outcome.AWins ? positionB - positionA : positionA - positionB);
 
         EndCharge(first.Soldier);
         EndCharge(second.Soldier);
@@ -64,17 +65,19 @@ public sealed class DuelResolver
     int Power(SoldierContact contact, Vector2 position, bool flanked)
     {
         TroopTuning tuning = TroopTuning.Active;
-        SoldierProfile profile = contact.Soldier.Profile;
+        CharacterProfile profile = contact.Soldier.Character;
         if (profile == null) return 0;
         int support = _support.SupportBonus(contact.Troop, contact.Soldier, position, flanked);
         return CombatPower.Compute(profile.MeleeWeaponSkill, contact.Soldier.IsCharging, profile.Charge,
             profile.MeleeWeaponChargeBonus, contact.Troop.IsAssaulting, tuning.AssaultChargeBonus, support);
     }
 
-    // A fleeing troop (retreating or routed) that wins a clash deals no damage (Q-37).
-    static void ApplyDamage(SoldierContact winner, SoldierContact loser, int domination, bool loserFlanked)
+    // A fleeing troop (retreating or routed) that wins a clash deals no damage (Q-37). A loser that takes damage plays
+    // its squash and stretch along pushDirection (from the winner toward the loser).
+    static void ApplyDamage(SoldierContact winner, SoldierContact loser, int domination, bool loserFlanked,
+        Vector2 pushDirection)
     {
-        SoldierProfile profile = winner.Soldier.Profile;
+        CharacterProfile profile = winner.Soldier.Character;
         if (profile == null || winner.Troop.State == UnitState.Fleeing) return;
         bool lanceDouble = profile.HasLance && winner.Soldier.IsCharging;
         int raw = DamageRules.RawDamage(profile.Strength, profile.MeleeWeaponDamage, domination, lanceDouble);
@@ -82,6 +85,7 @@ public sealed class DuelResolver
         int applied = loser.Troop.ApplyDamage(loser.Soldier, raw, winner.Troop.transform.position, loserFlanked);
         winner.Troop.MeleeMetrics.RecordDamageDone(applied);
         loser.Troop.MeleeMetrics.RecordDamageReceived(applied);
+        if (applied > 0) loser.Troop.PlayHitSquash(loser.Soldier, pushDirection);
     }
 
     // One charge = one clash: the charge ends on contact and the charger's followers return to the line.
@@ -97,8 +101,8 @@ public sealed class DuelResolver
         towardB = towardB.sqrMagnitude > 1e-8f ? towardB.normalized : Vector2.right;
         float impactDistance = Mathf.Min(0.6f, Mathf.Min(a.Troop.Radius, b.Troop.Radius) * 0.06f);
         float maxSpeed = Mathf.Max(
-            a.Soldier.Profile != null ? a.Soldier.Profile.MaxSpeed : 0f,
-            b.Soldier.Profile != null ? b.Soldier.Profile.MaxSpeed : 0f);
+            a.Soldier.Character != null ? a.Soldier.Character.MaxSpeed : 0f,
+            b.Soldier.Character != null ? b.Soldier.Character.MaxSpeed : 0f);
         float impactSpeed = Mathf.Max(maxSpeed * 1.7f, 5.5f);
         a.Troop.ResolveContact(a.Soldier, -towardB * impactDistance, -towardB * impactSpeed);
         b.Troop.ResolveContact(b.Soldier, towardB * impactDistance, towardB * impactSpeed);

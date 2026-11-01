@@ -35,7 +35,7 @@ namespace BattleUI
             HandleExtension();
         }
 
-        // Shows a unit that has no legacy stat block of its own (e.g. a Troop, see TroopSelectionCard). A null unit
+        // Shows a unit that has no legacy stat block of its own (e.g. a Troop; currently unused, the troop cards are drawn by TroopCardHud). A null unit
         // hides the card. The stat text (TextMeshPro rich text) shrinks to fit the stat panel.
         public void SetContent(IUnit unit, Sprite portrait, Color portraitTint, bool preserveAspect, string unitName, string stats)
         {

@@ -28,15 +28,16 @@ Troops are used by two test scenes only (`Assets/Resources/Levels/Test/Level 1 T
 | Folder | Contents |
 |---|---|
 | `Rules/` | Pure maths with no Unity lifecycle: morale, duel, support, damage, mitigation, charge rate, footprints and gaps, faces, surround path, line geometry, chain geometry and topology, ranged rules, formation priority, composite troops, seeded random. Covered by EditMode tests. |
-| `Model/` | Profiles (`TroopProfile`, `SoldierProfile`, `WeaponProfile`, `ArmourProfile`), `TroopTuning` (every §7.2 value), runtime state (`SoldierAgentState`, `SoldierHealth`, `SoldierChargeState`, ...). |
+| `Model/` | Profiles (`TroopProfile`, `SoldierProfile`, `WeaponProfile` (abstract) / `MeleeWeaponProfile` / `RangedWeaponProfile`, `ArmourProfile`), `TroopTuning` (every §7.2 value), runtime state (`SoldierAgentState`, `SoldierHealth`, `SoldierChargeState`, ...). |
 | `Runtime/` | `Troop` and its modules: `TroopRoster`, `TroopMorale`, `TroopFormationState`, `TroopLineOrder`, `TroopLineLinks`, `TroopPivotMover`, `FaultSlipMotion` (retreat), `TroopRout`, `AssaultState`, `TroopDamageReceiver`, `MeleeMetrics`. |
 | `Combat/` | `TroopCombatWorld`, engagement, charges, contacts, duels, support, ranged fire, projectiles, gizmos. |
 | `Formation/` | `ChainLinker`, `TroopFootprintBuilder`. |
 | `Pressure/` | Line pressure, friendly overlap, link tension. |
 | `Soldiers/` | Steering, field shapes, motion constraints, spatial grid. |
-| `Input/` | Selection, order classification and planning, chain order rules, the order overlay. |
-| `View/` | Soldier sprites, projectile sprites, troop visualiser, showcase driver. |
-| `Diagnostics/` | `TroopDebugOverlay` (F3 overlay, F4 gizmos: footprints, faces, gaps, joints, charges) and `TroopDebugSnapshot`. |
+| `Input/` | Selection and hover, order classification and planning, chain order rules, the order overlay. |
+| `View/` | Soldier sprites, projectile sprites, troop visualiser, showcase driver, troop cards (`TroopCardHud`: selected troop bottom left, hovered troop bottom right), the hovered troop's order path (`TroopOrderPathView`) and the engagement view (`TroopEngagementView`). |
+| `Diagnostics/` | `TroopDebugOverlay` (F4 gizmos: footprints, faces, gaps, joints, charges) and `TroopDebugSnapshot`. |
+| `Campaign/` | Campaign-only character data: `CampaignCharacter` (a `CharacterProfile` with growth chances, `StatGrowths`), `CharacterClass` (stat caps, `StatCaps`) and `CharacterStat`. Battle code never needs these. |
 | `Editor/` | Inspectors (morale, state, combat metrics), the Phase 01 sample-data generator, the CLI smoke test, and `Tests/`. |
 
 ## Controls (Level 1 Troop Test)
@@ -48,11 +49,30 @@ Troops are used by two test scenes only (`Assets/Resources/Levels/Test/Level 1 T
 - Moving one chained troop: inside the envelope (3.0 x L_nat stretch, 65 degree hinge) it stays linked; outside it the
   link breaks on release. The ghost tether shows which (green = stays, dashed red = breaks).
 - **Alt** + order: unlink a chained troop, or keep an unlinked reserve from snapping onto a line.
+- **Hover** a troop (any team) with a Move, Line or Attack order: its path to the waypoint is drawn with arrows (red for
+  an attack, ending at the target, whose footprint is outlined; the ordered line's footprint for a line order).
+- **F5** toggles the engagement heat map: a red band across the gap between engaged troops' lines, most intense in the
+  middle of the gap and fading smoothly toward each troop's line and the ends of the engagement. Its settings are on
+  `TroopPlayerOrders`.
 
 ## Tuning
 
-Every value from spec §7.2 is a field on `Assets/Resources/Boid Profiles/Troop Tuning.asset` (`TroopTuning`), or a
-constant in `TroopConstants` when it never changes. `TroopCombatWorld` has no distance fields of its own; the scene
+Every value from spec §7.2 is a field on one of the Battle Tuning assets in `Assets/Resources/Battle Tuning/`, or a
+constant in `TroopConstants` when it never changes:
+
+| Asset | Sections |
+|---|---|
+| Soldier Tuning | Stats and actions, soldier steering |
+| Formation Tuning | Distances (S_Distance, A_Distance, EngagementGap), formation and movement |
+| Morale Tuning | Morale and retreat, faces |
+| Melee Tuning | Charges and clashes, support and duel, Assault |
+| Chain Tuning | Chains, link spring |
+| Ranged Tuning | Ranged, composite troops |
+| Input Tuning | Input thresholds (pixels) |
+
+Code reads them through `TroopTuning.Active` (property names unchanged). A missing asset falls back to the code
+defaults; **Troops > Battle Tuning > Create Missing Assets** recreates it. Characters, troops, classes and equipment are
+in `Assets/Resources/Troop and Character Profiles/`. `TroopCombatWorld` has no distance fields of its own; the scene
 values it used to override (S 5, A 2) are no longer read.
 
 ## Tests and the command line

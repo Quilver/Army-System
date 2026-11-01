@@ -1,7 +1,7 @@
 using UnityEngine;
 
-// Conversions between screen space (origin bottom-left), GUI space (origin top-left) and world space,
-// plus the HUD hit test used to keep clicks on the on-screen help from issuing orders.
+// Conversions between screen space (origin bottom-left), GUI space (origin top-left) and world space.
+// The HUD hit test (clicks on the troop cards are not orders) is TroopCardHud.Contains.
 public static class TroopScreenSpace
 {
     public static Vector2 ScreenToWorld(Camera camera, Vector2 screenPosition)
@@ -26,13 +26,5 @@ public static class TroopScreenSpace
     {
         Vector3 screen = camera.WorldToScreenPoint(worldPosition);
         return new Vector2(screen.x, Screen.height - screen.y);
-    }
-
-    // The help panel (top centre) and the objectives text (top left). The unit card is tested by TroopSelectionCard.
-    public static bool OverHud(Vector2 screenPosition)
-    {
-        Vector2 gui = ToGui(screenPosition);
-        if (TroopOrderOverlay.HelpRect.Contains(gui)) return true;
-        return gui.x <= 500f && gui.y <= 140f;
     }
 }

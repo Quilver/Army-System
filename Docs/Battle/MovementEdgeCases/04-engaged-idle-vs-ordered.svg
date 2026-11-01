@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" width="640" height="360" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#222"/></marker><marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3b6fd8"/></marker><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d6453a"/></marker><marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2e9d4a"/></marker></defs>
+<rect width="640" height="360" fill="#fbfaf6"/>
+<text x="16" y="26" font-size="16" font-weight="bold" fill="#222">04 Engaged with no order vs. with an order</text>
+<text x="16" y="44" font-size="12" fill="#555">Assault only for a troop that moves into engagement under an order (spec 4.2)</text>
+<line x1="320.0" y1="60.0" x2="320.0" y2="290.0" stroke="#8a8a8a" stroke-width="1" stroke-dasharray="4 4"/>
+<text x="168.0" y="76.0" font-size="13" text-anchor="middle" font-weight="bold" fill="#222">Idle troop is attacked</text>
+<rect x="78.0" y="108.0" width="180.0" height="24.0" rx="0" fill="#d6453a" stroke="#d6453a" stroke-width="1.2" opacity="0.08"/>
+<rect x="78.0" y="108.0" width="180.0" height="24.0" rx="0" fill="none" stroke="#d6453a" stroke-width="1.2" opacity="1"/>
+<line x1="78.0" y1="132.0" x2="258.0" y2="132.0" stroke="#d6453a" stroke-width="3"/>
+<rect x="87.4" y="111.5" width="7.0" height="7.0" rx="0" fill="#d6453a" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="87.4" y="121.5" width="7.0" height="7.0" rx="0" fill="#d6453a" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="113.1" y="111.5" width="7.0" height="7.0" rx="0" fill="#d6453a" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="113.1" y="121.5" width="7.0" height="7.0" rx="0" fill="#d6453a" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="138.8" y="111.5" width="7.0" height="7.0" rx="0" fill="#d6453a" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="138.8" y="121.5" width="7.0" height="7.0" rx="0" fill="#d6453a" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="164.5" y="111.5" width="7.0" height="7.0" rx="0" fill="#d6453a" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="164.5" y="121.5" width="7.0" height="7.0" rx="0" fill="#d6453a" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="190.2" y="111.5" width="7.0" height="7.0" rx="0" fill="#d6453a" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="190.2" y="121.5" width="7.0" height="7.0" rx="0" fill="#d6453a" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="215.9" y="111.5" width="7.0" height="7.0" rx="0" fill="#d6453a" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="215.9" y="121.5" width="7.0" height="7.0" rx="0" fill="#d6453a" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="241.6" y="111.5" width="7.0" height="7.0" rx="0" fill="#d6453a" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="241.6" y="121.5" width="7.0" height="7.0" rx="0" fill="#d6453a" stroke="none" stroke-width="0" opacity="1"/>
+<line x1="168.0" y1="140.0" x2="168.0" y2="166.0" stroke="#d6453a" stroke-width="2" marker-end="url(#ar)"/>
+<rect x="78.0" y="188.0" width="180.0" height="24.0" rx="0" fill="#3b6fd8" stroke="#3b6fd8" stroke-width="1.2" opacity="0.08"/>
+<rect x="78.0" y="188.0" width="180.0" height="24.0" rx="0" fill="none" stroke="#3b6fd8" stroke-width="1.2" opacity="1"/>
+<line x1="78.0" y1="188.0" x2="258.0" y2="188.0" stroke="#3b6fd8" stroke-width="3"/>
+<rect x="87.4" y="191.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="87.4" y="201.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="113.1" y="191.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="113.1" y="201.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="138.8" y="191.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="138.8" y="201.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="164.5" y="191.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="164.5" y="201.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="190.2" y="191.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="190.2" y="201.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="215.9" y="191.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="215.9" y="201.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="241.6" y="191.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="241.6" y="201.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<text x="168.0" y="240.0" font-size="11" text-anchor="middle" font-weight="normal" fill="#222">turns to face, holds; facing then locks</text>
+<text x="168.0" y="256.0" font-size="11" text-anchor="middle" font-weight="bold" fill="#555">no Assault</text>
+<text x="480.0" y="76.0" font-size="13" text-anchor="middle" font-weight="bold" fill="#222">Troop moves in on Move / Pursue / Line</text>
+<rect x="390.0" y="108.0" width="180.0" height="24.0" rx="0" fill="#d6453a" stroke="#d6453a" stroke-width="1.2" opacity="0.08"/>
+<rect x="390.0" y="108.0" width="180.0" height="24.0" rx="0" fill="none" stroke="#d6453a" stroke-width="1.2" opacity="1"/>
+<line x1="390.0" y1="132.0" x2="570.0" y2="132.0" stroke="#d6453a" stroke-width="3"/>
+<rect x="399.4" y="111.5" width="7.0" height="7.0" rx="0" fill="#d6453a" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="399.4" y="121.5" width="7.0" height="7.0" rx="0" fill="#d6453a" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="425.1" y="111.5" width="7.0" height="7.0" rx="0" fill="#d6453a" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="425.1" y="121.5" width="7.0" height="7.0" rx="0" fill="#d6453a" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="450.8" y="111.5" width="7.0" height="7.0" rx="0" fill="#d6453a" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="450.8" y="121.5" width="7.0" height="7.0" rx="0" fill="#d6453a" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="476.5" y="111.5" width="7.0" height="7.0" rx="0" fill="#d6453a" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="476.5" y="121.5" width="7.0" height="7.0" rx="0" fill="#d6453a" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="502.2" y="111.5" width="7.0" height="7.0" rx="0" fill="#d6453a" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="502.2" y="121.5" width="7.0" height="7.0" rx="0" fill="#d6453a" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="527.9" y="111.5" width="7.0" height="7.0" rx="0" fill="#d6453a" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="527.9" y="121.5" width="7.0" height="7.0" rx="0" fill="#d6453a" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="553.6" y="111.5" width="7.0" height="7.0" rx="0" fill="#d6453a" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="553.6" y="121.5" width="7.0" height="7.0" rx="0" fill="#d6453a" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="390.0" y="188.0" width="180.0" height="24.0" rx="0" fill="#3b6fd8" stroke="#3b6fd8" stroke-width="1.2" opacity="0.08"/>
+<rect x="390.0" y="188.0" width="180.0" height="24.0" rx="0" fill="none" stroke="#3b6fd8" stroke-width="1.2" opacity="1"/>
+<line x1="390.0" y1="188.0" x2="570.0" y2="188.0" stroke="#3b6fd8" stroke-width="3"/>
+<rect x="399.4" y="191.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="399.4" y="201.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="425.1" y="191.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="425.1" y="201.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="450.8" y="191.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="450.8" y="201.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="476.5" y="191.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="476.5" y="201.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="502.2" y="191.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="502.2" y="201.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="527.9" y="191.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="527.9" y="201.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="553.6" y="191.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="553.6" y="201.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<line x1="480.0" y1="228.0" x2="480.0" y2="216.0" stroke="#3b6fd8" stroke-width="2"/>
+<line x1="480.0" y1="214.0" x2="480.0" y2="190.0" stroke="#3b6fd8" stroke-width="2" marker-end="url(#ab)"/>
+<text x="480.0" y="240.0" font-size="11" text-anchor="middle" font-weight="bold" fill="#3b6fd8">Assault for 10 s</text>
+<text x="480.0" y="256.0" font-size="11" text-anchor="middle" font-weight="normal" fill="#222">+5 Aggression, +5 Charge (while charging)</text>
+<text x="16.0" y="346.0" font-size="11.5" text-anchor="start" font-weight="normal" fill="#555">Pursuing a troop that retreated and re-engaging refreshes Assault to 10 s.</text>
+</svg>

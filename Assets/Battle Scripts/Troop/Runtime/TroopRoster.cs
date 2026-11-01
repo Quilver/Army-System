@@ -1,13 +1,11 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// The troop's soldiers: spawns them from a composition and answers questions about them (living count, positions,
+// The troop's soldiers: spawns them from the troop's characters and answers questions about them (living count, positions,
 // averages). Disable to stop the troop spawning and steering soldiers; existing soldiers stay visible.
 [DisallowMultipleComponent]
 public sealed class TroopRoster : MonoBehaviour
 {
-    [SerializeField, HideInInspector] List<TroopProfileCount> _composition = new();
-
     readonly List<SoldierAgentState> _soldiers = new();
     Troop _troop;
     int _nextSoldierId;
@@ -15,7 +13,6 @@ public sealed class TroopRoster : MonoBehaviour
     public IReadOnlyList<SoldierAgentState> Soldiers => _soldiers;
     // Same list without interface boxing, for per-frame loops inside the troop.
     internal List<SoldierAgentState> SoldierList => _soldiers;
-    public IReadOnlyList<TroopProfileCount> Composition => _composition;
     public int Count => _soldiers.Count;
 
     public int LivingCount
@@ -30,11 +27,6 @@ public sealed class TroopRoster : MonoBehaviour
     }
 
     internal void Bind(Troop troop) => _troop = troop;
-
-    internal void SetComposition(IEnumerable<TroopProfileCount> composition)
-    {
-        _composition = new List<TroopProfileCount>(composition);
-    }
 
     internal void Clear() => _soldiers.Clear();
 
@@ -62,55 +54,59 @@ public sealed class TroopRoster : MonoBehaviour
         get
         {
             foreach (var soldier in _soldiers)
-                if (soldier.IsAlive && soldier.Profile != null && soldier.Profile.RangedWeapon != null) return true;
+                if (soldier.IsAlive && soldier.Character != null && soldier.Character.RangedWeapon != null) return true;
             return false;
         }
     }
 
-    // Replaces the soldiers with one per unit in the composition, scattered in a gaussian blob around the pivot.
-    internal void Spawn(IReadOnlyList<TroopProfileCount> composition)
+    // Replaces the soldiers with Numbers soldiers per character, scattered in a gaussian blob around the pivot.
+    // Throws MissingMeleeWeaponException if a character has no melee weapon (spec §1.6, Decisions D-52).
+    internal void Spawn(IReadOnlyList<CharacterProfile> characters)
     {
+        foreach (var character in characters)
+            if (character != null) character.EnsureHasMeleeWeapon();
+
         _soldiers.Clear();
-        foreach (var entry in composition)
+        foreach (var character in characters)
         {
-            if (entry == null || entry.Profile == null) continue;
-            for (int i = 0; i < Mathf.Max(0, entry.Count); i++)
-                _soldiers.Add(new SoldierAgentState(_nextSoldierId++, entry.Profile, RandomBlobOffset()) { Facing = transform.right });
+            if (character == null) continue;
+            for (int i = 0; i < character.Numbers; i++)
+                _soldiers.Add(new SoldierAgentState(_nextSoldierId++, character, RandomBlobOffset()) { Facing = transform.right });
         }
     }
 
-    public float AverageProfileValue(System.Func<SoldierProfile, float> valueSelector)
+    public float AverageProfileValue(System.Func<CharacterProfile, float> valueSelector)
     {
         float total = 0f;
         int count = 0;
         foreach (var soldier in _soldiers)
         {
-            if (!soldier.IsAlive || soldier.Profile == null) continue;
-            total += valueSelector(soldier.Profile);
+            if (!soldier.IsAlive || soldier.Character == null) continue;
+            total += valueSelector(soldier.Character);
             count++;
         }
         return count > 0 ? total / count : 0f;
     }
 
-    public float MaxProfileValue(System.Func<SoldierProfile, float> valueSelector)
+    public float MaxProfileValue(System.Func<CharacterProfile, float> valueSelector)
     {
         float max = 0f;
         foreach (var soldier in _soldiers)
-            if (soldier.IsAlive && soldier.Profile != null)
-                max = Mathf.Max(max, valueSelector(soldier.Profile));
+            if (soldier.IsAlive && soldier.Character != null)
+                max = Mathf.Max(max, valueSelector(soldier.Character));
         return max;
     }
 
-    // Lowest integer stat over all soldiers with a profile, dead ones included so Move does not change when soldiers die.
+    // Lowest integer stat over all soldiers with a character, dead ones included so Move does not change when soldiers die.
     // Returns zero when there are none.
-    public int MinProfileValue(System.Func<SoldierProfile, int> valueSelector)
+    public int MinProfileValue(System.Func<CharacterProfile, int> valueSelector)
     {
         bool found = false;
         int min = 0;
         foreach (var soldier in _soldiers)
         {
-            if (soldier.Profile == null) continue;
-            int value = valueSelector(soldier.Profile);
+            if (soldier.Character == null) continue;
+            int value = valueSelector(soldier.Character);
             min = found ? Mathf.Min(min, value) : value;
             found = true;
         }

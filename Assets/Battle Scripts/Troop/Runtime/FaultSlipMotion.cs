@@ -51,9 +51,11 @@ public sealed class FaultSlipMotion
         _axis = -retreatDirection.normalized;
         Vector2 localAxis = transform.InverseTransformVector(_axis).normalized;
 
+        // Chargers, their followers and soldiers already rushing back are left out: they finish their charge and then
+        // return to the troop's new place on their own (SU-43). Pinning them to where they stand would strand them.
         _living.Clear();
         foreach (var soldier in _troop.Roster.SoldierList)
-            if (soldier.IsAlive) _living.Add(soldier);
+            if (soldier.IsAlive && !soldier.IsCommitted && !soldier.IsReturning) _living.Add(soldier);
         AssignSoldierMotion(localAxis);
 
         IsSympathetic = sympathetic;
@@ -85,7 +87,7 @@ public sealed class FaultSlipMotion
         bool arrived = true;
         foreach (var soldier in _troop.Roster.SoldierList)
         {
-            if (!soldier.IsAlive) continue;
+            if (!soldier.IsAlive || !soldier.IsRetreatTracking) continue;
             soldier.FaultOffset = RemainingAt(soldier);
             Vector2 target = soldier.FaultHome + localAxis * soldier.FaultOffset;
             Vector2 targetVelocity = deltaTime > 0f ? (target - soldier.FaultTargetPosition) / deltaTime : Vector2.zero;
@@ -128,7 +130,6 @@ public sealed class FaultSlipMotion
             float frontness = frontDepth - rearDepth > 0.0001f
                 ? Mathf.InverseLerp(rearDepth, frontDepth, depth)
                 : 0f;
-            soldier.CancelCharge();
             soldier.SetFaultMotion(frontness * waveDelay, moveDuration);
             soldier.FaultRetreatScale = 1f;
             soldier.BeginFaultTracking();

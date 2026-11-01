@@ -13,6 +13,8 @@ public sealed class TroopSelection
 
     public int PlayerTeamId { get; set; }
     public IReadOnlyList<Troop> Troops => _troops;
+    // The troop under the cursor (any team), or null. Shown on the hover troop card.
+    public Troop Hovered => _hovered;
     // Orders reorder this list, so it is exposed mutable to the order planner.
     public List<Troop> Selected => _selected;
 
@@ -34,22 +36,11 @@ public sealed class TroopSelection
         }
     }
 
-    // Hovers the troop of any team whose centre is nearest (relative to its radius) to the world position, or none.
-    public void UpdateHover(Vector2? worldPosition)
+    // Hovers the troop of any team under the world position, picked the same way as a click (see Pick), or none.
+    // pickRadius is in world units, converted from screen pixels by the caller.
+    public void UpdateHover(Vector2? worldPosition, float pickRadius = 0f)
     {
-        Troop hovered = null;
-        if (worldPosition.HasValue)
-        {
-            float bestRatio = 1f;
-            foreach (var troop in _troops)
-            {
-                if (troop == null) continue;
-                float ratio = Vector2.Distance(troop.transform.position, worldPosition.Value) / troop.Radius;
-                if (ratio >= bestRatio) continue;
-                hovered = troop;
-                bestRatio = ratio;
-            }
-        }
+        Troop hovered = worldPosition.HasValue ? Pick(worldPosition.Value, pickRadius, 0, TeamFilter.Any) : null;
 
         if (hovered == _hovered) return;
         if (_hovered != null) _hovered.SetHovered(false);
@@ -63,9 +54,9 @@ public sealed class TroopSelection
         _hovered = null;
     }
 
-    // Selects the player's troop under the cursor: inside its footprint, or with its pivot or a living soldier within
-    // pickRadius (world units, converted from screen pixels by the caller). Empty ground clears the selection unless
-    // Shift is held.
+    // Selects the player's troop under the cursor: one of its living soldiers within pickRadius, or inside its outline
+    // (Troop.Outline, the formation outline the visualiser draws), or its pivot within pickRadius. pickRadius is in
+    // world units, converted from screen pixels by the caller. Empty ground clears the selection unless Shift is held.
     public void SelectAtPoint(Vector2 worldPosition, float pickRadius, bool toggle)
     {
         Troop closest = TroopAtPoint(worldPosition, pickRadius, PlayerTeamId, true);
@@ -79,23 +70,59 @@ public sealed class TroopSelection
     }
 
     // Nearest troop of the given team (or of any other team when sameTeam is false) under the point.
-    public Troop TroopAtPoint(Vector2 worldPosition, float pickRadius, int teamId, bool sameTeam)
+    public Troop TroopAtPoint(Vector2 worldPosition, float pickRadius, int teamId, bool sameTeam) =>
+        Pick(worldPosition, pickRadius, teamId, sameTeam ? TeamFilter.Same : TeamFilter.Other);
+
+    enum TeamFilter
     {
-        Troop closest = null;
-        float closestDistance = float.PositiveInfinity;
+        Any,
+        Same,
+        Other
+    }
+
+    // The troop under a point. A troop is hit by (in order of preference):
+    //   1. one of its living soldiers within pickRadius: the troop with the nearest soldier wins;
+    //   2. the point being inside its outline: where outlines overlap, the one the point is deepest inside wins;
+    //   3. its pivot within pickRadius: the nearest pivot wins.
+    // A soldier you point at therefore beats the outline of a troop standing over it.
+    Troop Pick(Vector2 worldPosition, float pickRadius, int teamId, TeamFilter filter)
+    {
+        Troop best = null;
+        int bestTier = int.MaxValue;
+        float bestScore = float.PositiveInfinity;
         foreach (var troop in _troops)
         {
             if (troop == null || troop.LivingSoldierCount == 0) continue;
-            if ((troop.TeamId == teamId) != sameTeam) continue;
-            float distance = Mathf.Min(
-                troop.DistanceToNearestSoldier(worldPosition),
-                Vector2.Distance(troop.transform.position, worldPosition));
-            if (Application.isPlaying && troop.Footprint.Contains(worldPosition)) distance = 0f;
-            if (distance > pickRadius || distance >= closestDistance) continue;
-            closest = troop;
-            closestDistance = distance;
+            if (filter == TeamFilter.Same && troop.TeamId != teamId) continue;
+            if (filter == TeamFilter.Other && troop.TeamId == teamId) continue;
+
+            int tier;
+            float score;
+            float soldierDistance = troop.DistanceToNearestSoldier(worldPosition);
+            if (soldierDistance <= pickRadius)
+            {
+                tier = 0;
+                score = soldierDistance;
+            }
+            else if (Application.isPlaying && troop.Outline.Contains(worldPosition))
+            {
+                tier = 1;
+                score = troop.Outline.SignedDistance(worldPosition);
+            }
+            else
+            {
+                float pivotDistance = Vector2.Distance(troop.transform.position, worldPosition);
+                if (pivotDistance > pickRadius) continue;
+                tier = 2;
+                score = pivotDistance;
+            }
+
+            if (tier > bestTier || (tier == bestTier && score >= bestScore)) continue;
+            best = troop;
+            bestTier = tier;
+            bestScore = score;
         }
-        return closest;
+        return best;
     }
 
     // Box select (Q-48): a troop is picked when its pivot or any living soldier is inside the box.

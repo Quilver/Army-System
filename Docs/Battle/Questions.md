@@ -235,7 +235,7 @@ Projectiles can hit troops in the way. Are they blocked by enemy troops, friendl
 
 **Q-41 (P2, blocks Phase 09). Front arc and target soldiers.**
 "Situated in front of their line" is not defined. Proposed: within ±45° of the troop's facing, measured from the pivot. Targeting picks the nearest enemy soldier of the nearest troop for each shot. Confirm.
-> **Current assumption:** Targets lie within **±45° of the troop's facing**, measured from the pivot. Each shot goes to the **nearest enemy soldier** of the **nearest troop** in that arc.
+> **Resolved (Decisions D-54):** The arc (±45° of the troop's facing) is measured **from each shooter**, not the pivot. Each shooter fires at a target soldier within its range and arc, spreading fire across the target troop.
 
 **Q-42 (P2, blocks Phase 09). Hit resolution timing.**
 Roll P(Hit) when the shot is fired, or when the projectile arrives? Projectile speed?

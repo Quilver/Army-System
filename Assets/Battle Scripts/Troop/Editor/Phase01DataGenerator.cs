@@ -5,20 +5,25 @@ using UnityEngine;
 
 // Creates the Phase 01 sample data from the designer's character sheets (Docs/Battle/Decisions.md, D-01).
 // Run from Troops > Phase 01 > Generate Sample Data, or from the command line with -executeMethod.
+// - Each sheet becomes one Character asset (Characters/<Name>) and one single-character Troop asset (Characters/Troops/<Name>).
 // - Existing assets are updated in place with CopySerialized, so their GUIDs and scene references are kept.
-// - Sprites already assigned to soldier profiles are kept.
+// - Portraits and soldier sprites already assigned to characters are kept.
+// - The old Characters/Soldiers folder (from before SoldierProfile was removed) is deleted once it is empty.
 // - Troop Tuning is created only when it is missing, so designer edits to it are not overwritten.
+// - Each sheet's class name becomes a CharacterClass asset (Classes/<Name>), shared by characters of that class.
+// - Campaign characters (CampaignCharacter) found at a sheet's path are left alone.
 // - Every sheet value is checked against its range. Out-of-range values are logged as errors and the asset is clamped.
 // - Stats not on the sheets are placeholders, and the weapon and armour values are marked Provisional.
+// - Melee classes become MeleeWeaponProfile assets and ranged classes RangedWeaponProfile assets (Decisions D-52).
+//   Old combined weapon assets are converted first (WeaponProfileMigration). Each sheet must list one melee weapon.
 public static class Phase01DataGenerator
 {
-    const string BaseFolder = "Assets/Resources/Boid Profiles";
+    const string BaseFolder = "Assets/Resources/Troop and Character Profiles";
     const string CharactersFolder = BaseFolder + "/Characters";
-    const string SoldierFolder = CharactersFolder + "/Soldiers";
+    const string LegacySoldierFolder = CharactersFolder + "/Soldiers";
     const string TroopFolder = CharactersFolder + "/Troops";
     const string WeaponFolder = BaseFolder + "/Equipment/Weapons";
     const string ArmourFolder = BaseFolder + "/Equipment/Armour";
-    const string TuningPath = BaseFolder + "/Troop Tuning.asset";
 
     // Radius for the sample troops. The sheets do not give a radius. 5 matches the existing Swordsmen profile, which has
     // a similar soldier count (Questions.md Q-12, working assumption). Line length is derived from it (L_nat).
@@ -230,20 +235,31 @@ public static class Phase01DataGenerator
         EnsureFolder(WeaponFolder);
         EnsureFolder(ArmourFolder);
         EnsureFolder(CharactersFolder);
-        EnsureFolder(SoldierFolder);
         EnsureFolder(TroopFolder);
 
         int rangeErrors = 0;
         foreach (CharacterDef character in Characters)
             rangeErrors += ValidateCharacter(character);
 
+        // Old combined weapon assets must be melee or ranged assets before they can be updated in place.
+        WeaponProfileMigration.Run();
+
         var weaponAssets = new Dictionary<string, WeaponProfile>();
         foreach (WeaponDef def in Weapons)
         {
-            WeaponProfile fresh = WeaponProfile.CreateRuntimeProfile(
-                def.Name, def.Class, def.Damage, def.ChargeBonus, def.Range, def.Accuracy, def.FireRate,
-                def.Special, def.Provisional);
-            weaponAssets[def.Name] = CreateOrUpdate($"{WeaponFolder}/{def.Name}.asset", fresh);
+            string weaponPath = $"{WeaponFolder}/{def.Name}.asset";
+            if (def.Class.IsRanged())
+            {
+                RangedWeaponProfile fresh = RangedWeaponProfile.CreateRuntimeProfile(
+                    def.Name, def.Class.ToRangedClass(), def.Damage, def.Range, def.Accuracy, def.FireRate, def.Provisional);
+                weaponAssets[def.Name] = CreateOrUpdate(weaponPath, fresh);
+            }
+            else
+            {
+                MeleeWeaponProfile fresh = MeleeWeaponProfile.CreateRuntimeProfile(
+                    def.Name, def.Class.ToMeleeClass(), def.Damage, def.ChargeBonus, def.Special, def.Provisional);
+                weaponAssets[def.Name] = CreateOrUpdate(weaponPath, fresh);
+            }
         }
 
         var armourAssets = new Dictionary<string, ArmourProfile>();
@@ -255,25 +271,37 @@ public static class Phase01DataGenerator
         }
 
         // Created once and never overwritten, so designer edits to the tuning values survive re-running the generator.
-        if (AssetDatabase.LoadAssetAtPath<TroopTuning>(TuningPath) == null)
-        {
-            var tuning = ScriptableObject.CreateInstance<TroopTuning>();
-            AssetDatabase.CreateAsset(tuning, TuningPath);
-            tuning.name = Path.GetFileNameWithoutExtension(TuningPath);
-            EditorUtility.SetDirty(tuning);
-        }
+        BattleTuningAssets.EnsureAssets();
 
         int defence = CombatStatLimits.Default;
 
         foreach (CharacterDef character in Characters)
         {
-            string soldierPath = $"{SoldierFolder}/{character.Name}.asset";
-            SoldierProfile existingSoldier = AssetDatabase.LoadAssetAtPath<SoldierProfile>(soldierPath);
-            Sprite sprite = existingSoldier != null ? existingSoldier.Sprite : null;
+            string characterPath = $"{CharactersFolder}/{character.Name}.asset";
+            CharacterProfile existing = AssetDatabase.LoadAssetAtPath<CharacterProfile>(characterPath);
+            // CopySerialized would turn a campaign character back into a plain one and drop its growths.
+            if (existing is CampaignCharacter)
+            {
+                Debug.LogWarning($"{characterPath} is a campaign character; not overwritten. Edit it in the Inspector.");
+                continue;
+            }
+            Sprite portrait = existing != null ? existing.Portrait : null;
+            Sprite soldierSprite = existing != null ? existing.SoldierSprite : null;
 
-            var weapons = new List<WeaponProfile>();
+            MeleeWeaponProfile melee = null;
+            RangedWeaponProfile ranged = null;
             foreach (string weaponName in character.Weapons)
-                weapons.Add(weaponAssets[weaponName]);
+            {
+                WeaponProfile weapon = weaponAssets[weaponName];
+                if (weapon is MeleeWeaponProfile meleeWeapon && melee == null) melee = meleeWeapon;
+                else if (weapon is RangedWeaponProfile rangedWeapon && ranged == null) ranged = rangedWeapon;
+                else Debug.LogWarning($"{character.Name}: {weaponName} ignored. A character carries one melee weapon and at most one ranged weapon (D-52).");
+            }
+            if (melee == null)
+            {
+                Debug.LogError($"{character.Name}: the sheet lists no melee weapon. Every character must carry one; skipped.");
+                continue;
+            }
 
             var skills = new List<WeaponSkill>();
             foreach (var skill in character.Skills)
@@ -281,19 +309,19 @@ public static class Phase01DataGenerator
 
             ArmourProfile armour = armourAssets[character.Armour];
 
-            SoldierProfile soldierFresh = SoldierProfile.CreateCharacterProfile(
-                character.ClassName, sprite, character.Speed, defence, character.Hp, character.Aggression,
-                character.Strength, character.ChargeBonus, character.Support, weapons, skills, armour);
-            SoldierProfile soldierAsset = CreateOrUpdate(soldierPath, soldierFresh);
+            var stats = new SoldierStats(character.Speed, defence, character.Strength, character.Support,
+                character.ChargeBonus, character.Aggression, character.Hp, skills);
+            CharacterProfile characterFresh = CharacterProfile.CreateRuntimeProfile(
+                character.Name, CampaignCharacterMigration.FindOrCreateClass(character.ClassName), portrait, soldierSprite, character.Numbers, character.Morale,
+                character.Discipline, new CharacterEquipment(melee, ranged, armour), stats);
+            CharacterProfile characterAsset = CreateOrUpdate(characterPath, characterFresh);
 
-            var composition = new List<TroopProfileCount>
-            {
-                new TroopProfileCount { Profile = soldierAsset, Count = character.Numbers }
-            };
             TroopProfile troopFresh = TroopProfile.CreateRuntimeProfile(
-                character.Morale, composition, SampleTroopRadius, character.Discipline);
+                new List<CharacterProfile> { characterAsset }, SampleTroopRadius);
             CreateOrUpdate($"{TroopFolder}/{character.Name}.asset", troopFresh);
         }
+
+        DeleteLegacySoldierFolderIfEmpty();
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
@@ -346,6 +374,18 @@ public static class Phase01DataGenerator
         target.name = Path.GetFileNameWithoutExtension(path);
         EditorUtility.SetDirty(target);
         return target;
+    }
+
+    // Old SoldierProfile assets were moved up to Characters/ (they keep their GUIDs and load as characters).
+    static void DeleteLegacySoldierFolderIfEmpty()
+    {
+        if (!AssetDatabase.IsValidFolder(LegacySoldierFolder)) return;
+        if (AssetDatabase.FindAssets("t:Object", new[] { LegacySoldierFolder }).Length > 0)
+        {
+            Debug.LogWarning($"{LegacySoldierFolder} still holds assets. Move or delete them; SoldierProfile no longer exists.");
+            return;
+        }
+        AssetDatabase.DeleteAsset(LegacySoldierFolder);
     }
 
     static void EnsureFolder(string path)

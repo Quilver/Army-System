@@ -40,8 +40,9 @@ public static class CrossTroopSeparation
         if (distance <= 0.1f || distance >= CellSize) return;
 
         float falloff = (CellSize - distance) / CellSize;
-        float aScale = a.Soldier.Profile != null ? a.Soldier.Profile.Separation / 1.8f : 1f;
-        float bScale = b.Soldier.Profile != null ? b.Soldier.Profile.Separation / 1.8f : 1f;
+        // Separation is shared by every soldier (TroopTuning), so both sides scale alike.
+        float aScale = TroopTuning.Active.SoldierSeparation / TroopTuning.DefaultSoldierSeparation;
+        float bScale = aScale;
         float teamScale = a.Troop.TeamId == b.Troop.TeamId ? 0.94f : 0.78f;
         Vector2 direction = difference / distance;
         a.Soldier.AddExternalSeparation((Vector2)a.Troop.transform.InverseTransformVector(direction * falloff * teamScale * aScale));

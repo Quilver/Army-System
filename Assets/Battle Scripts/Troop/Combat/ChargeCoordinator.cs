@@ -7,7 +7,8 @@ using UnityEngine;
 //   Target: one of the ChargeCandidateCount nearest enemy soldiers within the charge range (7.8 units), at random.
 //   Followers: the troop's Discipline nearest same-troop soldiers each follow with ChargeFollowProbability. They are
 //   passive: they stay near the charger and support its clash, and return to the line when the charge ends.
-//   Cancel: the target dies, the charger's troop breaks, or ChargeTimeoutSeconds passes (no retargeting, Q-27).
+//   Cancel: the target dies, the charger's troop routs, or ChargeTimeoutSeconds passes (no retargeting, Q-27). A retreat
+//   does not cancel a charge: it is completed and the soldier rushes back to its troop (SU-43).
 // Candidate search uses the contact index (a spatial query), not a loop over every soldier.
 public sealed class ChargeCoordinator
 {
@@ -34,7 +35,7 @@ public sealed class ChargeCoordinator
         foreach (var troop in _registry.Troops)
         {
             if (troop == null) continue;
-            bool broken = troop.IsFaultSlipping || troop.IsRouted;
+            bool broken = troop.IsRouted;
             foreach (var soldier in troop.Soldiers)
             {
                 if (soldier.ChargeRole == ChargeRole.None) continue;
@@ -78,9 +79,9 @@ public sealed class ChargeCoordinator
             for (int i = 0; i < soldiers.Count; i++)
             {
                 SoldierAgentState soldier = soldiers[i];
-                if (!soldier.IsAlive || soldier.Profile == null || soldier.IsCommitted) continue;
+                if (!soldier.IsAlive || soldier.Character == null || soldier.IsCommitted || soldier.IsReturning) continue;
 
-                float chance = ChargeRules.ChargeProbability(troop.EffectiveAggression(soldier.Profile),
+                float chance = ChargeRules.ChargeProbability(troop.EffectiveAggression(soldier.Character),
                     tuning.ActionWindowSeconds, deltaTime);
                 if (random.Value() >= chance) continue;
 
@@ -128,7 +129,7 @@ public sealed class ChargeCoordinator
         _friends.Clear();
         foreach (var soldier in troop.Soldiers)
         {
-            if (soldier == charger || !soldier.IsAlive || soldier.IsCommitted) continue;
+            if (soldier == charger || !soldier.IsAlive || soldier.IsCommitted || soldier.IsReturning) continue;
             _friends.Add((soldier, (troop.WorldPosition(soldier) - chargerPosition).sqrMagnitude));
         }
         _friends.Sort((a, b) => a.distance.CompareTo(b.distance));

@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" width="640" height="360" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#222"/></marker><marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3b6fd8"/></marker><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d6453a"/></marker><marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2e9d4a"/></marker></defs>
+<rect width="640" height="360" fill="#fbfaf6"/>
+<text x="16" y="26" font-size="16" font-weight="bold" fill="#222">06 Chain: linking and breaking</text>
+<text x="16" y="44" font-size="12" fill="#555">Endpoint to endpoint, one link per wing (spec 3.4)</text>
+<text x="40.0" y="72.0" font-size="12" text-anchor="start" font-weight="bold" fill="#222">Links when</text>
+<rect x="55.0" y="100.0" width="150.0" height="20.0" rx="0" fill="#3b6fd8" stroke="#3b6fd8" stroke-width="1.2" opacity="0.08"/>
+<rect x="55.0" y="100.0" width="150.0" height="20.0" rx="0" fill="none" stroke="#3b6fd8" stroke-width="1.2" opacity="1"/>
+<line x1="55.0" y1="100.0" x2="205.0" y2="100.0" stroke="#3b6fd8" stroke-width="3"/>
+<rect x="64.0" y="102.3" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="64.0" y="110.7" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="89.0" y="102.3" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="89.0" y="110.7" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="114.0" y="102.3" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="114.0" y="110.7" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="139.0" y="102.3" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="139.0" y="110.7" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="164.0" y="102.3" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="164.0" y="110.7" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="189.0" y="102.3" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="189.0" y="110.7" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="225.0" y="100.0" width="150.0" height="20.0" rx="0" fill="#3b6fd8" stroke="#3b6fd8" stroke-width="1.2" opacity="0.08"/>
+<rect x="225.0" y="100.0" width="150.0" height="20.0" rx="0" fill="none" stroke="#3b6fd8" stroke-width="1.2" opacity="1"/>
+<line x1="225.0" y1="100.0" x2="375.0" y2="100.0" stroke="#3b6fd8" stroke-width="3"/>
+<rect x="234.0" y="102.3" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="234.0" y="110.7" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="259.0" y="102.3" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="259.0" y="110.7" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="284.0" y="102.3" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="284.0" y="110.7" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="309.0" y="102.3" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="309.0" y="110.7" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="334.0" y="102.3" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="334.0" y="110.7" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="359.0" y="102.3" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="359.0" y="110.7" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<circle cx="215.0" cy="110.0" r="14.0" fill="none" stroke="#2e9d4a" stroke-width="1.2" stroke-dasharray="3 3"/>
+<text x="215.0" y="140.0" font-size="11" text-anchor="middle" font-weight="normal" fill="#2e9d4a">free ends within 0.25 x L_nat</text>
+<text x="215.0" y="154.0" font-size="11" text-anchor="middle" font-weight="normal" fill="#555">right wing meets left wing, both facing the same way</text>
+<circle cx="215.0" cy="110.0" r="4.0" fill="white" stroke="#222" stroke-width="1.5"/>
+<text x="420.0" y="72.0" font-size="12" text-anchor="start" font-weight="bold" fill="#222">Joint J</text>
+<text x="420.0" y="90.0" font-size="11" text-anchor="start" font-weight="normal" fill="#555">weighted average of the two</text>
+<text x="420.0" y="104.0" font-size="11" text-anchor="start" font-weight="normal" fill="#555">endpoints; each line 0.7-3.0 x L_nat</text>
+<text x="420.0" y="118.0" font-size="11" text-anchor="start" font-weight="normal" fill="#555">no loops, no stealing a linked end</text>
+<text x="40.0" y="196.0" font-size="12" text-anchor="start" font-weight="bold" fill="#222">Breaks when</text>
+<line x1="50.0" y1="240.0" x2="120.0" y2="240.0" stroke="#3b6fd8" stroke-width="4"/>
+<line x1="120.0" y1="240.0" x2="250.0" y2="240.0" stroke="#3b6fd8" stroke-width="4" stroke-dasharray="6 4"/>
+<circle cx="120.0" cy="240.0" r="4.0" fill="white" stroke="#222" stroke-width="1.5"/>
+<text x="150.0" y="262.0" font-size="11" text-anchor="middle" font-weight="normal" fill="#d6453a">stretch &gt; 3.0 x L_nat</text>
+<line x1="300.0" y1="250.0" x2="370.0" y2="250.0" stroke="#3b6fd8" stroke-width="4"/>
+<line x1="370.0" y1="250.0" x2="330.0" y2="205.0" stroke="#3b6fd8" stroke-width="4"/>
+<circle cx="370.0" cy="250.0" r="4.0" fill="white" stroke="#222" stroke-width="1.5"/>
+<path d="M 350 250 A 20 20 0 0 0 357 235" fill="none" stroke="#d6453a" stroke-width="1.5"/>
+<text x="345.0" y="272.0" font-size="11" text-anchor="middle" font-weight="normal" fill="#d6453a">inner angle &lt; 65 deg</text>
+<rect x="470.0" y="214.0" width="30.0" height="50.0" rx="0" fill="#8a8a8a" stroke="none" stroke-width="1.5" opacity="0.5"/>
+<line x1="430.0" y1="240.0" x2="540.0" y2="240.0" stroke="#3b6fd8" stroke-width="4" stroke-dasharray="6 4"/>
+<text x="485.0" y="282.0" font-size="11" text-anchor="middle" font-weight="normal" fill="#d6453a">terrain between pivots</text>
+<text x="16.0" y="331.0" font-size="11.5" text-anchor="start" font-weight="normal" fill="#555">Also breaks when a troop routs (both its links), and on a player order outside the envelope (next diagram).</text>
+<text x="16.0" y="346.0" font-size="11.5" text-anchor="start" font-weight="normal" fill="#555">A broken, stretched end relaxes back to L_nat at 2 units/s instead of snapping.</text>
+</svg>

@@ -55,8 +55,8 @@ public sealed class SoldierMotionConstraints
 
     public void ConstrainToRadius(SoldierAgentState soldier)
     {
-        // Retreating and committed soldiers may leave the troop radius.
-        if (soldier.IsRetreatTracking || soldier.IsCommitted) return;
+        // Retreating, committed and returning soldiers may leave the troop radius.
+        if (soldier.IsRetreatTracking || soldier.IsCommitted || soldier.IsReturning) return;
         float radius = EffectiveRadius;
         float distance = soldier.Position.magnitude;
         if (distance <= radius) return;

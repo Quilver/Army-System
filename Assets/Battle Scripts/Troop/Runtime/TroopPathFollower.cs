@@ -46,6 +46,17 @@ public sealed class TroopPathFollower
         _invalid = true;
     }
 
+    // The rest of the planned path from the given position: the position, then every waypoint still ahead. Empty when no
+    // path is planned yet. Read-only; used to draw the hovered troop's order (TroopOrderPathView).
+    public void CollectRemainingPath(Vector2 position, List<Vector2> results)
+    {
+        results.Clear();
+        if (_path == null || _path.Count == 0) return;
+        results.Add(position);
+        for (int i = Mathf.Clamp(_pathIndex, 0, _path.Count - 1); i < _path.Count; i++)
+            results.Add(_path[i]);
+    }
+
     // Returns the displacement to apply this frame, at most maxSpeed * deltaTime along the path.
     public Vector2 Step(Vector2 position, Vector2 destination, float maxSpeed, float deltaTime)
     {

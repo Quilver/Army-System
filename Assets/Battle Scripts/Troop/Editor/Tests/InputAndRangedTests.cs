@@ -73,4 +73,22 @@ public sealed class RangedRulesTests
     {
         Assert.AreEqual(10, RangedRules.RawDamage(10));
     }
+
+    // D-54: within the shooter's range and within the arc of the troop's facing, measured from the shooter.
+    [TestCase(0f, 10f, true)]      // straight ahead, in range
+    [TestCase(0f, 21f, false)]     // straight ahead, out of range
+    [TestCase(7f, 7f, true)]       // exactly on the 45 degree edge
+    [TestCase(8f, 6f, false)]      // outside the arc
+    [TestCase(0f, -5f, false)]     // behind
+    public void CanReach_IsRangeAndFrontArcFromTheShooter(float x, float y, bool expected)
+    {
+        Assert.AreEqual(expected, RangedRules.CanReach(new Vector2(x, y), Vector2.up, 45f, 20f));
+    }
+
+    [Test]
+    public void CanReach_AllRoundArc_IgnoresFacing()
+    {
+        Assert.IsTrue(RangedRules.CanReach(new Vector2(0f, -5f), Vector2.up, 180f, 20f));
+        Assert.IsFalse(RangedRules.CanReach(new Vector2(0f, 5f), Vector2.up, 45f, 0f), "No range, no reach");
+    }
 }

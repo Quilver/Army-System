@@ -26,6 +26,34 @@ public sealed class TroopRosterEditor : TroopModuleEditor
         var roster = (TroopRoster)target;
         EditorGUILayout.IntField("Soldiers", roster.Count);
         EditorGUILayout.IntField("Living", roster.LivingCount);
+        DrawSoldierHealth(roster);
+    }
+
+    static bool _showSoldiers = true;
+
+    // One HP bar per soldier (spec §4.6): id, character, current / max HP, bleed and bruise.
+    static void DrawSoldierHealth(TroopRoster roster)
+    {
+        // Drawn enabled inside the read-only runtime block, so the foldout can be clicked (the bars cannot be edited).
+        bool wasEnabled = GUI.enabled;
+        GUI.enabled = true;
+        _showSoldiers = EditorGUILayout.Foldout(_showSoldiers, "Soldier HP", true);
+        if (!_showSoldiers)
+        {
+            GUI.enabled = wasEnabled;
+            return;
+        }
+
+        EditorGUI.indentLevel++;
+        foreach (var soldier in roster.Soldiers)
+        {
+            string name = soldier.Character != null ? soldier.Character.CharacterName : "Soldier";
+            string state = soldier.IsAlive ? "" : "   DEAD";
+            Rect rect = EditorGUI.IndentedRect(EditorGUILayout.GetControlRect());
+            SoldierHealthGUI.DrawBar(rect, soldier, "#" + soldier.Id + " " + name + "   " + SoldierHealthGUI.HpText(soldier) + state);
+        }
+        EditorGUI.indentLevel--;
+        GUI.enabled = wasEnabled;
     }
 }
 

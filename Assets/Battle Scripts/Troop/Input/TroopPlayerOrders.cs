@@ -6,19 +6,64 @@ using UnityEngine.InputSystem;
 //   LMB click / drag      select (box select from BoxSelectMinDragPixels); Shift toggles
 //   RMB click / drag      Pursue (on an enemy), Move (on ground), or a battle line (from OrderDragMinPixels)
 //   Alt                   force unlink of chained troops / keep reserves from linking (spec §6.3)
-// The first selected troop is shown on the scene's unit card (TroopSelectionCard).
+// The first selected troop and the troop under the cursor are shown on troop cards (TroopCardHud), and the soldier under
+// the cursor gets a small HP bar over its head (SoldierHealthBar). A hovered troop with ranged weapons shows a
+// transparent mask of where it can shoot (TroopRangeMask). A hovered troop with a Move, Line or Attack order shows the
+// path it is taking with arrows to its waypoint (TroopOrderPathView).
+// Engaged troops show a red heat map across the gap between their lines (TroopEngagementView): most intense in the
+// middle of the gap, fading toward each troop's line and the ends of the engagement. F5 toggles it.
 public sealed class TroopPlayerOrders : MonoBehaviour
 {
     [SerializeField] int _playerTeamId;
 
+    [Header("Range mask (hovered ranged troop)")]
+    [SerializeField, Tooltip("Fill colour. Its alpha is ignored: see the fill alphas.")]
+    Color _rangeMaskFillColor = new(0.15f, 0.7f, 0.6f, 1f);
+    [SerializeField, Range(0f, 1f), Tooltip("Fill opacity where the least fire reaches.")] float _rangeMaskMinFillAlpha = 0.15f;
+    [SerializeField, Range(0f, 1f), Tooltip("Fill opacity where all of the troop's fire reaches.")] float _rangeMaskMaxFillAlpha = 0.55f;
+    [SerializeField, Range(0f, 1f), Tooltip("How much darker the fill gets where all of the troop's fire reaches.")]
+    float _rangeMaskHeatDarken = 0.45f;
+    [SerializeField] Color _rangeMaskOutline = new(0.05f, 0.4f, 0.85f, 1f);
+    [SerializeField, Min(0f), Tooltip("Outline width in screen pixels.")] float _rangeMaskOutlinePixels = 3f;
+
+    [Header("Order path (hovered troop)")]
+    [SerializeField, Tooltip("Path and arrows of a Move or Line order.")] Color _orderPathMoveColor = new(0.95f, 0.95f, 0.85f, 0.95f);
+    [SerializeField, Tooltip("Path and arrows of an Attack (pursue) order.")] Color _orderPathAttackColor = new(1f, 0.3f, 0.2f, 0.95f);
+
+    [Header("Engagement heat map (F5 toggles)")]
+    [SerializeField, Tooltip("Mode at the start of the battle.")] EngagementViewMode _engagementView = EngagementViewMode.HeatMap;
+    [SerializeField, Tooltip("Colour where the heat is low.")] Color _engagementHeatLight = new(1f, 0.35f, 0.3f, 1f);
+    [SerializeField, Tooltip("Colour where the heat is full.")] Color _engagementHeatDark = new(0.45f, 0f, 0f, 1f);
+    [SerializeField, Range(0f, 1f), Tooltip("Opacity where the heat is full (the middle of a fully engaged line gap).")]
+    float _engagementHeatMaxAlpha = 0.75f;
+    [SerializeField, Min(0f), Tooltip("World units over which the heat fades to nothing at each end of the engagement.")]
+    float _engagementHeatEndFade = 2f;
+    [SerializeField, Min(0f), Tooltip("Flank and rear attacks (lines not facing each other) draw the band between the engaged " +
+        "soldiers: a soldier is engaged when an enemy soldier is within EngagementGap + 2 soldier radii + this (world units).")]
+    float _engagementReachSlack = 0.45f;
+
     readonly TroopSelection _selection = new();
-    readonly TroopSelectionCard _card = new();
+    readonly TroopCardHud _cards = new();
+    readonly SoldierHealthBar _healthBar = new();
+    readonly TroopRangeMask _rangeMask = new();
+    readonly TroopOrderPathView _orderPath = new();
+    readonly TroopEngagementView _engagementViewMesh = new();
     TroopOrderPlanner _planner;
     Camera _camera;
     Vector2? _selectionStart;
     Vector2? _orderStart;
     Vector2 _mousePosition;
     bool _toggleSelection;
+
+    public EngagementViewMode EngagementView
+    {
+        get => _engagementView;
+        set => _engagementView = value;
+    }
+
+    // Heat map <-> Off.
+    public static EngagementViewMode NextEngagementView(EngagementViewMode mode) =>
+        mode == EngagementViewMode.HeatMap ? EngagementViewMode.Off : EngagementViewMode.HeatMap;
 
     void Awake()
     {
@@ -35,13 +80,20 @@ public sealed class TroopPlayerOrders : MonoBehaviour
         _selection.PlayerTeamId = _playerTeamId;
         _selection.Refresh();
         _selection.RemoveDestroyed();
-        _card.Show(_selection.Selected);
 
         var mouse = Mouse.current;
         if (mouse == null) return;
         _mousePosition = mouse.position.ReadValue();
-        bool overHud = TroopScreenSpace.OverHud(_mousePosition) || _card.Contains(_mousePosition);
-        _selection.UpdateHover(overHud ? null : ScreenToWorld(_mousePosition));
+        bool overHud = _cards.Contains(_mousePosition);
+        _selection.UpdateHover(overHud ? null : ScreenToWorld(_mousePosition),
+            TroopScreenSpace.PixelsToWorld(_camera, _mousePosition, TroopTuning.Active.ClickPickRadiusPixels));
+        _cards.Update(_selection.Selected, _selection.Hovered, _mousePosition);
+        _healthBar.Update(_selection.Troops, overHud ? null : ScreenToWorld(_mousePosition));
+        _rangeMask.Update(_selection.Hovered, RangeMaskStyle());
+
+        var keyboard = Keyboard.current;
+        if (keyboard != null && keyboard.f5Key.wasPressedThisFrame) _engagementView = NextEngagementView(_engagementView);
+        _engagementViewMesh.Update(_selection.Troops, _engagementView, EngagementStyle());
 
         if (mouse.leftButton.wasPressedThisFrame && !overHud)
         {
@@ -63,7 +115,18 @@ public sealed class TroopPlayerOrders : MonoBehaviour
         }
     }
 
-    void OnDisable() => _selection.ClearHover();
+    void OnDisable()
+    {
+        _selection.ClearHover();
+        _rangeMask.Hide();
+        _engagementViewMesh.Hide();
+    }
+
+    void OnDestroy()
+    {
+        _rangeMask.Destroy();
+        _engagementViewMesh.Destroy();
+    }
 
     void FinishSelection(Vector2 start, Vector2 end)
     {
@@ -74,6 +137,31 @@ public sealed class TroopPlayerOrders : MonoBehaviour
             _selection.SelectAtPoint(ScreenToWorld(end),
                 TroopScreenSpace.PixelsToWorld(_camera, end, tuning.ClickPickRadiusPixels), _toggleSelection);
     }
+
+    TroopRangeMask.Style RangeMaskStyle() => new()
+    {
+        Fill = _rangeMaskFillColor,
+        MinFillAlpha = _rangeMaskMinFillAlpha,
+        MaxFillAlpha = _rangeMaskMaxFillAlpha,
+        HeatDarken = _rangeMaskHeatDarken,
+        Outline = _rangeMaskOutline,
+        OutlinePixels = _rangeMaskOutlinePixels,
+    };
+
+    TroopEngagementView.Style EngagementStyle() => new()
+    {
+        HeatLight = _engagementHeatLight,
+        HeatDark = _engagementHeatDark,
+        MaxHeatAlpha = _engagementHeatMaxAlpha,
+        EndFade = _engagementHeatEndFade,
+        ReachSlack = _engagementReachSlack,
+    };
+
+    TroopOrderPathView.Style OrderPathStyle() => new()
+    {
+        Move = _orderPathMoveColor,
+        Attack = _orderPathAttackColor,
+    };
 
     Vector2 ScreenToWorld(Vector2 screenPosition) => TroopScreenSpace.ScreenToWorld(_camera, screenPosition);
 
@@ -91,7 +179,9 @@ public sealed class TroopPlayerOrders : MonoBehaviour
 
     void OnGUI()
     {
-        TroopOrderOverlay.DrawHelp(_selection.Selected.Count);
+        if (_camera != null) _orderPath.Draw(_camera, _selection.Hovered, OrderPathStyle());
+        if (_camera != null) _healthBar.Draw(_camera);
+        _cards.Draw();
 
         if (_selectionStart.HasValue && Mouse.current != null)
             TroopOrderOverlay.DrawSelectionBox(_selectionStart.Value, _mousePosition);
@@ -99,8 +189,9 @@ public sealed class TroopPlayerOrders : MonoBehaviour
             DrawOrderPreview(_orderStart.Value, _mousePosition);
     }
 
-    // Ghost preview while the right button is held: each troop's projected footprint and facing, the shared joints of
-    // a multi-troop line, and the tether to any chain neighbour outside the order.
+    // Ghost preview while the right button is held: each troop's projected footprint (or a marker for a point order), the
+    // shared joints of a multi-troop line, and the tether to any chain neighbour outside the order. No facing arrow:
+    // troops set their facing themselves (toward the threat, or from the chain line).
     void DrawOrderPreview(Vector2 screenStart, Vector2 screenEnd)
     {
         bool alt = IsAltHeld();
@@ -131,7 +222,6 @@ public sealed class TroopPlayerOrders : MonoBehaviour
             {
                 TroopOrderOverlay.DrawMarker(TroopScreenSpace.WorldToGui(_camera, placement.Center), placement.Troop.ArmyColor);
             }
-            TroopOrderOverlay.DrawFacing(_camera, placement.Center, placement.Facing, placement.Troop.NaturalLineLength * 0.25f);
         }
 
         foreach (var tether in _planner.Tethers)

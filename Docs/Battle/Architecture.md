@@ -21,8 +21,10 @@ For the rules, see `specifications.md` (v0.9). For decisions and working assumpt
 
 1. **Pure rules.** Maths that does not need the engine lives in `Rules/` as static classes and small structs (Unity's
    `Vector2`/`Mathf` value types are allowed). Every rule there has EditMode tests.
-2. **Named tuning.** Every value in spec §7.2 is a field on `TroopTuning` (`Assets/Resources/Boid Profiles/Troop
-   Tuning.asset`, code defaults when missing) or a constant in `TroopConstants`. Stat ranges are in `CombatStatLimits`.
+2. **Named tuning.** Every value in spec §7.2 is a field on one of the Battle Tuning section assets in
+   `Assets/Resources/Battle Tuning/` (Soldier, Formation, Morale, Melee, Chain, Ranged, Input; code defaults when an
+   asset is missing), read through `TroopTuning.Active`, or a constant in `TroopConstants`. Stat ranges are in
+   `CombatStatLimits`.
 3. **Seeded randomness.** All draws use `ITroopRandom`. `TroopCombatWorld` holds the battle seed; each troop derives
    its own stream from its hierarchy path, so update order does not change outcomes.
 4. **One engagement metric.** S_Distance, A_Distance, line pressure, the surround test and ranged targeting all use
@@ -248,7 +250,8 @@ in Edit mode at a fixed frame time.
 
 | To change | Start here |
 |---|---|
-| A tuning value | `Troop Tuning.asset` / `Model/TroopTuning.cs` |
+| A tuning value | `Resources/Battle Tuning/*.asset` / `Model/Battle Tuning/*Tuning.cs` (read through `Model/TroopTuning.cs`) |
+| Hover order path, engagement view | `View/TroopOrderPathView.cs`, `View/TroopEngagementView.cs`, `Combat/EngagementFrontage.cs`, `Rules/EngagementHeatStrip.cs` |
 | Morale, breaks, rout | `Rules/MoraleRules.cs`, `Runtime/TroopMorale.cs`, `Runtime/Troop.cs` (`EvaluateBreak`, `EnterRout`) |
 | Charges and followers | `Combat/ChargeCoordinator.cs`, `Model/SoldierChargeState.cs` |
 | Clash, duel, support, damage | `Rules/ClashRules.cs`, `Combat/DuelResolver.cs`, `Combat/SupportCalculator.cs`, `Rules/DuelRules.cs` |

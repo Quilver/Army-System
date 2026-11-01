@@ -3,9 +3,9 @@ using UnityEngine;
 
 public sealed class TroopSoldierShowcase : MonoBehaviour
 {
-    [SerializeField] SoldierProfile _squareProfile;
-    [SerializeField] SoldierProfile _triangleProfile;
-    [SerializeField] SoldierProfile _circleProfile;
+    [SerializeField] CharacterProfile _squareProfile;
+    [SerializeField] CharacterProfile _triangleProfile;
+    [SerializeField] CharacterProfile _circleProfile;
 
     Troop _leftTroop;
     Troop _lowerLeftTroop;
@@ -28,28 +28,25 @@ public sealed class TroopSoldierShowcase : MonoBehaviour
 
     void EnsureProfiles()
     {
-        EnsureProfile(ref _squareProfile, SoldierSpriteLibrary.Square, ref _ownsSquareProfile);
-        EnsureProfile(ref _triangleProfile, SoldierSpriteLibrary.Triangle, ref _ownsTriangleProfile);
-        EnsureProfile(ref _circleProfile, SoldierSpriteLibrary.Circle, ref _ownsCircleProfile);
+        EnsureProfile(ref _squareProfile, SoldierSpriteLibrary.Square, 12, ref _ownsSquareProfile);
+        EnsureProfile(ref _triangleProfile, SoldierSpriteLibrary.Triangle, 6, ref _ownsTriangleProfile);
+        EnsureProfile(ref _circleProfile, SoldierSpriteLibrary.Circle, 8, ref _ownsCircleProfile);
     }
 
     void EnsureTroopProfile()
     {
         if (_troopProfile != null) return;
-        _troopProfile = TroopProfile.CreateRuntimeProfile(CombatStatLimits.Default, new List<TroopProfileCount>
-        {
-            new() { Profile = _squareProfile, Count = 12 },
-            new() { Profile = _triangleProfile, Count = 6 },
-            new() { Profile = _circleProfile, Count = 8 }
-        }, 16.5f);
+        _troopProfile = TroopProfile.CreateRuntimeProfile(
+            new List<CharacterProfile> { _squareProfile, _triangleProfile, _circleProfile }, 16.5f);
         _ownsTroopProfile = true;
     }
 
-    static void EnsureProfile(ref SoldierProfile profile, Sprite fallbackSprite, ref bool ownsProfile)
+    // A missing character is created with the given soldier count. An assigned character uses its own Numbers.
+    static void EnsureProfile(ref CharacterProfile profile, Sprite fallbackSprite, int numbers, ref bool ownsProfile)
     {
         if (profile == null)
         {
-            profile = SoldierProfile.CreateRuntimeProfile(fallbackSprite);
+            profile = CharacterProfile.CreateRuntimeProfile(fallbackSprite, numbers);
             ownsProfile = true;
         }
         else

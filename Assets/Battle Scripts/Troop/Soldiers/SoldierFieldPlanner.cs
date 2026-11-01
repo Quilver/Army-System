@@ -31,10 +31,11 @@ public readonly struct FieldShape
 
 public sealed class SoldierFieldPlanner
 {
-    // Column lane: starts just behind the pivot and runs back for this fraction of the troop radius.
-    const float ColumnTrailFraction = 0.05f;
-    const float ColumnLengthFraction = 0.8f;
-    const float MovingSpeedSquared = 0.0025f;
+    // Column lane: starts just behind the pivot and runs back for this fraction of the troop radius. Shared with the
+    // troop outline (TroopOutline), which draws the same lane.
+    public const float ColumnTrailFraction = 0.05f;
+    public const float ColumnLengthFraction = 0.8f;
+    public const float MovingSpeedSquared = 0.0025f;
     // A follower keeps within this fraction of SupportRadius of its charger.
     const float FollowerSpacingFraction = 0.6f;
 
@@ -67,7 +68,8 @@ public sealed class SoldierFieldPlanner
     public bool TrySeek(SoldierAgentState soldier, out Vector2 localPoint)
     {
         localPoint = Vector2.zero;
-        if (_troop.IsFaultSlipping || _troop.IsRouted) return false;
+        // Charges carry on through a retreat (SU-43); only a rout ends them.
+        if (_troop.IsRouted) return false;
 
         if (soldier.IsCharging && soldier.ChargeTargetTroop != null)
         {

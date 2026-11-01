@@ -1,6 +1,6 @@
 using UnityEngine;
 
-// IMGUI drawing for the player order controls (spec §6): help panel, selection box, ghost footprints, facing arrows,
+// IMGUI drawing for the player order controls (spec §6): selection box, ghost footprints,
 // shared joints and the ghost tether. All positions are GUI space (origin top-left) unless noted.
 public static class TroopOrderOverlay
 {
@@ -9,45 +9,7 @@ public static class TroopOrderOverlay
     static readonly Color TetherInside = new(0.35f, 1f, 0.45f, 0.95f);
     static readonly Color TetherOutside = new(1f, 0.25f, 0.2f, 0.95f);
     static readonly Color JointColor = new(1f, 1f, 1f, 0.95f);
-    // Help panel: top centre of the screen, HelpScale x the original 480 px panel and 12 px text. It is kept clear of
-    // the troop status panel on the right (TroopDebugOverlay, 25% of the screen width) and wraps to fit.
-    const float HelpScale = 3f;
-    const float HelpBaseWidth = 480f;
-    const float HelpBaseFontSize = 12f;
-    const float HelpMargin = 10f;
-    const float HelpPadding = 12f;
-    const float RightPanelWidthFraction = 0.25f;
     static Texture2D _dotTexture;
-    static GUIStyle _helpStyle;
-    static Rect _helpRect;
-
-    // Where the help panel was last drawn (GUI space). Clicks inside it do not select or issue orders.
-    public static Rect HelpRect => _helpRect;
-
-    public static void DrawHelp(int selectedCount)
-    {
-        _helpStyle ??= new GUIStyle(GUI.skin.label)
-        {
-            fontSize = Mathf.RoundToInt(HelpBaseFontSize * HelpScale),
-            wordWrap = true,
-            richText = false
-        };
-        string text =
-            "LMB click / drag: select (Shift toggles)   Alt + order: unlink / keep reserves unlinked\n" +
-            "RMB: enemy = pursue, ground = move, drag = battle line   Selected: " + selectedCount + "\n" +
-            "Tether: green = stays chained, dashed red = link breaks on release";
-
-        // Centred, and no wider than the gap between the screen's left edge and the right-hand status panel allows.
-        float rightPanelLeft = Screen.width * (1f - RightPanelWidthFraction) - HelpMargin;
-        float maxWidth = 2f * (rightPanelLeft - HelpMargin - Screen.width * 0.5f);
-        float width = Mathf.Max(200f, Mathf.Min(HelpBaseWidth * HelpScale, maxWidth));
-        float textHeight = _helpStyle.CalcHeight(new GUIContent(text), width - 2f * HelpPadding);
-        _helpRect = new Rect((Screen.width - width) * 0.5f, HelpMargin, width, textHeight + 2f * HelpPadding);
-
-        GUI.Box(_helpRect, GUIContent.none);
-        GUI.Label(new Rect(_helpRect.x + HelpPadding, _helpRect.y + HelpPadding, width - 2f * HelpPadding, textHeight),
-            text, _helpStyle);
-    }
 
     // Start and end are screen positions (origin bottom-left), as read from the mouse.
     public static void DrawSelectionBox(Vector2 start, Vector2 end)
@@ -80,18 +42,6 @@ public static class TroopOrderOverlay
             Vector2 b = TroopScreenSpace.WorldToGui(camera, footprint.OuterCorner(i + 1));
             DrawGuiLine(a, b, i == 0 ? army : new Color(army.r, army.g, army.b, 0.55f), i == 0 ? 3f : 2f);
         }
-    }
-
-    public static void DrawFacing(Camera camera, Vector2 worldCenter, Vector2 facing, float worldLength)
-    {
-        Vector2 a = TroopScreenSpace.WorldToGui(camera, worldCenter);
-        Vector2 tip = worldCenter + facing.normalized * worldLength;
-        Vector2 b = TroopScreenSpace.WorldToGui(camera, tip);
-        DrawGuiLine(a, b, Color.white, 2f);
-        Vector2 back = (a - b).sqrMagnitude > 1f ? (a - b).normalized * 8f : Vector2.zero;
-        Vector2 side = new(-back.y, back.x);
-        DrawGuiLine(b, b + back + side * 0.6f, Color.white, 2f);
-        DrawGuiLine(b, b + back - side * 0.6f, Color.white, 2f);
     }
 
     public static void DrawJoint(Vector2 gui) => DrawDot(gui, JointColor);
@@ -143,7 +93,7 @@ public static class TroopOrderOverlay
         return _dotTexture;
     }
 
-    static void DrawGuiLine(Vector2 guiStart, Vector2 guiEnd, Color color, float thickness)
+    public static void DrawGuiLine(Vector2 guiStart, Vector2 guiEnd, Color color, float thickness)
     {
         Vector2 delta = guiEnd - guiStart;
         if (delta.sqrMagnitude < 1f) return;

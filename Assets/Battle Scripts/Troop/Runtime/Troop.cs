@@ -52,6 +52,7 @@ public sealed class Troop : IUnit
     float _chainSuppressOutsideTime;
     FormationMode _formationMode;
     TroopFootprint _footprint;
+    readonly TroopOutline _outline = new();
 
     public event Action<SoldierAgentState> SoldierDied;
 
@@ -123,7 +124,7 @@ public sealed class Troop : IUnit
     // Length of the line the troop uses now: the ordered length while a line order holds, otherwise L_nat.
     public float LineLength => _lineOrder != null && _lineOrder.IsActive ? _lineOrder.Length : NaturalLineLength;
 
-    // Troop stats (spec §1.4). Move is the lowest soldier Speed; Discipline is the troop-level value.
+    // Troop stats (spec §1.4). Move is the lowest soldier Speed; Discipline is resolved from the characters (spec §1.2).
     public int Move
     {
         get
@@ -151,7 +152,7 @@ public sealed class Troop : IUnit
     public IReadOnlyList<SoldierAgentState> Soldiers => _roster != null ? _roster.Soldiers : Array.Empty<SoldierAgentState>();
     public int SoldierCount => _roster != null ? _roster.Count : 0;
     public int LivingSoldierCount => _roster != null ? _roster.LivingCount : 0;
-    public float AverageProfileValue(Func<SoldierProfile, float> valueSelector) => _roster.AverageProfileValue(valueSelector);
+    public float AverageProfileValue(Func<CharacterProfile, float> valueSelector) => _roster.AverageProfileValue(valueSelector);
     public float DistanceToNearestSoldier(Vector2 worldPosition) => _roster.DistanceToNearestSoldier(worldPosition);
     public bool HasLivingSoldierInRect(Rect worldRect) => _roster.HasLivingSoldierInRect(worldRect);
     public Vector2 WorldPosition(SoldierAgentState soldier) => _roster.WorldPosition(soldier);
@@ -207,6 +208,9 @@ public sealed class Troop : IUnit
     // --- Footprint and engagement (spec §3.3, §4.1, §4.8) ---
 
     public TroopFootprint Footprint => _footprint;
+    // The formation outline for display and picking (TroopOutline): drawn from the formation, not the soldiers, so it is
+    // steady in melee and on the march. The rules keep using Footprint.
+    public TroopFootprint Outline => _outline.IsSeeded ? _outline.At(transform.position) : _footprint;
     public IReadOnlyList<EngagementRecord> Engagements => _engagements;
     public bool IsEngaged => _engaged;
     public bool IsAssaulting => _assault.IsActive;
@@ -240,6 +244,7 @@ public sealed class Troop : IUnit
     public bool IsFlankedBy(Troop opponent) => FaceAttackedBy(opponent).IsFlanked();
 
     internal void SetFootprint(in TroopFootprint footprint) => _footprint = footprint;
+    internal void UpdateOutline(float deltaTime) => _outline.Update(this, deltaTime);
 
     // Replaces this frame's engagement records. Entering engagement with an active order starts Assault (spec §4.2).
     internal void SetEngagements(List<EngagementRecord> records)
@@ -287,6 +292,47 @@ public sealed class Troop : IUnit
     public Vector2 LinePushVelocity => _mover.LinePushVelocity;
     public float PivotSpeed => _mover.PivotSpeed;
     public void SetLinePushVelocity(Vector2 velocity) => _mover.SetLinePushVelocity(velocity);
+
+    // The order the troop is carrying out now (shown when it is hovered). A line order counts while the troop marches to
+    // the line; once it holds the line there is nothing left to show.
+    public TroopOrderKind CurrentOrder
+    {
+        get
+        {
+            if (_mover == null || IsRouted || IsFaultSlipping || !IsMoving) return TroopOrderKind.None;
+            if (IsPursuing) return TroopOrderKind.Attack;
+            return HasManualLineOrder ? TroopOrderKind.Line : TroopOrderKind.Move;
+        }
+    }
+
+    // The ordered line (centre, facing, length) while a line order is active.
+    public bool TryGetLineOrder(out Vector2 center, out Vector2 facing, out float length)
+    {
+        bool active = HasManualLineOrder;
+        center = active ? _lineOrder.Center : Vector2.zero;
+        facing = active ? _lineOrder.Facing : Vector2.zero;
+        length = active ? _lineOrder.Length : 0f;
+        return active;
+    }
+
+    // Fills points with the route of the current order: the pivot, the planned path waypoints still ahead, then the
+    // destination (the pursued troop's pivot for an attack). A straight line when no path is planned yet. Returns the
+    // order kind; points is empty when there is no order.
+    public TroopOrderKind CollectOrderPath(List<Vector2> points)
+    {
+        points.Clear();
+        TroopOrderKind kind = CurrentOrder;
+        if (kind == TroopOrderKind.None) return kind;
+
+        Vector2 position = transform.position;
+        _path.CollectRemainingPath(position, points);
+        if (points.Count == 0) points.Add(position);
+        Vector2 destination = kind == TroopOrderKind.Attack && PursuitTarget != null
+            ? (Vector2)PursuitTarget.transform.position
+            : Destination;
+        if ((points[points.Count - 1] - destination).sqrMagnitude > 0.01f) points.Add(destination);
+        return kind;
+    }
 
     // Moves the whole troop (soldiers are positioned relative to the pivot, so they travel with it).
     public void ShiftPivot(Vector2 worldDelta) => transform.position += (Vector3)worldDelta;
@@ -339,15 +385,6 @@ public sealed class Troop : IUnit
     void OnDestroy()
     {
         if (_views != null) _views.DestroyAll();
-    }
-
-    public void Configure(int teamId, IEnumerable<TroopProfileCount> composition)
-    {
-        EnsureModules();
-        _teamId = teamId;
-        _profile = null;
-        _roster.SetComposition(composition);
-        ResetSoldiers();
     }
 
     public void Configure(int teamId, TroopProfile profile)
@@ -405,14 +442,14 @@ public sealed class Troop : IUnit
     // Armour rolls use this troop's stream, since the troop being hit is the one that owns the target soldier.
     MitigationResult Mitigate(SoldierAgentState target, int rawDamage)
     {
-        ArmourProfile armour = target.Profile != null ? target.Profile.Armour : null;
+        ArmourProfile armour = target.Character != null ? target.Character.Armour : null;
         if (armour == null) return MitigationResolver.Unarmoured(rawDamage);
         return MitigationResolver.Resolve(rawDamage, target.TotalDefence, armour.Deflect, armour.Bruise, TroopRandom);
     }
 
     // Charges per troop and Assault bonuses (spec §4.2, §4.3).
-    public int EffectiveAggression(SoldierProfile profile) =>
-        profile == null ? 0 : (int)ChargeRules.EffectiveAggression(profile.Aggression, IsAssaulting, Tuning.AssaultAggressionBonus);
+    public int EffectiveAggression(CharacterProfile character) =>
+        character == null ? 0 : (int)ChargeRules.EffectiveAggression(character.Aggression, IsAssaulting, Tuning.AssaultAggressionBonus);
 
     // Rolling melee statistics for this troop (charges, clashes, duels won, damage dealt and taken).
     public MeleeMetrics MeleeMetrics => _meleeMetrics ??= new MeleeMetrics(_meleeMetricsWindow);
@@ -429,6 +466,9 @@ public sealed class Troop : IUnit
     internal void RaiseSoldierDied(SoldierAgentState soldier) => SoldierDied?.Invoke(soldier);
 
     internal void PulseMeleeClash(SoldierAgentState soldier, float duration) => _views.PulseClash(soldier, duration);
+    // Squash and stretch on a soldier that took damage and was pushed back (worldPushDirection points away from the hit).
+    internal void PlayHitSquash(SoldierAgentState soldier, Vector2 worldPushDirection) =>
+        _views?.PlayHitSquash(soldier, worldPushDirection);
 
     // Every soldier is dead. A routed troop already raised the destroyed event, so it is only removed.
     internal void OnAllSoldiersDead()
@@ -472,7 +512,7 @@ public sealed class Troop : IUnit
     void BeginRetreat()
     {
         _morale.RecordRetreat();
-        CancelCharges();
+        // Charges in flight are completed; the chargers then rush back to the retreating troop (SU-43).
         _mover.CancelOrders();
         _lineOrder.Cancel();
         Vector2 away = RetreatDirection();
@@ -503,7 +543,7 @@ public sealed class Troop : IUnit
     // Case A (spec §5.4): final. Unlinks, scatters, flees away from the nearest enemy, raises the destroyed event once.
     void EnterRout()
     {
-        CancelCharges();
+        CancelCharges(returnToTroop: false);
         _mover.CancelOrders();
         _lineOrder.Cancel();
         _assault.Clear();
@@ -559,10 +599,10 @@ public sealed class Troop : IUnit
             _soldierObstacleMask) != null;
     }
 
-    void CancelCharges()
+    void CancelCharges(bool returnToTroop = true)
     {
         foreach (var soldier in _roster.SoldierList)
-            soldier.CancelCharge();
+            soldier.CancelCharge(returnToTroop);
     }
 
     // Test hook: break evaluation with a given Shock.
@@ -636,10 +676,10 @@ public sealed class Troop : IUnit
     void EnsureInitialized()
     {
         EnsureModules();
-        IReadOnlyList<TroopProfileCount> composition = _profile != null ? _profile.Composition : _roster.Composition;
-        if (_initialized || !_roster.enabled || composition == null || composition.Count == 0) return;
+        IReadOnlyList<CharacterProfile> characters = _profile != null ? _profile.Characters : null;
+        if (_initialized || !_roster.enabled || characters == null || characters.Count == 0) return;
 
-        _roster.Spawn(composition);
+        _roster.Spawn(characters);
         _morale.CaptureInitialSoldiers(_roster.LivingCount);
         _rangedFire.Reset();
 
@@ -647,6 +687,7 @@ public sealed class Troop : IUnit
         _views.Create();
         CreateVisualiser();
         _footprint = TroopFootprint.Circle(transform.position, Radius * Tuning.BlobRadiusScale, transform.right);
+        _outline.Reset();
         _initialized = true;
     }
 

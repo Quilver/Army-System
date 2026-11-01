@@ -5,7 +5,9 @@ using UnityEngine;
 // A_Distance and faces all use the same metric:
 //   - engagement records (gap, attacking face, engaged) for each troop, which also start Assault;
 //   - the threat heading from enemies within S_Distance, which turns the troop's line toward them.
-// No hysteresis on engagement entry or exit. S_Distance exit hysteresis is a tuning value (0 per the spec).
+// No hysteresis on engagement entry or exit. S_Distance has exit hysteresis (see ExitMargin): forming a line changes a
+// troop's footprint from a circle to a thin rectangle, which widens the gap, so without it a troop at the S_Distance edge
+// would flick between Line and Idle / Column every few frames.
 public sealed class TroopEngagementSystem
 {
     struct Threat
@@ -23,7 +25,11 @@ public sealed class TroopEngagementSystem
     {
         TroopTuning tuning = TroopTuning.Active;
         foreach (var troop in troops)
-            if (troop != null) troop.SetFootprint(TroopFootprintBuilder.Build(troop));
+        {
+            if (troop == null) continue;
+            troop.SetFootprint(TroopFootprintBuilder.Build(troop));
+            troop.UpdateOutline(deltaTime);
+        }
 
         foreach (var troop in troops)
         {
@@ -33,7 +39,7 @@ public sealed class TroopEngagementSystem
             TroopFootprint own = troop.Footprint;
             Vector2 pivot = troop.transform.position;
             Vector2 heading = troop.PivotVelocity.sqrMagnitude > 0.0025f ? troop.PivotVelocity.normalized : troop.Facing;
-            float sensing = tuning.SDistance + (troop.HasThreatWithinSDistance ? tuning.SDistanceExitHysteresis : 0f);
+            bool threatened = troop.HasThreatWithinSDistance;
             float nearestPivot = float.PositiveInfinity;
 
             foreach (var other in troops)
@@ -41,6 +47,7 @@ public sealed class TroopEngagementSystem
                 if (other == null || other == troop || other.TeamId == troop.TeamId) continue;
                 TroopFootprint theirs = other.Footprint;
                 float gap = FootprintGap.Gap(own, theirs);
+                float sensing = tuning.SDistance + (threatened ? ExitMargin(troop, other, tuning) : 0f);
                 if (gap > sensing) continue;
 
                 TroopFace face = FaceClassifier.Classify(own, pivot, theirs, tuning.FrontFaceHalfAngleDeg, tuning.RearFaceAngleDeg);
@@ -85,6 +92,15 @@ public sealed class TroopEngagementSystem
             else
                 troop.UpdateNaturalFormation(weightedDirection.normalized, weightedDistance / totalWeight, deltaTime);
         }
+    }
+
+    // Extra gap before a troop that already faces a threat drops it again: at least the shape change of both footprints
+    // between a blob (radius BlobRadiusScale x TroopRadius) and a thin line, so a formation change alone cannot move the
+    // pair back across S_Distance. SDistanceExitHysteresis (TroopTuning) is used instead when it is larger.
+    static float ExitMargin(Troop troop, Troop other, TroopTuning tuning)
+    {
+        float shapeChange = tuning.BlobRadiusScale * (troop.Radius + other.Radius);
+        return Mathf.Max(tuning.SDistanceExitHysteresis, shapeChange);
     }
 
     // Nearer enemies, and enemies ahead of the march, weigh more.

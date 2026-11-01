@@ -9,6 +9,10 @@ using UnityEngine;
 //   - In a battle line (Line / Chain) the field also spreads soldiers evenly along the line, so it fills its whole
 //     length instead of bunching at the middle (see PlanLineFill).
 // No soldier is pulled toward another.
+//   - Composite troops (some soldiers with ranged weapons, some without) in a battle line (Line / Chain) sort themselves
+//     by rank (Decisions D-55): when
+//     not engaged, ranged soldiers steer toward the front of the formation and melee soldiers toward the back; when
+//     engaged they swap, so the shooters fall back behind the melee soldiers. See CompositeRankPlan.
 public sealed class SoldierSteering
 {
     const float NeighborRadius = TroopConstants.NeighborRadius;
@@ -20,7 +24,7 @@ public sealed class SoldierSteering
     // Retreating soldiers may move faster than their normal top speed to keep up with the scheduled retreat.
     const float RetreatSpeedHeadroom = 1.5f;
     const float RetreatAccelerationHeadroom = 3f;
-    const float SeparationGain = 2.5f;   // separation strength relative to SoldierProfile.Separation
+    const float SeparationGain = 2.5f;   // separation strength relative to TroopTuning.SoldierSeparation
     // Soldiers try to keep their centres this far apart. Neighbours closer than this push each other out, and the
     // minimum is enforced exactly by ResolveMinimumSeparation.
     const float SeparationDistance = TroopConstants.SeparationRadius;
@@ -34,6 +38,12 @@ public sealed class SoldierSteering
     const int MinimumSeparationPasses = 3;
     // Line fill: pull toward the soldier's place along the line, relative to the attraction strength.
     const float LineFillGain = 0.8f;
+    // Soldiers are pulled back inside this fraction of the troop radius.
+    const float SoftRadiusFraction = 0.92f;
+    // Return after a charge (SU-43): the soldier is home within this distance of its formation band. The return gives up
+    // after ReturnTimeoutSeconds so a soldier that cannot reach its place does not stay fast and unclamped.
+    const float ReturnArrivalSlack = TroopConstants.LineSpacing;
+    const float ReturnTimeoutSeconds = 6f;
 
     readonly Troop _troop;
     readonly SoldierMotionConstraints _constraints;
@@ -46,8 +56,10 @@ public sealed class SoldierSteering
     readonly List<float> _fillAlong = new();    // distance along the line core, per soldier
     readonly List<float> _fillTargets = new();  // place along the line core, per soldier (NaN: no line fill)
     readonly List<int> _fillOrder = new();
+    readonly List<int> _fillOrderShooters = new();  // composite troops: the ranged soldiers, filled separately
     readonly System.Comparison<int> _byAlong;
     ITroopRandom _random;
+    CompositeRankPlan _rankPlan;
 
     public SoldierSteering(Troop troop, SoldierMotionConstraints constraints)
     {
@@ -77,11 +89,13 @@ public sealed class SoldierSteering
         for (int i = 0; i < soldiers.Count; i++)
         {
             var soldier = soldiers[i];
+            if (soldier.IsAlive) UpdateReturn(soldier, shape, deltaTime);
             Vector2 seekPoint = Vector2.zero;
-            bool seek = soldier.IsAlive && soldier.Profile != null && _planner.TrySeek(soldier, out seekPoint);
+            bool seek = soldier.IsAlive && soldier.Character != null && _planner.TrySeek(soldier, out seekPoint);
             _seeks[i] = seek;
             _seekPoints[i] = seekPoint;
         }
+        _rankPlan = CompositeRankPlan.For(_troop, shape);
         PlanLineFill(soldiers, shape);
 
         // Pass 2: integrate each living soldier.
@@ -90,7 +104,7 @@ public sealed class SoldierSteering
             var soldier = soldiers[i];
             _nextPositions[i] = soldier.Position;
             _nextVelocities[i] = soldier.Velocity;
-            if (!soldier.IsAlive || soldier.Profile == null) continue;
+            if (!soldier.IsAlive || soldier.Character == null) continue;
             soldier.TickCooldowns(deltaTime);
 
             Vector2 velocity = Step(soldier, _seeks[i], _seekPoints[i], shape, _fillTargets[i], deltaTime,
@@ -115,7 +129,7 @@ public sealed class SoldierSteering
     Vector2 Step(SoldierAgentState soldier, bool seek, Vector2 seekPoint, FieldShape shape, float fillTarget, float deltaTime,
         out Vector2 nextPosition, out float drive)
     {
-        float strength = soldier.IsCommitted ? 5.2f
+        float strength = soldier.IsCommitted || soldier.IsReturning ? 5.2f
             : _troop.PivotVelocity.sqrMagnitude > 0.0025f ? 3.2f
             : _troop.Formation != null ? 2.5f
             : 1.3f;
@@ -135,7 +149,7 @@ public sealed class SoldierSteering
         {
             Vector2 desired = RetreatArrivalVelocity(soldier, strength);
             steering = (desired - soldier.Velocity) * (VelocityMatchGain * strength);
-            drive = Mathf.Min(1f, desired.magnitude / soldier.Profile.MaxSpeed);
+            drive = Mathf.Min(1f, desired.magnitude / soldier.Character.MaxSpeed);
         }
         else
         {
@@ -148,17 +162,18 @@ public sealed class SoldierSteering
         // Retreating and charging soldiers may leave the troop radius; the radius pull would fight them.
         float radius = _constraints.EffectiveRadius;
         float distanceFromPivot = soldier.Position.magnitude;
-        float softRadius = radius * 0.92f;
+        float softRadius = radius * SoftRadiusFraction;
         if (distanceFromPivot > softRadius && !LeavesRadius(soldier))
             steering -= soldier.Position / distanceFromPivot * ((distanceFromPivot - softRadius) * 3.3f);
-        if (soldier.Profile.BrownianMotion > 0f)
-            steering += _random.InsideUnitCircle() * soldier.Profile.BrownianMotion * 2.5f;
+        float brownianMotion = TroopTuning.Active.SoldierBrownianMotion;
+        if (brownianMotion > 0f)
+            steering += _random.InsideUnitCircle() * brownianMotion * 2.5f;
 
         // Chargers and their followers move at ChargeSpeedScale (2x). A retreating soldier gets headroom so it can keep
         // to its schedule.
-        float speedScale = soldier.IsCommitted ? TroopTuning.Active.ChargeSpeedScale : 1f;
-        float accelerationLimit = soldier.Profile.Acceleration * speedScale;
-        float speedLimit = soldier.Profile.MaxSpeed * speedScale;
+        float speedScale = soldier.IsCommitted || soldier.IsReturning ? TroopTuning.Active.ChargeSpeedScale : 1f;
+        float accelerationLimit = soldier.Character.Acceleration * speedScale;
+        float speedLimit = soldier.Character.MaxSpeed * speedScale;
         if (retreating)
         {
             accelerationLimit *= RetreatAccelerationHeadroom;
@@ -199,6 +214,8 @@ public sealed class SoldierSteering
             desired -= offset / distance * ((distance - shape.HalfWidth) * strength);
         if (!soldier.IsCommitted)
             desired += spread * SpreadSpeedPerUnit;
+        if (_rankPlan.Active && !soldier.IsCommitted)
+            desired += _rankPlan.DesiredVelocity(soldier, offset, shape.HalfWidth, strength);
         if (!float.IsNaN(fillTarget))
         {
             Vector2 segment = shape.End - shape.Start;
@@ -211,8 +228,10 @@ public sealed class SoldierSteering
             }
         }
 
-        desired = Vector2.ClampMagnitude(desired, soldier.Profile.MaxSpeed);
-        drive = desired.magnitude / soldier.Profile.MaxSpeed;
+        // A soldier rushing back after a charge runs at charge speed (SU-43).
+        float maxSpeed = soldier.Character.MaxSpeed * (soldier.IsReturning ? TroopTuning.Active.ChargeSpeedScale : 1f);
+        desired = Vector2.ClampMagnitude(desired, maxSpeed);
+        drive = desired.magnitude / maxSpeed;
         return desired;
     }
 
@@ -221,6 +240,9 @@ public sealed class SoldierSteering
     // evenly spaced place along the core, so the line fills its whole length. Depth inside a file is left to separation
     // and the half-width band. Chargers, followers and retreating soldiers keep their place in the order (so the line
     // does not shuffle while they are away) but are not pulled. Leaves every target NaN outside Line / Chain.
+    // Composite troops (D-55): the ranged and the melee soldiers are filled separately, each group spread evenly over
+    // the whole length (with as many ranks as it needs for the line's files), so both kinds are spread along the line
+    // and the rank plan only sorts them front to back. Without this a group that ended up at one end stays there.
     void PlanLineFill(List<SoldierAgentState> soldiers, FieldShape shape)
     {
         for (int i = 0; i < soldiers.Count; i++) _fillTargets[i] = float.NaN;
@@ -232,23 +254,43 @@ public sealed class SoldierSteering
         Vector2 tangent = segment / length;
 
         _fillOrder.Clear();
+        _fillOrderShooters.Clear();
         for (int i = 0; i < soldiers.Count; i++)
         {
             var soldier = soldiers[i];
-            if (!soldier.IsAlive || soldier.Profile == null) continue;
+            if (!soldier.IsAlive || soldier.Character == null) continue;
             _fillAlong[i] = Vector2.Dot(soldier.Position - shape.Start, tangent);
-            _fillOrder.Add(i);
+            if (_rankPlan.Active && soldier.Character.RangedWeapon != null) _fillOrderShooters.Add(i);
+            else _fillOrder.Add(i);
         }
-        int count = _fillOrder.Count;
+        int count = _fillOrder.Count + _fillOrderShooters.Count;
         if (count == 0) return;
-        _fillOrder.Sort(_byAlong);
 
         int ranks = Mathf.Max(1, shape.LineRanks);
+        if (_fillOrderShooters.Count == 0)
+        {
+            AssignFill(soldiers, _fillOrder, ranks, length);
+            return;
+        }
+        int lineFiles = (count + ranks - 1) / ranks;
+        AssignFill(soldiers, _fillOrder, GroupRanks(_fillOrder.Count, lineFiles), length);
+        AssignFill(soldiers, _fillOrderShooters, GroupRanks(_fillOrderShooters.Count, lineFiles), length);
+    }
+
+    // Ranks a group needs so that it spans no more files than the line has.
+    static int GroupRanks(int groupCount, int lineFiles) => Mathf.Max(1, (groupCount + lineFiles - 1) / Mathf.Max(1, lineFiles));
+
+    // Orders the group along the line and spreads it over the whole length in files of `ranks` soldiers.
+    void AssignFill(List<SoldierAgentState> soldiers, List<int> order, int ranks, float length)
+    {
+        int count = order.Count;
+        if (count == 0) return;
+        order.Sort(_byAlong);
         int files = (count + ranks - 1) / ranks;
         float fileSpacing = length / files;
         for (int k = 0; k < count; k++)
         {
-            int index = _fillOrder[k];
+            int index = order[k];
             var soldier = soldiers[index];
             if (_seeks[index] || soldier.IsRetreatTracking) continue;
             _fillTargets[index] = (k / ranks + 0.5f) * fileSpacing;
@@ -321,7 +363,34 @@ public sealed class SoldierSteering
     }
 
     // Retreating and committed soldiers, and every soldier of a routed troop, may leave the troop radius.
-    bool LeavesRadius(SoldierAgentState soldier) => soldier.IsRetreatTracking || soldier.IsCommitted || _troop.IsRouted;
+    bool LeavesRadius(SoldierAgentState soldier) =>
+        soldier.IsRetreatTracking || soldier.IsCommitted || soldier.IsReturning || _troop.IsRouted;
+
+    // Return after a charge (SU-43). When a charge ends, the soldier rushes back to the troop if its troop is retreating
+    // or no longer engaged, or it ended up outside the troop's soft radius; otherwise it rejoins the field as before. The
+    // return ends once the soldier is back in its formation band and inside the soft radius, after ReturnTimeoutSeconds,
+    // or on a rout.
+    void UpdateReturn(SoldierAgentState soldier, FieldShape shape, float deltaTime)
+    {
+        if (_troop.IsRouted)
+        {
+            soldier.EndReturn();
+            return;
+        }
+        if (soldier.IsCommitted) return;
+        if (soldier.ConsumeReturnPending()
+            && (_troop.IsFaultSlipping || !_troop.IsEngaged || !InsideSoftRadius(soldier)))
+            soldier.BeginReturn(ReturnTimeoutSeconds);
+        if (!soldier.IsReturning) return;
+
+        Vector2 core = NearestOnSegment(soldier.Position, shape.Start, shape.End);
+        bool home = (soldier.Position - core).magnitude <= shape.HalfWidth + ReturnArrivalSlack && InsideSoftRadius(soldier);
+        if (home) soldier.EndReturn();
+        else soldier.TickReturn(deltaTime);
+    }
+
+    bool InsideSoftRadius(SoldierAgentState soldier) =>
+        soldier.Position.magnitude <= _constraints.EffectiveRadius * SoftRadiusFraction;
 
     // Alignment and separation within NeighborRadius, plus the density spread (returned separately as a desired-velocity
     // push, because it steers the field rather than adding acceleration). Chargers and followers are not separated,
@@ -350,7 +419,7 @@ public sealed class SoldierSteering
                 if (!soldier.IsCommitted && !other.IsCommitted && distanceSquared < SeparationDistance * SeparationDistance)
                 {
                     float distance = Mathf.Sqrt(Mathf.Max(distanceSquared, 0.001f));
-                    separation += difference / distance * ((SeparationDistance - distance) / SeparationDistance * SeparationGain * soldier.Profile.Separation);
+                    separation += difference / distance * ((SeparationDistance - distance) / SeparationDistance * SeparationGain * TroopTuning.Active.SoldierSeparation);
                 }
 
                 if (!soldier.IsCommitted && !other.IsCommitted && distanceSquared < SpreadRadius * SpreadRadius)
@@ -366,8 +435,68 @@ public sealed class SoldierSteering
         if (neighbors > 0)
         {
             alignment = alignment / neighbors - soldier.Velocity;
-            force += alignment * soldier.Profile.Alignment;
+            force += alignment * TroopTuning.Active.SoldierAlignment;
         }
         return force + separation;
+    }
+}
+
+// Rank sorting for composite troops (Decisions D-55). Each frame the troop decides whether it is composite (it has
+// living soldiers with and without a ranged weapon) and which way is the front. Each field-following soldier is then
+// steered along the front direction toward a target depth from the formation's centre line: ranged soldiers to
+// +DepthFraction x half-depth (the front rank) and melee soldiers to -DepthFraction x half-depth (the back), or the
+// reverse while the troop is engaged. Separation and the pressure-weighted minimum separation let the two groups pass
+// each other. Applied only in a battle line (Line / Chain formation); idle blobs, columns and routed troops stay mixed.
+public readonly struct CompositeRankPlan
+{
+    public readonly bool Active;
+    public readonly Vector2 LocalFront;  // troop-local unit vector toward the enemy side of the formation
+    public readonly bool ShootersForward;
+    readonly float _gain;
+    readonly float _depthFraction;
+
+    public CompositeRankPlan(Vector2 localFront, bool shootersForward, float gain, float depthFraction)
+    {
+        Active = gain > 0f && localFront.sqrMagnitude > 1e-6f;
+        LocalFront = Active ? localFront.normalized : Vector2.zero;
+        ShootersForward = shootersForward;
+        _gain = gain;
+        _depthFraction = depthFraction;
+    }
+
+    public static CompositeRankPlan For(Troop troop, FieldShape shape)
+    {
+        TroopTuning tuning = TroopTuning.Active;
+        // Only a battle line (Line / Chain) has a front rank to sort into. Idle blobs and columns are left mixed.
+        if (tuning.CompositeRankGain <= 0f || troop.IsRouted || !shape.IsLine || !IsComposite(troop)) return default;
+        Vector2 localFront = troop.transform.InverseTransformDirection(troop.Facing);
+        return new CompositeRankPlan(localFront, !troop.IsEngaged, tuning.CompositeRankGain, tuning.CompositeRankDepthFraction);
+    }
+
+    // Living soldiers both with and without a ranged weapon.
+    public static bool IsComposite(Troop troop)
+    {
+        bool ranged = false;
+        bool melee = false;
+        foreach (var soldier in troop.Soldiers)
+        {
+            if (!soldier.IsAlive || soldier.Character == null) continue;
+            if (soldier.Character.RangedWeapon != null) ranged = true;
+            else melee = true;
+            if (ranged && melee) return true;
+        }
+        return false;
+    }
+
+    // Target depth along LocalFront from the centre line (positive = toward the front).
+    public float TargetDepth(bool isShooter, float halfWidth) =>
+        (isShooter == ShootersForward ? 1f : -1f) * _depthFraction * Mathf.Max(0f, halfWidth);
+
+    // offsetFromCore: the soldier's troop-local offset from the nearest point of the formation's centre line.
+    public Vector2 DesiredVelocity(SoldierAgentState soldier, Vector2 offsetFromCore, float halfWidth, float strength)
+    {
+        float depth = Vector2.Dot(offsetFromCore, LocalFront);
+        float target = TargetDepth(soldier.Character.RangedWeapon != null, halfWidth);
+        return LocalFront * ((target - depth) * strength * _gain);
     }
 }

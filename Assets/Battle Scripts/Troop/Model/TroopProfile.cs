@@ -1,95 +1,77 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
 
-[Serializable]
-public sealed class TroopProfileCount
-{
-    public SoldierProfile Profile;
-    [Min(0)] public int Count = 1;
-}
-
-// A troop's stats and composition (spec §1.4). Move is derived from the soldiers, not stored.
-// BaseMorale and Discipline are integers 1-20, default 5 (see CombatStatLimits).
+// A troop before battle (spec §1.1, §1.2): the characters that make it up. One character is an ordinary troop; two or
+// more are a composite troop. The troop stats are resolved from the characters with CompositeTroopResolver:
+//   Move = min(Speed_i), BaseMorale = max(Morale_i), Discipline = max(Discipline_i), soldiers = Σ Numbers_i.
+// Each character spawns its own Numbers of soldiers.
 [CreateAssetMenu(menuName = "Troops/Troop Profile")]
 public sealed class TroopProfile : ScriptableObject
 {
-    // Per-soldier morale (spec §5.1). Renamed from the old absolute morale value (10-100). The old serialized value is
-    // not carried over, so existing assets reset to 5 until they are set in the Editor.
-    [SerializeField, Range(1, 20), Tooltip("Morale per soldier. EffectiveMorale = BaseMorale x living soldiers.")]
-    int _baseMorale = CombatStatLimits.Default;
-    [SerializeField, Range(1, 20), Tooltip("Number of nearest friendly soldiers that may follow a charger (spec §4.4).")]
-    int _discipline = CombatStatLimits.Default;
-    [SerializeField] List<TroopProfileCount> _composition = new();
+    [SerializeField, Tooltip("The characters in this troop. The first one names the troop and gives its portrait.")]
+    List<CharacterProfile> _characters = new();
     [SerializeField, Min(0.1f), FormerlySerializedAs("_flockRadius"),
      Tooltip("Troop radius. The natural line length is L_nat = NaturalLineRadiusScale x TroopRadius (spec §3.3).")]
     float _troopRadius = 16.5f;
 
-    public int BaseMorale => _baseMorale;
-    public int Discipline => _discipline;
-    public IReadOnlyList<TroopProfileCount> Composition => _composition;
+    readonly List<TroopStatLine> _lines = new();
+
+    public IReadOnlyList<CharacterProfile> Characters => _characters;
     public float TroopRadius => _troopRadius;
 
-    // Lowest soldier Speed in the composition (spec §1.4). Zero when there are no soldiers.
-    public int Move
+    // The first character, or null when the list is empty.
+    public CharacterProfile FirstCharacter
     {
         get
         {
-            bool found = false;
-            int move = 0;
-            foreach (var entry in _composition)
-            {
-                if (entry == null || entry.Profile == null || entry.Count <= 0) continue;
-                move = found ? Mathf.Min(move, entry.Profile.Speed) : entry.Profile.Speed;
-                found = true;
-            }
-            return move;
+            foreach (var character in _characters)
+                if (character != null) return character;
+            return null;
         }
     }
 
-    public int SoldierCount
+    // The troop's name and portrait are its first character's.
+    public string DisplayName => FirstCharacter != null ? FirstCharacter.CharacterName : name;
+    public Sprite Portrait => FirstCharacter != null ? FirstCharacter.Portrait : null;
+
+    public ResolvedTroopStats Resolved
     {
         get
         {
-            int total = 0;
-            foreach (var entry in _composition)
-                if (entry != null && entry.Profile != null) total += Mathf.Max(0, entry.Count);
-            return total;
+            _lines.Clear();
+            foreach (var character in _characters)
+                if (character != null) _lines.Add(character.StatLine);
+            return CompositeTroopResolver.Resolve(_lines);
         }
     }
 
-    public static TroopProfile CreateRuntimeProfile(
-        int baseMorale,
-        IEnumerable<TroopProfileCount> composition,
-        float troopRadius,
-        int discipline = CombatStatLimits.Default)
+    public int Move => Resolved.Move;
+    public int BaseMorale => Resolved.BaseMorale;
+    public int Discipline => Resolved.Discipline;
+    public int SoldierCount => Resolved.InitialSoldierCount;
+
+    public static TroopProfile CreateRuntimeProfile(IEnumerable<CharacterProfile> characters, float troopRadius)
     {
         var profile = CreateInstance<TroopProfile>();
-        profile._baseMorale = CombatStatLimits.Clamp(baseMorale);
-        profile._discipline = CombatStatLimits.Clamp(discipline);
-        profile._composition = new List<TroopProfileCount>(composition);
+        profile._characters = new List<CharacterProfile>(characters);
         profile._troopRadius = Mathf.Max(0.1f, troopRadius);
         return profile;
     }
 
-    // Pairs parts into one composite troop before battle (spec §1.2). The battle receives the result as an ordinary
-    // profile. Radius takes the largest part value (Questions.md Q-53, working assumption).
+    // Pairs troops into one composite troop before battle (spec §1.2): all their characters in order. Radius takes the
+    // largest part value (Questions.md Q-53, working assumption).
     public static TroopProfile CreateComposite(IReadOnlyList<TroopProfile> parts)
     {
-        var lines = new List<TroopStatLine>(parts.Count);
-        var composition = new List<TroopProfileCount>();
+        var characters = new List<CharacterProfile>();
         float radius = 0f;
-
         foreach (var part in parts)
         {
-            lines.Add(new TroopStatLine(part.Move, part.BaseMorale, part.Discipline, part.SoldierCount));
+            if (part == null) continue;
             radius = Mathf.Max(radius, part.TroopRadius);
-            foreach (var entry in part.Composition)
-                composition.Add(new TroopProfileCount { Profile = entry.Profile, Count = entry.Count });
+            foreach (var character in part.Characters)
+                if (character != null) characters.Add(character);
         }
-
-        ResolvedTroopStats resolved = CompositeTroopResolver.Resolve(lines);
-        return CreateRuntimeProfile(resolved.BaseMorale, composition, radius, resolved.Discipline);
+        return CreateRuntimeProfile(characters, radius);
     }
 }

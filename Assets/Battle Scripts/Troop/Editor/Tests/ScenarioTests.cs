@@ -19,6 +19,10 @@ public sealed class TroopScenarioTests
     [SetUp]
     public void SetUp()
     {
+        // Scenarios run on the spec defaults (a fresh TroopTuning), not the project's tuned Battle Tuning assets, so a
+        // designer's tuning edit cannot change what these rules are checked against. UseTuning edits this instance.
+        _tuning = TroopTuning.CreateDefaults();
+        TroopTuning.OverrideForTests(_tuning);
         _world = new GameObject("Test Combat World").AddComponent<TroopCombatWorld>();
         _world.SetSeed(12345);
         _world.Initialize();
@@ -32,22 +36,35 @@ public sealed class TroopScenarioTests
             if (target != null) Object.DestroyImmediate(target);
         _created.Clear();
         TroopTuning.OverrideForTests(null);
-        if (_tuning != null) Object.DestroyImmediate(_tuning);
+        _tuning?.DestroySections();
+        _tuning = null;
     }
 
-    SoldierProfile Soldier(int aggression = 5, int maxHealth = 15, int strength = 5)
+    // Every character needs a melee weapon. This one adds no damage or charge bonus and the test soldiers are unskilled
+    // with it, so it fights as the old weaponless test character did.
+    MeleeWeaponProfile TestMeleeWeapon()
     {
-        var profile = SoldierProfile.CreateCharacterProfile("Test", null, 5, 5, maxHealth, aggression, strength, 5, 5,
-            new List<WeaponProfile>(), new List<WeaponSkill>(), null);
+        var weapon = MeleeWeaponProfile.CreateRuntimeProfile("Test Sword", MeleeWeaponClass.Sword, 0, 0,
+            WeaponSpecialRule.None, false);
+        _created.Add(weapon);
+        return weapon;
+    }
+
+    CharacterProfile Character(int numbers = 12, int morale = 5, int aggression = 5, int maxHealth = 15, int strength = 5)
+    {
+        var profile = CharacterProfile.CreateRuntimeProfile("Test", null, null, null, numbers, morale,
+            CombatStatLimits.Default, new CharacterEquipment(TestMeleeWeapon(), null, null),
+            new SoldierStats(5, 5, strength, 5, 5, aggression, maxHealth));
         _created.Add(profile);
         return profile;
     }
 
+    // Without a character, a default one is made with the given soldier count and morale.
     Troop CreateTroop(string name, int team, Vector2 position, float radius = 5f, int soldiers = 12, int baseMorale = 5,
-        SoldierProfile soldier = null)
+        CharacterProfile character = null)
     {
-        var profile = TroopProfile.CreateRuntimeProfile(baseMorale,
-            new List<TroopProfileCount> { new() { Profile = soldier ?? Soldier(), Count = soldiers } }, radius);
+        var profile = TroopProfile.CreateRuntimeProfile(
+            new List<CharacterProfile> { character ?? Character(soldiers, baseMorale) }, radius);
         _created.Add(profile);
         var root = new GameObject(name);
         root.transform.position = position;
@@ -65,9 +82,18 @@ public sealed class TroopScenarioTests
 
     void UseTuning(string property, float value)
     {
-        if (_tuning == null) _tuning = ScriptableObject.CreateInstance<TroopTuning>();
-        var serialized = new SerializedObject(_tuning);
-        serialized.FindProperty(property).floatValue = value;
+        _tuning ??= TroopTuning.CreateDefaults();
+        // The field lives on one of the Battle Tuning sections; find the one that has it.
+        SerializedObject serialized = null;
+        SerializedProperty found = null;
+        foreach (var section in _tuning.Sections)
+        {
+            serialized = new SerializedObject(section);
+            found = serialized.FindProperty(property);
+            if (found != null) break;
+        }
+        Assert.IsNotNull(found, $"No Battle Tuning section has the field {property}");
+        found.floatValue = value;
         serialized.ApplyModifiedPropertiesWithoutUndo();
         TroopTuning.OverrideForTests(_tuning);
     }
@@ -82,6 +108,25 @@ public sealed class TroopScenarioTests
             soldier.ApplyMitigation(new MitigationResult(0, 0, 100, 0));
             killed++;
         }
+    }
+
+    [Test]
+    public void CharacterWithoutMeleeWeapon_Throws()
+    {
+        Assert.Throws<System.ArgumentNullException>(() => new CharacterEquipment(null, null, null));
+        Assert.Throws<MissingMeleeWeaponException>(() => CharacterProfile.CreateRuntimeProfile("No Melee", null, null,
+            null, 12, 5, CombatStatLimits.Default, new CharacterEquipment(), null));
+
+        // A character asset made in the Inspector with the melee slot left empty: deploying it throws.
+        var unarmed = ScriptableObject.CreateInstance<CharacterProfile>();
+        _created.Add(unarmed);
+        Assert.Throws<MissingMeleeWeaponException>(() => _ = unarmed.MeleeWeapon);
+        var profile = TroopProfile.CreateRuntimeProfile(new List<CharacterProfile> { unarmed }, 5f);
+        _created.Add(profile);
+        var root = new GameObject("Unarmed");
+        _created.Add(root);
+        var troop = root.AddComponent<Troop>();
+        Assert.Throws<MissingMeleeWeaponException>(() => troop.Configure(0, profile));
     }
 
     [Test]
@@ -212,9 +257,9 @@ public sealed class TroopScenarioTests
     public void ChargeRate_Over30Seconds_IsAboutAggression()
     {
         const int aggression = 10;
-        SoldierProfile tough = Soldier(aggression, maxHealth: 40, strength: 1);
-        Troop left = CreateTroop("Left", 0, new Vector2(-2f, 0f), radius: 1.5f, baseMorale: 20, soldier: tough);
-        Troop right = CreateTroop("Right", 1, new Vector2(2f, 0f), radius: 1.5f, baseMorale: 20, soldier: tough);
+        CharacterProfile tough = Character(morale: 20, aggression: aggression, maxHealth: 40, strength: 1);
+        Troop left = CreateTroop("Left", 0, new Vector2(-2f, 0f), radius: 1.5f, character: tough);
+        Troop right = CreateTroop("Right", 1, new Vector2(2f, 0f), radius: 1.5f, character: tough);
         Simulate(0.2f);
         Assert.IsTrue(left.IsEngaged && right.IsEngaged);
         left.ResetMeleeMetrics();

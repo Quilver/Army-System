@@ -40,6 +40,7 @@ public static class TroopCliSmoke
         // Safety net: give up after this much real time even if Play mode never starts.
         SessionState.SetFloat(RealDeadlineKey, (float)EditorApplication.timeSinceStartup + 600f);
         Debug.Log($"[TroopSmoke] Opening {scene}, playing {seconds:0} s of game time.");
+        WeaponProfileMigration.Run();
         EditorSceneManager.OpenScene(scene, OpenSceneMode.Single);
         Attach();
         EditorApplication.EnterPlaymode();

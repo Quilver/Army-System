@@ -30,7 +30,7 @@ public sealed class SupportCalculator
             SoldierContact ally = contacts[i];
             if (ally.Soldier == soldier || ally.Troop == null || ally.Troop.TeamId != troop.TeamId) continue;
             if (!ally.Soldier.CanSupport) continue;
-            SoldierProfile profile = ally.Soldier.Profile;
+            CharacterProfile profile = ally.Soldier.Character;
             float range = SupportRules.SupporterRange(radius, tuning.BoarSpearSupportRangeMultiplier,
                 profile != null && profile.HasBoarSpear);
             if (SupportRules.InSupportRange(Vector2.Distance(ally.Position, position), range)) eligible++;
@@ -41,7 +41,7 @@ public sealed class SupportCalculator
     public int SupportBonus(Troop troop, SoldierAgentState soldier, Vector2 position, bool flanked)
     {
         if (flanked) return 0;
-        int maxSupport = soldier.Profile != null ? soldier.Profile.Support : CombatStatLimits.Default;
+        int maxSupport = soldier.Character != null ? soldier.Character.Support : CombatStatLimits.Default;
         int eligible = EligibleSupporters(troop, soldier, position);
         return SupportRules.SupportBonus(eligible, maxSupport, TroopTuning.Active.SupportBonusPerAlly, false);
     }

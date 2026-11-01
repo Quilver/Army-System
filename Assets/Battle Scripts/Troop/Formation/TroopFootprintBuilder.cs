@@ -38,7 +38,7 @@ public static class TroopFootprintBuilder
         for (int i = 0; i < soldiers.Count; i++)
         {
             SoldierAgentState soldier = soldiers[i];
-            if (!soldier.IsAlive || soldier.IsCommitted) continue;
+            if (!soldier.IsAlive || soldier.IsCommitted || soldier.IsReturning) continue;
             Vector2 offset = troop.WorldPosition(soldier) - formation.Start;
             float along = Vector2.Dot(offset, tangent);
             if (along < -SoldierRadius || along > length + SoldierRadius) continue;
@@ -55,7 +55,7 @@ public static class TroopFootprintBuilder
         Vector2 normal = new(-heading.y, heading.x);
         foreach (var soldier in troop.Soldiers)
         {
-            if (!soldier.IsAlive || soldier.IsCommitted) continue;
+            if (!soldier.IsAlive || soldier.IsCommitted || soldier.IsReturning) continue;
             Vector2 offset = troop.WorldPosition(soldier) - pivot;
             back = Mathf.Max(back, -Vector2.Dot(offset, heading));
             across = Mathf.Max(across, Mathf.Abs(Vector2.Dot(offset, normal)));

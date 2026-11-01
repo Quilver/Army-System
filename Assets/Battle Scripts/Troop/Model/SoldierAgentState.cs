@@ -1,13 +1,20 @@
 using System;
 using UnityEngine;
 
+public enum SoldierLifeState
+{
+    Active,
+    Fatigued,
+    Dead
+}
+
 // One soldier: identity, life and motion. Charging, retreating, clash flashes and external separation each live in a
 // small state object; the members below forward to them so callers deal with a single soldier.
 [Serializable]
 public sealed class SoldierAgentState
 {
     [SerializeField] int _id;
-    [SerializeField] SoldierProfile _profile;
+    [SerializeField] CharacterProfile _character;
     [SerializeField] SoldierLifeState _lifeState;
     [SerializeField] SoldierHealth _health;
     [SerializeField] Vector2 _position;
@@ -21,7 +28,8 @@ public sealed class SoldierAgentState
     [SerializeField] float _clashCooldownRemaining;
 
     public int Id => _id;
-    public SoldierProfile Profile => _profile;
+    // The character this soldier belongs to: its soldier stats and equipment.
+    public CharacterProfile Character => _character;
     public SoldierLifeState LifeState => _lifeState;
     public SoldierHealth Health => _health;
     public int CurrentHp => _health.CurrentHp;
@@ -31,8 +39,8 @@ public sealed class SoldierAgentState
     // Alive and not fatigued: the soldier can take part in supporting its neighbours.
     public bool CanSupport => IsAlive && _lifeState != SoldierLifeState.Fatigued;
 
-    // Defence plus the armour bonus. Without a profile or armour, only the soldier's Defence (or 0) counts.
-    public int TotalDefence => _profile == null ? 0 : _profile.Defence + (_profile.Armour != null ? _profile.Armour.DefenceBonus : 0);
+    // Defence plus the armour bonus. Without a character or armour, only the soldier's Defence (or 0) counts.
+    public int TotalDefence => _character == null ? 0 : _character.Defence + (_character.Armour != null ? _character.Armour.DefenceBonus : 0);
     public Vector2 Position { get => _position; internal set => _position = value; }
     public Vector2 Velocity { get => _velocity; internal set => _velocity = value; }
     public Vector2 Facing { get => _facing; internal set => _facing = value; }
@@ -71,12 +79,12 @@ public sealed class SoldierAgentState
     // Separation from other troops
     public Vector2 ExternalSeparation => _separation.External;
 
-    public SoldierAgentState(int id, SoldierProfile profile, Vector2 position)
+    public SoldierAgentState(int id, CharacterProfile character, Vector2 position)
     {
         _id = id;
-        _profile = profile;
+        _character = character;
         _lifeState = SoldierLifeState.Active;
-        _health = new SoldierHealth(profile != null ? profile.MaxHealth : CombatStatLimits.HpDefault);
+        _health = new SoldierHealth(character != null ? character.MaxHealth : CombatStatLimits.HpDefault);
         _position = position;
     }
 
@@ -96,6 +104,10 @@ public sealed class SoldierAgentState
     // separation, density spreading and drive pressure in both directions (spec §2.3).
     public bool IsCommitted => IsCharging || IsFollowing;
 
+    // Rushing back to its troop after a charge (see SoldierChargeState): charge speed, free of the troop radius, and
+    // left out of the footprint until it is back in the formation.
+    public bool IsReturning => _charge.IsReturning;
+
     public void BeginClashColorPulse(float duration) => _clashPulse.Begin(duration);
     public bool TickClashColorPulse(float deltaTime) => _clashPulse.Tick(deltaTime);
 
@@ -104,7 +116,11 @@ public sealed class SoldierAgentState
     public void BeginFollow(SoldierAgentState leader, float timeout, float startTime) =>
         _charge.BeginFollow(leader, timeout, startTime);
     public void TickCharge(float deltaTime) => _charge.Tick(deltaTime);
-    public void CancelCharge() => _charge.End();
+    public void CancelCharge(bool returnToTroop = true) => _charge.End(returnToTroop);
+    internal bool ConsumeReturnPending() => _charge.ConsumeReturnPending();
+    internal void BeginReturn(float timeout) => _charge.BeginReturn(timeout);
+    internal void TickReturn(float deltaTime) => _charge.TickReturn(deltaTime);
+    internal void EndReturn() => _charge.ClearReturn();
 
     public void SetFaultMotion(float delay, float moveDuration) => _fault.Set(delay, moveDuration);
 

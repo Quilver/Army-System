@@ -2,9 +2,9 @@ using UnityEngine;
 
 public sealed class TroopProfileSpriteDefaults : MonoBehaviour
 {
-    [SerializeField] SoldierProfile _squareProfile;
-    [SerializeField] SoldierProfile _triangleProfile;
-    [SerializeField] SoldierProfile _circleProfile;
+    [SerializeField] CharacterProfile _squareProfile;
+    [SerializeField] CharacterProfile _triangleProfile;
+    [SerializeField] CharacterProfile _circleProfile;
 
     void Awake()
     {
