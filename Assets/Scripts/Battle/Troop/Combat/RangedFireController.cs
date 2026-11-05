@@ -8,6 +8,10 @@ using UnityEngine;
 //   Target troop: the enemy troop not engaged in melee (Q-39) with the soldier nearest to a shooter that can reach it.
 //   Each volley, every shooter fires one projectile at a target soldier it can reach, spreading fire across them.
 //   After each volley the troop waits ActionWindowSeconds / FireRate (+/- 10% jitter) before the next (Q-43).
+// Fire & Engage (SU-90): soldiers whose ranged weapon has the Fire & Engage rule also fire one volley when their troop
+// enters an engagement (at the enemy it engages) and one when the troop retreats (spec §5.5) from that engagement, though
+// it is engaged, moving or retreating. Both reset with each new engagement. These volleys need only weapon range (no
+// front arc), may target an engaged troop, include soldiers that are charging, and do not use or reset the cooldown.
 public sealed class RangedFireController
 {
     readonly Troop _troop;
@@ -18,6 +22,12 @@ public sealed class RangedFireController
     float _cooldown;
     bool _primed;
 
+    // Fire & Engage state (SU-90).
+    bool _wasEngaged;
+    bool _wasRetreating;
+    bool _retreatVolleyUsed;
+    Troop _engagedEnemy;
+
     public RangedFireController(Troop troop)
     {
         _troop = troop;
@@ -26,15 +36,23 @@ public sealed class RangedFireController
     public bool IsFiring { get; private set; }
     public Troop Target { get; private set; }
     public float Cooldown => _cooldown;
+    // Every volley fired, including Fire & Engage volleys.
     public int Volleys { get; private set; }
+    // Fire & Engage volleys fired (SU-90).
+    public int FireAndEngageVolleys { get; private set; }
 
     public void Reset()
     {
         _cooldown = 0f;
         _primed = false;
         Volleys = 0;
+        FireAndEngageVolleys = 0;
         Target = null;
         IsFiring = false;
+        _wasEngaged = false;
+        _wasRetreating = false;
+        _retreatVolleyUsed = false;
+        _engagedEnemy = null;
     }
 
     public void Tick(IReadOnlyList<Troop> troops, TroopProjectiles projectiles, float deltaTime)
@@ -43,6 +61,7 @@ public sealed class RangedFireController
         _cooldown = Mathf.Max(0f, _cooldown - deltaTime);
         Target = null;
         IsFiring = false;
+        TickFireAndEngage(projectiles, tuning);
         if (!CanFire()) return;
 
         CollectShooters(out float range, out int fireRate);
@@ -59,10 +78,55 @@ public sealed class RangedFireController
         }
         if (_cooldown > 0f) return;
 
-        FireVolley(projectiles, tuning);
+        FireVolley(Target, projectiles, tuning, useFrontArc: true);
         Volleys++;
         BattleEvents.RaiseVolleyFired(_troop);
         _cooldown = RangedRules.FireInterval(fireRate, tuning.ActionWindowSeconds, tuning.FireRateJitterFraction, _troop.TroopRandom);
+    }
+
+    // Fire & Engage (SU-90). A new engagement (not engaged last frame, engaged now) fires one volley at the enemy engaged
+    // and makes the retreat volley available. A retreat (spec §5.5) that starts while engaged, or the frame after the
+    // engagement ended, fires one volley at that enemy, once per engagement. A routed troop does neither.
+    void TickFireAndEngage(TroopProjectiles projectiles, TroopTuning tuning)
+    {
+        bool engaged = _troop.IsEngaged && !_troop.IsRouted;
+        bool retreating = _troop.IsRetreating && !_troop.IsRouted;
+        Troop enemy = engaged ? _troop.EngagedEnemy : null;
+
+        if (engaged && !_wasEngaged)
+        {
+            _retreatVolleyUsed = false;
+            FireAndEngageVolley(enemy, projectiles, tuning);
+        }
+        if (retreating && !_wasRetreating && !_retreatVolleyUsed && (engaged || _wasEngaged))
+        {
+            _retreatVolleyUsed = true;
+            FireAndEngageVolley(enemy != null ? enemy : _engagedEnemy, projectiles, tuning);
+        }
+
+        _engagedEnemy = engaged ? (enemy != null ? enemy : _engagedEnemy) : null;
+        _wasEngaged = engaged;
+        _wasRetreating = retreating;
+    }
+
+    void FireAndEngageVolley(Troop enemy, TroopProjectiles projectiles, TroopTuning tuning)
+    {
+        if (enemy == null || enemy.LivingSoldierCount == 0 || !_troop.Roster.HasRangedSoldiers) return;
+        _shooters.Clear();
+        _shooterPositions.Clear();
+        foreach (var soldier in _troop.Soldiers)
+        {
+            if (!soldier.IsAlive || soldier.Character == null) continue;
+            RangedWeaponProfile weapon = soldier.Character.RangedWeapon;
+            if (weapon == null || weapon.Range <= 0f || !weapon.HasRule(WeaponSpecialRule.FireAndEngage)) continue;
+            _shooters.Add(soldier);
+            _shooterPositions.Add(_troop.WorldPosition(soldier));
+        }
+        if (_shooters.Count == 0) return;
+        if (FireVolley(enemy, projectiles, tuning, useFrontArc: false) == 0) return;
+        Volleys++;
+        FireAndEngageVolleys++;
+        BattleEvents.RaiseVolleyFired(_troop);
     }
 
     // Longest range among the soldiers that can shoot now (0 without one).
@@ -150,16 +214,18 @@ public sealed class RangedFireController
         return best;
     }
 
-    // Each shooter fires one projectile at a target soldier it can reach. Fire is spread: a shooter picks the reachable
-    // soldier with the fewest shots aimed at it so far this volley, the nearest on a tie. Shooters that cannot reach any
-    // target soldier hold.
-    void FireVolley(TroopProjectiles projectiles, TroopTuning tuning)
+    // Each shooter fires one projectile at a soldier of targetTroop it can reach. Fire is spread: a shooter picks the
+    // reachable soldier with the fewest shots aimed at it so far this volley, the nearest on a tie. Shooters that cannot
+    // reach any target soldier hold. useFrontArc false (Fire & Engage) checks weapon range only. Returns the shots fired.
+    int FireVolley(Troop targetTroop, TroopProjectiles projectiles, TroopTuning tuning, bool useFrontArc)
     {
         _targets.Clear();
         _aimed.Clear();
-        foreach (var soldier in Target.Soldiers)
+        if (targetTroop == null) return 0;
+        foreach (var soldier in targetTroop.Soldiers)
             if (soldier.IsAlive) _targets.Add((soldier, 0f));
-        if (_targets.Count == 0) return;
+        if (_targets.Count == 0) return 0;
+        int fired = 0;
         for (int t = 0; t < _targets.Count; t++) _aimed.Add(0);
         Vector2 facing = _troop.Facing;
 
@@ -172,8 +238,11 @@ public sealed class RangedFireController
             float chosenDistance = float.PositiveInfinity;
             for (int t = 0; t < _targets.Count; t++)
             {
-                Vector2 offset = Target.WorldPosition(_targets[t].soldier) - from;
-                if (!RangedRules.CanReach(offset, facing, tuning.RangedFrontArcDeg, weapon.Range)) continue;
+                Vector2 offset = targetTroop.WorldPosition(_targets[t].soldier) - from;
+                bool reachable = useFrontArc
+                    ? RangedRules.CanReach(offset, facing, tuning.RangedFrontArcDeg, weapon.Range)
+                    : offset.sqrMagnitude <= weapon.Range * weapon.Range;
+                if (!reachable) continue;
                 float distance = offset.sqrMagnitude;
                 if (chosen < 0 || _aimed[t] < _aimed[chosen] || (_aimed[t] == _aimed[chosen] && distance < chosenDistance))
                 {
@@ -185,7 +254,10 @@ public sealed class RangedFireController
             _aimed[chosen]++;
             SoldierAgentState target = _targets[chosen].soldier;
             float hitChance = RangedRules.HitChance(weapon.Accuracy, shooter.Character.SkillFor(weapon.Class), tuning.BaseShotDC);
-            projectiles.Launch(_troop, from, Target, target, RangedRules.RawDamage(weapon.Damage), hitChance, tuning.ProjectileSpeed);
+            projectiles.Launch(_troop, from, targetTroop, target, RangedRules.RawDamage(weapon.Damage), hitChance,
+                tuning.ProjectileSpeed, weapon);
+            fired++;
         }
+        return fired;
     }
 }

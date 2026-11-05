@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: Light Armour + Shield
   m_EditorClassIdentifier: 
   _displayName: Light Armour + Shield
-  _deflect: 30
-  _bruise: 50
-  _bleed: 20
+  _deflect: 3
+  _bruise: 5
+  _bleed: 2
   _defenceBonus: 4
   _provisional: 1

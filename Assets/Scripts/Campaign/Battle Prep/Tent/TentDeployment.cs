@@ -7,7 +7,7 @@ namespace BattlePrep.Tent
     // cost to field in gold; undeploying refunds it. At most LaunchRules.MaximumDeployed characters.
     public static class TentDeployment
     {
-        public static List<RosterCharacter> Deployed => BattleReport.DeployedRoster;
+        public static List<RosterCharacter> Deployed => BattleReport.DeployedCharacters;
 
         public static bool IsDeployed(RosterCharacter character) => Deployed.Contains(character);
 
@@ -52,6 +52,8 @@ namespace BattlePrep.Tent
                 Deployed.Add(character);
                 data.Money -= character.costToField;
             }
+            // The battle deploys troops: keep BattleReport.DeployedTroops in step with the deployed characters.
+            Deployment.RosterTroops.Sync();
         }
     }
 }

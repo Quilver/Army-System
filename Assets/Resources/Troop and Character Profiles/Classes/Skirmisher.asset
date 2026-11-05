@@ -13,7 +13,9 @@ MonoBehaviour:
   m_Name: Skirmisher
   m_EditorClassIdentifier: 
   _displayName: Skirmisher
-  _description: 
+  _description: Mobile light infantry with short range ranged attacks. Use to slow
+    the enemy or use their high assualt value to take down weakened foes.
+  _icon: {fileID: 21300000, guid: 877cca7644a34a53a8bcb3809f568bc5, type: 3}
   _statCaps:
     _numbers: 20
     _speed: 20
@@ -27,4 +29,6 @@ MonoBehaviour:
     _discipline: 20
     _weaponSkills:
     - Class: 1
+      Cap: 20
+    - Class: 4
       Cap: 20

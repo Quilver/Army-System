@@ -6,7 +6,7 @@ public sealed class MitigationResolverTests
     [Test]
     public void DamageBelowDefence_AllPointsRoll_NoOverflow()
     {
-        MitigationResult result = MitigationResolver.Resolve(5, 8, 30, 50, new SeededTroopRandom(1));
+        MitigationResult result = MitigationResolver.Resolve(5, 8, 3, 5, 2, new SeededTroopRandom(1));
         Assert.AreEqual(5, result.Deflected + result.Bruised + result.Bled);
         Assert.AreEqual(0, result.Overflow);
     }
@@ -14,7 +14,7 @@ public sealed class MitigationResolverTests
     [Test]
     public void DamageAboveDefence_ExtraBecomesOverflowBleed()
     {
-        MitigationResult result = MitigationResolver.Resolve(12, 8, 30, 50, new SeededTroopRandom(1));
+        MitigationResult result = MitigationResolver.Resolve(12, 8, 3, 5, 2, new SeededTroopRandom(1));
         Assert.AreEqual(8, result.Deflected + result.Bruised + result.Bled);
         Assert.AreEqual(4, result.Overflow);
         Assert.AreEqual(result.Bruised + result.Bled, result.ShockPoints);
@@ -28,11 +28,82 @@ public sealed class MitigationResolverTests
         int rolled = 0;
         for (int i = 0; i < 1000; i++)
         {
-            MitigationResult result = MitigationResolver.Resolve(10, 10, 60, 30, random);
+            MitigationResult result = MitigationResolver.Resolve(10, 10, 6, 3, 1, random);
             deflected += result.Deflected;
             rolled += 10;
         }
         Assert.AreEqual(0.6f, deflected / (float)rolled, 0.01f);
+    }
+
+    // SU-89: the armour split is a ratio, so 6 : 3 : 1 and 60 : 30 : 10 roll the same.
+    [Test]
+    public void Ratio_ScaledPartsRollTheSame()
+    {
+        MitigationResult small = MitigationResolver.Resolve(10, 10, 6, 3, 1, new SeededTroopRandom(7));
+        MitigationResult large = MitigationResolver.Resolve(10, 10, 60, 30, 10, new SeededTroopRandom(7));
+        Assert.AreEqual(small.Deflected, large.Deflected);
+        Assert.AreEqual(small.Bruised, large.Bruised);
+        Assert.AreEqual(small.Bled, large.Bled);
+    }
+
+    // SU-89: Piercing 2 against 6 : 3 : 1 rolls as 6 : 3 : 3, so Bleed is 3 / 12 = 25%.
+    [Test]
+    public void Piercing_AddsToBleedPart()
+    {
+        float bleedShare = Share(r => MitigationResolver.Resolve(10, 10, 6, 3, 1, r, piercing: 2).Bled);
+        Assert.AreEqual(0.25f, bleedShare, 0.015f);
+    }
+
+    // SU-89: Bludgeoning 2 against 6 : 3 : 1 rolls as 6 : 5 : 1, so Bruise is 5 / 12 (about 42%).
+    [Test]
+    public void Bludgeoning_AddsToBruisePart()
+    {
+        float bruiseShare = Share(r => MitigationResolver.Resolve(10, 10, 6, 3, 1, r, bludgeoning: 2).Bruised);
+        Assert.AreEqual(5f / 12f, bruiseShare, 0.015f);
+    }
+
+    [Test]
+    public void Abilities_DoNotChangeOverflow()
+    {
+        MitigationResult result = MitigationResolver.Resolve(12, 8, 6, 3, 1, new SeededTroopRandom(1), 3, 3);
+        Assert.AreEqual(8, result.Deflected + result.Bruised + result.Bled);
+        Assert.AreEqual(4, result.Overflow);
+    }
+
+    [Test]
+    public void AllZeroRatio_EveryRolledPointBleeds()
+    {
+        MitigationResult result = MitigationResolver.Resolve(5, 8, 0, 0, 0, new SeededTroopRandom(1));
+        Assert.AreEqual(5, result.Bled);
+        Assert.AreEqual(0, result.Deflected + result.Bruised);
+    }
+
+    // SU-90: no armour rolls every point (no overflow) against 0 : 3 : 7.
+    [Test]
+    public void NoArmour_RollsAgainstZeroThreeSeven_WithoutOverflow()
+    {
+        MitigationResult one = MitigationResolver.Unarmoured(10, new SeededTroopRandom(3));
+        Assert.AreEqual(0, one.Deflected);
+        Assert.AreEqual(0, one.Overflow);
+        Assert.AreEqual(10, one.Bruised + one.Bled);
+        float bruiseShare = Share(r => MitigationResolver.Unarmoured(10, r).Bruised);
+        Assert.AreEqual(0.3f, bruiseShare, 0.015f);
+    }
+
+    // SU-90: Bludgeoning 2 against no armour rolls as 0 : 5 : 7.
+    [Test]
+    public void NoArmour_BludgeoningAddsToBruise()
+    {
+        float bruiseShare = Share(r => MitigationResolver.Unarmoured(10, r, bludgeoning: 2).Bruised);
+        Assert.AreEqual(5f / 12f, bruiseShare, 0.015f);
+    }
+
+    static float Share(System.Func<ITroopRandom, int> count)
+    {
+        var random = new SeededTroopRandom(42);
+        int total = 0;
+        for (int i = 0; i < 2000; i++) total += count(random);
+        return total / 20000f;
     }
 }
 

@@ -45,7 +45,7 @@ public sealed class ChainAndRangedScenarioTests
         if (melee == null)
         {
             melee = MeleeWeaponProfile.CreateRuntimeProfile("Test Sword", MeleeWeaponClass.Sword, 0, 0,
-                WeaponSpecialRule.None, false);
+                null, false);
             _created.Add(melee);
         }
         var profile = CharacterProfile.CreateRuntimeProfile("Test", null, null, null, 12, morale, CombatStatLimits.Default,
@@ -166,7 +166,7 @@ public sealed class ChainAndRangedScenarioTests
         RangedWeaponProfile bow = RangedWeaponProfile.CreateRuntimeProfile("Long bow", RangedWeaponClass.Bow, 1, 20f, 2, 10,
             false);
         MeleeWeaponProfile knife = MeleeWeaponProfile.CreateRuntimeProfile("Knife", MeleeWeaponClass.Sword, 1, 0,
-            WeaponSpecialRule.None, false);
+            null, false);
         _created.Add(bow);
         _created.Add(knife);
         CharacterProfile archer = Character(5, 15, knife, bow,
@@ -197,6 +197,21 @@ public sealed class ChainAndRangedScenarioTests
         Assert.AreEqual(0, archers.RangedFire.Volleys, "No fire while engaged");
     }
 
+    // SU-90: a Fire & Engage weapon fires one volley when its troop enters an engagement, then holds while engaged.
+    [Test]
+    public void FireAndEngageArchers_FireOnceWhenTheEngagementStarts()
+    {
+        RangedWeaponProfile bow = RangedWeaponProfile.CreateRuntimeProfile("Fire & Engage bow", RangedWeaponClass.Bow, 1,
+            20f, 2, 10, false, new[] { new WeaponSpecialRuleEntry(WeaponSpecialRule.FireAndEngage) });
+        _created.Add(bow);
+        CharacterProfile archer = Character(20, 40, ranged: bow, skills: new List<WeaponSkill> { new(WeaponClass.Bow, 8) });
+        Troop archers = LineTroop("Archers", Vector2.zero, Vector2.right, character: archer);
+        LineTroop("Melee", new Vector2(5.5f, 0f), Vector2.left, team: 1, character: Character(20, 40));
+        Simulate(6f);
+        Assert.IsTrue(archers.IsEngaged);
+        Assert.AreEqual(1, archers.RangedFire.FireAndEngageVolleys, "One volley at the start of the engagement only");
+    }
+
     RangedWeaponProfile LongBow()
     {
         RangedWeaponProfile bow = RangedWeaponProfile.CreateRuntimeProfile("Long bow", RangedWeaponClass.Bow, 1, 20f, 2, 10, false);
@@ -206,7 +221,7 @@ public sealed class ChainAndRangedScenarioTests
 
     CharacterProfile Squad(int numbers, RangedWeaponProfile ranged, int maxHealth = 15)
     {
-        var sword = MeleeWeaponProfile.CreateRuntimeProfile("Sword", MeleeWeaponClass.Sword, 1, 0, WeaponSpecialRule.None, false);
+        var sword = MeleeWeaponProfile.CreateRuntimeProfile("Sword", MeleeWeaponClass.Sword, 1, 0, null, false);
         _created.Add(sword);
         var profile = CharacterProfile.CreateRuntimeProfile("Squad", null, null, null, numbers, 20, CombatStatLimits.Default,
             new CharacterEquipment(sword, ranged, null),

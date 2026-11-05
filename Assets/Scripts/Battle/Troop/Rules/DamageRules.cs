@@ -2,7 +2,7 @@ using System;
 
 // Raw melee damage (spec §4.6). Pure C#.
 //   Raw = Strength + WeaponDamageBonus + Domination
-//   A Lance bearer's total is doubled while charging (Q-8). Domination is included in the doubled total.
+//   A Couched Lance bearer's total is doubled while charging (Q-8). Domination is included in the doubled total.
 // The result goes to MitigationResolver (Phase 02).
 public static class DamageRules
 {

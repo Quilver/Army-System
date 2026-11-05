@@ -60,7 +60,7 @@ public sealed class SupportRulesTests
     }
 
     [Test]
-    public void BoarSpear_DoublesTheSupportersRange()
+    public void SpearSupport_DoublesTheSupportersRange()
     {
         Assert.AreEqual(3f, SupportRules.SupporterRange(3f, 2f, false));
         Assert.AreEqual(6f, SupportRules.SupporterRange(3f, 2f, true));
@@ -109,7 +109,7 @@ public sealed class DamageRulesTests
     }
 
     [Test]
-    public void Lance_DoublesTotalDamage_OnlyWhileCharging()
+    public void CouchedLance_DoublesTotalDamage_OnlyWhileCharging()
     {
         Assert.AreEqual(20, DamageRules.RawDamage(5, 3, 2, true));
     }

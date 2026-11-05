@@ -7,10 +7,10 @@ using System;
 //   A clash against a flanking enemy gives 0 (face data supplied from Phase 05).
 public static class SupportRules
 {
-    // Supporter's range. A Boar Spear multiplies the range of the soldier carrying it (Q-7).
-    public static float SupporterRange(float supportRadius, float boarSpearMultiplier, bool supporterHasBoarSpear)
+    // Supporter's range. A Spear Support weapon multiplies the range of the soldier carrying it (Q-7).
+    public static float SupporterRange(float supportRadius, float spearSupportMultiplier, bool supporterHasSpearSupport)
     {
-        return supporterHasBoarSpear ? supportRadius * boarSpearMultiplier : supportRadius;
+        return supporterHasSpearSupport ? supportRadius * spearSupportMultiplier : supportRadius;
     }
 
     public static bool InSupportRange(float distance, float range) => distance <= range;

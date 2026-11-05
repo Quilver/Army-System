@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 // Battle Tuning: charges, clashes, support, duels and Assault (spec §4.2-§4.5, §7.2).
 // Asset: Assets/Resources/Battle Tuning/Melee Tuning.asset. Read through TroopTuning.Active.
@@ -24,8 +25,9 @@ public sealed class MeleeTuning : ScriptableObject
     [Header("Support and duel (spec §4.5)")]
     [SerializeField, Min(0f), Tooltip("Support range (units).")]
     float _supportRadius = 3f;
-    [SerializeField, Min(1f), Tooltip("Support range multiplier for a Boar Spear supporter (Q-7).")]
-    float _boarSpearSupportRangeMultiplier = 2f;
+    [SerializeField, Min(1f), Tooltip("Support range multiplier for a Spear Support supporter (Q-7, SU-90).")]
+    [FormerlySerializedAs("_boarSpearSupportRangeMultiplier")]
+    float _spearSupportRangeMultiplier = 2f;
     [SerializeField, Min(0), Tooltip("Combat Power per supporting ally.")]
     int _supportBonusPerAlly = 2;
     [SerializeField, Min(0.1f), Tooltip("Divisor of the Domination formula.")]
@@ -47,7 +49,7 @@ public sealed class MeleeTuning : ScriptableObject
     public float ClashCooldownSeconds => _clashCooldownSeconds;
 
     public float SupportRadius => _supportRadius;
-    public float BoarSpearSupportRangeMultiplier => _boarSpearSupportRangeMultiplier;
+    public float SpearSupportRangeMultiplier => _spearSupportRangeMultiplier;
     public int SupportBonusPerAlly => _supportBonusPerAlly;
     public float DominationDivisor => _dominationDivisor;
 

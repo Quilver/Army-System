@@ -84,6 +84,22 @@ public sealed class TroopOrderPlanner
         }
     }
 
+    // Deployment: the same Move and Line plans as FinishOrder, but each troop is put straight at its planned spot.
+    // Attack orders do nothing while deploying.
+    public void FinishPlacement(Vector2 pressScreen, Vector2 releaseScreen, Camera camera, ITroopPlacement placement)
+    {
+        var selected = LiveSelection();
+        if (selected.Count == 0 || placement == null) return;
+        Vector2 worldStart = TroopScreenSpace.ScreenToWorld(camera, pressScreen);
+        Vector2 worldEnd = TroopScreenSpace.ScreenToWorld(camera, releaseScreen);
+        OrderKind kind = OrderClassifier.Classify(pressScreen, releaseScreen, Tuning.OrderDragMinPixels, false, selected.Count);
+        if (kind == OrderKind.Line) PlanLine(selected, worldStart, worldEnd);
+        else PlanMove(selected, worldEnd);
+        BreakLinksWithin(selected);
+        foreach (var planned in _placements)
+            placement.Place(planned.Troop, planned.Center, planned.Facing, planned.Length);
+    }
+
     // --- Planning (shared with the ghost preview) ---
 
     public OrderKind Preview(Vector2 pressScreen, Vector2 currentScreen, Camera camera, bool altHeld)

@@ -193,53 +193,6 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 10763742}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &88329236
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 88329238}
-  - component: {fileID: 88329237}
-  m_Layer: 0
-  m_Name: Troop Profile Sprite Defaults
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &88329237
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 88329236}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7a2b90e9fc4d44f0a08029dc822d4b81, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _squareProfile: {fileID: 11400000, guid: 0b354f693c454b869344580a857430a1, type: 2}
-  _triangleProfile: {fileID: 11400000, guid: f819f8c448644042934d7ad8e20864da, type: 2}
-  _circleProfile: {fileID: 11400000, guid: 9a67b81f064f4f03b1adab858443f02d, type: 2}
---- !u!4 &88329238
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 88329236}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &151630720
 GameObject:
   m_ObjectHideFlags: 0
@@ -1745,12 +1698,6 @@ PolygonCollider2D:
       - {x: 6.451282, y: -0.9128205}
       - {x: 6.5538464, y: -0.52307695}
   m_UseDelaunayMesh: 1
---- !u!1 &174343660 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 3046834966632758157, guid: 947aad18af33cb3458fc6e8dc71030f7,
-    type: 3}
-  m_PrefabInstance: {fileID: 1569833407267663931}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &218358592
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2194,60 +2141,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 26abad6c9a7f1924d878c422bb753296, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _deployment: 1
   _Deploy:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
-        m_MethodName: SetActive
-        m_Mode: 6
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-      - m_Target: {fileID: 174343660}
-        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
-        m_MethodName: SetActive
-        m_Mode: 6
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-      - m_Target: {fileID: 174343660}
-        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
-        m_MethodName: SetActive
-        m_Mode: 6
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: UnityEngine.Behaviour, UnityEngine
-        m_MethodName: set_enabled
-        m_Mode: 6
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 1
-        m_CallState: 2
+      m_Calls: []
   player: {fileID: 2087348140}
   enemy: {fileID: 1842504730}
-  invalidDeployments: 0
 --- !u!4 &534580058
 Transform:
   m_ObjectHideFlags: 0
@@ -3566,6 +3465,35 @@ PrefabInstance:
       propertyPath: _achievements.Array.size
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2930595629069799993, guid: 8114fb246603f9b418faeb7bcb0e6f63,
+        type: 3}
+      propertyPath: _deployedTroops.Array.size
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 2930595629069799993, guid: 8114fb246603f9b418faeb7bcb0e6f63,
+        type: 3}
+      propertyPath: '_deployedTroops.Array.data[0]'
+      value: 
+      objectReference: {fileID: 11400000, guid: a6db3570c04ad2e42b45321fd814c472,
+        type: 2}
+    - target: {fileID: 2930595629069799993, guid: 8114fb246603f9b418faeb7bcb0e6f63,
+        type: 3}
+      propertyPath: '_deployedTroops.Array.data[1]'
+      value: 
+      objectReference: {fileID: 11400000, guid: 6fc791d40db6b5f419a0a9fba6c71f44,
+        type: 2}
+    - target: {fileID: 2930595629069799993, guid: 8114fb246603f9b418faeb7bcb0e6f63,
+        type: 3}
+      propertyPath: '_deployedTroops.Array.data[2]'
+      value: 
+      objectReference: {fileID: 11400000, guid: 043f6500dc7e4da4b8b11485898f3fb2,
+        type: 2}
+    - target: {fileID: 2930595629069799993, guid: 8114fb246603f9b418faeb7bcb0e6f63,
+        type: 3}
+      propertyPath: '_deployedTroops.Array.data[3]'
+      value: 
+      objectReference: {fileID: 11400000, guid: c42fbcc66532c064c915157fd0d3706a,
+        type: 2}
     - target: {fileID: 5391157433311076479, guid: 8114fb246603f9b418faeb7bcb0e6f63,
         type: 3}
       propertyPath: m_Name
@@ -4122,6 +4050,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   WinCondition: 0
   _army: {fileID: 2087348140}
+  _routShare: 1
 --- !u!1001 &1569833407267663931
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4142,13 +4071,18 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2816141329985165112, guid: 947aad18af33cb3458fc6e8dc71030f7,
         type: 3}
+      propertyPath: _army
+      value: 
+      objectReference: {fileID: 2087348140}
+    - target: {fileID: 2816141329985165112, guid: 947aad18af33cb3458fc6e8dc71030f7,
+        type: 3}
       propertyPath: armyData
       value: 
       objectReference: {fileID: 2087348140}
     - target: {fileID: 3046834966632758157, guid: 947aad18af33cb3458fc6e8dc71030f7,
         type: 3}
       propertyPath: m_Name
-      value: Deployement Zone
+      value: Deployment Zone
       objectReference: {fileID: 0}
     - target: {fileID: 3046834966632758157, guid: 947aad18af33cb3458fc6e8dc71030f7,
         type: 3}
@@ -4369,6 +4303,5 @@ SceneRoots:
   - {fileID: 1721287796}
   - {fileID: 1456112084}
   - {fileID: 398992930}
-  - {fileID: 88329238}
   - {fileID: 606625668}
   - {fileID: 302360763}

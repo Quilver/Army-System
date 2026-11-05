@@ -20,6 +20,16 @@ public static class FaceClassifier
         return angle > 0f ? TroopFace.LeftFlank : TroopFace.RightFlank;
     }
 
+    // The outward direction of a face of a footprint: Front along Facing, Rear against it, the Left Flank along Axis
+    // (anticlockwise of Facing) and the Right Flank against it.
+    public static Vector2 OutwardNormal(in TroopFootprint footprint, TroopFace face) => face switch
+    {
+        TroopFace.Rear => -footprint.Facing,
+        TroopFace.LeftFlank => footprint.Axis,
+        TroopFace.RightFlank => -footprint.Axis,
+        _ => footprint.Facing
+    };
+
     public static TroopFace Classify(in TroopFootprint defender, Vector2 defenderPivot, in TroopFootprint attacker,
         float frontHalfAngleDeg = 45f, float rearAngleDeg = 135f) =>
         Classify(defenderPivot, defender.Facing, attacker.ClosestPoint(defenderPivot), frontHalfAngleDeg, rearAngleDeg);

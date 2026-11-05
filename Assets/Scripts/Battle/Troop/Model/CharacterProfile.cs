@@ -44,6 +44,8 @@ public class CharacterProfile : ScriptableObject
     // The class's name. Falls back to an unmigrated legacy class name, then to the character's name.
     public string ClassName => _class != null ? _class.DisplayName
         : string.IsNullOrEmpty(_className) ? CharacterName : _className;
+    // The class's icon, or null (show ClassName instead).
+    public Sprite ClassIcon => _class != null ? _class.Icon : null;
     public Sprite Portrait => _portrait;
     public Sprite SoldierSprite => _soldierSprite;
     public int Numbers => _numbers;
@@ -95,9 +97,9 @@ public class CharacterProfile : ScriptableObject
     public int MeleeWeaponDamage => MeleeWeapon.Damage;
     // Weapon charge bonus, added to Charge only while charging (spec §4.5, Q-4).
     public int MeleeWeaponChargeBonus => MeleeWeapon.ChargeBonus;
-    // Special rules of the melee weapon (spec §1.6).
-    public bool HasBoarSpear => MeleeWeapon.SpecialRule == WeaponSpecialRule.BoarSpearSupport;
-    public bool HasLance => MeleeWeapon.SpecialRule == WeaponSpecialRule.LanceChargeDouble;
+    // Special rules of the melee weapon (spec §1.6, SU-90).
+    public bool HasSpearSupport => MeleeWeapon.HasRule(WeaponSpecialRule.SpearSupport);
+    public bool HasCouchedLance => MeleeWeapon.HasRule(WeaponSpecialRule.CouchedLance);
 
     // This character's line for composite troop resolution (spec §1.2).
     public TroopStatLine StatLine => new(Speed, _morale, _discipline, _numbers);
@@ -146,7 +148,7 @@ public class CharacterProfile : ScriptableObject
     public static CharacterProfile CreateRuntimeProfile(Sprite soldierSprite, int numbers)
     {
         MeleeWeaponProfile placeholder = MeleeWeaponProfile.CreateRuntimeProfile(
-            "Placeholder Sword", MeleeWeaponClass.Sword, 0, 0, WeaponSpecialRule.None, provisional: true);
+            "Placeholder Sword", MeleeWeaponClass.Sword, 0, 0, null, provisional: true);
         placeholder.hideFlags = HideFlags.DontSave;
         return CreateRuntimeProfile(null, null, null, soldierSprite, numbers, CombatStatLimits.Default,
             CombatStatLimits.Default, new CharacterEquipment(placeholder, null, null), null);

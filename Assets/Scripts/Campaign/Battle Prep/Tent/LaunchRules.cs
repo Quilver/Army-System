@@ -12,7 +12,7 @@ namespace BattlePrep.Tent
         // Build indices before the first level scene (ToBattleButton.NextLevel).
         const int EndOfNonLevelSceneIndexes = 2;
 
-        public static int DeployedCount => BattleReport.DeployedRoster?.Count ?? 0;
+        public static int DeployedCount => BattleReport.DeployedCharacters?.Count ?? 0;
 
         public static bool CanLaunch(out string reason)
         {

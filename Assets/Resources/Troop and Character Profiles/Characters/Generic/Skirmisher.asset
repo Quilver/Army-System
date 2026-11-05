@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 44a895c451f14ddba52eb35252a62001, type: 3}
+  m_Name: Skirmisher
+  m_EditorClassIdentifier: 
+  _characterName: Skirmisher
+  _class: {fileID: 11400000, guid: 4fa2f34eb40a9af4ea4150dbc9de6825, type: 2}
+  _className: 
+  _portrait: {fileID: 21300000, guid: 1cae26ba15d861249ad977c233d9ec1d, type: 3}
+  _soldierSprite: {fileID: 21300000, guid: a24e6ca849b124f4faca864433d78665, type: 3}
+  _numbers: 10
+  _morale: 4
+  _discipline: 3
+  _equipment:
+    _meleeWeapon: {fileID: 11400000, guid: ca6cd433d76ae834d95b1a87a2e07fd6, type: 2}
+    _rangedWeapon: {fileID: 11400000, guid: 316ffbe7014542945af6b69a97c14bc8, type: 2}
+    _armour: {fileID: 11400000, guid: 00c55c1b0d374d74b95d2859523e450e, type: 2}
+    _weapons: []
+  _soldierStats:
+    _speed: 7
+    _defence: 5
+    _strength: 6
+    _support: 3
+    _charge: 7
+    _aggression: 8
+    _maxHealth: 17
+    _weaponSkills:
+    - Class: 2
+      Level: 6
+    - Class: 4
+      Level: 4

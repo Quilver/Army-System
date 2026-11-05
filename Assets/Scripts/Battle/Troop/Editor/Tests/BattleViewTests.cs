@@ -46,7 +46,7 @@ public sealed class BattleViewTests
     CharacterProfile Character()
     {
         var melee = MeleeWeaponProfile.CreateRuntimeProfile("Test Sword", MeleeWeaponClass.Sword, 0, 0,
-            WeaponSpecialRule.None, false);
+            null, false);
         _created.Add(melee);
         var profile = CharacterProfile.CreateRuntimeProfile("Test", null, null, null, 12, 5, CombatStatLimits.Default,
             new CharacterEquipment(melee, null, null), new SoldierStats(5, 5, 5, 5, 5, 5, 15, null));

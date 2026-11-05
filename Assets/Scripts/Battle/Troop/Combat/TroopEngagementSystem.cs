@@ -4,7 +4,9 @@ using UnityEngine;
 // Measures every pair of opposing troops once per frame with the footprint gap (spec §4.1, Q-16), so S_Distance,
 // A_Distance and faces all use the same metric:
 //   - engagement records (gap, attacking face, engaged) for each troop, which also start Assault;
-//   - the threat heading from enemies within S_Distance, which turns the troop's line toward them.
+//   - the threat heading from enemies within S_Distance, which turns the troop's line toward them. A troop pursuing an
+//     enemy within S_Distance takes its heading from that target alone and squares up to the face it attacks, and keeps
+//     turning to it while engaged with it (SU-75).
 // Engagement starts at A_Distance and has an exit hold (SU-45, Q-16): two troops that were engaged last frame stay engaged
 // until their gap passes A_Distance + EngagementHoldMargin. Engaged lines are held at EngagementGap by the barrier, which can
 // equal A_Distance, so without the hold a fight would flick in and out of 'engaged' (charges, facing lock, chain pinning).
@@ -45,6 +47,10 @@ public sealed class TroopEngagementSystem
             bool threatened = troop.HasThreatWithinSDistance;
             float nearestPivot = float.PositiveInfinity;
             float holdRange = tuning.ADistance + tuning.EngagementHoldMargin;
+            Troop pursuitTarget = troop.PursuitTarget;
+            bool hasPursuitHeading = false;
+            Vector2 pursuitHeading = Vector2.zero;
+            float pursuitDistance = 0f;
 
             foreach (var other in troops)
             {
@@ -71,6 +77,14 @@ public sealed class TroopEngagementSystem
                     Facing = Vector2.Dot(direction, heading)
                 });
                 nearestPivot = Mathf.Min(nearestPivot, pivotDistance);
+
+                if (other == pursuitTarget)
+                {
+                    pursuitHeading = PursuitHeading(theirs, other.transform.position, own, pivot, gap, tuning.SDistance,
+                        tuning.ADistance, tuning.FrontFaceHalfAngleDeg, tuning.RearFaceAngleDeg);
+                    pursuitDistance = pivotDistance;
+                    hasPursuitHeading = true;
+                }
             }
 
             troop.SetEngagements(_records);
@@ -79,6 +93,14 @@ public sealed class TroopEngagementSystem
             if (_threats.Count == 0 || troop.IsRouted)
             {
                 troop.UpdateNaturalFormation(null, 0f, deltaTime);
+                continue;
+            }
+
+            if (hasPursuitHeading)
+            {
+                // The facing lock still holds while the pursuer is engaged only with other enemies.
+                bool engagedElsewhere = troop.IsEngaged && !troop.WasEngagedWith(pursuitTarget);
+                troop.UpdateNaturalFormation(pursuitHeading, pursuitDistance, deltaTime, turnWhileEngaged: !engagedElsewhere);
                 continue;
             }
 
@@ -98,6 +120,23 @@ public sealed class TroopEngagementSystem
             else
                 troop.UpdateNaturalFormation(weightedDirection.normalized, weightedDistance / totalWeight, deltaTime);
         }
+    }
+
+    // The heading of a troop pursuing target (SU-75): toward the target's pivot while the gap is S_Distance, turning
+    // as the gap closes to A_Distance until it squares up to the face it attacks, so its line meets a line target's
+    // front, flank or rear parallel. A target without a line (blob or column) is faced pivot to pivot.
+    public static Vector2 PursuitHeading(in TroopFootprint target, Vector2 targetPivot, in TroopFootprint own,
+        Vector2 ownPivot, float gap, float sDistance, float aDistance, float frontHalfAngleDeg, float rearAngleDeg)
+    {
+        Vector2 toTarget = targetPivot - ownPivot;
+        toTarget = toTarget.sqrMagnitude > 1e-8f ? toTarget.normalized : own.Facing;
+        if (target.Kind != FootprintKind.Rect) return toTarget;
+
+        TroopFace face = FaceClassifier.Classify(target, targetPivot, own, frontHalfAngleDeg, rearAngleDeg);
+        Vector2 squared = -FaceClassifier.OutwardNormal(target, face);
+        float closeness = sDistance > aDistance ? Mathf.InverseLerp(sDistance, aDistance, gap) : 1f;
+        Vector2 heading = Vector2.Lerp(toTarget, squared, closeness);
+        return heading.sqrMagnitude > 1e-6f ? heading.normalized : squared;
     }
 
     // Extra gap before a troop that already faces a threat drops it again: at least the shape change of both footprints

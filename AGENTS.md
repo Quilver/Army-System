@@ -11,9 +11,11 @@
 - Scripts live under `Assets/Scripts/`, split by system:
   - `Battle/`: the battle simulation. `Troop/` is the troop and soldier system (see `Troop/README.md` and
     `Docs/Battle/Architecture.md`), `Controller/` holds `Battle`, `Army` and `CapturePoint`, `Battle End/` the win/lose
-    conditions, `Pathfinding/` the 2D NavMesh code, `Audio/` the battle sounds. There is no enemy AI yet.
+    conditions, `Pathfinding/` the 2D NavMesh code, `Audio/` the battle sounds, `AI/` the enemy AI (see `AI/README.md`;
+    it reaches troops only through the adapters in `AI/Adapters/`).
   - `Tween/`: what passes between battle and campaign: campaign characters (`CampaignCharacter`, `RosterCharacter`),
-    achievements, `BattleReport`, `BattleFlow` (scene changes after a battle) and roster deployment.
+    achievements, `BattleReport`, `BattleFlow` (scene changes after a battle) and `RosterTroops` (the deployed characters' troops, handed to the
+    battle's `DeploymentZone`).
   - `Campaign/`: campaign data and saving, the pre-battle tent hub, post-battle screens, cutscenes and the main menu.
   - `Misc/`: shared UI (hover tips, floating text), the input map and camera controls.
 - Dependency rule: `Battle/` and `Misc/` never reference `Tween/` or `Campaign/`; the battle reports through events

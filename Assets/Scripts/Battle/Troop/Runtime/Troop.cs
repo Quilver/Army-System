@@ -189,8 +189,11 @@ public sealed class Troop : MonoBehaviour
     public bool HasThreatFacingFormation => Formation != null && Formation.IsThreatFacing;
     public bool HasThreatWithinSDistance => _formationState != null && _formationState.HasThreat;
     public Vector2 SegmentEndpoint(int end) => _formationState.SegmentEndpoint(end);
-    internal void UpdateNaturalFormation(Vector2? threatHeading, float threatDistance, float deltaTime) =>
-        _formationState.UpdateNatural(threatHeading, threatDistance, _engaged, deltaTime);
+    // turnWhileEngaged lifts the engaged facing lock for this update: a pursuer keeps squaring up to the face of its
+    // target that it attacks (SU-75). The engaged flag only drives that lock in TroopFormationState.
+    internal void UpdateNaturalFormation(Vector2? threatHeading, float threatDistance, float deltaTime,
+        bool turnWhileEngaged = false) =>
+        _formationState.UpdateNatural(threatHeading, threatDistance, _engaged && !turnWhileEngaged, deltaTime);
 
     // Facing used for faces and ranged arcs: the line's facing, or the march heading, or the transform's right.
     public Vector2 Facing
@@ -347,8 +350,42 @@ public sealed class Troop : MonoBehaviour
         return kind;
     }
 
-    // Moves the whole troop (soldiers are positioned relative to the pivot, so they travel with it).
-    public void ShiftPivot(Vector2 worldDelta) => transform.position += (Vector3)worldDelta;
+    // Moves the whole troop (soldiers are positioned relative to the pivot, so they travel with it). The shift is kept
+    // off terrain and on the map (ConstrainPivotStep).
+    public void ShiftPivot(Vector2 worldDelta) => transform.position += (Vector3)ConstrainPivotStep(worldDelta);
+
+    // A pivot displacement limited to the battlefield (BattlefieldBounds, inset by the blob radius so soldiers stay on
+    // the map) and clipped against terrain obstacles with a slide along them (SU-74).
+    public Vector2 ConstrainPivotStep(Vector2 worldDelta) => ConstrainPivotStep(transform.position, worldDelta);
+
+    Vector2 ConstrainPivotStep(Vector2 start, Vector2 worldDelta)
+    {
+        if (worldDelta.sqrMagnitude <= 1e-12f) return worldDelta;
+        Vector2 delta = BattlefieldBounds.ClampStep(start, worldDelta, Radius * Tuning.BlobRadiusScale);
+        return _constraints != null ? _constraints.ClipPivotStep(start, delta) : delta;
+    }
+
+    // Applies ConstrainPivotStep to everything that moved the pivot this frame: retreat slip, rout flight, the march
+    // and the line push.
+    void KeepPivotOnTheField(Vector2 before)
+    {
+        Vector3 position = transform.position;
+        Vector2 moved = (Vector2)position - before;
+        if (moved.sqrMagnitude <= 1e-12f) return;
+        Vector2 allowed = ConstrainPivotStep(before, moved);
+        if ((allowed - moved).sqrMagnitude <= 1e-12f) return;
+        transform.position = new Vector3(before.x + allowed.x, before.y + allowed.y, position.z);
+    }
+
+    // A Move (or a line order's march) whose path is used up ends there, even when it stops short of the destination:
+    // the destination is off the NavMesh (the path ends at the nearest reachable point), or there is no route (SU-73).
+    void CompleteOrderAtPathEnd()
+    {
+        if (!IsMoving || IsPursuing || IsRouted || IsFaultSlipping) return;
+        if (!_path.IsAtEnd(transform.position)) return;
+        _mover.CancelOrders();
+        OnOrderComplete();
+    }
 
     void Awake()
     {
@@ -377,10 +414,13 @@ public sealed class Troop : MonoBehaviour
         _lineLinks.TickRelax(deltaTime, Tuning.ChainEndpointRelaxSpeed);
         if (_faultSlip.TickRecovery(deltaTime) && !IsRouted) State = TroopState.Idle;
         EvaluateBreak();
+        Vector2 pivotBefore = transform.position;
         _faultSlip.Tick(deltaTime);
         EvaluateBreak();
         TickRout(deltaTime);
         _mover.Tick(deltaTime);
+        KeepPivotOnTheField(pivotBefore);
+        CompleteOrderAtPathEnd();
         if (_roster.enabled) _steering.Simulate(deltaTime);
         _views.Refresh(deltaTime);
     }
@@ -435,6 +475,25 @@ public sealed class Troop : MonoBehaviour
         State = TroopState.Moving;
     }
 
+    // Deployment: puts the troop straight at center, facing the given way, holding a line of the given length, without
+    // marching. Its soldiers move with the pivot and form the line once the battle runs. Ignored once routed.
+    public void PlaceAt(Vector2 center, Vector2 facing, float length)
+    {
+        EnsureInitialized();
+        if (IsRouted || IsRetreating) return;
+        if (facing.sqrMagnitude < 1e-6f) facing = transform.right;
+        facing.Normalize();
+        _mover.CancelOrders();
+        _lineOrder.Cancel();
+        transform.SetPositionAndRotation(new Vector3(center.x, center.y, transform.position.z),
+            Quaternion.Euler(0f, 0f, Mathf.Atan2(facing.y, facing.x) * Mathf.Rad2Deg));
+        _lineOrder.Order(center, facing, Mathf.Clamp(length, MinimumLineLength, MaximumLineLength));
+        _footprint = TroopFootprint.Circle(transform.position, Radius * Tuning.BlobRadiusScale, transform.right);
+        _outline.Reset();
+        State = TroopState.Idle;
+        _views.Refresh(0f);
+    }
+
     // The current Move or Pursue order finished (arrival, or the pursued troop is gone). A line order keeps holding.
     internal void OnOrderComplete()
     {
@@ -446,22 +505,26 @@ public sealed class Troop : MonoBehaviour
 
     // Melee or ranged raw damage in whole points. It is rolled against the target's armour, then applied. Returns the
     // applied HP. A flanked hit adds x3 Shock (spec §4.8).
-    // attacker (optional) is credited with the kill in BattleEvents.SoldierKilled.
+    // attacker (optional) is credited with the kill in BattleEvents.SoldierKilled. weapon (optional) is the weapon that
+    // dealt the damage; its Piercing and Bludgeoning change the armour roll (SU-89).
     public int ApplyDamage(SoldierAgentState target, int rawDamage, Vector2 attackerPivotPosition, bool flanked,
-        Troop attacker = null)
+        Troop attacker = null, WeaponProfile weapon = null)
     {
         if (target == null || rawDamage <= 0 || !target.IsAlive) return 0;
-        int applied = _damage.Apply(target, Mitigate(target, rawDamage), attackerPivotPosition, flanked).Total;
+        int applied = _damage.Apply(target, Mitigate(target, rawDamage, weapon), attackerPivotPosition, flanked).Total;
         if (!target.IsAlive) BattleEvents.RaiseSoldierKilled(this, target, attacker);
         return applied;
     }
 
     // Armour rolls use this troop's stream, since the troop being hit is the one that owns the target soldier.
-    MitigationResult Mitigate(SoldierAgentState target, int rawDamage)
+    MitigationResult Mitigate(SoldierAgentState target, int rawDamage, WeaponProfile weapon)
     {
         ArmourProfile armour = target.Character != null ? target.Character.Armour : null;
-        if (armour == null) return MitigationResolver.Unarmoured(rawDamage);
-        return MitigationResolver.Resolve(rawDamage, target.TotalDefence, armour.Deflect, armour.Bruise, TroopRandom);
+        int piercing = weapon != null ? weapon.Piercing : 0;
+        int bludgeoning = weapon != null ? weapon.Bludgeoning : 0;
+        if (armour == null) return MitigationResolver.Unarmoured(rawDamage, TroopRandom, piercing, bludgeoning);
+        return MitigationResolver.Resolve(rawDamage, target.TotalDefence, armour.Deflect, armour.Bruise, armour.Bleed,
+            TroopRandom, piercing, bludgeoning);
     }
 
     // Charges per troop and Assault bonuses (spec §4.2, §4.3).

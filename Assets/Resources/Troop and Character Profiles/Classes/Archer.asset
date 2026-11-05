@@ -13,7 +13,9 @@ MonoBehaviour:
   m_Name: Archer
   m_EditorClassIdentifier: 
   _displayName: Archer
-  _description: 
+  _description: Armed with bows they are able to plink away at enemies from a distance
+    and draw them in.
+  _icon: {fileID: 21300000, guid: 2e9c6676e55745feb03e08ccfcf53877, type: 3}
   _statCaps:
     _numbers: 20
     _speed: 20
@@ -27,4 +29,6 @@ MonoBehaviour:
     _discipline: 20
     _weaponSkills:
     - Class: 1
+      Cap: 20
+    - Class: 3
       Cap: 20

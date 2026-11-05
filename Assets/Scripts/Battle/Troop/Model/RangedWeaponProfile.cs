@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 // A ranged weapon: Bow, Crossbow or Javelin (spec §1.6, Decisions D-52). Damage is the base damage per hit. A
@@ -24,7 +25,8 @@ public sealed class RangedWeaponProfile : WeaponProfile
         float range,
         int accuracy,
         int fireRate,
-        bool provisional)
+        bool provisional,
+        IEnumerable<WeaponSpecialRuleEntry> specialRules = null)
     {
         var profile = CreateInstance<RangedWeaponProfile>();
         profile.SetBaseValues(displayName, damage, provisional);
@@ -32,6 +34,7 @@ public sealed class RangedWeaponProfile : WeaponProfile
         profile._range = Mathf.Max(0f, range);
         profile._accuracy = Mathf.Max(0, accuracy);
         profile._fireRate = Mathf.Max(0, fireRate);
+        profile.SetSpecialRules(specialRules);
         return profile;
     }
 }

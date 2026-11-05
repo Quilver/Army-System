@@ -22,6 +22,7 @@ namespace Campaign
 
         public string Name => character != null ? character.CharacterName : "Unknown";
         public string ClassName => character != null ? character.ClassName : "";
+        public Sprite ClassIcon => character != null ? character.ClassIcon : null;
         public Sprite Portrait => character != null ? character.Portrait : null;
         public float XpFraction => Mathf.Clamp01(xp / (float)XpPerLevel);
         // XP earned since level 1.

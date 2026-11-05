@@ -13,9 +13,12 @@ MonoBehaviour:
   m_Name: Javelin
   m_EditorClassIdentifier: 
   _displayName: Javelin
-  _damage: 5
+  _damage: 7
+  _specialRules:
+  - _rule: 5
+    _value: 0
   _provisional: 1
   _weaponClass: 4
-  _range: 6
+  _range: 10
   _accuracy: 4
   _fireRate: 5

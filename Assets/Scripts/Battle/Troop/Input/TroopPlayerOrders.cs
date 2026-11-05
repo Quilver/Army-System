@@ -7,7 +7,12 @@ using UnityEngine.InputSystem;
 //   RMB click / drag      Pursue (on an enemy), Move (on ground); a drag from OrderDragMinPixels is a battle line for
 //                         two or more troops and a Move for one troop (a single troop is never given a facing)
 //   Alt                   force unlink of chained troops / keep reserves from linking (spec §6.3)
-//   P / gamepad Start     pause and resume (Time.timeScale); no selection or orders while paused
+//   P / gamepad Start     pause and resume (GamePause), keeping the game speed
+// Speed bar (BattleSpeedHud, top-right): Pause, ½ speed, Play and 2× speed (GamePause.Speed). It is hidden while
+// deploying and once the battle is over. While paused, the camera, selection and orders all still work; troops carry
+// out their orders when time runs again.
+// During the deployment phase (Placement set) a Move or Line puts the troops straight there instead of marching them,
+// inside the deployment zone; attack orders are ignored. Clicks on UI (the Start Battle button) are not orders.
 // The first selected troop and the troop under the cursor are shown on troop cards (TroopCardHud), and the soldier under
 // the cursor gets a small HP bar over its head (SoldierHealthBar). A hovered troop with ranged weapons shows a
 // transparent mask of where it can shoot (TroopRangeMask). A hovered troop with a Move, Line or Attack order shows the
@@ -17,7 +22,7 @@ using UnityEngine.InputSystem;
 public sealed class TroopPlayerOrders : MonoBehaviour
 {
     [SerializeField] int _playerTeamId;
-    [SerializeField, Tooltip("Shown while the battle is paused (P or gamepad Start).")] GameObject _pausedIndicator;
+    [SerializeField, Tooltip("Shown while the battle is paused (P, gamepad Start or the speed bar).")] GameObject _pausedIndicator;
 
     [Header("Range mask (hovered ranged troop)")]
     [SerializeField, Tooltip("Fill colour. Its alpha is ignored: see the fill alphas.")]
@@ -47,6 +52,7 @@ public sealed class TroopPlayerOrders : MonoBehaviour
 
     readonly TroopSelection _selection = new();
     readonly TroopCardHud _cards = new();
+    readonly BattleSpeedHud _speedHud = new();
     readonly SoldierHealthBar _healthBar = new();
     readonly TroopRangeMask _rangeMask = new();
     readonly TroopOrderPathView _orderPath = new();
@@ -60,6 +66,9 @@ public sealed class TroopPlayerOrders : MonoBehaviour
     bool _paused;
 
     public bool IsPaused => _paused;
+
+    // While set (the deployment phase), Move and Line orders place troops at once through it instead of ordering them.
+    public ITroopPlacement Placement { get; set; }
 
     public EngagementViewMode EngagementView
     {
@@ -77,6 +86,12 @@ public sealed class TroopPlayerOrders : MonoBehaviour
         Cursor.visible = true;
         _camera = Camera.main;
         _planner = new TroopOrderPlanner(_selection);
+        // Each battle starts at normal speed.
+        GamePause.SetSpeed(BattleSpeedHud.NormalSpeed);
+        // The paused indicator sits mid-screen; it must not swallow clicks, since orders can be given while paused.
+        if (_pausedIndicator != null)
+            foreach (var graphic in _pausedIndicator.GetComponentsInChildren<UnityEngine.UI.Graphic>(true))
+                graphic.raycastTarget = false;
     }
 
     void Update()
@@ -90,7 +105,7 @@ public sealed class TroopPlayerOrders : MonoBehaviour
         var mouse = Mouse.current;
         if (mouse == null) return;
         _mousePosition = mouse.position.ReadValue();
-        bool overHud = _cards.Contains(_mousePosition);
+        bool overHud = _cards.Contains(_mousePosition) || _speedHud.Contains(_mousePosition);
         _selection.UpdateHover(overHud ? null : ScreenToWorld(_mousePosition),
             TroopScreenSpace.PixelsToWorld(_camera, _mousePosition, TroopTuning.Active.ClickPickRadiusPixels));
         _cards.Update(_selection.Selected, _selection.Hovered, _mousePosition);
@@ -102,15 +117,10 @@ public sealed class TroopPlayerOrders : MonoBehaviour
         _engagementViewMesh.Update(_selection.Troops, _engagementView, EngagementStyle());
 
         if (PausePressed(keyboard)) SetPaused(!_paused);
-        // No selection or orders while paused.
-        if (_paused)
-        {
-            _selectionStart = null;
-            _orderStart = null;
-            return;
-        }
+        // Selection and orders work while paused too: troops act on them once time runs again.
 
-        if (mouse.leftButton.wasPressedThisFrame && !overHud)
+        bool overUi = IsPointerOverUi();
+        if (mouse.leftButton.wasPressedThisFrame && !overHud && !overUi)
         {
             _selectionStart = _mousePosition;
             _toggleSelection = IsShiftHeld();
@@ -121,11 +131,12 @@ public sealed class TroopPlayerOrders : MonoBehaviour
             _selectionStart = null;
         }
 
-        if (mouse.rightButton.wasPressedThisFrame && !overHud)
+        if (mouse.rightButton.wasPressedThisFrame && !overHud && !overUi)
             _orderStart = _mousePosition;
         if (mouse.rightButton.wasReleasedThisFrame && _orderStart.HasValue)
         {
-            _planner.FinishOrder(_orderStart.Value, _mousePosition, _camera, IsAltHeld());
+            if (Placement != null) _planner.FinishPlacement(_orderStart.Value, _mousePosition, _camera, Placement);
+            else _planner.FinishOrder(_orderStart.Value, _mousePosition, _camera, IsAltHeld());
             _orderStart = null;
         }
     }
@@ -137,15 +148,40 @@ public sealed class TroopPlayerOrders : MonoBehaviour
         _engagementViewMesh.Hide();
     }
 
-    // Pauses or resumes the battle. Does nothing while something else (a cutscene) has stopped time.
+    // Pauses or resumes the battle. Does nothing while something else (a cutscene, deployment) has stopped time.
     public void SetPaused(bool paused)
     {
         if (paused == _paused) return;
-        if (paused && Time.timeScale == 0f) return;
+        if (paused && GamePause.IsPaused) return;
         _paused = paused;
-        Time.timeScale = paused ? 0f : 1f;
+        GamePause.Set(this, paused);
         if (_pausedIndicator != null) _pausedIndicator.SetActive(paused);
     }
+
+    // Sets the game speed (GamePause.Speed) and resumes the battle if the player had paused it.
+    public void SetSpeed(float speed)
+    {
+        GamePause.SetSpeed(speed);
+        SetPaused(false);
+    }
+
+    // A speed bar button: Pause pauses (keeping the speed); the others set their speed and resume.
+    public void PressSpeedButton(BattleSpeedButton button)
+    {
+        if (button == BattleSpeedButton.Pause) SetPaused(true);
+        else SetSpeed(BattleSpeedHud.SpeedOf(button));
+    }
+
+    // The speed bar shows while the battle is being fought (or in a scene without a Battle).
+    static bool ShowSpeedBar()
+    {
+        var battle = Battle.Instance;
+        return battle == null || battle.Phase == BattlePhase.Fighting;
+    }
+
+    static bool IsPointerOverUi() =>
+        UnityEngine.EventSystems.EventSystem.current != null &&
+        UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject();
 
     // Same keys as the Pause action in PlayerInputMap: P, or Start on a gamepad.
     static bool PausePressed(Keyboard keyboard) =>
@@ -154,7 +190,10 @@ public sealed class TroopPlayerOrders : MonoBehaviour
 
     void OnDestroy()
     {
-        if (_paused) Time.timeScale = 1f;
+        GamePause.Release(this);
+        // Leave the battle's speed behind: the campaign and the next battle run at normal speed.
+        GamePause.SetSpeed(BattleSpeedHud.NormalSpeed);
+        _speedHud.Destroy();
         _rangeMask.Destroy();
         _engagementViewMesh.Destroy();
     }
@@ -213,6 +252,13 @@ public sealed class TroopPlayerOrders : MonoBehaviour
         if (_camera != null) _orderPath.Draw(_camera, _selection.Hovered, OrderPathStyle());
         if (_camera != null) _healthBar.Draw(_camera);
         _cards.Draw();
+
+        if (ShowSpeedBar())
+        {
+            var active = BattleSpeedHud.ActiveButton(_paused || GamePause.IsPaused, GamePause.Speed);
+            if (_speedHud.Draw(active, out var clicked)) PressSpeedButton(clicked);
+        }
+        else _speedHud.Hide();
 
         if (_selectionStart.HasValue && Mouse.current != null)
             TroopOrderOverlay.DrawSelectionBox(_selectionStart.Value, _mousePosition);

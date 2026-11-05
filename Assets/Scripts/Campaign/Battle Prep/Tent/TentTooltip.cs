@@ -5,6 +5,7 @@ namespace BattlePrep.Tent
 {
     // The name label shown by a hovered or selected tent object (spec TentHub.md §3). Follows the pointer for mouse
     // hover; sits above the object for keyboard/controller selection. Never takes clicks.
+    // Also names the icon under the pointer on the ledger and troop cards (IconTooltip, SU-91); that follows the pointer.
     public class TentTooltip : MonoBehaviour
     {
         static TentTooltip _instance;
@@ -14,6 +15,7 @@ namespace BattlePrep.Tent
         [SerializeField] Vector2 _pointerOffset = new(18f, -18f);
 
         TentHotspot _source;
+        IconTooltip _icon;
         bool _followPointer;
         Canvas _canvas;
 
@@ -33,6 +35,7 @@ namespace BattlePrep.Tent
         {
             if (_instance == null || source == null) return;
             _instance._source = source;
+            _instance._icon = null;
             _instance._followPointer = followPointer;
             _instance._window.gameObject.SetActive(true);
             _instance.Refresh();
@@ -44,22 +47,53 @@ namespace BattlePrep.Tent
             if (_instance == null) return;
             if (source != null && _instance._source != source) return;
             _instance._source = null;
+            _instance._icon = null;
             _instance._window.gameObject.SetActive(false);
+        }
+
+        // Shows the icon's name (IconTooltip.Text) next to the pointer.
+        public static void ShowIcon(IconTooltip icon)
+        {
+            if (_instance == null || icon == null || string.IsNullOrEmpty(icon.Text)) return;
+            _instance._source = null;
+            _instance._icon = icon;
+            _instance._followPointer = true;
+            _instance._window.gameObject.SetActive(true);
+            _instance.Refresh();
+        }
+
+        // Hides the tooltip if it belongs to the icon.
+        public static void HideIcon(IconTooltip icon)
+        {
+            if (_instance == null || icon == null || _instance._icon != icon) return;
+            Hide();
         }
 
         void LateUpdate()
         {
-            if (_source != null) Refresh();
+            if (_source != null || _icon != null) Refresh();
         }
 
         void Refresh()
         {
-            if (_source == null || !_source.isActiveAndEnabled)
+            if (_icon != null)
+            {
+                if (!_icon.isActiveAndEnabled || string.IsNullOrEmpty(_icon.Text))
+                {
+                    Hide();
+                    return;
+                }
+                _text.text = _icon.Text;
+            }
+            else if (_source == null || !_source.isActiveAndEnabled)
             {
                 Hide();
                 return;
             }
-            _text.text = _source.HoverText;
+            else
+            {
+                _text.text = _source.HoverText;
+            }
 
             var parent = (RectTransform)_window.parent;
             Camera cam = _canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : _canvas.worldCamera;

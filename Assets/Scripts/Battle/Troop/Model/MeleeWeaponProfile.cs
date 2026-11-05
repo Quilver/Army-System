@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 // A melee weapon: Sword, Axe, Spear or Mace (spec §1.6, Decisions D-52). Damage is the damage bonus added to Strength.
@@ -11,7 +12,6 @@ public sealed class MeleeWeaponProfile : WeaponProfile
 {
     [SerializeField] MeleeWeaponClass _weaponClass = MeleeWeaponClass.Sword;
     [SerializeField, Min(0), Tooltip("Added to Charge while the bearer is charging.")] int _chargeBonus;
-    [SerializeField] WeaponSpecialRule _specialRule = WeaponSpecialRule.None;
 
     // Legacy ranged values from the combined WeaponProfile. Read by WeaponProfileMigration only.
     [SerializeField, HideInInspector] float _range;
@@ -22,10 +22,10 @@ public sealed class MeleeWeaponProfile : WeaponProfile
     public override WeaponClass Class => _weaponClass.ToWeaponClass();
     public override bool IsRanged => false;
     public int ChargeBonus => _chargeBonus;
-    public WeaponSpecialRule SpecialRule => _specialRule;
 
-    void OnValidate()
+    protected override void OnValidate()
     {
+        base.OnValidate();
         if (((WeaponClass)_weaponClass).IsRanged() || !System.Enum.IsDefined(typeof(MeleeWeaponClass), _weaponClass))
             Debug.LogWarning($"{name}: weapon class {(WeaponClass)_weaponClass} is not a melee class. Run " +
                              "Troops > Migrate > Split Weapon Profiles to convert it to a ranged weapon.", this);
@@ -36,14 +36,14 @@ public sealed class MeleeWeaponProfile : WeaponProfile
         MeleeWeaponClass weaponClass,
         int damage,
         int chargeBonus,
-        WeaponSpecialRule specialRule,
+        IEnumerable<WeaponSpecialRuleEntry> specialRules,
         bool provisional)
     {
         var profile = CreateInstance<MeleeWeaponProfile>();
         profile.SetBaseValues(displayName, damage, provisional);
         profile._weaponClass = weaponClass;
         profile._chargeBonus = Mathf.Max(0, chargeBonus);
-        profile._specialRule = specialRule;
+        profile.SetSpecialRules(specialRules);
         return profile;
     }
 }

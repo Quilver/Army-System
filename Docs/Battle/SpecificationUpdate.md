@@ -7,6 +7,386 @@ change work; confirm or replace). `specifications.md` itself is not edited; fold
 
 ---
 
+## 2026-11-05: Icons in place of stat, class and weapon skill names
+
+### SU-91 Stat, class, weapon skill and armour icons on the troop card and in the tent (Decision + Assumptions)
+- Decision: the UI shows **icons instead of names** for stats, classes and weapon skills, and shows the **name in a
+  tooltip** while the cursor is over an icon. Applies to the battle troop card (§6.1, `TroopCardHud`) and to the tent's
+  Roster Ledger page and Map roster / deployed cards.
+  - **Stats** (Soldiers, HP, Morale, Discipline, Speed, Defence, Strength, Support, Charge, Aggression): icon, then the
+    value. The troop card's Morale bar is led by the Morale icon.
+  - **Class**: a `CharacterClass` has an **Icon** field. When it is empty the class **name** is shown as before. Archer,
+    Cavalry, Huscarl, Skirmisher and Spearmen have icons; the other classes show their names until given one.
+  - **Weapon skill**: the weapon class icon (tooltip "Sword skill") then the level. On the troop card a weapon row is
+    icon, skill, weapon name, damage; in the ledger each skill is icon, level / cap.
+  - **Armour**: a stat row **below Defence**: the armour icon (tooltip: Armour and the armour's name), then Deflect,
+    Bruise and Bleed, each after its own icon. No armour shows the unarmoured ratio 0 : 3 : 7 (SU-90). The ledger did
+    not show the ratio before; it now has this row in its right column.
+- Assumption: stat, weapon class and armour icons are held by one asset, `Resources/UI/Game Icons` (`GameIcons`). Any
+  icon left empty falls back to its name as text. Mace and Crossbow have no icon yet and show their names.
+- Assumption: in the tent the icons sit on small dark badges, since they are drawn for a dark background and the ledger
+  is parchment. The tent icon rows are built in code over the existing text fields, so the Tent Hub scene needs no
+  rebuild.
+- Not changed: the ledger's equipment lines, the roster card's "Speed / Morale" detail line and the post-battle unit
+  card still use words.
+
+## 2026-11-05: Weapon special rules as a list; Fire & Engage; unarmoured ratio
+
+### SU-90 Special rules are a list; Piercing / Bludgeoning become special rules; Fire & Engage; renames (Decision + Assumptions, replaces part of SU-89)
+- Decision: a weapon's **special rules are a list** (`WeaponProfile.SpecialRules`), on **melee and ranged** weapons.
+  Each entry is a rule plus a value X, used only by the rules that take one. The rules (§1.6):
+
+  | Rule | Weapons | Effect |
+  |---|---|---|
+  | **Spear Support** (was Boar Spear Support) | Melee | Support range ×`SpearSupportRangeMultiplier` (2) when supporting. |
+  | **Couched Lance** (was Lance Charge Double) | Melee | Total melee damage doubled while charging. |
+  | **Piercing X** | Melee, ranged | +X to the Bleed part of the target's armour ratio for this weapon's hits. |
+  | **Bludgeoning X** | Melee, ranged | +X to the Bruise part of the target's armour ratio for this weapon's hits. |
+  | **Fire & Engage** | Ranged | One volley when the troop enters an engagement and one when it retreats from it. |
+
+  Piercing and Bludgeoning are no longer separate weapon fields (SU-89); they are special rules like Couched Lance.
+- Existing assets: Pike keeps its rule as Spear Support and Lance as Couched Lance (same saved numbers); the other
+  melee weapons have an empty list. The Melee Tuning field is renamed `SpearSupportRangeMultiplier` (the saved value is
+  kept). No weapon has Piercing, Bludgeoning or Fire & Engage yet.
+- Decision: **no armour defaults to 0 : 3 : 7** (Deflect : Bruise : Bleed), so Piercing and Bludgeoning affect
+  unarmoured soldiers. The *Unarmoured* armour asset is also set to 0 : 3 : 7 (its DefenceBonus 4 is unchanged). The
+  troop card shows 0 : 3 : 7 for a character with no armour.
+- Assumption: a soldier with **no armour** still has **no TotalDefence cap**: every point rolls against 0 : 3 : 7, so
+  all of it counts as Shock as before (decision 7). The change is that about 30% now lands as Bruise (heals) instead of
+  Bleed. Seeded scenario tests that use unarmoured characters may need their expectations re-checked.
+- Decision: **Fire & Engage** fires **once at the start of each engagement and once on the retreat**, per engagement
+  (not once per battle):
+  - Start: the frame the troop goes from not engaged to engaged, at the enemy troop it is engaged with (the nearest).
+  - Retreat: when the troop begins a **Case B retreat** (§5.5) while engaged (or the frame after the engagement ended),
+    at the enemy it was engaged with. Once per engagement.
+- Assumption: "retreat" is the morale **Case B retreat** (§5.5). A rout, a chain sympathetic retreat and an ordered
+  move away from a fight do not trigger the retreat volley.
+- Assumption: these volleys ignore the usual limits (stationary, not engaged, not retreating, target not engaged) and the
+  front arc: a shooter needs only its weapon range to the target soldier. Soldiers that are charging also fire. Hit
+  chance and damage are the normal ranged rules. The volleys count toward `Volleys` (and `FireAndEngageVolleys`), raise
+  the normal volley event, and do not change the normal fire cooldown. Outside these two moments a Fire & Engage
+  weapon fires normally.
+- Assumption: a rule on the wrong kind of weapon (Fire & Engage on melee, Spear Support or Couched Lance on ranged) has
+  no effect and logs a warning; repeated Piercing or Bludgeoning entries add up.
+- Tests: `WeaponSpecialRuleTests`, `MitigationResolverTests` (no-armour cases) and
+  `ChainAndRangedScenarioTests.FireAndEngageArchers_FireOnceWhenTheEngagementStarts` (EditMode).
+
+---
+
+## 2026-11-04 (5): Armour resistance as ratios; Piercing and Bludgeoning weapon abilities
+
+### SU-89 Armour Deflect / Bruise / Bleed is a ratio; weapons gain Piercing X and Bludgeoning X (Decision + Assumptions)
+- Decision: armour **Resistance** (§1.6, §4.6) is a **Deflect : Bruise : Bleed ratio** instead of percentages that sum
+  to 100. Each point of damage up to `TotalDefence` rolls Deflect with chance `Deflect / (Deflect + Bruise + Bleed)`,
+  and likewise for Bruise and Bleed. Overflow above `TotalDefence` is unchanged (always Bleed, no Shock).
+- Decision: existing armour keeps its ratio, divided by 10 and **rounded up**:
+
+  | Armour | Was (%) | Now (ratio) |
+  |---|---|---|
+  | Light Armour, Light Armour + Buckler, Light Armour + Shield | 30 / 50 / 20 | 3 : 5 : 2 |
+  | Chainmail | 60 / 30 / 10 | 6 : 3 : 1 |
+  | Mail + Shield | 70 / 25 / 5 | 7 : 3 : 1 |
+  | Unarmoured (asset) | 15 / 45 / 40 | 2 : 5 : 4 |
+
+  Rounding up shifts Mail + Shield (Deflect 70% → 64%, Bleed 5% → 9%) and Unarmoured (Deflect 15% → 18%, Bleed 40% →
+  36%); the others are exact. Spec sample data (§1.6) reads 3 : 5 : 2 for light armour and shield and 6 : 3 : 1 for
+  heavy armour. The Phase 01 data generator uses the same ratios.
+- Decision: two new **weapon abilities**, each with a value X:
+  - **Piercing X:** when rolling damage done by this weapon against armour, the **Bleed** part of the ratio is
+    increased by X (e.g. Piercing 2 against 6 : 3 : 1 rolls as 6 : 3 : 3).
+  - **Bludgeoning X:** when rolling damage done by this weapon against armour, the **Bruise** part of the ratio is
+    increased by X (e.g. Bludgeoning 2 against 6 : 3 : 1 rolls as 6 : 5 : 1).
+- `ArmourProfile` parts are now any whole number ≥ 0 (no 0–100 slider); an armour is invalid only when all three
+  parts are 0 (a warning is logged; if it is used anyway every rolled point is Bleed). The troop card shows armour as
+  `Deflect : Bruise : Bleed`.
+- Assumption: Piercing and Bludgeoning are **fields on every weapon** (`WeaponProfile.Piercing`, `.Bludgeoning`, 0 =
+  none), so both **melee and ranged** weapons can have them, and one weapon may have both. They are separate from the
+  single melee `SpecialRule` (Boar Spear, Lance), so a weapon can carry a special rule as well.
+- Assumption: a melee hit uses the winner's **melee weapon**; a projectile uses the **ranged weapon that fired it**.
+- Assumption: a soldier with **no armour at all** still takes every point as Bleed with no roll (decision 7), so
+  Bludgeoning does not turn that damage into Bruise. A character wearing the *Unarmoured* asset does roll, and the
+  abilities apply.
+- Assumption: no existing weapon has Piercing or Bludgeoning yet (all 0); set them per weapon in the Inspector.
+- Tests: `MitigationResolverTests` (EditMode) updated to ratios, plus ratio scaling, Piercing, Bludgeoning, overflow
+  and all-zero cases.
+
+---
+
+## 2026-11-04 (4): Battle speed bar; orders while paused (Assets/Scripts/Battle/Troop/View/BattleSpeedHud.cs)
+
+### SU-88 Pause and speed controls, with orders allowed while paused (Decision + Assumptions)
+- Decision: a speed bar in the **top-right corner** of the battle screen has four buttons: **Pause**, **½ speed**,
+  **Play** (normal speed) and **2× speed**. The button for the current state is lit (Pause in orange, a speed in
+  blue); hovering a button names it under the bar. It is drawn by `TroopPlayerOrders` (IMGUI, like the troop cards),
+  so every scene with player controls has it: Level 1, Level 2 and Level 1 Troop Test. No scene or prefab changes.
+- Decision: while paused the player can still **move and zoom the camera, select troops and give orders** (§6). Troops
+  carry the orders out when time runs again. (Before, selection and orders were blocked while paused.)
+- `GamePause` now owns the game speed (`GamePause.Speed`, `SetSpeed`): `Time.timeScale` is the speed while nothing
+  holds the pause and 0 while paused. Everything timed by game time (troops, AI, capture points, path rebuilds)
+  speeds up or slows down with it; the camera and HUD run on unscaled time.
+- Assumption: **Pause keeps the speed**; P (or gamepad Start) toggles pause and resumes at that speed. ½, Play and 2×
+  set their speed and resume.
+- Assumption: the bar is **hidden while deploying** (deployment already holds the pause) and once the battle is over.
+  A speed button pressed while a cutscene holds the pause sets the speed but does not end the cutscene's pause.
+- Assumption: every battle starts at normal speed, and leaving the battle scene resets the speed to normal so the
+  campaign scenes are unaffected.
+- The mid-screen **Paused** label no longer blocks clicks (its graphics are made non-raycast at runtime), since orders
+  can be given beneath it.
+- Assumption: 2× speed doubles the simulation step per frame rather than running two steps; no extra stability
+  handling was added. Watch for jitter in large melees at 2× on low frame rates.
+- Tests: `BattleSpeedTests` (EditMode).
+
+---
+
+## 2026-11-04 (3): Default troops on the battle report; sprite defaults removed
+
+### SU-86 Level default troops live in BattleReport.DeployedTroops (Decision, replaces part of SU-84)
+- Decision: `BattleReport.DeployedRoster` is renamed **DeployedTroops**, and it is the only list the deployment zone
+  deploys (`DeploymentZone.TroopSource`, set by `RosterTroops`). The zone's **Default Troops** field is removed.
+- Each level scene's **DataManager** holds that level's default troops in its BattleReport's Deployed Troops. Played
+  from the campaign, the persistent DataManager's report (filled from the tent's characters) is used and the level's
+  own DataManager is destroyed, so the chosen roster overrides the defaults with no extra logic.
+- `BattleReport` resolves to the scene's own report if read before any report has woken up, so the zone can read
+  it from its Awake when a level is played on its own.
+- Assumption: a report with no troops deploys none.
+- The setup tool moves the zone's old Default Troops (Level 1: Julian's, Bandit and Franz's Troop; Level 2: Julian's,
+  Franz's, Jagen's and Robin's Troop) onto each level's DataManager.
+
+### SU-87 Troop Profile Sprite Defaults removed (Decision)
+- The `TroopProfileSpriteDefaults` script and its **Troop Profile Sprite Defaults** objects (Level 1, Level 2, Level 1
+  Troop Test) are removed as redundant. `CharacterProfile.SetSpriteIfMissing` stays (`TroopSoldierShowcase` uses it).
+
+---
+
+## 2026-11-04 (2): Deployment phase (Assets/Scripts/Battle/Controller/DeploymentZone.cs)
+
+### SU-81 Optional deployment phase that pauses the battle (Decision + Assumptions)
+- Decision: `Battle` has **Deployment** (Inspector, default on). With it, the battle opens in the **Deployment** phase:
+  the battle simulation is paused (time stands still) and the player places troops inside the deployment zone. The
+  **Start Battle** button (`Battle.StartBattle`) ends the phase and the fighting begins (`Deploy` event, then
+  `PhaseChanged`). `Battle.Phase` is Deployment, Fighting or Over.
+- Decision: the **enemy AI starts with the scene** (`AIDirector` Begin On Start), not on Deploy (supersedes SU-76's
+  Deploy wiring). It gives its first orders while paused and acts once time runs.
+- Assumption: a battle with Deployment on but **no deployment zone for the player army** starts fighting at once (the
+  Level 1 Troop Test scene, the CLI smoke test).
+- Assumption: battle time (`ElapsedTime`, the report's time taken) counts only fighting time.
+- Decision: pausing is shared (`Misc/GamePause.cs`): deployment, the player's pause key (P) and cutscenes each hold the
+  pause, and time runs only when all have released it, so a cutscene ending cannot cut deployment short. P does
+  nothing while deploying.
+- Clicks on UI (the Start Battle button) are no longer read as selection or orders.
+
+### SU-82 Placing troops during deployment (Decision + Assumptions)
+- Decision: while deploying, the player's usual order gestures **place** troops instead of marching them: select, then
+  right-click (Move) or right-drag (Line) and each troop is put straight at its planned spot with that facing and line
+  length (`Troop.PlaceAt`). Attack orders do nothing while deploying.
+- Assumption: a spot outside the zone is **moved inside it**, keeping the whole troop (its blob radius) in the zone
+  where the zone is big enough. Troops placed on top of one another are not separated.
+- Assumption: placed soldiers keep their blob around the pivot while paused and form the line once the battle runs.
+
+### SU-83 Deployment zone prefab refactored (Decision)
+- The prefab is renamed **Deployment Zone** (same GUID; scenes keep their instances). Its component is now
+  `DeploymentZone` (`Battle/Controller`, the old `DeployUnitFromBattleReport` script moved and rewritten). The area is
+  the object's unit square (scale it); the sprite shows it only while deploying. The old drag-and-drop
+  `BoxCollider2D` and `Rigidbody2D` are removed, and the zone no longer needs hiding through the Deploy event.
+- At scene start the zone spawns one troop per profile (from the Troop prefab) under its army, in rows inside the area,
+  facing the enemy army. Fields: Army, Team Id, **Default Troops**, Troop Prefab, Gap.
+
+### SU-84 Deployed roster is a list of troops; level default troops (Decision + Assumptions)
+- Decision: `BattleReport.DeployedRoster` (now **DeployedTroops**, SU-86) is a list of **TroopProfile** assets: the troops the next battle
+  deploys. The tent's chosen characters move to `BattleReport.DeployedCharacters` (gold, XP and achievements still
+  follow characters), and `RosterTroops` rebuilds `DeployedRoster` from them whenever a character is deployed or
+  withdrawn.
+- Decision: each level's zone has **Default Troops**, deployed when no roster was chosen in battle preparation (a
+  level played on its own). A chosen roster replaces them.
+- Assumption: a character's troop is the troop asset in `Resources/Troop and Character Profiles/Characters/Campaign`
+  made of that character alone (Franz's, Jagen's, Julian's and Robin's Troop). Characters without one (Brom, Gareth,
+  Lyra, Richter) get a runtime troop of radius 5.
+- Level defaults set by the setup tool: **Level 1** = the three player troops that were placed in the scene (Julian's
+  Troop, Bandit Troop, Franz's Troop), which are removed from the scene and now spawn from the zone; **Level 2** (no
+  placed player troops) = Julian's, Franz's, Jagen's and Robin's Troop.
+
+### SU-85 Setup tool (Decision)
+- **Leveraged Wars > Battle > Set Up Deployment (Levels 1 and 2)** makes the prefab changes above, adds the
+  **Deployment Panel** (hint text and Start Battle button, `DeploymentPanel`) to the battle Canvas prefab, and in each
+  level turns Deployment on, fills the zone's defaults, clears the old Deploy event calls (missing targets, the zone
+  hiding itself, `AIDirector.BeginBattle`) and sets the enemy AI to start with the scene, then saves the scenes.
+
+---
+
+## 2026-11-04 (1): Mission 1 enemy AI in Level 1 (Assets/Scripts/Battle/AI/Editor/Mission1Setup.cs)
+
+### SU-76 Mission 1 AI set up by a tool (Decision + Assumptions)
+- Decision: **Leveraged Wars > AI > Set Up Mission 1 (Level 1)** builds the Mission 1 AI in Level 1: an `EnemyAI`
+  object (`BattleAIBattlefield`, `AIDirector`, `AIMission`, `AIDebugOverlay`), its markers under `EnemyAI/Markers`,
+  the detachments and the triggers of the AI README §3. Running it again keeps existing markers where they are and
+  rebuilds the AI settings.
+- Detachments: **Archers** (the archer, Skirmish: fallback `ArcherFallback`, minimum range 7, at most 30 from the
+  fallback), **Guards** (Alpha and Beta, Guard: aggro 10, leash 16), **Cavalry** (Cav, Hold at its start: aggro 8,
+  leash 12). Triggers: **CavalryLoop** (a player troop crosses `LureLine` → Cavalry Flank the rearmost player troop
+  via `CavalryRoute1`, `CavalryRoute2`) and **GuardsAdvance** (Archers broken → Guards Advance).
+- Assumption: marker placement for the Level 1 map: `ArcherFallback` (-2.5, 18.5) just behind the gap between the
+  guards; `LureLine` across the field at y = -2, firing northwards; `CavalryRoute1` (-35.5, -14) in the gap south of
+  the river's end; `CavalryRoute2` (-33, -21) south-west of the player's deployment line.
+- Assumption: the archer's minimum range is **7** (README: 6) because Level 1's archer has a Short Bow (range 10, so
+  it stands at 8.5); 6 would let a chaser reach it. The cavalry's aggro and leash are **8 / 12** (README: 4 / 7) so it
+  fights back if a player troop finds it.
+- Decision: `AIDirector` starts on Battle's **Deploy** event (Begin On Start unticked), so the AI waits during
+  deployment.
+
+### SU-77 Guards guard the archer's fallback point (Decision, change to AI README §3)
+- Found in play: guarding the **Archers detachment** sent the guards after every player troop the archer harassed,
+  out to their leash and back. The Guards now guard the `ArcherFallback` marker, so they wait at their post and
+  intercept what follows the archer back to them, as in the Mission 1 plan.
+
+### SU-78 Rout mission: the battle is won at over half the enemy troops (Decision + Assumptions)
+- Decision: `Rout` gains **Rout Share**: the battle ends when more than that share of the army's troops are out
+  (routed or wiped out). 1 (the default) keeps the old rule, every troop. Level 1's enemy-army rout uses **0.5**: rout
+  or destroy over half the enemy army (3 of its 4 troops) to win.
+- Assumption: the **player's loss** in Level 1 is unchanged (every player troop out). Set its Rout Share to 0.5 too if
+  the rule should apply to both sides.
+- Assumption: the share counts **troops**, not soldiers, and a troop that routed and left the field still counts
+  towards the total.
+
+### SU-79 Thrown weapons do not make a troop ranged for the AI (Decision)
+- Found while setting up Mission 1: Level 1's Bandits carry Throwing Axes (range 3), so the AI treated the two
+  guarding infantry as ranged troops; ranged troops never charge in Guard and Hold, so they would have stood and
+  thrown instead of intercepting.
+- `TroopAIAdapter.IsRanged` is now true only for a troop with a living soldier carrying a **Bow or Crossbow**.
+  Javelin-class weapons (javelin, pilum, throwing axe) are thrown by infantry before contact: the AI orders those
+  troops as melee, and their `RangedFireController` still throws by itself.
+
+### SU-80 Flank skips an unreachable waypoint (Assumption)
+- A Flank route waypoint is skipped, with a console warning, when the detachment gets no closer to it for **4 s**
+  (Flank: Waypoint Stuck Seconds), e.g. a marker placed off the walkable ground. Previously the cavalry waited there
+  for ever.
+
+---
+
+## 2026-11-03 (2): Pathing, map edges and pursuit facing (bug fixes)
+
+### SU-73 Troops path around terrain on the NavMesh (Decision + Assumptions)
+- Decision (bug: troops did not path around the river): `NavPathfinder` snaps the troop pivot (within 6 units) and the
+  destination (within 25 units) onto the NavMesh before planning. A straight line is used only when both
+  `NavMesh.Raycast` and the troop-sized terrain box cast are clear; otherwise `NavMesh.CalculatePath` is used. Spec
+  §3.2 Pathing.
+- Found while fixing: **Level 1's NavMeshSurface has no baked NavMesh assigned** (`m_NavMeshData` is empty on the
+  `==========MAP====================` object; the Level 1 Troop Test scene has one). Without a NavMesh no route could
+  be planned, so a blocked order did nothing. Bake the surface in Level 1.
+- Assumption: with no NavMesh under the troop the path falls back to a straight line and logs one warning per troop;
+  terrain then stops the pivot (SU-74).
+- Assumption: a Move or line-order march whose path ends short of the destination (destination off the NavMesh, or no
+  route) completes where the path ends, instead of staying in Column for ever. Pursuit keeps replanning.
+
+### SU-74 Troop pivots stay off terrain and on the map (Decision + Assumptions)
+- Decision (bug: troops ran off the map edge, seen when pursuing routing troops): every pivot movement (march, line
+  push, retreat slip, rout flight, `ShiftPivot`) is limited each frame by `Troop.ConstrainPivotStep`:
+  - the **battlefield edge** is the bounding rectangle of the scene's NavMesh (`BattlefieldBounds`), inset by the blob
+    radius (`BlobRadiusScale × TroopRadius`) so soldiers stay on the map. Level 2 has no boundary walls and relies on
+    it;
+  - the pivot is **clipped against terrain colliders** (the troop's obstacle mask: Terrain, Water, Water/flat
+    impassible terrain), so boundary walls and rivers stop it; the rest of the step slides along the obstacle.
+- Assumption: **routed troops do not leave the map**: they run along the edge until they despawn after
+  `RoutDespawnSeconds`, and can be caught there. Previously soldiers were carried across terrain with the pivot.
+- Assumption: a pivot already inside a collider is let out (2D physics queries that start in a collider ignore it).
+
+### SU-75 A pursuer squares up to the face it attacks (Decision + Assumption)
+- Decision (bug: the pursuing troop did not align to the enemy when engaging): a troop with a Pursue order whose target
+  is within S_Distance takes its threat heading from that target alone (not the weighted blend of nearby enemies). The
+  heading runs from the direction to the target's pivot at S_Distance to square with the attacked face at A_Distance:
+  facing against the target's Front, flank or Rear normal, so the lines meet parallel. A target without a line is
+  faced pivot to pivot. Spec §3.3, §4.1.
+- Decision: the engaged **facing lock is lifted for a pursuer engaged with its target**, so it finishes turning
+  (heading smoothing, 0.8 s) after contact. It still applies while the pursuer is engaged only with other enemies, and
+  to every troop without a Pursue order.
+- Assumption: the attacked face is classified as for flanking (`FaceClassifier`), so a pursuer that hits a line's flank
+  aligns with that flank.
+
+---
+
+## 2026-11-03 (1): Player troops in Level 1 on the player team (Assets/Resources/Levels/Level 1/Level 1.unity)
+
+### SU-72 Level 1 player troops set to team 0 (Decision)
+- Decision: the three troops under `PLAYER ARMY` in Level 1 now override `Troop._teamId` to `0`. They are instances of
+  `Assets/Prefabs/Battle/Troop.prefab`, whose default is `1`, so they were on the enemy team: `TroopPlayerOrders`
+  (player team 0) could not select or order them, and the AI (`TroopAIAdapter.PlayerTeamId` 0) counted them as its own.
+
+---
+
+## 2026-11-02 (1): Enemy AI, Basic tier (Missions 1 and 2) (Assets/Scripts/Battle/AI/README.md)
+
+### SU-67 Basic enemy AI added (Decision)
+- Decision: the enemy AI from the *Enemy AI Specification & Plan* is added under `Assets/Scripts/Battle/AI/`
+  (namespace `LeveragedWars.Battle.AI`): `AIDirector` runs a commander (`AIMission`, the Basic tier) that gives each
+  **Detachment** a **Formation** (Hold, Guard, Skirmish, Support fire, Advance, Flank, Capture, Fall back) and changes
+  them with authored triggers. Troops follow their formation's order plus reflexes. Setup and the Mission 1 and 2
+  configurations are in the AI folder's README.
+- Code names follow the glossary: the AI README's `AISquadDefinition` / `SquadTaskDefinition` / `ISquadTask` are
+  `Detachment`, `FormationDefinition` and `Formation`. Its Planning and Analysis folders are left for the Advanced tier.
+- The top layer is pluggable: `AIDirector` drives any `IAICommander`; the Army Planner will implement the same one.
+- Formations, conditions and actions are authored in the Inspector with `[SerializeReference]` and the MackySoft
+  `SubclassSelector` already in the project.
+
+### SU-68 Changes to the AI spec (Decision)
+- **Fall back takes a position only** (spec edit removing "facing the enemy where possible"). On arrival the formation
+  issues a Hold with a facing.
+- **Anchors can be offset** (side and forward). Mission 2's first-line cavalry holds 10 units to the left of the
+  advancing FirstLine rather than at its start position.
+- **Mission 2 archers stand in front of the second line** (Support fire stand-off −5), matching the Mission 2 plan
+  image. Support fire allows a negative stand-off for this.
+- **Mission 2 bypass trigger** is a Hold at a WallGap marker plus disabling SecondLineGo, instead of a Fall back
+  followed by a Hold.
+
+### SU-69 The AI on the troop system (Decision + Assumptions)
+- Decision: the AI reaches the game only through `IAITroop`, `IAIObjective` and `IAIBattlefield`. The adapters
+  (`TroopAIAdapter`, `CapturePointAIObjective`, `BattleAIBattlefield`) are the only AI code that knows `Troop`,
+  `CapturePoint` and `Battle`. `BattleAIBattlefield` adds them to every troop and capture point in the scene.
+- Decision: the battle is 2D, so the AI works on the XY plane and a facing is the transform's right (red arrow), as
+  `Troop.Facing`. Scene markers are oriented by their red arrow.
+- Order mapping: Hold = `OrderLine` at the position and facing with the natural line length; Move and Fall back =
+  `MoveTo`; Attack and Charge on a melee troop = `Pursue`. A ranged troop told to Attack stands facing the target (and
+  walks to 85% of its range first if the target is beyond 105% of it); `RangedFireController` keeps choosing what to
+  shoot (spec §4.7).
+- Assumption: troops have **one speed**, so the AI's run flag is ignored and an enemy marching at 60% of its Move speed
+  towards a holding troop counts as a charge for the brace reflex.
+- Assumption: there is **no ammunition** yet; a ranged troop can always shoot.
+- Assumption: a **retreating** troop (fault slip) is treated like a routing one: the AI leaves it alone and re-issues
+  its order once it recovers. A routed troop never recovers (spec §5.4).
+- Assumption: a troop is **in melee** when it is engaged or has soldiers in melee; its melee opponent is
+  `Troop.EngagedEnemy`.
+- Assumption: a troop is on the AI team when it is under `Battle.enemy`; troops under neither army use team id 0 = player.
+- Assumption: a line order holds the troop's facing, so the AI's facing is kept while holding. To confirm in play: the
+  troop's own threat facing may turn it instead.
+
+### SU-70 Capture points report contest and radius (Assumption)
+- `CapturePoint` gains `IsContested` (both armies had living soldiers inside at the last count) and `Radius` (the 2D
+  collider's larger half-extent, or the fallback radius without a collider). Behaviour is unchanged.
+- Objective ids: a `CapturePointAIObjective` on the point sets the id (e.g. `Primary`); without one the id is the
+  GameObject's name.
+
+### SU-71 AI behaviour details (Assumptions)
+- **Distances are in world units** (troop radius 3–8, bow range 10–20). The AI plan's metre values are scaled down by
+  about 3.5; all are Inspector values to tune in play.
+- Troops are only re-ordered when the order changes, with tolerances of 0.75 units and 12°.
+- **Engaged** means the formation reports Engaged, any troop is in melee, or a ranged troop is shooting.
+- **Broken** means the share of troops still fighting is strictly below the threshold, or no troops are left.
+- **Triggers fire on the rising edge** of their condition. A re-enabled trigger fires straight away if its condition
+  already holds.
+- **Reflex priorities:** Fall back is never interrupted; fighting back in melee overrides everything else; ranged
+  troops shoot and others brace only while holding at their position.
+- **Ranged targeting** keeps the current target while it stays valid and within 1.05 × range. Enemies already in melee
+  are never chosen (as Q-39 for the fire controller).
+- **Rearmost opponent** means the opponent furthest from the AI army's centre.
+- **Flank** charges once within charge distance and beside or behind the target. If it starts in front, it first swings
+  out to the nearer side. It charges anyway after a 20 s approach.
+- **Skirmish** resumes harassing once back at the fallback point and the nearest enemy is beyond 1.5 × minimum range. It
+  never stands more than 30 units from the fallback point.
+- **Support fire** archers shoot only once at their slot, not while moving to keep up.
+- **Capture** holds the objective once taken; this is also the Mission 2 bandit's behaviour after capture, until that
+  open question is settled. A detachment of several troops lines up on the objective, so the outer troops may stand
+  outside the point.
+
+---
+
 ## 2026-11-01 (12): Legacy Unit/Model system removed (Docs/Battle/Plan/11-legacy-removal.md)
 
 ### SU-57 Troops stand alone; the legacy Unit/Model code is deleted (Decision, answers part of Q-49)

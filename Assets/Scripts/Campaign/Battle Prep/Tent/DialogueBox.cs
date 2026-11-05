@@ -1,53 +1,51 @@
 using System;
 using System.Collections.Generic;
+using Cutscene;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace BattlePrep.Tent
 {
-    // Fire Emblem-style dialogue box for the tent: speaker name plate, text, one portrait on the left or right
-    // (spec TentHub.md §1 Briefing, §4.5 Court). Plays a Cutscene.DialogueFlow or a single line.
+    // Fire Emblem-style dialogue box for the tent: speaker name plate, text, a portrait on the left and right
+    // (spec TentHub.md §1 Briefing, §4.5 Court). Plays a Cutscene.DialogueFlow (including a DialogueScript written in
+    // markdown) or a single line. The talking portrait is shown at full colour, the other one dimmed.
     // Click / Space / Enter / gamepad South: finish the current line, then advance. Esc / right click / East: skip all.
     // Unlike Cutscene.CutScene it does not touch Time.timeScale or the battle camera.
     public class DialogueBox : MonoBehaviour
     {
-        struct Line
-        {
-            public string Speaker, Text;
-            public Sprite Portrait;
-            public bool Right;
-        }
-
         [SerializeField] GameObject _root;
         [SerializeField] TextMeshProUGUI _speakerName;
         [SerializeField] GameObject _namePlate;
         [SerializeField] TextMeshProUGUI _text;
         [SerializeField] Image _leftPortrait, _rightPortrait;
-        [SerializeField, Min(1f), Tooltip("Characters revealed per second.")] float _revealSpeed = 70f;
+        [SerializeField, Min(1f), Tooltip("Typing speed in words per minute for lines without a <wpm> tag.")]
+        float _defaultWordsPerMinute = 250f;
+        [SerializeField, Tooltip("Tint of the portrait that is not talking.")]
+        Color _dimColor = new Color(0.55f, 0.55f, 0.55f, 1f);
 
-        readonly List<Line> _lines = new();
+        readonly List<DialogueLine> _lines = new();
+        DialogueView _view;
         int _index;
-        float _revealed;
         int _startFrame;
         Action _onComplete;
 
         public bool IsPlaying { get; private set; }
+
+        DialogueView View => _view ??= new DialogueView(_speakerName, _namePlate, _text, _leftPortrait, _rightPortrait,
+                                                        _defaultWordsPerMinute, _dimColor);
 
         void Awake()
         {
             if (!IsPlaying) _root.SetActive(false);
         }
 
-        public void Play(Cutscene.DialogueFlow flow, Action onComplete)
+        public void Play(DialogueFlow flow, Action onComplete)
         {
             _lines.Clear();
             if (flow != null)
-            {
-                flow.Start();
-                for (var d = flow.GetNextScene(); d != null; d = flow.GetNextScene())
-                    _lines.Add(new Line { Speaker = d.CharacterName, Text = d.dialogue, Portrait = d.Portrait, Right = d.leftOrRight });
-            }
+                foreach (var line in flow.GetLines())
+                    if (line != null) _lines.Add(line);
             Begin(onComplete);
         }
 
@@ -55,7 +53,7 @@ namespace BattlePrep.Tent
         {
             _lines.Clear();
             if (!string.IsNullOrEmpty(text))
-                _lines.Add(new Line { Speaker = speaker, Text = text, Portrait = portrait, Right = right });
+                _lines.Add(DialogueLine.Single(speaker, text, portrait, right));
             Begin(onComplete);
         }
 
@@ -70,36 +68,21 @@ namespace BattlePrep.Tent
             IsPlaying = true;
             _startFrame = Time.frameCount;
             _root.SetActive(true);
+            View.Begin();
             ShowLine(0);
         }
 
         void ShowLine(int index)
         {
             _index = index;
-            var line = _lines[index];
-            _speakerName.text = line.Speaker;
-            if (_namePlate != null) _namePlate.SetActive(!string.IsNullOrEmpty(line.Speaker));
-            _text.text = line.Text;
-            _revealed = 0f;
-            _text.maxVisibleCharacters = 0;
-
-            bool hasPortrait = line.Portrait != null;
-            _leftPortrait.enabled = hasPortrait && !line.Right;
-            _rightPortrait.enabled = hasPortrait && line.Right;
-            if (hasPortrait) (line.Right ? _rightPortrait : _leftPortrait).sprite = line.Portrait;
+            View.Show(_lines[index]);
         }
 
         void Update()
         {
             if (!IsPlaying) return;
 
-            int total = _text.textInfo != null && _text.textInfo.characterCount > 0 ? _text.textInfo.characterCount : _text.text.Length;
-            bool fullyShown = _revealed >= total;
-            if (!fullyShown)
-            {
-                _revealed += _revealSpeed * Time.unscaledDeltaTime;
-                _text.maxVisibleCharacters = Mathf.FloorToInt(_revealed);
-            }
+            View.Tick(Time.unscaledDeltaTime);
 
             // Ignore the click / key that started the dialogue.
             if (Time.frameCount == _startFrame) return;
@@ -110,10 +93,9 @@ namespace BattlePrep.Tent
                 return;
             }
             if (!TentInput.AdvancePressed) return;
-            if (!fullyShown)
+            if (!View.FullyShown)
             {
-                _revealed = total;
-                _text.maxVisibleCharacters = int.MaxValue;
+                View.Complete();
                 return;
             }
             if (_index + 1 < _lines.Count) ShowLine(_index + 1);

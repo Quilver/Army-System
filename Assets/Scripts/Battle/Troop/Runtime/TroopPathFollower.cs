@@ -6,6 +6,7 @@ public sealed class TroopPathFollower
 {
     const float WaypointReachedDistance = 0.2f;
     const float TargetMovedSquared = 0.04f;
+    const float ArrivedSquared = 0.0004f;
 
     readonly Troop _troop;
     MovementSystem.IPathfinder _pathfinder;
@@ -57,6 +58,16 @@ public sealed class TroopPathFollower
             results.Add(_path[i]);
     }
 
+    // True once the planned path is used up: there is no route to the destination, or the pivot stands on the last
+    // waypoint. The last waypoint is short of the destination when the destination is off the NavMesh (in water, say),
+    // so the troop ends the order here instead of marching on the spot for ever (SU-73).
+    public bool IsAtEnd(Vector2 position)
+    {
+        if (_invalid || _path == null) return false;
+        if (_path.Count == 0) return true;
+        return _pathIndex >= _path.Count - 1 && (position - _path[_path.Count - 1]).sqrMagnitude <= ArrivedSquared;
+    }
+
     // Returns the displacement to apply this frame, at most maxSpeed * deltaTime along the path.
     public Vector2 Step(Vector2 position, Vector2 destination, float maxSpeed, float deltaTime)
     {
@@ -78,7 +89,9 @@ public sealed class TroopPathFollower
         EnsurePathfinder();
         _pathTarget = destination;
         _path = _pathfinder.GetPath(destination);
-        _pathIndex = _path != null && _path.Count > 1 ? 1 : 0;
+        // Start at the first waypoint: Step skips it when the pivot already stands on it, and walks to it first when the
+        // pivot was off the NavMesh and the path starts at its snapped point.
+        _pathIndex = 0;
         _invalid = false;
         _nextRebuild = Time.time + TroopTuning.Active.PathRebuildIntervalSeconds;
     }

@@ -16,6 +16,8 @@ public sealed class TroopProjectiles
         public float FlightTime;
         public float Age;
         public int Damage;
+        // The weapon that fired it; its Piercing / Bludgeoning apply to the armour roll (SU-89). May be null.
+        public WeaponProfile Weapon;
         public float HitChance;
 
         public Vector2 Position => Vector2.Lerp(From, To, FlightTime > 0f ? Mathf.Clamp01(Age / FlightTime) : 1f);
@@ -27,7 +29,7 @@ public sealed class TroopProjectiles
     public IReadOnlyList<Projectile> Active => _active;
 
     public void Launch(Troop shooter, Vector2 from, Troop targetTroop, SoldierAgentState target, int damage,
-        float hitChance, float speed)
+        float hitChance, float speed, WeaponProfile weapon = null)
     {
         Projectile projectile = _pool.Count > 0 ? _pool.Pop() : new Projectile();
         projectile.Shooter = shooter;
@@ -38,6 +40,7 @@ public sealed class TroopProjectiles
         projectile.FlightTime = Vector2.Distance(from, projectile.To) / Mathf.Max(0.01f, speed);
         projectile.Age = 0f;
         projectile.Damage = damage;
+        projectile.Weapon = weapon;
         projectile.HitChance = hitChance;
         _active.Add(projectile);
     }
@@ -54,6 +57,7 @@ public sealed class TroopProjectiles
             projectile.Shooter = null;
             projectile.TargetTroop = null;
             projectile.Target = null;
+            projectile.Weapon = null;
             _pool.Push(projectile);
         }
     }
@@ -75,7 +79,8 @@ public sealed class TroopProjectiles
         BattleEvents.RaiseProjectileLanded(shooter, targetTroop, hit, targetTroop.WorldPosition(projectile.Target));
         if (!hit) return;
         Vector2 origin = shooter != null ? (Vector2)shooter.transform.position : projectile.From;
-        int applied = targetTroop.ApplyDamage(projectile.Target, projectile.Damage, origin, flanked: false, shooter);
+        int applied = targetTroop.ApplyDamage(projectile.Target, projectile.Damage, origin, flanked: false, shooter,
+            projectile.Weapon);
         if (shooter != null) shooter.MeleeMetrics.RecordDamageDone(applied);
         targetTroop.MeleeMetrics.RecordDamageReceived(applied);
     }

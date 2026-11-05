@@ -3,7 +3,7 @@ using UnityEngine;
 // Resolves one clash between two opposing soldiers in contact (spec §4.5, §4.6):
 //   knock-back on both, then a duel on Combat Power: P_A = CP_A / (CP_A + CP_B), roll R in [0, 100], A wins when
 //   R <= P_A x 100. The winner deals Strength + weapon damage + Domination, Domination = round(|R - P_A%| / 10),
-//   doubled for a charging Lance bearer. The damage goes through the target's armour (MitigationResolver).
+//   doubled for a charging Couched Lance bearer. The damage goes through the target's armour (MitigationResolver).
 //   A is the charger; if both charge, the earlier charge; if neither, the lower soldier id (Q-28).
 //   A soldier fighting an enemy on its troop's flank or rear gets no support, and the Shock it takes is x3 (spec §4.8).
 //   A clash ends any charge of either soldier, and both soldiers start their clash cooldown.
@@ -79,10 +79,11 @@ public sealed class DuelResolver
     {
         CharacterProfile profile = winner.Soldier.Character;
         if (profile == null || winner.Troop.State == TroopState.Fleeing) return;
-        bool lanceDouble = profile.HasLance && winner.Soldier.IsCharging;
+        bool lanceDouble = profile.HasCouchedLance && winner.Soldier.IsCharging;
         int raw = DamageRules.RawDamage(profile.Strength, profile.MeleeWeaponDamage, domination, lanceDouble);
         if (raw <= 0) return;
-        int applied = loser.Troop.ApplyDamage(loser.Soldier, raw, winner.Troop.transform.position, loserFlanked, winner.Troop);
+        int applied = loser.Troop.ApplyDamage(loser.Soldier, raw, winner.Troop.transform.position, loserFlanked,
+            winner.Troop, profile.MeleeWeapon);
         winner.Troop.MeleeMetrics.RecordDamageDone(applied);
         loser.Troop.MeleeMetrics.RecordDamageReceived(applied);
         if (applied > 0)

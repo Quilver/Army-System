@@ -44,7 +44,7 @@ For the rules, see `specifications.md` (v0.9). For decisions and working assumpt
 | `Pressure/` | `TroopSegmentPressureRules`, `FriendlyOverlapResolver`, `AlliedLinkTension`, `SegmentGeometry`. |
 | `Soldiers/` | `SoldierSteering`, `SoldierFieldPlanner` (+ `FieldShape`), `SoldierSpatialGrid`, `SoldierMotionConstraints`. |
 | `Input/` | `TroopPlayerOrders`, `TroopSelection`, `TroopOrderPlanner`, `TroopOrderOverlay`, `TroopScreenSpace`, `OrderClassifier` (+ `OrderKind`), `ChainOrderRules`. |
-| `View/` | `TroopSoldierViews`, `ProjectileView`, `TroopVisualiser`, `SoldierFacingAnimator`, `ClashPulseView`, `SoldierSpriteLibrary`, `TroopSoldierShowcase`, `TroopProfileSpriteDefaults`. |
+| `View/` | `TroopSoldierViews`, `ProjectileView`, `TroopVisualiser`, `SoldierFacingAnimator`, `ClashPulseView`, `SoldierSpriteLibrary`, `TroopSoldierShowcase`. |
 | `Diagnostics/` | `TroopDebugOverlay`, `TroopDebugSnapshot` (now in its own file, D-40). |
 | `Editor/` | `TroopEditor`, `TroopModuleEditors` (roster, formation, morale), `Phase01DataGenerator`, `TroopCliSmoke`, `Tests/`. |
 
@@ -233,9 +233,10 @@ in Edit mode at a fixed frame time.
 
 ## 10. Scenes
 
-- `Level 1` and `Level 2`: real battles. Enemy troops are placed in the scene; the player's troops are spawned from the
-  roster deployed in the pre-battle tent (`DeployUnitFromBattleReport`, SU-60). Each has `TroopCombatWorld`,
-  `TroopPlayerOrders`, `TroopProfileSpriteDefaults` and the battle sounds.
+- `Level 1` and `Level 2`: real battles. Enemy troops are placed in the scene; the player's troops are spawned by the
+  `DeploymentZone` from `BattleReport.DeployedTroops`: the level's defaults on its own DataManager, or the roster
+  deployed in the pre-battle tent (SU-84, SU-86). Each has `TroopCombatWorld`, `TroopPlayerOrders` and the battle
+  sounds.
 - `Level 1 Troop Test.unity`: Level 1 with seven placed troops (no roster needed), `TroopDebugOverlay` and the CLI smoke
   test scene. Not in Build Settings.
 - All scenes are text-serialized (Force Text).

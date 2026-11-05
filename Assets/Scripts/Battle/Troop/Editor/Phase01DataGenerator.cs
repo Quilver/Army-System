@@ -115,22 +115,22 @@ public static class Phase01DataGenerator
         RangedBaseline("Throwing Axe", WeaponClass.Javelin),
         Melee("Pike", WeaponClass.Spear),
         Melee("Arming Sword", WeaponClass.Sword),
-        // Spec §1.6 Lance: damage 3, charge bonus 8, double damage while charging.
+        // Spec §1.6 Lance: damage 3, charge bonus 8, Couched Lance (double damage while charging).
         Melee("Lance", WeaponClass.Spear, damage: 3, chargeBonus: 8,
-            special: WeaponSpecialRule.LanceChargeDouble, provisional: false),
+            special: WeaponSpecialRule.CouchedLance, provisional: false),
     };
 
     // Light armour and Heavy armour are the spec §1.6 samples. Every other armour is mapped to the nearest sample and
     // is provisional (Questions.md Q-54). Chainmail + Shield uses the 60/30/10 split from Q-6.
     static readonly ArmourDef[] Armours =
     {
-        new ArmourDef { Name = "Light Armour", Deflect = 30, Bruise = 50, Bleed = 20, DefenceBonus = 4 },
-        new ArmourDef { Name = "Light Armour + Buckler", Deflect = 30, Bruise = 50, Bleed = 20, DefenceBonus = 4 },
-        new ArmourDef { Name = "Light Armour + Round Shield", Deflect = 30, Bruise = 50, Bleed = 20, DefenceBonus = 4 },
-        new ArmourDef { Name = "Thick Furs", Deflect = 30, Bruise = 50, Bleed = 20, DefenceBonus = 4 },
-        new ArmourDef { Name = "Padded Vest", Deflect = 30, Bruise = 50, Bleed = 20, DefenceBonus = 4 },
-        new ArmourDef { Name = "Chainmail + Shield", Deflect = 60, Bruise = 30, Bleed = 10, DefenceBonus = 7 },
-        new ArmourDef { Name = "Heavy Mail + Shield", Deflect = 60, Bruise = 30, Bleed = 10, DefenceBonus = 7 },
+        new ArmourDef { Name = "Light Armour", Deflect = 3, Bruise = 5, Bleed = 2, DefenceBonus = 4 },
+        new ArmourDef { Name = "Light Armour + Buckler", Deflect = 3, Bruise = 5, Bleed = 2, DefenceBonus = 4 },
+        new ArmourDef { Name = "Light Armour + Round Shield", Deflect = 3, Bruise = 5, Bleed = 2, DefenceBonus = 4 },
+        new ArmourDef { Name = "Thick Furs", Deflect = 3, Bruise = 5, Bleed = 2, DefenceBonus = 4 },
+        new ArmourDef { Name = "Padded Vest", Deflect = 3, Bruise = 5, Bleed = 2, DefenceBonus = 4 },
+        new ArmourDef { Name = "Chainmail + Shield", Deflect = 6, Bruise = 3, Bleed = 1, DefenceBonus = 7 },
+        new ArmourDef { Name = "Heavy Mail + Shield", Deflect = 6, Bruise = 3, Bleed = 1, DefenceBonus = 7 },
     };
 
     // Level 1 characters from the designer's sheets (Decisions D-01). Level is not stored: all sheets are Level 1.
@@ -257,7 +257,9 @@ public static class Phase01DataGenerator
             else
             {
                 MeleeWeaponProfile fresh = MeleeWeaponProfile.CreateRuntimeProfile(
-                    def.Name, def.Class.ToMeleeClass(), def.Damage, def.ChargeBonus, def.Special, def.Provisional);
+                    def.Name, def.Class.ToMeleeClass(), def.Damage, def.ChargeBonus,
+                    def.Special == WeaponSpecialRule.None ? null : new[] { new WeaponSpecialRuleEntry(def.Special) },
+                    def.Provisional);
                 weaponAssets[def.Name] = CreateOrUpdate(weaponPath, fresh);
             }
         }

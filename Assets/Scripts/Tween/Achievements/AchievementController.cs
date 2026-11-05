@@ -25,11 +25,11 @@ namespace AchievementSystem
                 _achievementsPC.Add(CharacterAchievement.CreateCustom(achievement));
             foreach (CustomGlobalAchievement achievement in _CustomGlobalAchievements)
                 _GlobalAchievements.Add(GlobalAchievement.CreateCustom(achievement));
-            // Wait a frame so deployment has spawned the roster's troops.
+            // Wait a frame so the deployment zone has spawned the roster's troops (it spawns them in Awake).
             yield return null;
 
             if (BattleReport.Exists && Battle.Instance != null)
-                foreach (RosterCharacter character in BattleReport.DeployedRoster)
+                foreach (RosterCharacter character in BattleReport.DeployedCharacters)
                 {
                     Troop troop = TroopOf(character);
                     if (troop == null || character.character == null) continue;

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-// Keeps soldiers inside the troop radius and stops them moving through terrain obstacles.
+// Keeps soldiers inside the troop radius and stops them, and the troop pivot, moving through terrain obstacles.
 public sealed class SoldierMotionConstraints
 {
     const float CollisionSkin = 0.005f;
@@ -8,6 +8,7 @@ public sealed class SoldierMotionConstraints
     readonly LayerMask _obstacleMask;
     readonly ContactFilter2D _obstacleFilter;
     readonly RaycastHit2D[] _obstacleHits = new RaycastHit2D[4];
+    readonly RaycastHit2D[] _pivotHits = new RaycastHit2D[4];
 
     public SoldierMotionConstraints(Troop troop, LayerMask obstacleMask)
     {
@@ -97,6 +98,52 @@ public sealed class SoldierMotionConstraints
             worldVelocity -= obstacleHit.normal * intoObstacle;
         velocity = transform.InverseTransformVector(worldVelocity);
         nextPosition = transform.InverseTransformPoint(end);
+    }
+
+    // Clips a pivot displacement so the pivot does not cross terrain obstacles (rivers, woods, the map's boundary walls),
+    // and slides the rest of the step along the obstacle (SU-74). Soldiers are placed relative to the pivot, so a pivot
+    // that crossed terrain would carry the whole troop across it. A pivot that already stands inside an obstacle is let
+    // out: queries that start inside a collider ignore it (Physics 2D 'Queries Start In Colliders' is off).
+    public Vector2 ClipPivotStep(Vector2 start, Vector2 delta)
+    {
+        if (_obstacleMask.value == 0 || delta.sqrMagnitude <= 1e-12f) return delta;
+        if (!CastPivot(start, delta, out Vector2 moved, out Vector2 normal)) return delta;
+
+        Vector2 rest = delta - moved;
+        Vector2 slide = rest - normal * Vector2.Dot(rest, normal);
+        if (slide.sqrMagnitude > 1e-12f)
+        {
+            CastPivot(start + moved, slide, out Vector2 slid, out _);
+            moved += slid;
+        }
+        return moved;
+    }
+
+    // Moves a point along delta until the first blocking obstacle. Returns true when it was blocked.
+    bool CastPivot(Vector2 start, Vector2 delta, out Vector2 moved, out Vector2 normal)
+    {
+        moved = delta;
+        normal = Vector2.zero;
+        float distance = delta.magnitude;
+        if (distance <= 0.0001f) return false;
+
+        Vector2 direction = delta / distance;
+        int hitCount = Physics2D.Raycast(start, direction, _obstacleFilter, _pivotHits, distance);
+        int closest = -1;
+        float closestDistance = float.PositiveInfinity;
+        for (int i = 0; i < hitCount; i++)
+        {
+            RaycastHit2D candidate = _pivotHits[i];
+            if (candidate.collider == null || candidate.distance >= closestDistance) continue;
+            if (candidate.distance <= 0.0001f && Vector2.Dot(direction, candidate.normal) >= 0f) continue;
+            closest = i;
+            closestDistance = candidate.distance;
+        }
+        if (closest < 0) return false;
+
+        normal = _pivotHits[closest].normal;
+        moved = direction * Mathf.Max(0f, closestDistance - CollisionSkin);
+        return true;
     }
 
     // Nearest hit, ignoring obstacles the soldier is already overlapping but moving away from.

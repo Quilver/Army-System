@@ -74,7 +74,8 @@ namespace BattlePrep.Tent
             else if (_preparationData.Count > 0) Data = _preparationData[Mathf.Clamp(level - 1, 0, _preparationData.Count - 1)];
             else if (_sample != null && _sample.mission != null) Data = _sample.mission;
             else Debug.LogError("Tent: no PreparationData assigned on TentHubController.", this);
-            BattleReport.DeployedRoster = new();
+            BattleReport.DeployedCharacters = new();
+            BattleReport.DeployedTroops = new();
             EnsureRoster();
 
             foreach (var panel in AllPanels())

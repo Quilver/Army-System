@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: Unarmoured
   m_EditorClassIdentifier: 
   _displayName: Unarmoured
-  _deflect: 15
-  _bruise: 45
-  _bleed: 40
+  _deflect: 0
+  _bruise: 3
+  _bleed: 7
   _defenceBonus: 4
   _provisional: 1

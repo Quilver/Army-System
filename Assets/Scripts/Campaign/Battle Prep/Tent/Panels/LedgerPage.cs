@@ -8,14 +8,40 @@ namespace BattlePrep.Tent
 {
     // One page of the Roster Ledger: one character (spec TentHub.md §4.2, SU-54). Shows class, level and XP, soldier
     // stats against their class caps, weapon skills, equipment and cost to field.
+    // Stats, the class and weapon skills are shown by their icons (SU-91), each naming itself in the tooltip on hover;
+    // the Armour row (Deflect : Bruise : Bleed, each after its icon) sits below Defence. The icon rows are built at
+    // runtime over the scene's text fields, which are hidden. A missing icon falls back to its name as text.
     public class LedgerPage : MonoBehaviour
     {
+        const float StatRowHeight = 22f;     // six rows fill the 132 px stat columns
+        const float StatIconSize = 18f;
+        const float SkillIconSize = 20f;
+        const float ClassIconSize = 26f;
+        const float IconSpacing = 5f;
+        const float GroupGap = 10f;          // between the weapon skills, and between the armour ratio parts
+        const string CapColor = "#8a7a62";
+
+        static readonly CharacterStat[] LeftStats =
+            { CharacterStat.Numbers, CharacterStat.MaxHealth, CharacterStat.Morale, CharacterStat.Discipline, CharacterStat.Speed };
+        static readonly CharacterStat[] RightStats =     // Armour goes after Defence (index 0)
+            { CharacterStat.Defence, CharacterStat.Strength, CharacterStat.Support, CharacterStat.Charge, CharacterStat.Aggression };
+
         [SerializeField] GameObject _content;
         [SerializeField] TextMeshProUGUI _empty, _pageNumber;
         [SerializeField] Image _portrait;
         [SerializeField] TextMeshProUGUI _name, _class, _level;
         [SerializeField] RectTransform _xpFill;
         [SerializeField] TextMeshProUGUI _statsLeft, _statsRight, _skills, _equipment, _footer;
+
+        // Built by BuildIcons.
+        bool _iconsBuilt;
+        IconBadge _classBadge;
+        IconText[] _leftStats, _rightStats;
+        IconText _armour;
+        IconText[] _armourParts;   // Deflect, Bruise, Bleed
+        TextMeshProUGUI _skillsHeader;
+        Transform _skillsRow;
+        readonly List<IconText> _skillParts = new();
 
         public void ShowEmpty(int pageNumber)
         {
@@ -39,43 +65,125 @@ namespace BattlePrep.Tent
             _portrait.sprite = c.Portrait;
             _portrait.enabled = c.Portrait != null;
             _name.text = c.CharacterName;
-            _class.text = c.ClassName;
+            BuildIcons();
+            _class.text = _classBadge.Set(c.ClassIcon, c.ClassName) ? "" : c.ClassName;
             _level.text = $"Level {roster.level}   ·   {roster.xp}/{RosterCharacter.XpPerLevel} XP";
             _xpFill.anchorMax = new Vector2(roster.XpFraction, 1f);
 
-            _statsLeft.text = string.Join("\n",
-                Stat("Soldiers", c.Numbers, c.CapFor(CharacterStat.Numbers)),
-                Stat("HP", c.MaxHealth, c.CapFor(CharacterStat.MaxHealth)),
-                Stat("Morale", c.Morale, c.CapFor(CharacterStat.Morale)),
-                Stat("Discipline", c.Discipline, c.CapFor(CharacterStat.Discipline)),
-                Stat("Speed", c.Speed, c.CapFor(CharacterStat.Speed)));
-            _statsRight.text = string.Join("\n",
-                Stat("Defence", c.Defence, c.CapFor(CharacterStat.Defence)),
-                Stat("Strength", c.Strength, c.CapFor(CharacterStat.Strength)),
-                Stat("Support", c.Support, c.CapFor(CharacterStat.Support)),
-                Stat("Charge", c.Charge, c.CapFor(CharacterStat.Charge)),
-                Stat("Aggression", c.Aggression, c.CapFor(CharacterStat.Aggression)));
-
-            var skills = new List<string>();
-            foreach (var skill in c.WeaponSkills)
-                skills.Add($"{skill.Class} <b>{skill.Level}</b><color=#8a7a62>/{c.CapFor(skill.Class)}</color>");
-            _skills.text = "<b>Weapon skills</b>   " + (skills.Count > 0 ? string.Join("   ·   ", skills) : "none");
+            for (int i = 0; i < LeftStats.Length; i++)
+                SetStat(_leftStats[i], LeftStats[i], StatValue(c, LeftStats[i]), c.CapFor(LeftStats[i]));
+            for (int i = 0; i < RightStats.Length; i++)
+                SetStat(_rightStats[i], RightStats[i], StatValue(c, RightStats[i]), c.CapFor(RightStats[i]));
 
             var eq = c.Equipment;
             var melee = eq?.MeleeWeapon;
             var ranged = eq?.RangedWeapon;
             var armour = eq?.Armour;
+            SetArmour(armour);
+            SetSkills(c);
+
             _equipment.text = string.Join("\n",
                 melee != null ? $"<b>Melee</b>   {melee.DisplayName} <color=#6b5a45>({melee.Class}, +{melee.Damage} damage, +{melee.ChargeBonus} charge)</color>" : "<b>Melee</b>   none",
                 ranged != null ? $"<b>Ranged</b>   {ranged.DisplayName} <color=#6b5a45>({ranged.Class}, range {ranged.Range:0})</color>" : "<b>Ranged</b>   none",
                 armour != null ? $"<b>Armour</b>   {armour.DisplayName} <color=#6b5a45>(+{armour.DefenceBonus} defence)</color>" : "<b>Armour</b>   none");
 
-            bool deployed = BattleReport.DeployedRoster != null && BattleReport.DeployedRoster.Contains(roster);
+            bool deployed = BattleReport.DeployedCharacters != null && BattleReport.DeployedCharacters.Contains(roster);
             _footer.text = $"Cost to field: <b>{roster.costToField} gold</b>" +
                            (deployed ? "   ·   <color=#3f6212><b>Deployed</b></color>" : "");
         }
 
-        static string Stat(string label, int value, int cap) =>
-            $"{label}<pos=62%><b>{value}</b><color=#8a7a62> / {cap}</color>";
+        static int StatValue(CampaignCharacter c, CharacterStat stat) => stat switch
+        {
+            CharacterStat.Numbers => c.Numbers,
+            CharacterStat.MaxHealth => c.MaxHealth,
+            CharacterStat.Morale => c.Morale,
+            CharacterStat.Discipline => c.Discipline,
+            CharacterStat.Speed => c.Speed,
+            CharacterStat.Defence => c.Defence,
+            CharacterStat.Strength => c.Strength,
+            CharacterStat.Support => c.Support,
+            CharacterStat.Charge => c.Charge,
+            CharacterStat.Aggression => c.Aggression,
+            _ => 0
+        };
+
+        static void SetStat(IconText line, CharacterStat stat, int value, int cap) =>
+            line.Set(GameIcons.For(stat), GameIcons.NameOf(stat), $"<b>{value}</b><color={CapColor}> / {cap}</color>");
+
+        // The armour icon (tooltip: Armour and the armour's name), then Deflect, Bruise and Bleed each after its icon.
+        // No armour shows the unarmoured ratio (SU-90).
+        void SetArmour(ArmourProfile armour)
+        {
+            string name = GameIcons.NameOf(ArmourIcon.Armour);
+            Sprite icon = GameIcons.For(ArmourIcon.Armour);
+            _armour.Set(icon, icon != null ? name + ": " + (armour != null ? armour.DisplayName : "none") : name, "");
+
+            int[] parts =
+            {
+                armour != null ? armour.Deflect : MitigationResolver.UnarmouredDeflect,
+                armour != null ? armour.Bruise : MitigationResolver.UnarmouredBruise,
+                armour != null ? armour.Bleed : MitigationResolver.UnarmouredBleed
+            };
+            for (int i = 0; i < parts.Length; i++)
+            {
+                var part = ArmourIcon.Deflect + i;
+                _armourParts[i].Set(GameIcons.For(part), GameIcons.NameOf(part), $"<b>{parts[i]}</b>");
+            }
+        }
+
+        // "Weapon skills", then each listed skill as its weapon class icon and level / cap.
+        void SetSkills(CampaignCharacter c)
+        {
+            int count = 0;
+            foreach (var skill in c.WeaponSkills)
+            {
+                if (count == _skillParts.Count)
+                    _skillParts.Add(TentIcons.Pair(_skillsRow, "Skill " + count, SkillIconSize, _skills, GroupGap));
+                _skillParts[count].Set(GameIcons.For(skill.Class), GameIcons.NameOf(skill.Class),
+                    $"<b>{skill.Level}</b><color={CapColor}>/{c.CapFor(skill.Class)}</color>");
+                count++;
+            }
+            for (int i = count; i < _skillParts.Count; i++) _skillParts[i].Hide();
+            _skillsHeader.text = count > 0 ? "<b>Weapon skills</b>" : "<b>Weapon skills</b>   none";
+        }
+
+        // Replaces the text stats, class and weapon skills with icon rows over the same places (once per page).
+        void BuildIcons()
+        {
+            if (_iconsBuilt) return;
+            _iconsBuilt = true;
+
+            _classBadge = TentIcons.BadgeAtLeft(_class.transform, "Class Icon", ClassIconSize);
+
+            var left = TentIcons.Overlay(_statsLeft.rectTransform, "Stat Icons Left");
+            _leftStats = new IconText[LeftStats.Length];
+            for (int i = 0; i < LeftStats.Length; i++)
+                _leftStats[i] = TentIcons.Pair(TentIcons.Row(left, LeftStats[i].ToString(), i, StatRowHeight, IconSpacing),
+                    LeftStats[i].ToString(), StatIconSize, _statsLeft);
+            _statsLeft.gameObject.SetActive(false);
+
+            var right = TentIcons.Overlay(_statsRight.rectTransform, "Stat Icons Right");
+            _rightStats = new IconText[RightStats.Length];
+            int row = 0;
+            for (int i = 0; i < RightStats.Length; i++)
+            {
+                _rightStats[i] = TentIcons.Pair(TentIcons.Row(right, RightStats[i].ToString(), row++, StatRowHeight, IconSpacing),
+                    RightStats[i].ToString(), StatIconSize, _statsRight);
+                if (RightStats[i] != CharacterStat.Defence) continue;
+                var armourRow = TentIcons.Row(right, "Armour", row++, StatRowHeight, IconSpacing);
+                _armour = TentIcons.Pair(armourRow, "Armour", StatIconSize, _statsRight, GroupGap);
+                _armourParts = new IconText[3];
+                for (int p = 0; p < 3; p++)
+                    _armourParts[p] = TentIcons.Pair(armourRow, (ArmourIcon.Deflect + p).ToString(), StatIconSize, _statsRight,
+                        p < 2 ? GroupGap : 0f);
+            }
+            _statsRight.gameObject.SetActive(false);
+
+            _skillsRow = TentIcons.Row(TentIcons.Overlay(_skills.rectTransform, "Skill Icons"), "Skills", 0,
+                _skills.rectTransform.sizeDelta.y, IconSpacing);
+            _skillsHeader = TentIcons.Text(_skillsRow, "Header", _skills);
+            TentIcons.Spacer(_skillsRow, "Header Gap", GroupGap);
+            _skills.gameObject.SetActive(false);
+        }
     }
 }

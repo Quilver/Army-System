@@ -18,23 +18,21 @@ MonoBehaviour:
   _portrait: {fileID: 21300000, guid: 8a65abc2676dd674c86f619ea941c5ae, type: 3}
   _soldierSprite: {fileID: 21300000, guid: ce5740be1db96a24495e8aad94d48630, type: 3}
   _numbers: 6
-  _morale: 6
-  _discipline: 6
+  _morale: 8
+  _discipline: 3
   _equipment:
     _meleeWeapon: {fileID: 11400000, guid: 76ed1923294fc734abfb2b665366b723, type: 2}
     _rangedWeapon: {fileID: 0}
-    _armour: {fileID: 11400000, guid: 7d0b31eba84a86f459437aa5b6884d79, type: 2}
+    _armour: {fileID: 11400000, guid: 5a8704daaac3c6c41962da04b681f8c5, type: 2}
     _weapons: []
   _soldierStats:
-    _speed: 9
-    _defence: 5
+    _speed: 10
+    _defence: 6
     _strength: 6
-    _support: 4
-    _charge: 9
-    _aggression: 7
-    _maxHealth: 24
+    _support: 1
+    _charge: 10
+    _aggression: 8
+    _maxHealth: 25
     _weaponSkills:
     - Class: 0
-      Level: 6
-    - Class: 1
-      Level: 5
+      Level: 8

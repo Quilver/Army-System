@@ -35,10 +35,24 @@ public class CapturePoint : MonoBehaviour
     SpriteRenderer _sprite;
     Collider2D _area;
     int _soldierDifference;
+    int _playerSoldiers, _enemySoldiers;
     float _nextCount;
     PointController _controller;
 
     public PointController Controller => _controller;
+    // Both armies have living soldiers inside the point (as of the last count).
+    public bool IsContested => _playerSoldiers > 0 && _enemySoldiers > 0;
+    // Rough radius of the point: the 2D collider's larger half-extent, or the fallback radius without one.
+    public float Radius
+    {
+        get
+        {
+            Collider2D area = _area != null ? _area : GetComponent<Collider2D>();
+            if (area == null) return _radius;
+            Vector3 extents = area.bounds.extents;
+            return Mathf.Max(extents.x, extents.y);
+        }
+    }
 
     void Start()
     {
@@ -79,8 +93,14 @@ public class CapturePoint : MonoBehaviour
     int CountSoldiers()
     {
         Battle battle = Battle.Instance;
-        if (battle == null) return 0;
-        return Count(battle.player) - Count(battle.enemy);
+        if (battle == null)
+        {
+            _playerSoldiers = _enemySoldiers = 0;
+            return 0;
+        }
+        _playerSoldiers = Count(battle.player);
+        _enemySoldiers = Count(battle.enemy);
+        return _playerSoldiers - _enemySoldiers;
     }
 
     int Count(Army army)
