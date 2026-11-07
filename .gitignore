@@ -73,3 +73,7 @@ crashlytics-build.properties
 
 # Unity CLI runner output (Tools/UnityCli)
 /.unity-cli/
+
+# OS and agent clutter
+.DS_Store
+/Claude outputs/
