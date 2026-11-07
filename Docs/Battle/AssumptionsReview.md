@@ -1,6 +1,6 @@
 # Assumptions review
 
-Every Assumption in `SpecificationUpdate.md` (SU-01 to SU-119), grouped by system so they can be confirmed in one sitting. Generated 2026-11-07: 113 assumptions across 119 SU entries.
+Every Assumption in `SpecificationUpdate.md` (SU-01 to SU-127), grouped by system so they can be confirmed in one sitting. Generated 2026-11-07 and updated with SU-120 to SU-127: 132 assumptions across 127 SU entries.
 
 ## How to use this
 
@@ -15,14 +15,14 @@ When a group is done, ask Claude to fold it into `specifications.md`. Once every
 
 ## Contents
 
-- [Troops, characters, stats & equipment](#troops-characters-stats--equipment) (15)
+- [Troops, characters, stats & equipment](#troops-characters-stats--equipment) (16)
 - [Soldier simulation & physics](#soldier-simulation--physics) (7)
-- [Formations, movement & geometry](#formations-movement--geometry) (6)
+- [Formations, movement & geometry](#formations-movement--geometry) (10)
 - [Combat (melee, charges, ranged)](#combat-melee-charges-ranged) (13)
-- [Morale, retreat & rout](#morale-retreat--rout) (4)
-- [Controls, orders & battle UI](#controls-orders--battle-ui) (8)
-- [Campaign, tent, missions & deployment](#campaign-tent-missions--deployment) (37)
-- [Tooling, visuals & other](#tooling-visuals--other) (23)
+- [Morale, retreat & rout](#morale-retreat--rout) (11)
+- [Controls, orders & battle UI](#controls-orders--battle-ui) (9)
+- [Campaign, tent, missions & deployment](#campaign-tent-missions--deployment) (40)
+- [Tooling, visuals & other](#tooling-visuals--other) (26)
 
 ## Troops, characters, stats & equipment
 
@@ -56,6 +56,10 @@ When a group is done, ask Claude to fold it into `specifications.md`. Once every
 - [ ] `Troop.Configure` takes an optional frontage override, used only by the tests and the soldier showcase scene, which need a fixed width; 0 (the default) uses `TroopFrontageRule`. →
 - [ ] scenes, the Troop prefab and the level DataManagers were migrated by replacing each troop asset reference with that asset's characters (same order). →
 - [ ] the deployment zone spawns every troop first and lays them out afterwards, so the row spacing uses each troop's own frontage and size. →
+
+**SU-125** The generic spearman is called "Spearmen"
+
+- [ ] the generic spearman character is named "Spearmen" like the other generics (it was "Borgo", so both Mission 1 guard troops showed as Borgo); it keeps Borgo's portrait for now, and the Phase 01 generator's Borgo sheet stays a separate character. →
 
 ## Soldier simulation & physics
 
@@ -99,6 +103,16 @@ When a group is done, ask Claude to fold it into `specifications.md`. Once every
 
 - [ ] marker placement for the Level 1 map: `ArcherFallback` (-2.5, 18.5) just behind the gap between the guards; `LureLine` across the field at y = -2, firing northwards; `CavalryRoute1` (-35.5, -14) in the gap south of the river's end; `CavalryRoute2` (-33, -21) south-west of the player's deployment line. →
 - [ ] the archer's minimum range is **7** (README: 6) because Level 1's archer has a Short Bow (range 10, so it stands at 8.5); 6 would let a chaser reach it. The cavalry's aggro and leash are **8 / 12** (README: 4 / 7) so it fights back if a player troop finds it. →
+
+**SU-120** Marching columns are longer than wide and the outline hugs them
+
+- [ ] lanes = clamp(ceil(frontage / 2), 1, 3), one fewer while there would be no more rows than lanes (a 4-soldier troop marches in single file); rows = ceil(living / lanes); core length = max(LineSpacing, (rows - 1) x LineSpacing); half-width = (lanes - 1) x LineSpacing / 2 + RankThickness; the core starts 0.05 x TroopRadius behind the pivot. Replaces "the column stays within the troop radius". →
+- [ ] while the troop marches, the soldier radius clamp reaches the column's tail; after the march it shrinks back at 1.5 units/s so the tail walks in. →
+- [ ] column soldiers are spread row by row along the core (column fill), front row just behind the pivot, last row at the tail. →
+
+**SU-123** A line footprint covers its soldiers on each side of the line
+
+- [ ] a Line / Chain footprint reaches, ahead of and behind the line separately, the furthest soldier on that side + SoldierRadius, and at least the rank field (RankHalfWidth - 2 x RankThickness); no longer one half-width mirrored to both sides. Line points stay on the formation line; a formed-up line is unchanged. →
 
 ## Combat (melee, charges, ranged)
 
@@ -165,6 +179,19 @@ When a group is done, ask Claude to fold it into `specifications.md`. Once every
 - [ ] "engaged in melee" is `Troop.InMelee` (engaged with an enemy troop, within A_Distance plus the hold margin). →
 - [ ] breaking again while disordered restarts the 10 s (another penalty); if the troop is in melee by then it retreats, which ends the disorder. Case A (rout) and Case C (surrounded break) are unchanged. →
 
+**SU-121** Routed troops flee around terrain
+
+- [ ] with a NavMesh a routed troop runs to a flee goal on the battlefield edge within ±90° of "away from the nearest non-routed enemy" (whole circle if nothing there is reachable), scored by direction, enemy distance, detour and not passing enemies, and follows the NavMesh path to it; re-planned every 1 s and on arrival. →
+- [ ] a routed pivot moving less than 0.5 units in 1 s is stuck: it picks a new goal and avoids that heading (±30°) for 5 s. →
+- [ ] without a NavMesh the rout keeps the straight-line flight. →
+- [ ] routed troops still do not leave the map (SU-74): at the edge they run along it until RoutDespawnSeconds. Despawning on reaching the edge was left out; say if you want it. →
+
+**SU-122** The surround test counts enemy soldiers, not footprints
+
+- [ ] an enemy troop blocks the retreat path only when one of its living soldiers (not charging, following or rushing back) overlaps the box behind the rear face; its footprint alone does not. Terrain still blocks; friendly troops never do. One soldier is enough. →
+- [ ] routed enemy troops never block the path. →
+- [ ] in play mode the Scene view draws a selected troop's retreat box: red when Surrounded, green when open. →
+
 ## Controls, orders & battle UI
 
 
@@ -196,6 +223,10 @@ When a group is done, ask Claude to fold it into `specifications.md`. Once every
 **SU-110** Combat log panel
 
 - [ ] top-left panel, half the screen high, newest entry at the bottom; it follows the newest entry until scrolled up. Clashes and Shots toggles filter it. Each entry has a bar in the attacker's army colour. The battle keeps the newest 600 entries; times are battle time (m:ss, nothing while paused). Clicks on the panel are not orders and the mouse wheel over it scrolls the log instead of zooming the camera. *Later amended by SU-113 — check it still applies.* →
+
+**SU-127** The Shock label stays readable at low morale
+
+- [ ] the Shock label is drawn after the white break tick, at the bar's left end, or at its right end when the tick would fall on it. →
 
 ## Campaign, tent, missions & deployment
 
@@ -294,6 +325,12 @@ When a group is done, ask Claude to fold it into `specifications.md`. Once every
 - [ ] the tent's map shows "Mission N: Title" when the mission has a title. →
 - [ ] without a catalog everything falls back to the old flow (tent `PreparationData` list by level, scene index `CurrentLevel + 2`, `CurrentLevel++` after a battle). →
 
+**SU-126** Deployment: Start Battle off the zone, one-line hint, camera on the zone
+
+- [ ] the Start Battle button is 180 x 48 (was 280 x 72) on the 960 x 540 reference, at the bottom centre 16 units up, between the troop cards in the bottom corners; its label shrinks to fit (set at runtime by DeploymentPanel). →
+- [ ] the deployment hint no longer wraps; it shrinks down to 14 pt instead. →
+- [ ] when deployment starts the camera centres on the player's deployment zone, 0.15 x its orthographic size below the zone's centre, kept inside the camera bounds. →
+
 ## Tooling, visuals & other
 
 
@@ -368,3 +405,8 @@ When a group is done, ask Claude to fold it into `specifications.md`. Once every
 
 - [ ] measured across the band between the two footprints' edges (line gap minus both footprint half-widths), the same metric as the engagement gap. Facing lines that are nowhere within A_Distance (still engaged by the hold margin) show nothing. →
 
+**SU-124** Skirmishers never fall back through the threat
+
+- [ ] a fall-back route is blocked when the straight line to the fallback point passes within half of each troop's frontage + Route Clearance Margin (default 2) of the nearest enemy and comes closer to it than the troop stands now. →
+- [ ] a blocked route sends the troop Escape Distance (default 8) away from the enemy first, inside the leash, from headings 0 / ±45 / ±90° (preferring one from which the way on is clear); a cornered troop holds facing the enemy; it resumes the fall-back once the route clears by 1 more unit. →
+- [ ] a troop walking out to firing range whose path would pass through the nearest enemy holds and shoots instead. →

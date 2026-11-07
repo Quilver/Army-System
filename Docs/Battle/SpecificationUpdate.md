@@ -7,6 +7,85 @@ change work; confirm or replace). `specifications.md` itself is not edited; fold
 
 ---
 
+## 2026-11-07 (6): Playtest fixes (Movie_017, Mission 1)
+
+### SU-120 Marching columns are longer than wide and the outline hugs them (Decision + Assumptions, amends spec §2.3, §3.2, §6.1)
+- Decision: a marching troop (Column) forms a column that is longer than it is wide at every size, and the soldier field
+  and the outline (which is also the click and hover area) use the same geometry (`LineGeometry` column helpers). Before,
+  the column was 0.8 x TroopRadius long with lanes added sideways, so Mission 1's troops marched 6-12 lanes wide and 1-2
+  deep and their outline grew to about 3x their idle size while the soldiers stayed in a blob.
+- Assumption: lanes = clamp(ceil(frontage / 2), 1, 3), one fewer while there would be no more rows than lanes (so a
+  4-soldier troop marches in single file); rows = ceil(living / lanes); core length = max(LineSpacing,
+  (rows - 1) x LineSpacing); half-width = (lanes - 1) x LineSpacing / 2 + RankThickness; the core starts
+  0.05 x TroopRadius behind the pivot. This replaces "the column stays within the troop radius" (§3.2).
+- Assumption: while the troop marches, the soldier radius clamp (§2.3) reaches the column's tail; after the march it
+  shrinks back at 1.5 units/s, slower than a soldier walks, so the tail walks in instead of being snapped in.
+- Assumption: column soldiers are spread row by row along the core (column fill), the front row just behind the pivot
+  and the last row at the tail.
+
+### SU-121 Routed troops flee around terrain (Assumptions, amends spec §5.4, SU-74, Q-35)
+- Assumption: with a NavMesh, a routed troop runs to a flee goal on the battlefield edge, chosen within ±90° of "away
+  from the nearest non-routed enemy" (the whole circle when nothing there is reachable) and scored by direction, distance
+  from the enemies, detour and not passing enemies (`RoutFleePlanner`); it follows the NavMesh path to it. The goal is
+  re-planned every 1 s and on arrival. Before, the troop ran in a straight line and stuck in dead ends (Mission 1: a
+  pocket in a wood; a river bank).
+- Assumption: a routed troop whose pivot moves less than 0.5 units in 1 s is stuck: it picks a new goal and avoids that
+  heading (±30°) for 5 s.
+- Assumption: without a NavMesh the rout keeps the straight-line flight away from the nearest enemy.
+- Assumption: routed troops still do not leave the map (SU-74): at the edge they run along it until
+  `RoutDespawnSeconds`. Despawning as soon as a troop reaches the edge was considered and left out
+  (`RoutFleePlanner.IsAtEdge` is there if it is wanted).
+
+### SU-122 The surround test counts enemy soldiers, not footprints (Decision + Assumptions, amends spec §4.9, §5.3, Q-33)
+- Decision: a troop with open ground behind it is not Surrounded. In Mission 1 a troop fighting one enemy troop in
+  front took the -20 surrounded break (and later routed) because that enemy's footprint reached behind it.
+- Assumption: an enemy troop blocks the retreat path only when one of its living soldiers (not charging, following a
+  charger or rushing back) overlaps the box behind the rear face; an enemy footprint alone no longer blocks it. Terrain
+  still blocks; friendly troops still never block.
+- Assumption: routed enemy troops never block the path.
+- Assumption: in play mode the Scene view draws a selected troop's retreat box (`TroopCombatGizmos`): red when
+  Surrounded, green when open.
+
+### SU-123 A line footprint covers its soldiers on each side of the line (Assumption, amends spec §3.3)
+- Assumption: a Line / Chain footprint reaches, ahead of and behind the line separately, the furthest soldier on that
+  side + `SoldierRadius`, and at least the rank field (`RankHalfWidth - 2 x RankThickness`). It used to be one
+  half-width mirrored to both sides, so when the line ran ahead of its soldiers (a retreat's pivot slip, a pivot pressed
+  into an enemy) the box reached as far again over empty ground. The line points stay on the formation line
+  (`TroopFootprint.RectAcross`, `LineOffset`), and a formed-up line's footprint is unchanged.
+
+### SU-124 Skirmishers never fall back through the threat (Decision + Assumptions, amends SU-67)
+- Decision: a skirmishing troop's fall-back never routes through or into the threat, and nothing changes when the way
+  is clear. In Mission 1 the archers fell back straight through the cavalry attacking them.
+- Decision: a skirmishing troop locked in melee does not fall back: it fights its melee opponent and morale decides.
+- Assumption: the route is blocked when the straight line to the fallback point passes within half of each troop's
+  frontage + Route Clearance Margin (default 2) of the nearest enemy and comes closer to it than the troop stands now.
+- Assumption: a blocked route sends the troop Escape Distance (default 8) away from the enemy first, inside Max Distance
+  From Fallback, choosing from headings 0 / ±45 / ±90° and preferring one from which the way on is clear; a cornered
+  troop holds facing the enemy. It heads for the fallback point again once the route clears by 1 more unit.
+- Assumption: a troop walking out to firing range whose path would pass through the nearest enemy holds and shoots
+  instead.
+
+### SU-125 The generic spearman is called "Spearmen" (Assumption, bug fix)
+- Assumption: the generic spearman character (`Characters/Generic/Spearman.asset`) is named "Spearmen", like the other
+  generics (Archer, Cavalry, Huskarl). It was "Borgo", a named character's name, so Mission 1's two guard troops both
+  showed as Borgo. It keeps Borgo's portrait for now. The Phase 01 generator's Borgo sheet is a separate character and
+  is unchanged.
+
+### SU-126 Deployment: Start Battle off the zone, one-line hint, camera on the zone (Decision + Assumptions, amends SU-81, SU-100)
+- Decision: the Start Battle button no longer covers the deployment zone, and the deployment hint fits on one line.
+- Assumption: the button is 180 x 48 (was 280 x 72) on the 960 x 540 reference, at the bottom centre 16 units up,
+  between the troop cards in the bottom corners (a corner would put it under the hover card); its label shrinks to fit.
+  `DeploymentPanel` sets this at runtime, like the hint.
+- Assumption: the hint no longer wraps; it shrinks down to 14 pt instead.
+- Assumption: when deployment starts the camera centres on the player's deployment zone, 0.15 x its orthographic size
+  below the zone's centre, and `CameraControls` keeps it inside its bounds.
+
+### SU-127 The Shock label stays readable at low morale (Assumption, bug fix, amends SU-26)
+- Assumption: on the troop card the Shock label is drawn after the white break tick, at the bar's left end, or at its
+  right end when the tick would fall on it (low morale puts the tick at the left).
+
+---
+
 ## 2026-11-07 (5): Missions
 
 ### SU-119 Mission sheets, mission catalog and mission folders (Decision + Assumptions, amends SU-50, SU-117)
