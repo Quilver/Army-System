@@ -10,6 +10,9 @@ using UnityEngine;
 // inside the area, facing the enemy, Idle (SU-101).
 // While the battle is deploying, player Move and Line orders place troops straight at their spot, kept inside the area
 // (ITroopPlacement through TroopPlayerOrders.Placement): a Move leaves them Idle, a Line puts them in that line.
+// When deployment starts, the player's zone centres the battle camera on itself, the camera a little below the zone's
+// centre so the zone sits above the troop cards and buttons along the bottom of the screen (the camera used to open
+// with the zone at the bottom edge). CameraControls then keeps the camera inside its bounds as usual.
 [DefaultExecutionOrder(-100)]
 public sealed class DeploymentZone : MonoBehaviour, ITroopPlacement
 {
@@ -33,6 +36,7 @@ public sealed class DeploymentZone : MonoBehaviour, ITroopPlacement
     SpriteRenderer _areaRenderer;
 
     const string VisualiserPrefabPath = "Troop and Character Profiles/Troop Visualiser";
+    const float CameraBelowZone = 0.15f;   // camera offset below the zone's centre, as a fraction of its orthographic size
 
     readonly List<Troop> _spawned = new();
     // The area and everything drawn under the zone (the Border child): shown only while deploying.
@@ -75,7 +79,22 @@ public sealed class DeploymentZone : MonoBehaviour, ITroopPlacement
         _battle = Battle.Instance;
         if (_battle != null) _battle.PhaseChanged += OnPhaseChanged;
         OnPhaseChanged(_battle != null ? _battle.Phase : BattlePhase.Fighting);
+        if (_battle != null && _battle.IsDeploying && _army != null && _army == _battle.player) FrameCamera(Camera.main);
     }
+
+    // Moves an orthographic camera to CameraFocus, keeping its depth.
+    void FrameCamera(Camera camera)
+    {
+        if (camera == null || !camera.orthographic) return;
+        Vector2 focus = CameraFocus(camera.orthographicSize);
+        Vector3 position = camera.transform.position;
+        camera.transform.position = new Vector3(focus.x, focus.y, position.z);
+    }
+
+    // Where the camera centres to show this zone: CameraBelowZone x orthographicSize below the zone's centre, so the
+    // zone shows a little above the middle of the screen. Internal for tests.
+    internal Vector2 CameraFocus(float orthographicSize) =>
+        (Vector2)transform.position + Vector2.down * (orthographicSize * CameraBelowZone);
 
     void OnDestroy()
     {

@@ -86,6 +86,23 @@ public sealed class DeploymentTests
         Assert.IsFalse(zone.IsShown);
     }
 
+    // The camera opens on the player's zone, a little below its centre so the zone sits above the bottom UI.
+    [Test]
+    public void Zone_CameraFocus_IsJustBelowTheZonesCentre()
+    {
+        var go = new GameObject("Zone");
+        _created.Add(go);
+        go.transform.position = new Vector3(-7f, -15f, 0f);
+        go.transform.localScale = new Vector3(35f, 12f, 1f);
+        var zone = go.AddComponent<DeploymentZone>(); // Awake does not run in Edit mode
+
+        Vector2 focus = zone.CameraFocus(14f);
+        Assert.AreEqual(-7f, focus.x, 1e-4f, "centred across the zone");
+        Assert.Less(focus.y, -15f, "below the zone's centre, so the zone shows above the middle of the screen");
+        Assert.Greater(focus.y, -15f - 14f * 0.5f, "only a little below: the zone stays near the middle of the screen");
+        Assert.Greater(zone.CameraFocus(14f).y, zone.CameraFocus(20f).y, "zoomed out: further below, same place on screen");
+    }
+
     static int ReportTroopCount(out BattleReport report)
     {
         report = Object.FindAnyObjectByType<BattleReport>(FindObjectsInactive.Include);
