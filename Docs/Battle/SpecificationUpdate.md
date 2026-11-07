@@ -1523,7 +1523,7 @@ troop that passed a free chain end snapped onto it and was held at the joint. Di
 - Delay is proportional to how far forward the soldier stands along the attack axis.
 
 ### SU-13 Retreat motion has no overshoot and return (Assumption, replaces D-31 timing)
-- Spec §5.5; Decisions D-31; Handoff issue-03.
+- Spec §5.5; Decisions D-31; Handoff issue-03 (now `Docs/Archive/Handoff/`).
 - Before: the pivot jumped back and every soldier headed for the new line at once; the per-soldier delay only staggered
   an extra fall-back past the new line (to about 2× the distance) followed by a return. That hid the wave and caused
   the overshoot in issue-03.
