@@ -28,6 +28,8 @@ public enum FootprintKind
 //   Circle   a point with Rounding as its radius.
 //   Capsule  a segment of HalfLength with Rounding as its radius.
 // Axis runs along the line toward the left wing (end 1). Facing points out of the Front face.
+// A line's box need not be centred on its line (RectAcross, SU-123): Center is the middle of the box and LineOffset how
+// far the line sits from it along Facing, so the line points stay on the line. Every other kind has LineOffset 0.
 public readonly struct TroopFootprint
 {
     public readonly FootprintKind Kind;
@@ -37,6 +39,8 @@ public readonly struct TroopFootprint
     public readonly float HalfLength;
     public readonly float HalfWidth;
     public readonly float Rounding;
+    // Signed distance along Facing from Center to the battle line (positive: the line is ahead of the box's middle).
+    public readonly float LineOffset;
 
     public TroopFootprint(FootprintKind kind, Vector2 center, Vector2 facing, float halfLength, float halfWidth, float rounding)
     {
@@ -47,10 +51,41 @@ public readonly struct TroopFootprint
         HalfLength = Math.Max(0f, halfLength);
         HalfWidth = Math.Max(0f, halfWidth);
         Rounding = Math.Max(0f, rounding);
+        LineOffset = 0f;
+    }
+
+    TroopFootprint(FootprintKind kind, Vector2 center, Vector2 facing, float halfLength, float halfWidth, float rounding,
+        float lineOffset) : this(kind, center, facing, halfLength, halfWidth, rounding)
+    {
+        LineOffset = Math.Max(-HalfWidth, Math.Min(HalfWidth, lineOffset));
     }
 
     // Thick line between two line points. The facing is made perpendicular to the line, on the side of facingHint.
     public static TroopFootprint Rect(Vector2 start, Vector2 end, Vector2 facingHint, float halfWidth)
+    {
+        Vector2 facing = RectFacing(start, end, facingHint);
+        return new TroopFootprint(FootprintKind.Rect, (start + end) * 0.5f, facing, Vector2.Distance(start, end) * 0.5f,
+            halfWidth, 0f);
+    }
+
+    // Thick line that reaches frontHalfWidth ahead of the line (along the facing) and rearHalfWidth behind it, so it can
+    // cover soldiers standing more on one side of the line than the other (spec §3.3, SU-123). The line points stay on
+    // the line; Center is the middle of the box. Equal widths give the same box as Rect.
+    public static TroopFootprint RectAcross(Vector2 start, Vector2 end, Vector2 facingHint, float frontHalfWidth,
+        float rearHalfWidth)
+    {
+        Vector2 facing = RectFacing(start, end, facingHint);
+        float front = Math.Max(0f, frontHalfWidth);
+        float rear = Math.Max(0f, rearHalfWidth);
+        float lineOffset = (rear - front) * 0.5f;
+        Vector2 lineCenter = (start + end) * 0.5f;
+        return new TroopFootprint(FootprintKind.Rect, lineCenter - facing * lineOffset, facing,
+            Vector2.Distance(start, end) * 0.5f, (front + rear) * 0.5f, 0f, lineOffset);
+    }
+
+    // The facing of a thick line between two line points: perpendicular to the line, on the side of facingHint. A line
+    // too short to have a direction keeps the hint. Always a unit vector.
+    public static Vector2 RectFacing(Vector2 start, Vector2 end, Vector2 facingHint)
     {
         Vector2 line = end - start;
         float length = line.magnitude;
@@ -61,7 +96,7 @@ public readonly struct TroopFootprint
             facing = new Vector2(tangent.y, -tangent.x);
             if (Vector2.Dot(facing, facingHint) < 0f) facing = -facing;
         }
-        return new TroopFootprint(FootprintKind.Rect, (start + end) * 0.5f, facing, length * 0.5f, halfWidth, 0f);
+        return facing.sqrMagnitude > 1e-10f ? facing.normalized : Vector2.right;
     }
 
     public static TroopFootprint Circle(Vector2 center, float radius, Vector2 facing) =>
@@ -81,8 +116,14 @@ public readonly struct TroopFootprint
     public float OuterHalfLength => HalfLength + Rounding;
     public float OuterHalfWidth => HalfWidth + Rounding;
 
-    // Line points (spec §3.4): end 0 is the right wing (-Axis), end 1 the left wing (+Axis).
-    public Vector2 LinePoint(int end) => Center + Axis * (end == TroopConstants.LeftEnd ? HalfLength : -HalfLength);
+    // Middle of the battle line (Center for every footprint but an off-centre RectAcross).
+    public Vector2 LineCenter => Center + Facing * LineOffset;
+    // How far the inner box reaches ahead of and behind the battle line (both HalfWidth when centred).
+    public float FrontHalfWidth => HalfWidth - LineOffset;
+    public float RearHalfWidth => HalfWidth + LineOffset;
+
+    // Line points (spec §3.4): end 0 is the right wing (-Axis), end 1 the left wing (+Axis). They lie on the battle line.
+    public Vector2 LinePoint(int end) => LineCenter + Axis * (end == TroopConstants.LeftEnd ? HalfLength : -HalfLength);
 
     // Corner i of the inner box, anticlockwise starting at front-left.
     public Vector2 Corner(int index)

@@ -11,10 +11,13 @@ public static class TroopCombatGizmos
     //   line        army colour = threat-facing, dim = ordered line; tick shows the facing
     //   line points red = free, green = linked (white ring = the shared joint), yellow = pending link from an order
     //   soldiers    of a selected troop: red = charging, orange = following a charger, grey = fatigued
+//   retreat box of a selected troop (play mode): red = Surrounded (Troop.IsSurrounded), green = open (SU-122)
     static readonly Color FreeEndColor = new(1f, 0.25f, 0.25f, 1f);
     static readonly Color LinkedEndColor = new(0.25f, 1f, 0.4f, 1f);
     static readonly Color PendingEndColor = new(1f, 0.9f, 0.2f, 1f);
     static readonly Color FollowerColor = new(1f, 0.6f, 0.1f, 1f);
+    static readonly Color RetreatOpenColor = new(0.3f, 1f, 0.3f, 0.8f);
+    static readonly Color RetreatBlockedColor = new(1f, 0.2f, 0.2f, 0.9f);
     const float EndpointSphereSize = 0.1f;
     const float SoldierStateSphereSize = 0.12f;
     const int CircleSegments = 32;
@@ -34,6 +37,7 @@ public static class TroopCombatGizmos
             DrawBattleLine(troop);
 
             if (!troop.IsSelected) continue;
+            if (Application.isPlaying) DrawRetreatPath(troop);
             foreach (var soldier in troop.Soldiers)
             {
                 if (!soldier.IsAlive) continue;
@@ -60,6 +64,14 @@ public static class TroopCombatGizmos
             Gizmos.color = i == 0 ? army : new Color(army.r, army.g, army.b, 0.5f);
             Gizmos.DrawLine(footprint.OuterCorner(i), footprint.OuterCorner(i + 1));
         }
+    }
+
+    // The box behind the rear face that the surround test checks (spec §4.9, SU-122): red when it is blocked.
+    static void DrawRetreatPath(Troop troop)
+    {
+        TroopFootprint path = SurroundTest.RetreatPath(troop.Footprint, TroopTuning.Active.RetreatDistance);
+        Gizmos.color = troop.IsSurrounded() ? RetreatBlockedColor : RetreatOpenColor;
+        for (int i = 0; i < 4; i++) Gizmos.DrawLine(path.OuterCorner(i), path.OuterCorner(i + 1));
     }
 
     static void DrawBattleLine(Troop troop)

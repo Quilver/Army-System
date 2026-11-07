@@ -835,7 +835,10 @@ public sealed class Troop : MonoBehaviour
         return away.sqrMagnitude > 1e-6f ? away.normalized : -Facing;
     }
 
-    // Surrounded (spec §4.9, Q-33): the box behind the rear face is blocked by terrain or an enemy footprint.
+    // Surrounded (spec §4.9, §5.3, Q-33, SU-122): the box behind the rear face (SurroundTest.RetreatPath) is blocked by
+    // terrain or by an enemy troop. An enemy blocks it only with a soldier standing in the box, not with its footprint: a
+    // line footprint can reach well past its soldiers (a pivot run ahead of them), which gave false surrounds. Routed
+    // enemies never block (they are fleeing, and AwayFromNearestEnemy ignores them too); friendly troops never block.
     public bool IsSurrounded()
     {
         TroopFootprint path = SurroundTest.RetreatPath(_footprint, Tuning.RetreatDistance);
@@ -844,14 +847,30 @@ public sealed class Troop : MonoBehaviour
         {
             foreach (var other in world.Troops)
             {
-                if (other == null || other == this || other.TeamId == TeamId) continue;
-                TroopFootprint enemy = other.Footprint;
-                if (SurroundTest.BlockedBy(path, enemy)) return true;
+                if (other == null || other == this || other.TeamId == TeamId || other.IsRouted) continue;
+                if (HasSoldierInRetreatPath(other, path)) return true;
             }
         }
         if (_soldierObstacleMask.value == 0) return false;
         return Physics2D.OverlapBox(path.Center, SurroundTest.BoxSize(path), SurroundTest.BoxAngleDegrees(path),
             _soldierObstacleMask) != null;
+    }
+
+    // A soldier blocks the retreat path when its body (a disc of this radius) overlaps the path box.
+    const float RetreatPathSoldierRadius = TroopConstants.SoldierRadius;
+
+    // True when a living soldier of enemy that counts toward its footprint (not charging, following a charger or rushing
+    // back: those are on their way somewhere else, SU-43) stands in the retreat path.
+    static bool HasSoldierInRetreatPath(Troop enemy, in TroopFootprint path)
+    {
+        IReadOnlyList<SoldierAgentState> soldiers = enemy.Soldiers;
+        for (int i = 0; i < soldiers.Count; i++)
+        {
+            SoldierAgentState soldier = soldiers[i];
+            if (!soldier.IsAlive || soldier.IsCommitted || soldier.IsReturning) continue;
+            if (path.SignedDistance(enemy.WorldPosition(soldier)) < RetreatPathSoldierRadius) return true;
+        }
+        return false;
     }
 
     void CancelCharges(bool returnToTroop = true)

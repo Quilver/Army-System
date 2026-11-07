@@ -1,8 +1,8 @@
 using UnityEngine;
 
 // The surround test (spec §4.9, §5.3, Q-33). A troop is Surrounded when the path its retreat would take is blocked.
-// The path is a box behind the rear face: as wide as the footprint and RetreatDistance long. Pure geometry; the terrain
-// check is done by the caller with a physics query on the same box (see Troop.IsSurrounded).
+// The path is a box behind the rear face: as wide as the footprint and RetreatDistance long. Pure geometry; the caller
+// (Troop.IsSurrounded) checks the box for terrain with a physics query and for enemy soldiers standing in it (SU-122).
 public static class SurroundTest
 {
     // Box behind the rear face of the footprint, facing the same way as the troop.
@@ -15,7 +15,8 @@ public static class SurroundTest
         return new TroopFootprint(FootprintKind.Rect, centre, footprint.Facing, footprint.OuterHalfLength, halfLength, 0f);
     }
 
-    // Blocked by an enemy footprint that overlaps the path. Friendly troops never block (Q-33).
+    // Footprint overlap with the path. No longer what decides a surround: an enemy blocks the path only with a soldier in
+    // it, since a footprint can reach past its soldiers (SU-122). Friendly troops never block (Q-33).
     public static bool BlockedBy(in TroopFootprint path, in TroopFootprint enemy) => FootprintGap.Gap(path, enemy) < 0f;
 
     // Size and rotation of the path box for Physics2D.OverlapBox.
