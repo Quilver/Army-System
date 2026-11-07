@@ -27,6 +27,8 @@ public sealed class TroopCombatWorld : MonoBehaviour
     public static TroopCombatWorld Current { get; private set; }
 
     public int Seed { get; private set; }
+    // Seconds of battle simulated so far (scaled time; nothing while paused). The combat log stamps entries with it.
+    public float BattleTime { get; private set; }
     public IReadOnlyList<Troop> Troops => _registry.Troops;
     public TroopProjectiles Projectiles => _projectiles;
 
@@ -49,6 +51,7 @@ public sealed class TroopCombatWorld : MonoBehaviour
         Current = this;
         if (_charges != null) return;
         if (Seed == 0) Seed = _battleSeed != 0 ? _battleSeed : Environment.TickCount;
+        CombatLog.Clear();
         _charges = new ChargeCoordinator(_contactIndex, _registry);
         _contactResolver = new SoldierContactResolver(_contactIndex, new DuelResolver(new SupportCalculator(_contactIndex)));
     }
@@ -80,6 +83,7 @@ public sealed class TroopCombatWorld : MonoBehaviour
 
     void StepBeforeTroops(float deltaTime)
     {
+        BattleTime += Mathf.Max(0f, deltaTime);
         _registry.Refresh();
         _registry.RemoveDestroyed();
         IReadOnlyList<Troop> troops = _registry.Troops;

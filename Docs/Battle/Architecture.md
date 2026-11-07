@@ -14,8 +14,8 @@ For the rules, see `specifications.md` (v0.9). For decisions and working assumpt
   - `Army` (`Controller/Army.cs`) for the army colour and `Troop.Army`.
   - `MovementSystem.NavPathfinder` (`Pathfinding/`) for marching paths.
 - **What uses it:** `Battle`, `Army`, `CapturePoint` and the battle-end conditions (`Battle End/`), and through
-  `BattleEvents` (`Combat/BattleEvents.cs`) the Tween system: achievements, the battle report and battle flow, and roster
-  deployment (`Assets/Scripts/Tween/`). Troop code never references Tween or Campaign code (SU-57, SU-58).
+  `BattleEvents` (`Combat/BattleEvents.cs`: soldier kills, troop defeats, morale breaks with their cause, SU-114) the Tween
+  system: achievements, the battle report and battle flow, and roster deployment (`Assets/Scripts/Tween/`). Troop code never references Tween or Campaign code (SU-57, SU-58).
 - **Character classes:** `CharacterClass`, `StatCaps` and `CharacterStat` sit in `Model/` because `CharacterProfile`
   holds a class. `CampaignCharacter` and `StatGrowths` are campaign data in `Assets/Scripts/Tween/Characters/`.
 
@@ -37,7 +37,7 @@ For the rules, see `specifications.md` (v0.9). For decisions and working assumpt
 | Folder | Contents |
 |---|---|
 | `Rules/` | `MoraleRules`, `DuelRules`, `CombatPower`, `SupportRules`, `DamageRules`, `MitigationResolver`, `ChargeRules`, `ClashRules`, `TroopFootprint` (+ `TroopFace`, `FootprintKind`), `FootprintGap`, `FaceClassifier`, `SurroundTest`, `LineGeometry`, `FormationModeResolver`, `ChainGeometry`, `ChainLinkRules` (+ `ChainLinkCandidate`, `ChainBreakReason`), `ChainTopology`, `RangedRules`, `CompositeTroopResolver`, `ITroopRandom`, `SeededTroopRandom`. |
-| `Model/` | `TroopProfile`, `SoldierProfile` (+ `SoldierLifeState`), `WeaponProfile`, `ArmourProfile`, `WeaponSkill`, `WeaponTypes`, `CombatStatLimits`, `TroopTuning`, `FormationMode`, `SoldierAgentState`, `SoldierHealth`, `SoldierChargeState` (+ `ChargeRole`), `SoldierFaultMotionState`, `SoldierClashPulseState`, `SoldierSeparationState`, `MitigationResult` (+ `AppliedDamage`), `TroopFormationData`, `TroopEndpointLink`. |
+| `Model/` | `CharacterProfile`, `SoldierProfile` (+ `SoldierLifeState`), `WeaponProfile`, `ArmourProfile`, `WeaponSkill`, `WeaponTypes`, `CombatStatLimits`, `TroopTuning`, `FormationMode`, `SoldierAgentState`, `SoldierHealth`, `SoldierChargeState` (+ `ChargeRole`), `SoldierFaultMotionState`, `SoldierClashPulseState`, `SoldierSeparationState`, `MitigationResult` (+ `AppliedDamage`), `TroopFormationData`, `TroopEndpointLink`. |
 | `Runtime/` | `Troop`, `TroopRoster`, `TroopFormationState`, `TroopMorale`, `TroopLineOrder`, `TroopLineLinks`, `TroopPivotMover`, `TroopPathFollower`, `FaultSlipMotion`, `TroopRout`, `AssaultState`, `EngagementRecord`, `TroopDamageReceiver`, `MeleeMetrics`, `TroopConstants`, `TroopObjects`, `TroopAssemblyInfo`. |
 | `Combat/` | `TroopCombatWorld`, `TroopRegistry`, `TroopEngagementSystem`, `SoldierContactIndex`, `SoldierContact`, `SoldierContactResolver`, `DuelResolver`, `SupportCalculator`, `ChargeCoordinator`, `CrossTroopSeparation`, `RangedFireController`, `TroopProjectiles`, `TroopCombatGizmos`. |
 | `Formation/` | `ChainLinker`, `TroopFootprintBuilder`, `TroopPivots`. |
@@ -68,8 +68,8 @@ Spawning captures the initial soldier count for the rout threshold.
    `TroopFormationState.UpdateNatural`.
 3. `ChainLinker.Update`: validate links, solve joints and break, attach, publish final lines, ChainSuppressed,
    formation modes.
-4. `TroopSegmentPressureRules.Update`: line pressure (footprint gap), `FriendlyOverlapResolver`, `AlliedLinkTension`,
-   line-push integration.
+4. `TroopSegmentPressureRules.Update`: line pressure (footprint gap), `FriendlyOverlapResolver` (pivots, then
+   outlines, SU-94), `AlliedLinkTension`, line-push integration.
 5. `SoldierContactIndex.Rebuild`, `CrossTroopSeparation.Apply`.
 6. `ChargeCoordinator.Update`: tick and cancel charges and followers, start new charges.
 7. `RangedFireController.Tick` for each troop, `TroopProjectiles.Tick`, `ProjectileView.Draw`.
@@ -102,9 +102,11 @@ in Edit mode at a fixed frame time.
 - `TroopDamageReceiver.Apply` adds the applied Bruise + Bleed (overflow excluded) as Shock, ×3 when flanked, then
   calls `Troop.EvaluateBreak`.
 - `Troop.EvaluateBreak`: when Shock > EM, `MoraleRules.Evaluate` picks the case. **A Rout** (EM < 50 % of initial):
-  `EnterRout`. **B Retreat**: Shock 0, penalty, `FaultSlipMotion` for `RetreatDistanceScale × Radius` away from the last
-  attacker, shared retreat along the chain. **C Surrounded break** (`IsSurrounded`): Shock 0, penalty, no motion.
-  A retreating or routed troop does not break again (Q-34).
+  `EnterRout`. **B Retreat** (only in melee, SU-104): Shock 0, penalty, `FaultSlipMotion` for `RetreatDistance` away
+  from the last attacker, shared retreat along the chain; its stunned soldiers die (SU-107). **B out of melee: Disorder**
+  (SU-104): Shock 0, penalty, orders cancelled and refused, no movement for `DisorderSeconds` (10 s).
+  **C Surrounded break** (`IsSurrounded`): Shock 0, penalty, no motion. A retreating or routed troop does not break
+  again (Q-34).
 - `Troop.IsSurrounded`: `SurroundTest.RetreatPath` (box behind the rear face, RetreatDistance long) overlaps an enemy
   footprint, or `Physics2D.OverlapBox` hits the obstacle mask. Friendly troops never block (Q-33).
 - Rout (`TroopRout`): final. Breaks every link, cancels orders, raises `Troop.Routed`, `Troop.Defeated` and `BattleEvents.TroopDefeated` once,
@@ -113,10 +115,19 @@ in Edit mode at a fixed frame time.
 
 ### 6.2 Melee (spec §4.2–§4.6)
 
-- `ChargeCoordinator`: for every soldier of an engaged, unbroken troop, `p = 1 − exp(−EffectiveAggression / 30 × dt)`.
-  On a hit, the target is a random pick among the 3 nearest enemy soldiers within 7.8 units (contact-index query). The
+- `ChargeCoordinator`: for every soldier of an unbroken troop within `EngagementGap` (+ `ChargeGapTolerance`) of an
+  enemy troop (SU-95), `p = 1 − exp(−EffectiveAggression / ChargeWindowSeconds × dt)` (45 s, Melee Tuning, SU-112). On a hit, the target is a random pick among the
+  3 nearest soldiers of those enemy troops within `TroopTuning.ChargeRange` (A_Distance between soldier edges, so
+  A_Distance + 2 soldier radii centre to centre; contact-index query). The
   troop's Discipline nearest soldiers each follow with p = 0.5 (`ChargeRole.Follower`). Cancel on target death,
   troop break, or the 3 s timeout; followers return when their charger's charge ends. No cooldown, no contagion.
+  Only the front rank starts charges (SU-106, `CollectFrontRank`: one rank's worth of the soldiers furthest toward each
+  chargeable enemy troop). Stunned soldiers neither charge nor follow (SU-107).
+- Stunned soldiers (SU-107, `SoldierLifeState.Stunned`): 0 HP with Bruise >= Bleed stuns instead of killing; alive,
+  cannot charge or support, heal from 0 HP and recover at `StunRecoverHp` (5); killed when the troop retreats or routs
+  from melee (`Troop.KillStunnedSoldiers`).
+- Combat log (SU-110): `DuelResolver` and `TroopProjectiles` record every clash and landed shot in `CombatLog`
+  (Combat Power parts, chance and roll, raw damage and the armour roll); `CombatLogHud` shows it.
 - Committed soldiers (chargers and followers) skip separation, density spreading and drive pressure in both directions
   and may leave the radius (`SoldierSteering`, `SoldierMotionConstraints`). They move at ChargeSpeedScale (2×).
 - `SoldierContactResolver`: opposing soldiers closer than 0.85 bounce; `ClashRules` decides a clash — a charger in
@@ -146,13 +157,16 @@ in Edit mode at a fixed frame time.
 
 - `TroopFormationState.UpdateNatural` builds the natural line through the pivot: the ordered facing and length while a
   line order is active (and the troop holds it, or an enemy is within S), otherwise the smoothed threat heading at
-  L_nat = 1.8 × TroopRadius. `ChainLinker` publishes the final line (`Formation`).
+  L_nat = Frontage × LineSpacing (SU-103). `ChainLinker` publishes the final line (`Formation`). The troop's size in units
+  (`Troop.Radius`: blob, soldier clamp, pivot spacing) is derived: L_nat / 1.8, or more when its soldiers need room.
 - `FormationModeResolver`: Rout > Chain > Line > Column > Idle. `SoldierFieldPlanner.Shape` switches on the mode
   (line capsule with joint clearance, column lanes, blob of 0.85 × radius, wide rout scatter).
 - Line spacing 0.9 (`TroopConstants.LineSpacing`), ranks from `LineGeometry`.
 - Pivot speed = Move × 0.6 (`TroopPivotMover.PivotSpeed`), Move = slowest soldier Speed.
 - `TroopLineOrder` holds the line after arrival until another order (it used to drop it on arrival).
-- `FriendlyOverlapResolver`: pivots only, 0.25 × (r_A + r_B), engaged troops are not pushed.
+- `FriendlyOverlapResolver`: pivots at least 0.25 × (r_A + r_B) apart, engaged troops are not pushed; and (SU-94)
+  outlines at least `FriendlyGap` apart for friends not linked in a chain, with right of way committed > marching >
+  standing, the troop giving way moving at most `FriendlyGiveWaySpeedScale` × its march speed.
 - Stretched lines: `SoldierMotionConstraints.EffectiveRadius` widens the clamp to reach the line points (Q-11 a, D-36).
 
 ### 6.5 Chains (spec §3.4, §3.4.1)
@@ -191,8 +205,9 @@ in Edit mode at a fixed frame time.
 
 - `RangedFireController` (per troop): fires while stationary, unengaged, not retreating or routed. Target: nearest
   enemy troop whose footprint is within weapon range and inside ±45° of the facing, and that is not engaged (Q-39).
-  Each volley every ranged soldier shoots one of the target's nearest soldiers; the next volley follows after
-  `30 / FireRate × (1 ± 0.1)`.
+  Soldiers whose weapon has Volley (SU-105) fire together: each volley every one of them shoots one of the target's
+  nearest soldiers; the next volley follows after `30 / FireRate × (1 ± 0.1)`. The others (the default) each shoot on
+  their own clock at the same interval, first shot after a random part of it.
 - `TroopProjectiles`: pooled projectiles at 20 units/s; the hit is rolled on landing with
   `(Accuracy + skill) / (Accuracy + skill + 10)`; damage is the weapon damage through armour, no flank Shock.
 
@@ -200,7 +215,7 @@ in Edit mode at a fixed frame time.
 
 | Asset / type | Notes |
 |---|---|
-| `TroopProfile` | `BaseMorale`, `Discipline`, composition, `TroopRadius`. `LineWidth` removed (line length comes from L_nat and orders). Derived `Move`, `SoldierCount`. `CreateComposite` uses `CompositeTroopResolver`. |
+| `Troop` (characters) | `TroopProfile` removed (SU-118): a troop holds its list of `CharacterProfile`s (leader first) and resolves `BaseMorale`, `Discipline` and soldier count with `CompositeTroopResolver`. `Frontage` (soldiers wide in line, SU-103) is set when its soldiers spawn at the start of the battle, from its total soldier count (`TroopFrontageRule`, SU-117), unless `Configure` is given one. `BattleReport.DeployedTroops` is a list of `DeployedTroop` character lists. |
 | `SoldierProfile` | Integer stats, `MaxHealth`, up to 2 weapons and skills, armour, steering. Legacy `MeleeSkill`/`MeleeDamage` removed; derived `MeleeWeaponSkill`, `MeleeWeaponDamage`, `MeleeWeaponChargeBonus`, `HasBoarSpear`, `HasLance`, `MaxSpeed`. |
 | `WeaponProfile`, `ArmourProfile` | As Phase 01. |
 | `TroopTuning` | All §7.2 values: stats/actions, distances, formation, morale, faces, charges, support, Assault, chains, ranged, input. |
@@ -265,3 +280,4 @@ in Edit mode at a fixed frame time.
 | Chains | `Formation/ChainLinker.cs`, `Rules/ChainGeometry.cs`, `Rules/ChainLinkRules.cs`, `Pressure/AlliedLinkTension.cs` |
 | Orders and selection | `Input/TroopOrderPlanner.cs`, `Input/TroopSelection.cs`, `Input/TroopPlayerOrders.cs` |
 | Ranged | `Combat/RangedFireController.cs`, `Combat/TroopProjectiles.cs`, `Rules/RangedRules.cs` |
+| Combat log | `Combat/CombatLog.cs` (records and text), `View/CombatLogHud.cs` (panel) |

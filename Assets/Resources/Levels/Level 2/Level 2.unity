@@ -2307,8 +2307,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _state: 1
   _teamId: 1
-  _profile: {fileID: 11400000, guid: 20e618b28b66b2d409669342760418e9, type: 2}
-  _troopRadius: 16.5
+  _characters:
+  - {fileID: 11400000, guid: 357cd6944e402b747b84f97bab5cdde1, type: 2}
   _soldierObstacleMask:
     serializedVersion: 2
     m_Bits: 0
@@ -2816,8 +2816,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _state: 1
   _teamId: 1
-  _profile: {fileID: 11400000, guid: 20e618b28b66b2d409669342760418e9, type: 2}
-  _troopRadius: 16.5
+  _characters:
+  - {fileID: 11400000, guid: 357cd6944e402b747b84f97bab5cdde1, type: 2}
   _soldierObstacleMask:
     serializedVersion: 2
     m_Bits: 0
@@ -2908,8 +2908,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _state: 1
   _teamId: 1
-  _profile: {fileID: 11400000, guid: 20e618b28b66b2d409669342760418e9, type: 2}
-  _troopRadius: 16.5
+  _characters:
+  - {fileID: 11400000, guid: 357cd6944e402b747b84f97bab5cdde1, type: 2}
   _soldierObstacleMask:
     serializedVersion: 2
     m_Bits: 0
@@ -3472,27 +3472,53 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2930595629069799993, guid: 8114fb246603f9b418faeb7bcb0e6f63,
         type: 3}
-      propertyPath: '_deployedTroops.Array.data[0]'
+      propertyPath: '_deployedTroops.Array.data[0]._characters.Array.size'
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2930595629069799993, guid: 8114fb246603f9b418faeb7bcb0e6f63,
+        type: 3}
+      propertyPath: '_deployedTroops.Array.data[0]._characters.Array.data[0]'
       value: 
-      objectReference: {fileID: 11400000, guid: a6db3570c04ad2e42b45321fd814c472,
+      objectReference: {fileID: 11400000, guid: fc6c4d66d563885409ecd9f40468f856,
         type: 2}
     - target: {fileID: 2930595629069799993, guid: 8114fb246603f9b418faeb7bcb0e6f63,
         type: 3}
-      propertyPath: '_deployedTroops.Array.data[1]'
+      propertyPath: '_deployedTroops.Array.data[1]._characters.Array.size'
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2930595629069799993, guid: 8114fb246603f9b418faeb7bcb0e6f63,
+        type: 3}
+      propertyPath: '_deployedTroops.Array.data[1]._characters.Array.data[0]'
       value: 
-      objectReference: {fileID: 11400000, guid: 6fc791d40db6b5f419a0a9fba6c71f44,
+      objectReference: {fileID: 11400000, guid: a73b75e7bc6360d44b2df98d1e1dfd6c,
         type: 2}
     - target: {fileID: 2930595629069799993, guid: 8114fb246603f9b418faeb7bcb0e6f63,
         type: 3}
-      propertyPath: '_deployedTroops.Array.data[2]'
+      propertyPath: '_deployedTroops.Array.data[1]._characters.Array.data[1]'
       value: 
-      objectReference: {fileID: 11400000, guid: 043f6500dc7e4da4b8b11485898f3fb2,
+      objectReference: {fileID: 11400000, guid: bfc0cb79111465d4d9bfd9a15efef6ce,
         type: 2}
     - target: {fileID: 2930595629069799993, guid: 8114fb246603f9b418faeb7bcb0e6f63,
         type: 3}
-      propertyPath: '_deployedTroops.Array.data[3]'
+      propertyPath: '_deployedTroops.Array.data[2]._characters.Array.size'
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2930595629069799993, guid: 8114fb246603f9b418faeb7bcb0e6f63,
+        type: 3}
+      propertyPath: '_deployedTroops.Array.data[2]._characters.Array.data[0]'
       value: 
-      objectReference: {fileID: 11400000, guid: c42fbcc66532c064c915157fd0d3706a,
+      objectReference: {fileID: 11400000, guid: 0b9ac2bbc37b387468d7593aec30a531,
+        type: 2}
+    - target: {fileID: 2930595629069799993, guid: 8114fb246603f9b418faeb7bcb0e6f63,
+        type: 3}
+      propertyPath: '_deployedTroops.Array.data[3]._characters.Array.size'
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2930595629069799993, guid: 8114fb246603f9b418faeb7bcb0e6f63,
+        type: 3}
+      propertyPath: '_deployedTroops.Array.data[3]._characters.Array.data[0]'
+      value: 
+      objectReference: {fileID: 11400000, guid: 4370e4f9c15df644193aabc5c8a7ec47,
         type: 2}
     - target: {fileID: 5391157433311076479, guid: 8114fb246603f9b418faeb7bcb0e6f63,
         type: 3}
@@ -3665,8 +3691,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _state: 1
   _teamId: 1
-  _profile: {fileID: 11400000, guid: 20e618b28b66b2d409669342760418e9, type: 2}
-  _troopRadius: 16.5
+  _characters:
+  - {fileID: 11400000, guid: 357cd6944e402b747b84f97bab5cdde1, type: 2}
   _soldierObstacleMask:
     serializedVersion: 2
     m_Bits: 0

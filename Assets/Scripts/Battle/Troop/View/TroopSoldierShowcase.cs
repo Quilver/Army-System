@@ -7,19 +7,21 @@ public sealed class TroopSoldierShowcase : MonoBehaviour
     [SerializeField] CharacterProfile _triangleProfile;
     [SerializeField] CharacterProfile _circleProfile;
 
+    // The showcase troops stand 33 wide whatever their soldier count.
+    const int ShowcaseFrontage = 33;
+
     Troop _leftTroop;
     Troop _lowerLeftTroop;
     Troop _rightTroop;
-    TroopProfile _troopProfile;
+    List<CharacterProfile> _troopCharacters;
     bool _ownsSquareProfile;
     bool _ownsTriangleProfile;
     bool _ownsCircleProfile;
-    bool _ownsTroopProfile;
 
     void Start()
     {
         EnsureProfiles();
-        EnsureTroopProfile();
+        _troopCharacters = new List<CharacterProfile> { _squareProfile, _triangleProfile, _circleProfile };
         _leftTroop = CreateTroop("Friendly Troop A", 0, new Vector2(-15f, 13.5f));
         _lowerLeftTroop = CreateTroop("Friendly Troop B", 0, new Vector2(-15f, -13.5f));
         _rightTroop = CreateTroop("Enemy Troop", 1, new Vector2(15f, 0f));
@@ -31,14 +33,6 @@ public sealed class TroopSoldierShowcase : MonoBehaviour
         EnsureProfile(ref _squareProfile, SoldierSpriteLibrary.Square, 12, ref _ownsSquareProfile);
         EnsureProfile(ref _triangleProfile, SoldierSpriteLibrary.Triangle, 6, ref _ownsTriangleProfile);
         EnsureProfile(ref _circleProfile, SoldierSpriteLibrary.Circle, 8, ref _ownsCircleProfile);
-    }
-
-    void EnsureTroopProfile()
-    {
-        if (_troopProfile != null) return;
-        _troopProfile = TroopProfile.CreateRuntimeProfile(
-            new List<CharacterProfile> { _squareProfile, _triangleProfile, _circleProfile }, 16.5f);
-        _ownsTroopProfile = true;
     }
 
     // A missing character is created with the given soldier count. An assigned character uses its own Numbers.
@@ -60,7 +54,7 @@ public sealed class TroopSoldierShowcase : MonoBehaviour
         var root = new GameObject(troopName);
         root.transform.position = position;
         var troop = root.AddComponent<Troop>();
-        troop.Configure(team, _troopProfile);
+        troop.Configure(team, _troopCharacters, ShowcaseFrontage);
         return troop;
     }
 
@@ -89,6 +83,5 @@ public sealed class TroopSoldierShowcase : MonoBehaviour
         if (_ownsSquareProfile) Destroy(_squareProfile);
         if (_ownsTriangleProfile) Destroy(_triangleProfile);
         if (_ownsCircleProfile) Destroy(_circleProfile);
-        if (_ownsTroopProfile) Destroy(_troopProfile);
     }
 }

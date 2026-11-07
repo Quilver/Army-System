@@ -30,9 +30,7 @@ public sealed class ChainAndRangedScenarioTests
     public void TearDown()
     {
         TroopObjects.FlushPending();
-        foreach (var target in _created)
-            if (target != null) Object.DestroyImmediate(target);
-        _created.Clear();
+        TestScene.Destroy(_created);
         TroopTuning.OverrideForTests(null);
         _tuning?.DestroySections();
         _tuning = null;
@@ -57,13 +55,12 @@ public sealed class ChainAndRangedScenarioTests
     // Without a character, a default one is made with the given morale.
     Troop CreateTroop(string name, int team, Vector2 position, int baseMorale = 5, CharacterProfile character = null)
     {
-        var profile = TroopProfile.CreateRuntimeProfile(new List<CharacterProfile> { character ?? Character(baseMorale) }, 5f);
-        _created.Add(profile);
+        var troopCharacters = new List<CharacterProfile> { character ?? Character(baseMorale) };
         var root = new GameObject(name);
         root.transform.position = position;
         _created.Add(root);
         var troop = root.AddComponent<Troop>();
-        troop.Configure(team, profile);
+        troop.Configure(team, troopCharacters, 10);
         return troop;
     }
 
@@ -149,6 +146,7 @@ public sealed class ChainAndRangedScenarioTests
         {
             if (soldier.IsAlive && chain[0].LivingSoldierCount > 10) soldier.ApplyMitigation(new MitigationResult(0, 0, 100, 0));
         }
+        chain[0].SetMeleeState(true);        // retreats only come from melee (SU-104)
         chain[0].SetShockForTests(51f);      // retreat (EM 50 of 60), away from its facing
         Assert.IsTrue(chain[0].IsRetreating);
         Simulate(0.3f);
@@ -162,9 +160,10 @@ public sealed class ChainAndRangedScenarioTests
     [Test]
     public void ArcherTroop_FiresAVolleyEveryThreeSeconds_AndHitsAboutHalf()
     {
-        // Long bow range, accuracy and fire rate; damage 1 so the target does not break and walk out of range.
+        // Long bow range, accuracy and fire rate; damage 1 so the target does not break and walk out of range. Volley
+        // fire (SU-105): the whole troop shoots in sync.
         RangedWeaponProfile bow = RangedWeaponProfile.CreateRuntimeProfile("Long bow", RangedWeaponClass.Bow, 1, 20f, 2, 10,
-            false);
+            false, volley: true);
         MeleeWeaponProfile knife = MeleeWeaponProfile.CreateRuntimeProfile("Knife", MeleeWeaponClass.Sword, 1, 0,
             null, false);
         _created.Add(bow);
@@ -183,6 +182,47 @@ public sealed class ChainAndRangedScenarioTests
         Assert.Less(target.Soldiers.Count, 13);
     }
 
+    // SU-105: without Volley each archer shoots on its own clock: the same number of shots over time, but spread out
+    // rather than all at once.
+    [Test]
+    public void ArchersWithoutVolley_ShootOnTheirOwnTiming()
+    {
+        RangedWeaponProfile bow = RangedWeaponProfile.CreateRuntimeProfile("Long bow", RangedWeaponClass.Bow, 1, 20f, 2, 10,
+            false);
+        _created.Add(bow);
+        Assert.IsFalse(bow.Volley, "Volley is off by default");
+        CharacterProfile archer = Character(5, 15, ranged: bow,
+            skills: new List<WeaponSkill> { new(WeaponClass.Bow, 8), new(WeaponClass.Sword, 3) });
+        Troop archers = LineTroop("Archers", Vector2.zero, Vector2.right, character: archer);
+        LineTroop("Target", new Vector2(16f, 0f), Vector2.left, team: 1, character: Character(20, 40));
+
+        int frames = Mathf.CeilToInt(30f / FrameTime);
+        int mostInOneFrame = 0, previous = 0;
+        for (int i = 0; i < frames; i++)
+        {
+            _world.SimulateFrame(FrameTime);
+            int shots = archers.RangedFire.SingleShots;
+            mostInOneFrame = Mathf.Max(mostInOneFrame, shots - previous);
+            previous = shots;
+        }
+        Assert.AreEqual(0, archers.RangedFire.Volleys, "No volleys");
+        Assert.That(archers.RangedFire.SingleShots, Is.InRange(100, 132), "12 archers, one shot every 3 s each");
+        Assert.LessOrEqual(mostInOneFrame, 4, "Shots are spread out, not 12 at once");
+
+        // Combat log: every shot that landed is logged with its hit chance, roll and damage.
+        int logged = 0;
+        for (int i = 0; i < CombatLog.Count; i++)
+        {
+            CombatLogEntry entry = CombatLog.Get(i);
+            if (entry.Kind != CombatLogKind.Shot) continue;
+            logged++;
+            Assert.AreEqual(0.5f, entry.HitChance, 1e-4f, "P(Hit) = (2 + 8) / (2 + 8 + 10)");
+            Assert.AreEqual(entry.HitRoll < entry.HitChance, entry.Hit);
+            if (entry.Hit) Assert.AreEqual(1, entry.Damage.Raw);
+        }
+        Assert.Greater(logged, 80, "Shots in flight at the end are not logged yet");
+    }
+
     [Test]
     public void MovingOrEngagedArchers_DoNotFire()
     {
@@ -195,6 +235,7 @@ public sealed class ChainAndRangedScenarioTests
         Simulate(6f);
         Assert.IsTrue(archers.IsEngaged);
         Assert.AreEqual(0, archers.RangedFire.Volleys, "No fire while engaged");
+        Assert.AreEqual(0, archers.RangedFire.SingleShots, "No fire while engaged");
     }
 
     // SU-90: a Fire & Engage weapon fires one volley when its troop enters an engagement, then holds while engaged.
@@ -232,13 +273,12 @@ public sealed class ChainAndRangedScenarioTests
 
     Troop TroopOf(string name, int team, Vector2 position, Vector2 facing, params CharacterProfile[] characters)
     {
-        var profile = TroopProfile.CreateRuntimeProfile(new List<CharacterProfile>(characters), 5f);
-        _created.Add(profile);
+        var troopCharacters = new List<CharacterProfile>(characters);
         var root = new GameObject(name);
         root.transform.position = position;
         _created.Add(root);
         var troop = root.AddComponent<Troop>();
-        troop.Configure(team, profile);
+        troop.Configure(team, troopCharacters, 10);
         troop.OrderLine(position, facing, troop.NaturalLineLength);
         return troop;
     }
@@ -258,13 +298,34 @@ public sealed class ChainAndRangedScenarioTests
 
         Troop enemy = TroopOf("Enemy", 1, enemyPosition, Vector2.down, Squad(1, null, 40));
         Simulate(8f);
-        Assert.Greater(archers.RangedFire.Volleys, 0, "The flank archers reach the enemy");
+        Assert.Greater(archers.RangedFire.Volleys + archers.RangedFire.SingleShots, 0, "The flank archers reach the enemy");
     }
 
     // D-55: in a composite troop the archers take the front rank when not engaged and fall back behind the melee soldiers
     // when engaged.
+    // Melee jostles the ranks a lot, so the engaged lead is averaged over eight battle seeds. (A single seed passed only on
+    // the random stream it happened to get from the soldier sprites earlier tests left in the scene; see TestScene.)
     [Test]
     public void CompositeTroop_ArchersLeadWhenFree_AndFallBackWhenEngaged()
+    {
+        float engaged = 0f;
+        const int seeds = 8;
+        for (int seed = 1; seed <= seeds; seed++)
+        {
+            TestScene.Destroy(_created);
+            _world = new GameObject("Test Combat World").AddComponent<TroopCombatWorld>();
+            _world.SetSeed(seed * 1009);
+            _world.Initialize();
+            _created.Add(_world.gameObject);
+            engaged += CompositeLeads();
+        }
+        engaged /= seeds;
+        Debug.Log($"Composite rank lead (engaged, mean of {seeds} seeds): {engaged:0.00}");
+        Assert.Less(engaged, -0.4f, "Archers fall back behind the melee soldiers");
+    }
+
+    // The free lead is checked here; returns the engaged lead.
+    float CompositeLeads()
     {
         Troop mixed = TroopOf("Mixed", 0, Vector2.zero, Vector2.right, Squad(8, LongBow()), Squad(12, null));
         Simulate(10f);
@@ -275,8 +336,8 @@ public sealed class ChainAndRangedScenarioTests
         TroopOf("Enemy", 1, new Vector2(5.5f, 0f), Vector2.left, Squad(20, null, 40));
         for (int i = 0; i < 300 && !mixed.IsEngaged; i++) Simulate(FrameTime);
         Assert.IsTrue(mixed.IsEngaged, "The enemy engages the mixed troop");
-        // Melee jostles the ranks, so the lead is averaged over seconds 4-8 of the engagement.
-        Simulate(4f);
+        // Melee jostles the ranks, so the lead is averaged over seconds 12-16 of the engagement.
+        Simulate(12f);
         float engaged = 0f;
         int samples = 0;
         for (; samples < 8 && mixed.IsEngaged; samples++)
@@ -287,7 +348,7 @@ public sealed class ChainAndRangedScenarioTests
         engaged /= Mathf.Max(1, samples);
         Debug.Log($"Composite rank lead (engaged, mean of {samples} samples): {engaged:0.00}");
         Assert.Greater(samples, 4, "Still engaged");
-        Assert.Less(engaged, -0.4f, "Archers fall back behind the melee soldiers");
+        return engaged;
     }
 
     // D-55: a composite line spreads both kinds of soldier along its whole length, even when they start at opposite ends.
@@ -334,12 +395,12 @@ public sealed class ChainAndRangedScenarioTests
     [Test]
     public void IdleCompositeTroop_StaysMixed()
     {
-        var profile = TroopProfile.CreateRuntimeProfile(new List<CharacterProfile> { Squad(8, LongBow()), Squad(12, null) }, 5f);
-        _created.Add(profile);
+        var troopCharacters = new List<CharacterProfile> { Squad(8, LongBow()), Squad(12, null) };
         var root = new GameObject("Idle Mixed");
         _created.Add(root);
+
         var mixed = root.AddComponent<Troop>();
-        mixed.Configure(0, profile);
+        mixed.Configure(0, troopCharacters, 10);
         Simulate(12f);
         Assert.IsFalse(mixed.FormationMode == FormationMode.Line || mixed.FormationMode == FormationMode.Chain);
         float lead = ShooterLead(mixed);

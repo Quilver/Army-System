@@ -7,6 +7,497 @@ change work; confirm or replace). `specifications.md` itself is not edited; fold
 
 ---
 
+## 2026-11-07 (5): Missions
+
+### SU-119 Mission sheets, mission catalog and mission folders (Decision + Assumptions, amends SU-50, SU-117)
+- Decision: each mission has a **mission sheet** (`MissionDefinition`) holding its pre-battle data (the existing
+  `PreparationData`), its tween data (global and character achievements for this mission, **one next-mission link**)
+  and its battle scene. `Resources/MissionCatalog.asset` lists the missions in campaign order; a mission's number is
+  its place in the list and is what `CampaignData.CurrentLevel` holds (save format unchanged). Workflow:
+  `Docs/Missions/README.md`.
+- Decision: missions live in `Assets/Missions/Mxx - <Title>/` with `PreBattle/`, `Battle/` (scene, navmesh,
+  `Map/` layer images) and `Tween/` folders. **Leveraged Wars > Missions > New Mission** makes the folders, sheet,
+  PreparationData and battle scene (empty, or a copy of another mission's with its own navmesh copy) and links the
+  previous last mission to it. **Migrate Levels 1 and 2** moves the two levels there (assets keep their GUIDs).
+- Decision: `PreparationData` gains **New Characters**: they join the roster at level 1 **when the tent opens**, before
+  mandatory characters are deployed; they are not deployed unless also mandatory.
+- Decision: the deploy cap (SU-50) is per mission: `PreparationData.maxDeployed`, default 5.
+- Decision: the tent launches the current mission's battle scene, and the post-battle Continue goes to the finished
+  mission's next mission (none: game over). The battle scene must be in Build Settings; **Sync Build Settings** puts the
+  menu scenes at 0-2 and the missions' scenes after them in catalog order.
+- Assumption: without a catalog everything falls back to the old flow (tent `PreparationData` list by level, scene
+  index `CurrentLevel + 2`, `CurrentLevel++` after a battle).
+- Assumption: the mission's achievements are added to those on the scene's Achievement Controller; achievements on
+  scene objects (a capture point) stay on the controller. Win and loss conditions stay the scene's Battle End components
+  for now.
+- Assumption: the tent's map shows "Mission N: Title" when the mission has a title.
+- Assumption: migrated missions are titled "Level 1" and "Level 2"; their scenes are renamed "M01 Battle" and
+  "M02 Battle", and dialogue assets found in the level folders go to `PreBattle/`.
+
+---
+
+## 2026-11-07 (4): Troops are lists of characters
+
+### SU-118 Troop Profile removed: troops hold their characters and set their own frontage (Decision + Assumptions, amends SU-103, SU-117)
+- Decision: the `TroopProfile` ScriptableObject is removed. A `Troop` now holds a list of `CharacterProfile`s (leader
+  first: troop name and portrait are the leader's) and resolves its stats from them with `CompositeTroopResolver`
+  (spec §1.2). The troop assets ("Julian's Troop", "Spearman Troop", "Composite Troop", ...) are deleted.
+- Decision: a troop **determines its frontage at the start of the battle**, when its soldiers spawn, from its total
+  soldier count (`TroopFrontageRule`, SU-117). This now applies to every troop: deployed from the tent, a level's
+  default troops and troops placed in a scene. The frontages saved on the old troop assets are no longer used.
+- Decision: `BattleReport.DeployedTroops` is a list of `DeployedTroop`, each the list of characters for one troop. The
+  deployment zone passes each list to a troop (`Troop.Configure(team, characters)`); `RosterTroops.Sync` builds the
+  lists from the deployed characters and pairings.
+- Assumption: `Troop.Configure` takes an optional frontage override, used only by the tests and the soldier showcase
+  scene, which need a fixed width; 0 (the default) uses `TroopFrontageRule`.
+- Assumption: the deployment zone spawns every troop first and lays them out afterwards, so the row spacing uses each
+  troop's own frontage and size.
+- Assumption: scenes, the Troop prefab and the level DataManagers were migrated by replacing each troop asset reference
+  with that asset's characters (same order).
+
+---
+
+## 2026-11-07 (3): Battle preparation and deployment
+
+### SU-117 Mandatory characters, frontage from soldier count, composite troops in the tent (Decision + Assumptions, amends SU-50, SU-52, Q-53)
+- Decision: each mission's `PreparationData` has **Mandatory Characters**. They are deployed when the tent opens and
+  cannot be undeployed. Prince Julian is mandatory in Level 1 and Level 2 (and in the tent's Sample Mission).
+- Decision: Julian is free to deploy. Assumption: this applies to every mandatory character (cost 0, shown as "Free"),
+  rather than to Julian by name. Mandatory characters still count towards the 2-5 deploy limits.
+- Assumption: a mandatory character missing from the roster is added to it at level 1 (logged).
+- Decision: a troop made for battle from deployed characters has its **frontage set from its total soldier count**
+  (`TroopFrontageRule`): up to 4 soldiers, frontage = soldiers; up to 10, half rounded up; up to 16, a third rounded up;
+  more than 16, a quarter rounded up (minimum 1). `TroopProfile.CreateComposite` uses the same rule, replacing the Q-53
+  "largest part" assumption.
+- Assumption: deployed characters always get a troop made at runtime, so the per-character troop assets
+  (e.g. "Julian's Troop") and their saved frontage are no longer used for deployment. A level played on its own still
+  uses its DataManager's default troop assets unchanged. The soldier count is the characters' `Numbers`
+  (level-up Numbers gains are not applied to spawning yet).
+- Decision: **composite troops** are made on the Map's deployment page by dragging a deployed character's card onto
+  another deployed character's card. The dragged character serves under the one it was dropped on; the two fight as one
+  troop led by that character (leader first: troop name and portrait are the leader's). At most **2 characters** per
+  composite troop (`RosterTroops.MaxCharactersPerTroop`).
+- Decision (UI): the pairing slot box is removed from the deployed cards. A follower's card is listed straight after its
+  leader's and **indented** under it (e.g. Sir Jagen, then Lyra indented below).
+- Assumptions (UI): both cards of a composite are tinted. Dragging a follower off its leader (dropping anywhere but a
+  card) splits the pair. Dropping onto a character that serves under someone, or dragging a
+  character that already leads a composite, is refused with the reason shown on the readiness line. A follower dropped on
+  another leader moves to it. Undeploying either character splits the troop. Each character keeps its own cost; the
+  deploy cap counts characters, not troops. Pairing is mouse only for now (no keyboard / controller path).
+- Assumption (post-battle records): in a composite troop, a casualty goes to the fallen soldier's own character, kills go
+  to the leader, and a rout marks both characters routed. Achievements already find a follower's troop.
+
+---
+
+## 2026-11-07 (2): Post-battle book fixes
+
+### SU-116 Books lose the bookmark; characters always reach the post-battle book (Decision + Assumptions, amends SU-115)
+- Decision: no bookmark ribbon on any book (Roster Ledger, Debts, Map, post-battle book); removed from the builder and
+  from the Battle Preparation and Post battle scenes.
+- Decision: the BattleReport is the go-between for deployed characters. A level played on its own (no characters from
+  the tent) now deploys the campaign characters found in the player's troops (their roster entries if the campaign has
+  them, else new level 1 entries), so achievements, kills and XP still reach the post-battle book
+  (`RosterTroops.EnsureDeployedCharacters`). A battle scene without an AchievementController gets one at battle start.
+  The controller and the book log what they track and receive.
+- Decision: in the editor, a Post battle scene with no deployed characters shows debug data (`PostBattleDebugData`):
+  Julian and Lyra deployed and surviving, Julian also earning Ten Kills, Routed Foe, Against the Odds and Shock Assault
+  (14 XP, a level-up), and the battle won (Victory, Mission Complete). Toggle: Debug Data When Empty on the book.
+- Decision: the Battle Report's figures (and a character's kills and casualties) count up together.
+
+---
+
+## 2026-11-07: Post-battle book, 10-XP levels, stat growth, Achievement Tuning
+
+### SU-115 Post-battle book and levelling (Decision + Assumptions, amends SU-62, SU-114)
+- Decision: the achievements every character has (Survivor, Earned Your Spurs, Routed Foe) move from the class table
+  to **Achievement Tuning** (`Resources/Battle Tuning/Achievement Tuning`, `AchievementTuning`, menu Battle Tuning), which
+  also lists the global achievements of every battle. New: **Mission Complete** (Victory, 200 gold). The class mini
+  quests of SU-114 stay in `Resources/Achievement/Class Achievements` as guessed.
+- Decision: a level is **10 XP** (`RosterCharacter.XpPerLevel`, was 100). Achievement XP is divided by 10, rounded half
+  up: Survivor 2, Earned Your Spurs 2, Ten Kills 3, Twenty Kills 4, Routed Foe 3, Against the Odds 3, Shock Assault 3,
+  Held the Line 2, Volley Disorder 2. The global XP rewards round to 0 (Victory 3 -> 0, test achievements too).
+  Save version 3: older saves are discarded. Tent sample XP divided by 10.
+- Decision: **stat growth on level-up** (closes the SU-62 open item): each level rolls every stat (Soldiers, HP, Morale,
+  Discipline, Speed, Defence, Strength, Support, Charge, Aggression) and each listed weapon skill against its growth
+  chance; a success below the class cap adds +1. Gains are saved on the `RosterCharacter` (`statGains`, `skillGains`)
+  and shown by the ledger (`RosterCharacter.Stat`, `SkillLevel`).
+- Decision: XP shows as **10 notches** (glowing when full, black when empty) on the ledger and in the post-battle book.
+- Decision: the post-battle screen is a **book** like the Roster Ledger (build: Leveraged Wars > Post-Battle > Build
+  Post-Battle Book; the old canvas is switched off, renamed "(retired)").
+  - Spread 1: **Battle Report** (time taken, enemy slain, casualties, enemy troops routed, our troops routed, gold
+    earned, prestige earned when not 0, achievements won) facing **Battle Honours** (global achievements stamped one by
+    one while the treasury counts up).
+  - One spread per deployed character: its ledger page facing its **Battle Record** (enemy slain, casualties,
+    experience gained, its achievements stamped one by one).
+  - Animations: figures count up; stamps come down, land and glow; each stamp's XP lights notches one by one; a full row
+    is a level-up: all notches pulse together, then each stat glows in turn and gains a green +1 or returns to normal.
+  - Timings, colours and sounds: **Post Battle Tuning** (`Resources/Campaign Tuning/Post Battle Tuning`, menu Campaign
+    Tuning). Defaults: count-up 0.9 s, stamp drop 0.28 s from 2.4x, glow 0.9 s, 0.45 s between stamps, 0.16 s per notch,
+    3 pulses of 0.3 s at 1.4x, 0.22 s glow + 0.18 s result per stat. Sounds from Temporary Assets/Sound effects/UI.
+- Assumption: a spread per character (ledger page left, record right), since one 548 x 556 page cannot hold the ledger
+  page and the battle record. The book opens on the report; pages turn with the buttons, Q / E, Page Up / Down or the
+  shoulders; Space / Enter / click skips a spread's animation; a spread animates once and shows its end state if reopened.
+- Assumption: every reward is **granted when the book opens** (`PostBattleResults`), and the animations replay what was
+  recorded; Continue behaves as the old Next button.
+- Assumption: kills and casualties per character count enemy soldiers killed by, and soldiers lost from, the
+  character's troop (`BattleReport.CharacterRecords`); routed troops count routs of each side (`BattleEvents.TroopBroke`).
+- Open item: stat gains are saved and shown but **not yet applied in battle** (the troop still reads the
+  CampaignCharacter asset's stats).
+- Tests: `AchievementTests` (tuning, 10 XP per level and growth rolls, post-battle results granted once).
+
+---
+
+## 2026-11-06 (6): Achievement system refactor and character mini quests
+
+### SU-114 Achievements: break events, character mini quests, rewards (Decision + Assumptions, amends SU-61)
+- Decision: achievements do two jobs. **Global** achievements track the battle (victory, side objectives such as a held
+  capture point) and give gold and prestige. **Character** achievements are each class's and character's mini quests and
+  replace XP for kills: they are measured on the troop the deployed character leads and their XP goes to that character.
+  Rewards are gold, prestige and XP for now; new kinds (e.g. story flags) derive from `Reward`.
+- Decision: the requested character achievements, with their icons (`Campaign/UI/After battle menus/Symbols/Achievements/`,
+  SVG sources in its `Source~` folder) and assets in `Resources/Achievement/`:
+  | Achievement | Requirement | Reward |
+  |---|---|---|
+  | Survivor (Survived) | `CharacterSurvived`: the troop was not routed or wiped out when the battle ended | 20 XP (+2 gold, 1 prestige kept) |
+  | Earned Your Spurs / Ten Kills / Twenty Kills | `KillTracker` 5 / 10 / 20 kills | 15 / 25 / 40 XP (+12 gold kept on Spurs) |
+  | Routed Foe | `RoutEnemy`: an enemy troop routs, credited to the troop | 25 XP |
+  | Against the Odds | `DefeatWhileOutnumbered`: an enemy troop that outnumbered the troop in melee is defeated | 30 XP |
+  | Shock Assault | `BreakOnInitialAssault`: an enemy retreats or routs in the first clash of an assault | 25 XP |
+  | Held the Line | `HoldMelee`: 60 s of battle time in one melee | 20 XP |
+  | Volley Disorder | `RangedDisorder`: an enemy troop is disordered by the troop's projectiles | 20 XP |
+- Battle side: `BattleEvents.TroopBroke` (`TroopBreakInfo`: troop, kind Rout / Retreat / Disorder / SurroundedBreak,
+  cause, cause was ranged) is raised at every morale break; for a rout, before `TroopDefeated`. `Troop.LastAttacker`,
+  `LastAttackWasRanged` and `LastAttackTime` record the enemy troop whose hit last did damage. No battle behaviour changes.
+- Tween side: one `Achievement` base (icon, title, description, rewards); `Requirement` base with a battle lifecycle
+  (Begin, Tick, Finish at battle end, Abort) that unsubscribes from the static battle events, so a second battle in the
+  same session no longer receives the first battle's handlers. Each battle tracks instantiated copies, so assets are never
+  modified. Class mini quests live in `Resources/Achievement/Class Achievements` (`ClassAchievements`), since
+  `CharacterClass` is battle data. Character achievements listed on the battle's controller now apply to every deployed
+  character (they were created but never set up). Rewards are granted once per achievement, as its card appears or, for
+  any left, when the player leaves the post-battle screen (they were only granted by the card before). See
+  `Assets/Scripts/Tween/Achievements/README.md`.
+- Assumption: **credit** for an enemy's break or defeat goes to the troop that dealt its last damaging hit, or to a troop
+  in melee with it at that moment (so several troops can earn it from one enemy).
+- Assumption: **outnumbered** means the enemy troop's living soldiers exceeded ours (Ratio 1, adjustable) at any moment
+  while the two were in melee; only the two troops count, not allies on either side.
+- Assumption: **initial assault** is our troop's first melee with that enemy troop, entered while our troop has Assault
+  (it attacked with an order, spec §4.2); a retreat or rout within 15 s of first contact, before our troop leaves melee,
+  counts. "Require Assault" off counts any first contact, including being charged.
+- Assumption: **lasting 1 minute in melee** is 60 s of battle time (battle speed applies, pauses do not count) in melee
+  without our troop retreating or routing; gaps out of melee shorter than 2 s do not end the engagement.
+- Assumption: **disordered by ranged attacks** means the hit that broke the enemy into disorder (SU-104) was a
+  projectile from our troop; a rout or retreat caused by projectiles counts only with "Count Other Breaks".
+- Assumption: class mini quests (all adjustable in the table): every character: Survivor, Earned Your Spurs, Routed Foe;
+  Archer: Volley Disorder, Ten Kills; Skirmisher: Volley Disorder, Against the Odds; Cavalry: Shock Assault, Ten Kills;
+  Huscarl: Held the Line, Against the Odds, Twenty Kills; Spearmen: Held the Line, Shock Assault.
+- Open item: the "Reclaimed farm" capture-point achievement in Level 1 (and the troop test level) has no capture point
+  assigned, so it never paid out; it is now skipped with a warning until the point is set on the AchievementController.
+- Tests: `AchievementTests` (level rules, melee timer, outnumbered rule, lifecycle, rewards granted once, asset checks).
+
+---
+
+## 2026-11-06 (5): Charge window 45 s; combat log readable
+
+### SU-112 Charges per 45 s, set in Melee Tuning (Decision, amends spec §4.3, §1.5 Aggression)
+- Decision: a soldier makes about **EffectiveAggression charges per 45 s** (was per `ActionWindowSeconds`, 30 s). The
+  window is a new Melee Tuning value, `ChargeWindowSeconds` = 45. Charges are 1.5x rarer: a Spearman (Aggression 3)
+  charges about once every 15 s while it may charge (front rank, within the gate).
+- Assumption: only charges use it. Ranged fire rate (shots per window) and Shock decay keep `ActionWindowSeconds` (30 s,
+  Soldier Tuning).
+- Effect (`MeleeDurationTests`, project data): Spearmen melees now last **about 3.5 to 4.3 minutes** (was about 2.75).
+  Measured ways back to about 3 minutes: a 40 s window (about 3.2 min), or melee weapon damage -2 instead of -3 with
+  the 45 s window (about 3.1 min). Not changed; the designer's call. `SpearmenMelee_LastsAboutThreeMinutes` now accepts
+  2 to 5 minutes.
+- Effect: with fewer charges to shuffle the ranks, a composite troop's archers take longer to drop behind its melee
+  soldiers once engaged (D-55). They are well behind by 12-16 s (they were by 4-8 s); the test now samples then.
+- Tests: `TroopScenarioTests.ChargeRate_IsAboutAggressionPerChargeWindow` (was `ChargeRate_Over30Seconds_IsAboutAggression`;
+  6 to a rank and 90 s, so enough front-rank charges are rolled), `OnlyTheFrontRank_StartsCharges` runs 30 s.
+
+### SU-113 Combat log fits its panel and breaks down the charge bonus (Decision + Assumption, amends SU-110)
+- Found in play: entries ran past the right edge of the panel, and the charge bonus looked too large ("24 charge" for
+  Prince Julian, Charge 11).
+- The charge value was right by spec §4.5: `ChargeBonus = Charge + weapon ChargeBonus + AssaultChargeBonus` =
+  11 + 8 (Lance) + 5 (Assault) = 24. The log now shows the parts: "24 charge (11 Charge + 8 Lance + 5 Assault)".
+- Entries wrap to the panel's width, and each step is on its own line: who fought (A and B), A's Combat Power, B's
+  Combat Power, the chance, roll and winner, the damage and the armour roll, and what the loser lost.
+
+---
+
+## 2026-11-06 (4): Stunned soldiers deal no damage
+
+### SU-111 A stunned soldier that wins a clash deals no damage (Decision, amends SU-107, spec §4.5, §4.6)
+- Decision: a stunned soldier caught in a clash still rolls the duel as before, but if it wins it deals **no damage**
+  (like a fleeing winner, Q-37). If it loses it takes the hit as usual (nothing while it is on 0 HP).
+- The combat log tags it "(stunned)" and shows "No damage (winner stunned)".
+- Tests: `TroopScenarioTests.StunnedWinner_DealsNoDamage`.
+
+---
+
+## 2026-11-06 (3): Longer melees; frontage, disorder, volley fire, combat log
+
+### SU-103 Troop radius becomes troop frontage (Decision + Assumptions, amends spec §1.4, §3.2, §3.3, Q-11, Q-12, Q-53)
+- Decision: the troop profile's **Troop Radius** is renamed **Frontage**: about how many soldiers wide the troop stands
+  in line formation. Default **5**. The natural line is `L_nat = Frontage x LineSpacing` (5 x 0.9 = 4.5 units), so a
+  frontage of 5 puts 5 soldiers in each rank (16 Spearmen stand 4 ranks deep).
+- Assumption: saved assets keep their number (old `_troopRadius` reads as `_frontage`): Spearmen, Archer, Skirmisher,
+  Jagen, Robin and the Composite troop are 5 wide; Julian, Laurice, Cav and Huskarl are **3 wide**. Check those four.
+  Before, every radius-5 troop stood about 10 wide (L_nat 9), so lines are now about half as wide.
+- Assumption: the troop still has a size in world units for the blob, the soldier clamp, pivot spacing, deployment
+  spacing and pathing, now derived: `L_nat / NaturalLineRadiusScale` (the old radius-to-line ratio, so frontage 10 is
+  the old radius 5), but never smaller than the radius whose blob (`BlobRadiusScale` x radius) holds the troop's
+  soldiers packed at line spacing. Spearmen: 2.5 units (was 5). It is no longer a profile value
+  (`Troop.Radius`, `TroopProfile.Radius`, `LineGeometry.TroopRadius`).
+- Assumption: a composite troop takes the largest part frontage (Q-53 as before).
+- Clash knock-back keeps the 0.3 units every radius-5 troop had (it was 0.06 x the smaller radius), so clashes are
+  unchanged.
+- The hidden fallback radius on scene Troop components (16.5) is not carried over; a troop without a profile is 5 wide.
+- Code: `TroopProfile.Frontage`, `Troop.Frontage`, `LineGeometry.NaturalLength / TroopRadius`,
+  `TroopTuning.NaturalLineLength(frontage)`, `DeploymentZone`, `RosterTroops.DefaultTroopFrontage`.
+- Tests: `LineGeometryTests`; the scenario tests pass frontage = 2 x their old radius, which keeps their geometry.
+
+### SU-104 Retreats only from melee; out of melee a break disorders the troop (Decision + Assumptions, amends spec §5.3, §5.5)
+- Decision: a Case B break (§5.3) retreats only when the troop is **engaged in melee**. Out of melee (for example under
+  arrow fire) the troop becomes **disordered**: it cannot move for `DisorderSeconds` = **10 s** (Morale Tuning).
+- Assumption: "engaged in melee" is `Troop.InMelee` (engaged with an enemy troop, within A_Distance plus the hold
+  margin).
+- Assumptions, what disorder does: Shock resets to 0 and EffectiveMorale drops by the retreat penalty (5), as for a
+  retreat (it counts in `RetreatCount`). Its Move, Pursue and line orders are cancelled, and new orders are refused until
+  it ends. The pivot does not march, pursue or get pushed by line pressure; friends can still nudge it (SU-94) and a
+  chain does not pull it along (shared retreat). It can still fight, charge and shoot. The troop card's Formation row
+  shows "Disordered Ns". The AI treats it like a retreating troop and re-issues its order afterwards.
+- Assumption: breaking again while disordered restarts the 10 s (another penalty); if the troop is in melee by then it
+  retreats, which ends the disorder. Case A (rout) and Case C (surrounded break) are unchanged.
+- Tests: `TroopScenarioTests.BreakOutOfMelee_Disorders_NoRetreat_NoMovementForTenSeconds`, `BreakInMelee_StillRetreats`.
+  Retreat tests now put the troop in melee first.
+
+### SU-105 Ranged weapons fire in volleys only when Volley is set (Decision + Assumptions, amends spec §4.7)
+- Decision: ranged weapons have a **Volley** box, off by default. With Volley the troop's soldiers with that weapon
+  shoot in sync, all at once, as every troop did before. Without it each soldier shoots on its own timing.
+- Assumptions: a soldier without Volley shoots once every `ActionWindowSeconds / FireRate` (+/- 10% jitter), its first
+  shot after a random part of that interval, so the troop's shots spread out. The firing conditions, target troop and
+  hit roll are unchanged. Each single shot goes to the reachable enemy soldier with the fewest of the troop's projectiles
+  already flying at it (nearest on a tie). In a troop with both kinds, the volley soldiers fire together and the others
+  on their own.
+- Fire & Engage volleys (SU-90) stay volleys whatever the box says.
+- No existing weapon has Volley ticked (Short Bow, Javelin): every archer and skirmisher now shoots on its own timing.
+  Tick it on the weapon asset for drilled volley fire.
+- Code: `RangedWeaponProfile.Volley`, `RangedFireController` (`SingleShots` counts the single shots).
+- Tests: `ChainAndRangedScenarioTests.ArchersWithoutVolley_ShootOnTheirOwnTiming`; the volley test uses a Volley bow.
+
+### SU-106 Only the front rank charges (Decision + Assumptions, amends spec §4.3; to lengthen melee)
+- Decision: only soldiers in the **front rank** may start charges.
+- Assumptions: the front rank is one rank's worth of soldiers (the line's soldiers per rank; the troop's frontage when
+  it is not in a line), taken as the living soldiers standing furthest toward each enemy troop the troop may charge
+  (from its pivot toward that troop's pivot), so a flank attacker is met by the soldiers on that side. Soldiers out
+  charging or running back keep their place in that count, so rear soldiers do not step up while they are away.
+  Followers (§4.4) are unchanged: any of the Discipline nearest may follow.
+- Melee Tuning `FrontRankChargesOnly` (on) switches it.
+- Tests: `TroopScenarioTests.OnlyTheFrontRank_StartsCharges`; the 30 s charge-rate test counts front-rank soldiers.
+
+### SU-107 Stunned soldiers (Decision + Assumptions, amends spec §4.6; to lengthen melee)
+- Decision: a soldier brought to **0 HP with at least half of that damage Bruise** is **stunned**, not killed. It
+  cannot charge while stunned, and dies if its troop **retreats in melee**. It recovers once it has healed to **5 HP**.
+- Assumptions:
+  - "At least half" is Bruise >= Bleed (Bruise >= MaxHP / 2 at 0 HP). Overflow counts as Bleed.
+  - A stunned soldier is alive: it counts toward the troop's soldiers, EffectiveMorale and capture points. Its bruises
+    heal at the usual 1 HP/s from 0 HP, so a fully bruised soldier is down for 5 s.
+  - It neither charges nor follows, and cannot support (as a fatigued soldier). It can still be charged, and it still
+    takes part in a clash it is caught in, though it deals no damage if it wins (SU-111). On 0 HP it has no HP left to take, so a hit
+    then does nothing; once healed above 0 a hit that brings it back to 0 stuns it again or, with Bleed over half,
+    kills it.
+  - It is not snapped back inside the troop radius and walks back to its troop with the field; it does not rush back
+    after a charge.
+  - "Retreats in melee": a Case B retreat (only possible in melee, SU-104). Assumption: a **rout while in melee** also
+    leaves its stunned behind. A disorder or a chain's shared retreat does not. The dead are credited to the enemy troop
+    it was engaged with (`BattleEvents.SoldierKilled`).
+  - Drawn greyed like a corpse, without its glow, until it recovers.
+- Soldier Tuning `StunAtZeroHp` (on) and `StunRecoverHp` (5).
+- Code: `SoldierLifeState.Stunned`, `SoldierHealth.IsKnockedOut`, `SoldierAgentState.IsStunned`, `Troop.KillStunnedSoldiers`.
+- Tests: `TroopScenarioTests.ZeroHpMostlyBruise_Stuns_AndRecoversAtFiveHp`, `ZeroHpMostlyBleed_Kills_AndStunsCanBeSwitchedOff`,
+  `StunnedSoldiers_DoNotCharge`, `RetreatFromMelee_KillsTheStunned_DisorderDoesNot`.
+
+### SU-108 Melee weapon damage -3; spearmen melee lasts about 3 minutes (Decision, amends spec §1.6 sample data)
+- Decision: melees between two Spearman troops should last about **3 minutes** from engagement to rout, without changing
+  stats or clash resolution, using SU-106, SU-107 and a cut to melee weapon base damage. Measured first: about 1 minute.
+- Decision: melee weapon base damage is cut by **3** (the designer chose 3 over the 2 first proposed, which measured
+  about 2.1 minutes): Arming Sword 5 -> 2, Boar Spear 4 -> 1, Dagger 2 -> 0, Great Axe 8 -> 5, Lance 3 -> 0 (Couched
+  Lance still doubles the total while charging).
+- Measured (`MeleeDurationTests`, two Spearman Troops on the project tuning, one attacking and re-attacking after each
+  retreat, as a player would): before 1.0 min; with frontage 5 (SU-103) 1.5 min; with SU-106 + SU-107 + damage -2,
+  2.1 min; with damage -3, **about 2.75 min on average** (2.0 to 3.2 min across seeds). Both troops attacking: about
+  2.5 min.
+- Tests: `MeleeDurationTests.SpearmenMelee_LastsAboutThreeMinutes` checks 2 to 4 minutes with the project data. The
+  lever sweeps (`SpearmenMelee_Levers`, `SpearmenMelee_AllLevers`) are explicit: run them by name to re-tune.
+- Test clean-up: Edit mode never calls `OnDestroy`, so destroyed troops left their soldier sprites in the scene. They
+  piled up from test to test and shifted every later troop's random stream (`Troop.StreamId` uses the hierarchy), so
+  results depended on test order. Scenario tests now clean up through `TestScene.Destroy`, and a troop destroyed in battle
+  removes its sprites at once. `CompositeTroop_ArchersLeadWhenFree_AndFallBackWhenEngaged` averages four seeds (one seed
+  had passed only on its leftover-sprite stream).
+
+### SU-109 Hit squash and stretch doubled (Decision, amends SU-36)
+- Decision: the squash and stretch of a soldier taking damage is twice as strong: ModelMat Squash 0.4 -> **0.8**,
+  Stretch 0.35 -> **0.7** (also the shader defaults). Assumption: Taper (0.8) is the shape of the stretch, not its
+  amount, and stays: doubling it would turn the front of the sprite inside out. Timing is unchanged.
+
+### SU-110 Combat log panel (Decision + Assumptions, spec §6 UI)
+- Decision: a pop-out **combat log**: an arrow tab on the left edge of the battle screen shows or hides it. It records
+  every clash and every ranged attack with its bonuses and the damage done.
+- Each **clash**: the two soldiers (troop and soldier number; A is the charger, the earlier charger or the lower id,
+  Q-28), charging / Assault / flanked tags, each side's Combat Power as skill + charge + support, P(A), the roll, the
+  winner and Domination, then the damage: Strength + weapon + Domination (x2 lance) = raw, split into deflect, bruise,
+  bleed and overflow, and the HP lost, with killed / stunned / HP left. A winner whose troop is fleeing deals none (Q-37).
+- Each **shot** (logged when it lands): shooter and target, weapon, hit chance and roll, hit or miss, and on a hit the
+  same damage line.
+- Assumptions: top-left panel, half the screen high, newest entry at the bottom; it follows the newest entry until
+  scrolled up. Clashes and Shots toggles filter it. Each entry has a bar in the attacker's army colour. The battle keeps
+  the newest 600 entries; times are battle time (m:ss, nothing while paused). Clicks on the panel are not orders and the
+  mouse wheel over it scrolls the log instead of zooming the camera.
+- Code: `CombatLog` (records, `Combat/CombatLog.cs`), `CombatLogHud` (panel, drawn by `TroopPlayerOrders`),
+  `TroopCombatWorld.BattleTime`, `CameraControls.ZoomBlocked`.
+- Tests: `TroopScenarioTests.CombatLog_RecordsEveryClash_WithItsBonusesAndDamage`; the single-shot archer test checks the
+  logged shots.
+
+---
+
+## 2026-11-06 (2): Illustrated art for the pre-battle tent
+
+### SU-102 Tent hub placeholder sprites replaced by ink illustrations (Decision + Assumptions, TentHub.md §2, §7)
+- Decision: the SVG mock-up sprites are replaced one for one (TentHub.md §7) by the designer's sepia ink illustrations:
+  Background, Weapon Rack, Debts desk, Gold Chest, Ledger, Map, Dispatch-bearer, Merchant (the man inspecting a coin)
+  and Tactician (the robed monk). Their white backgrounds and die-cut sticker borders were cut away to transparency.
+- Still placeholders, unchanged art: Captain, War Table and the dispatch glow.
+- Assumption: the new background already shows the open tent door, so the Tent Flaps sprite is now a cut-out of that
+  doorway from the background (feathered edges) rather than a separate drawing; it still brightens and scales on hover
+  and only the doorway takes clicks.
+- Assumption: the layout (`TentLayout.json`) is re-fitted to the new background and to each sprite's aspect ratio,
+  keeping the left-to-right zones and draw order of §2. Changed positions: the weapon rack, merchant, debts desk and
+  chest stand left of the tent pole; the Captain beside the pole; the Tactician behind the war table; the war table
+  moved 36 px left and 16 px down so it clears the doorway; the Dispatch-bearer sits on his stool just inside the
+  entrance, below the doorway hotspot, holding the dispatch toward the table (the glow follows the dispatch).
+- The scene's hotspot rectangles were updated to match `TentLayout.json`, so **Build Tent Hub** reproduces them.
+
+---
+
+## 2026-11-06: Placed troops show their real formation while deploying
+
+### SU-101 Spawned and right-click-placed troops are Idle; a placed line forms at once (Decision, amends SU-82, SU-92)
+- Found in play: after SU-92 the outlines of deployed troops showed a line while their soldiers stood in the spawn blob.
+  Every placement (the spawn, a right-click and a right-drag) gave the troop a held line, so its formation was Line or
+  Chain, but time stands still while deploying, so its soldiers never walked into the line.
+- Decision: troops spawned by the deployment zone, and troops placed with a right-click, stand **Idle** (no line
+  order, blob outline, card says Idle), like a troop arriving from a Move order in battle. They keep the facing they were
+  given.
+- Decision: a right-drag line places the troops in that line, and their soldiers are put straight into its ranks, so
+  the troop, its outline and its card all show the line. A single troop's drag is a Move (SU-16), so it stands Idle.
+- Assumption: the soldiers are laid out as the line fill spreads them (files evenly spaced along the line, ranks
+  0.9 apart, first rank in front). Placing a lined-up troop with a right-click scatters its soldiers back into a blob.
+- Assumption: a troop placed within S_Distance of an enemy still forms a threat-facing line from the next frame, as in
+  battle, while its soldiers stay in the blob until time runs. Deployment zones are normally further away than that.
+- Code: `Troop.PlaceAt(center, facing, length, holdLine)`, `TroopRoster.ArrangeInLine` / `ScatterInBlob`,
+  `ITroopPlacement.Place(..., holdLine)`.
+- Tests: `ChainEngagementScenarioTests.Placement_IdleShowsTheBlob_ALineShowsTheLine_WhileTimeStandsStill`.
+
+---
+
+## 2026-11-05 (2): Fixes from play-test clip Movie_015; charge gate, heat map reach, order arrows
+
+### SU-92 A placed troop's outline moves with it (Decision, bug fix, SU-82)
+- Found in play: while deploying, a troop moved with right-click kept its outline (the line or chain box) where it had
+  stood before. The outline eases toward the formation over time, and nothing eases while time stands still, so it
+  stayed offset by the old position for the whole deployment.
+- `Troop.PlaceAt` now rebuilds the troop's line at the new spot at once, and `TroopOutline` snaps to the formation
+  whenever there is no time step (deploying or paused). In play the outline still eases as before.
+- Tests: `TroopOutlineTests.NoTimeStep_SnapsToTheTarget`.
+
+### SU-93 The deployment zone's border hides with the zone (Decision, bug fix, SU-83)
+- Found in play: after Start Battle the zone's white border stayed on screen for the rest of the battle. Only the area
+  sprite was hidden; the border is a separate child (`Border`).
+- `DeploymentZone` now shows and hides every renderer under it (area and border) with the deployment phase.
+- Not changed: the `Border` child still carries a dynamic `Rigidbody2D` and a solid `PolygonCollider2D` from the old
+  drag-and-drop zone. Nothing reads them now; remove them from the prefab in the Editor.
+- Tests: `DeploymentTests.Zone_AreaAndBorderShowOnlyWhileDeploying`; `PlayedDeployment` also checks it.
+
+### SU-94 Friendly troops do not overlap (Decision + Assumptions, amends spec §2.4)
+- Found in play: enemy infantry marched into its own archers and stood in them (29-31 s of the clip), and another
+  enemy troop stood in the archers around 50 s. Only friendly pivots were kept apart (0.25 x (r_A + r_B)), so friendly
+  troops could stand almost wholly inside each other.
+- Decision: friendly troops keep their **outlines** (the formation shape, `Troop.Outline`) at least `FriendlyGap`
+  apart. The pivot rule stays as well.
+- Assumption: who gives way. An engaged or attacking troop (SU-46) has right of way over a marching or retreating
+  troop, which has right of way over a standing one; the troop with right of way is not moved, equals share the move.
+- Assumption: the troop giving way moves at no more than `FriendlyGiveWaySpeedScale` (0.5) x its own march speed, so
+  its soldiers keep up and a marching troop is slowed while it passes a friend but never blocked for good. So a troop
+  can still pass through a friend that is engaged; it just takes longer.
+- Assumption: troops linked in a chain, or with a pending link from a line order, are exempt (their lines meet at the
+  joints). Routed troops are exempt. Nothing moves while paused or deploying; troops placed on top of each other in
+  deployment move apart once the battle starts.
+- Assumption: it uses the outline, not the footprint: the footprint grows with straggling soldiers, which would keep
+  pushing a troop whose soldiers lag behind its pivot.
+- New Formation Tuning values: `FriendlyGap` = 0.5 units, `FriendlyGiveWaySpeedScale` = 0.5.
+- Watch for: two AI troops given slots that overlap (for example a guard post on the archers' fallback point) will
+  now be shuffled apart, and the AI may keep walking them back to their slots. Space such slots apart.
+- Code: `FriendlyOverlapResolver.SeparateOutlines`, `FootprintGap.SeparationDirection`.
+- Tests: `ChainEngagementScenarioTests` (standing friends move apart sharing the move, a marching troop has right of
+  way and arrives, an attacker is not moved, linked friends are not pushed, nothing moves at a zero time step),
+  `FootprintGapTests.SeparationDirection_*`.
+
+### SU-95 Soldiers charge only within the engagement gap; charge reach is A_Distance (Decision + Assumptions, amends spec §4.3, Q-25)
+- Decision: soldiers start charges only while their troop is within `EngagementGap` (footprint gap) of an enemy troop.
+  Being engaged (within A_Distance) is no longer enough. A soldier's charge distance is `A_Distance`.
+- Assumption: the gate allows `ChargeGapTolerance` (0.25 units, Melee Tuning) beyond `EngagementGap`, so lines held at
+  the gap by the barrier do not flick in and out of charging.
+- Assumption: the charge distance is measured between the two soldiers' edges, like the footprint gap: centre to
+  centre it is A_Distance + 2 soldier radii (2.6 units with the project's A_Distance of 2). Lines held EngagementGap
+  apart have their front ranks EngagementGap + 2 radii apart, so with the project's A_Distance = EngagementGap = 2 a
+  centre-to-centre reach of 2 would almost never find a target.
+- Assumption: a charger picks its target only from enemy troops that pass the gate.
+- `ChargeRangeScale` (Melee Tuning, 1.5 x A_Distance) is removed; `TroopTuning.ChargeRange` is the new reach and
+  `TroopTuning.ChargeGap` the gate.
+- Effect at the spec defaults (A_Distance 5.2, EngagementGap 2): lines that engage at 5.2 but stand off do not fight
+  until one closes in (an attack order, or the AI). With the project's tuning (both 2) little changes.
+- Tests: `ChainEngagementScenarioTests.Charges_StartOnlyWithinTheEngagementGap`, `ChargeReach_IsADistanceBetweenSoldierEdges`;
+  `TroopScenarioTests.ChargeRate_Over30Seconds_IsAboutAggression` counts eligible soldiers with the new gate.
+
+### SU-96 The heat map shows only the frontage within A_Distance (Decision + Assumption, amends SU-40, SU-41)
+- Decision: the engagement heat map covers only the stretch of front where the two troops are within A_Distance of
+  each other. Lines at an angle are closer at one end; the band now stops where their footprints are further apart
+  than A_Distance (it used to cover the whole overlap of the lines).
+- Assumption: measured across the band between the two footprints' edges (line gap minus both footprint half-widths),
+  the same metric as the engagement gap. Facing lines that are nowhere within A_Distance (still engaged by the hold
+  margin) show nothing.
+- The flank and rear fallback (lines not facing each other) links soldiers within A_Distance + 2 soldier radii +
+  the reach slack (it used EngagementGap). With the project's tuning this is the same 3.05 units.
+- Tests: `BattleViewTests.WithinReach_KeepsThePartOfTheFrontThatIsCloseEnough`,
+  `HeatStrip_AngledLines_StopWhereTheyAreFurtherApartThanADistance`.
+
+### SU-97 Selected troops always show their order arrows (Decision, amends SU-37)
+- Decision: every selected troop with a Move, Line or Attack order shows its order path and arrows all the time, not
+  only while hovered. The hovered troop (any team) still shows its own; a troop is drawn once.
+
+### SU-98 The victory screen shows the deployed troops (Decision + Assumption)
+- Found in play: the post-battle screen's troop panel was empty. It listed the whole campaign roster
+  (`CampaignData.Roster`), which was empty here.
+- Decision: one card per troop the player deployed. From the campaign these are the characters deployed in the tent
+  (`BattleReport.DeployedCharacters`), with their level and XP bar.
+- Assumption: a level played on its own shows the troops the zone deployed (`BattleReport.DeployedTroops`): the
+  roster character if that troop's character is in the roster, otherwise the character's portrait, name and stats
+  without level or XP.
+
+### SU-99 Saved roster characters are found in the mission folders (Decision, bug fix, SU-52)
+- The campaign characters now sit in `Characters/Campaign/Mission 1`, `Mission 2`, ... A save names each roster
+  character by asset name and loaded it from `Characters/Campaign/<name>`, so after the move no saved character was
+  found and loading dropped them all from the roster. `RosterCharacter.ResolveCharacter` now also searches the
+  subfolders.
+- Tests: `CampaignCharacterTests.SavedRosterCharacter_IsFoundInAMissionSubfolder`.
+
+### SU-100 The deployment hint fits the screen (Decision, bug fix, SU-85)
+- Found in play: the hint "Deployment: select troops and right-click or drag inside the zone to place them" was cut off
+  at both ends. Its box was 1100 wide on a canvas with a 960-wide reference resolution.
+- `DeploymentPanel` now spans the hint across the canvas with a small margin and lets it wrap and shrink to fit; the
+  setup tool builds it that way.
+
+---
+
 ## 2026-11-05: Icons in place of stat, class and weapon skill names
 
 ### SU-91 Stat, class, weapon skill and armour icons on the troop card and in the tent (Decision + Assumptions)
@@ -181,7 +672,7 @@ change work; confirm or replace). `specifications.md` itself is not edited; fold
   length (`Troop.PlaceAt`). Attack orders do nothing while deploying.
 - Assumption: a spot outside the zone is **moved inside it**, keeping the whole troop (its blob radius) in the zone
   where the zone is big enough. Troops placed on top of one another are not separated.
-- Assumption: placed soldiers keep their blob around the pivot while paused and form the line once the battle runs.
+- Assumption: placed soldiers keep their blob around the pivot while paused and form the line once the battle runs. (Replaced by SU-101: a placed line forms at once; other placements stand Idle.)
 
 ### SU-83 Deployment zone prefab refactored (Decision)
 - The prefab is renamed **Deployment Zone** (same GUID; scenes keep their instances). Its component is now

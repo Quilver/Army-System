@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Lance
   m_EditorClassIdentifier: 
   _displayName: Lance
-  _damage: 3
+  _damage: 0
   _provisional: 0
   _weaponClass: 0
   _chargeBonus: 8

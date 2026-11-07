@@ -16,7 +16,7 @@ public sealed class SoldierStats
     int _support = CombatStatLimits.Default;
     [SerializeField, Range(1, 20), Tooltip("Bonus to Combat Power while charging.")]
     int _charge = CombatStatLimits.Default;
-    [SerializeField, Range(1, 20), Tooltip("Expected charges per TroopTuning.ActionWindowSeconds while engaged.")]
+    [SerializeField, Range(1, 20), Tooltip("Expected charges per ChargeWindowSeconds (Melee Tuning, 45 s) while it may charge.")]
     int _aggression = CombatStatLimits.Default;
     [SerializeField, Range(10, 40), Tooltip("Maximum HP (MaxHP), integer 10-40.")]
     int _maxHealth = CombatStatLimits.HpDefault;

@@ -1,7 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// The hovered troop's current order (any team), drawn over the battle in IMGUI: the path it is taking (Troop.CollectOrderPath,
+// A troop's current order, drawn over the battle in IMGUI for every selected troop (all the time) and for the troop
+// under the cursor (any team): the path it is taking (Troop.CollectOrderPath,
 // the navmesh waypoints still ahead) with chevrons marching along it, and an arrowhead at the waypoint.
 //   Move    path in the move colour, a dot at the destination.
 //   Line    path in the move colour, the ordered line's footprint at the destination.

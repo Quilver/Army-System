@@ -5,7 +5,8 @@ using UnityEngine;
 
 // Creates the Phase 01 sample data from the designer's character sheets (Docs/Battle/Decisions.md, D-01).
 // Run from Troops > Phase 01 > Generate Sample Data, or from the command line with -executeMethod.
-// - Each sheet becomes one Character asset (Characters/<Name>) and one single-character Troop asset (Characters/Troops/<Name>).
+// - Each sheet becomes one Character asset (Characters/<Name>). Troops are lists of characters set up in the scenes or
+//   the BattleReport, not assets.
 // - Existing assets are updated in place with CopySerialized, so their GUIDs and scene references are kept.
 // - Portraits and soldier sprites already assigned to characters are kept.
 // - The old Characters/Soldiers folder (from before SoldierProfile was removed) is deleted once it is empty.
@@ -21,13 +22,8 @@ public static class Phase01DataGenerator
     const string BaseFolder = "Assets/Resources/Troop and Character Profiles";
     const string CharactersFolder = BaseFolder + "/Characters";
     const string LegacySoldierFolder = CharactersFolder + "/Soldiers";
-    const string TroopFolder = CharactersFolder + "/Troops";
     const string WeaponFolder = BaseFolder + "/Equipment/Weapons";
     const string ArmourFolder = BaseFolder + "/Equipment/Armour";
-
-    // Radius for the sample troops. The sheets do not give a radius. 5 matches the existing Swordsmen profile, which has
-    // a similar soldier count (Questions.md Q-12, working assumption). Line length is derived from it (L_nat).
-    const float SampleTroopRadius = 5f;
 
     struct WeaponDef
     {
@@ -235,7 +231,6 @@ public static class Phase01DataGenerator
         EnsureFolder(WeaponFolder);
         EnsureFolder(ArmourFolder);
         EnsureFolder(CharactersFolder);
-        EnsureFolder(TroopFolder);
 
         int rangeErrors = 0;
         foreach (CharacterDef character in Characters)
@@ -316,11 +311,7 @@ public static class Phase01DataGenerator
             CharacterProfile characterFresh = CharacterProfile.CreateRuntimeProfile(
                 character.Name, CampaignCharacterMigration.FindOrCreateClass(character.ClassName), portrait, soldierSprite, character.Numbers, character.Morale,
                 character.Discipline, new CharacterEquipment(melee, ranged, armour), stats);
-            CharacterProfile characterAsset = CreateOrUpdate(characterPath, characterFresh);
-
-            TroopProfile troopFresh = TroopProfile.CreateRuntimeProfile(
-                new List<CharacterProfile> { characterAsset }, SampleTroopRadius);
-            CreateOrUpdate($"{TroopFolder}/{character.Name}.asset", troopFresh);
+            CreateOrUpdate(characterPath, characterFresh);
         }
 
         DeleteLegacySoldierFolderIfEmpty();

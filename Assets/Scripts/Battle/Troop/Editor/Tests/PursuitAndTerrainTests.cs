@@ -29,15 +29,13 @@ public sealed class PursuitAndTerrainTests
     public void TearDown()
     {
         TroopObjects.FlushPending();
-        foreach (var target in _created)
-            if (target != null) Object.DestroyImmediate(target);
-        _created.Clear();
+        TestScene.Destroy(_created);
         TroopTuning.OverrideForTests(null);
         _tuning?.DestroySections();
         _tuning = null;
     }
 
-    Troop CreateTroop(string name, int team, Vector2 position, float radius = 4f, int soldiers = 10)
+    Troop CreateTroop(string name, int team, Vector2 position, int frontage = 8, int soldiers = 10)
     {
         var weapon = MeleeWeaponProfile.CreateRuntimeProfile("Test Sword", MeleeWeaponClass.Sword, 0, 0,
             null, false);
@@ -45,13 +43,12 @@ public sealed class PursuitAndTerrainTests
         var character = CharacterProfile.CreateRuntimeProfile("Test", null, null, null, soldiers, 10,
             CombatStatLimits.Default, new CharacterEquipment(weapon, null, null), new SoldierStats(5, 5, 5, 5, 5, 5, 40));
         _created.Add(character);
-        var profile = TroopProfile.CreateRuntimeProfile(new List<CharacterProfile> { character }, radius);
-        _created.Add(profile);
+        var troopCharacters = new List<CharacterProfile> { character };
         var root = new GameObject(name);
         root.transform.position = position;
         _created.Add(root);
         var troop = root.AddComponent<Troop>();
-        troop.Configure(team, profile);
+        troop.Configure(team, troopCharacters, frontage);
         return troop;
     }
 
@@ -77,7 +74,7 @@ public sealed class PursuitAndTerrainTests
     {
         Troop enemy = CreateTroop("Enemy", 1, Vector2.zero);
         enemy.OrderLine(Vector2.zero, Vector2.left, enemy.NaturalLineLength);
-        Troop attacker = CreateTroop("Attacker", 0, new Vector2(-14f, 5f), 3f, 8);
+        Troop attacker = CreateTroop("Attacker", 0, new Vector2(-14f, 5f), 6, 8);
         Simulate(0.1f);
         attacker.Pursue(enemy);
 

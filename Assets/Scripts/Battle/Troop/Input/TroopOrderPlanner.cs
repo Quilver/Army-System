@@ -96,8 +96,10 @@ public sealed class TroopOrderPlanner
         if (kind == OrderKind.Line) PlanLine(selected, worldStart, worldEnd);
         else PlanMove(selected, worldEnd);
         BreakLinksWithin(selected);
+        // A line stands in its line; a move (one troop's drag included, SU-16) stands Idle, as it arrives in battle.
+        bool holdLine = kind == OrderKind.Line;
         foreach (var planned in _placements)
-            placement.Place(planned.Troop, planned.Center, planned.Facing, planned.Length);
+            placement.Place(planned.Troop, planned.Center, planned.Facing, planned.Length, holdLine);
     }
 
     // --- Planning (shared with the ghost preview) ---

@@ -7,7 +7,7 @@ using UnityEngine;
 //   defaults (20, HP 40). Weapon skills are capped per weapon class.
 // - Achievements: set up for the character's troop in each battle it is deployed in (AchievementController).
 // The battle system reads only the CharacterProfile part, so a campaign character fights exactly like any other
-// character and can sit in any TroopProfile.
+// character and can sit in any troop.
 [CreateAssetMenu(menuName = "Troops/Campaign Character")]
 public sealed class CampaignCharacter : CharacterProfile
 {

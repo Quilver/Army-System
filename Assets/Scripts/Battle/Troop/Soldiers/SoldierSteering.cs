@@ -364,7 +364,7 @@ public sealed class SoldierSteering
 
     // Retreating and committed soldiers, and every soldier of a routed troop, may leave the troop radius.
     bool LeavesRadius(SoldierAgentState soldier) =>
-        soldier.IsRetreatTracking || soldier.IsCommitted || soldier.IsReturning || _troop.IsRouted;
+        soldier.IsRetreatTracking || soldier.IsCommitted || soldier.IsReturning || soldier.IsStunned || _troop.IsRouted;
 
     // Return after a charge (SU-43). When a charge ends, the soldier rushes back to the troop if its troop is retreating
     // or no longer engaged, or it ended up outside the troop's soft radius; otherwise it rejoins the field as before. The

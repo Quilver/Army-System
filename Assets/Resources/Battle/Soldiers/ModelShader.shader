@@ -13,8 +13,8 @@ Shader "Unlit/ModelShader"
         // Hit squash and stretch (set per soldier by TroopSoldierViews through a property block).
         _HitDir("Hit Push Direction (world xy)", Vector) = (0,1,0,0)
         _Deform("Squash (-1) / Stretch (+1)", Range(-1, 1)) = 0
-        _SquashAmount("Squash Amount", Range(0, 1)) = 0.4
-        _StretchAmount("Stretch Amount", Range(0, 1)) = 0.35
+        _SquashAmount("Squash Amount", Range(0, 1)) = 0.8
+        _StretchAmount("Stretch Amount", Range(0, 1)) = 0.7
         _TaperAmount("Stretch Taper", Range(0, 1)) = 0.8
     }
     SubShader

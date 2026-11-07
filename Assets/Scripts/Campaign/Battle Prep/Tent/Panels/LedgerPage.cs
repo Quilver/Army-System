@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Campaign;
+using CampaignUI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -11,6 +12,9 @@ namespace BattlePrep.Tent
     // Stats, the class and weapon skills are shown by their icons (SU-91), each naming itself in the tooltip on hover;
     // the Armour row (Deflect : Bruise : Bleed, each after its icon) sits below Defence. The icon rows are built at
     // runtime over the scene's text fields, which are hidden. A missing icon falls back to its name as text.
+    // XP shows as XpNotches, one per point of the level (SU-115), built over the scene's XP bar. Stats include the points
+    // gained on level-ups (RosterCharacter.Stat). The post-battle book also shows a page as it was before the battle's
+    // rewards (a CharacterSnapshot) and animates it: SetLevel, HighlightRoll and SetRollValue.
     public class LedgerPage : MonoBehaviour
     {
         const float StatRowHeight = 22f;     // six rows fill the 132 px stat columns
@@ -42,6 +46,20 @@ namespace BattlePrep.Tent
         TextMeshProUGUI _skillsHeader;
         Transform _skillsRow;
         readonly List<IconText> _skillParts = new();
+        readonly Dictionary<WeaponClass, IconText> _skillLines = new();
+        XpNotches _notches;
+        Color _textColor;
+
+        RosterCharacter _roster;
+
+        public XpNotches Notches => _notches;
+
+        // Hides the character and the blank-page text (the page is used for something else).
+        public void Hide()
+        {
+            _content.SetActive(false);
+            _empty.gameObject.SetActive(false);
+        }
 
         public void ShowEmpty(int pageNumber)
         {
@@ -50,8 +68,12 @@ namespace BattlePrep.Tent
             _pageNumber.text = pageNumber.ToString();
         }
 
-        public void Show(RosterCharacter roster, int pageNumber)
+        public void Show(RosterCharacter roster, int pageNumber) => Show(roster, pageNumber, null);
+
+        // Shows the character with level, XP and stats from shown (as they were at that moment), or as they are now.
+        public void Show(RosterCharacter roster, int pageNumber, CharacterSnapshot shown)
         {
+            _roster = roster;
             var c = roster.character;
             if (c == null)
             {
@@ -67,20 +89,21 @@ namespace BattlePrep.Tent
             _name.text = c.CharacterName;
             BuildIcons();
             _class.text = _classBadge.Set(c.ClassIcon, c.ClassName) ? "" : c.ClassName;
-            _level.text = $"Level {roster.level}   ·   {roster.xp}/{RosterCharacter.XpPerLevel} XP";
-            _xpFill.anchorMax = new Vector2(roster.XpFraction, 1f);
+            SetLevel(shown != null ? shown.Level : roster.level, shown != null ? shown.Xp : roster.xp);
 
             for (int i = 0; i < LeftStats.Length; i++)
-                SetStat(_leftStats[i], LeftStats[i], StatValue(c, LeftStats[i]), c.CapFor(LeftStats[i]));
+                SetStat(_leftStats[i], LeftStats[i], StatValue(roster, shown, LeftStats[i]), c.CapFor(LeftStats[i]));
             for (int i = 0; i < RightStats.Length; i++)
-                SetStat(_rightStats[i], RightStats[i], StatValue(c, RightStats[i]), c.CapFor(RightStats[i]));
+                SetStat(_rightStats[i], RightStats[i], StatValue(roster, shown, RightStats[i]), c.CapFor(RightStats[i]));
+            foreach (var line in _leftStats) ResetHighlight(line);
+            foreach (var line in _rightStats) ResetHighlight(line);
 
             var eq = c.Equipment;
             var melee = eq?.MeleeWeapon;
             var ranged = eq?.RangedWeapon;
             var armour = eq?.Armour;
             SetArmour(armour);
-            SetSkills(c);
+            SetSkills(roster, shown);
 
             _equipment.text = string.Join("\n",
                 melee != null ? $"<b>Melee</b>   {melee.DisplayName} <color=#6b5a45>({melee.Class}, +{melee.Damage} damage, +{melee.ChargeBonus} charge)</color>" : "<b>Melee</b>   none",
@@ -92,23 +115,58 @@ namespace BattlePrep.Tent
                            (deployed ? "   ·   <color=#3f6212><b>Deployed</b></color>" : "");
         }
 
-        static int StatValue(CampaignCharacter c, CharacterStat stat) => stat switch
-        {
-            CharacterStat.Numbers => c.Numbers,
-            CharacterStat.MaxHealth => c.MaxHealth,
-            CharacterStat.Morale => c.Morale,
-            CharacterStat.Discipline => c.Discipline,
-            CharacterStat.Speed => c.Speed,
-            CharacterStat.Defence => c.Defence,
-            CharacterStat.Strength => c.Strength,
-            CharacterStat.Support => c.Support,
-            CharacterStat.Charge => c.Charge,
-            CharacterStat.Aggression => c.Aggression,
-            _ => 0
-        };
+        static int StatValue(RosterCharacter roster, CharacterSnapshot shown, CharacterStat stat) =>
+            shown != null && shown.Stats.TryGetValue(stat, out int value) ? value : roster.Stat(stat);
 
-        static void SetStat(IconText line, CharacterStat stat, int value, int cap) =>
-            line.Set(GameIcons.For(stat), GameIcons.NameOf(stat), $"<b>{value}</b><color={CapColor}> / {cap}</color>");
+        static int SkillValue(RosterCharacter roster, CharacterSnapshot shown, WeaponClass weaponClass) =>
+            shown != null && shown.Skills.TryGetValue(weaponClass, out int value) ? value : roster.SkillLevel(weaponClass);
+
+        static void SetStat(IconText line, CharacterStat stat, int value, int cap, string suffix = "") =>
+            line.Set(GameIcons.For(stat), GameIcons.NameOf(stat), $"<b>{value}</b><color={CapColor}> / {cap}</color>{suffix}");
+
+        // --- Animation (post-battle book, SU-115) ---
+
+        public void SetLevel(int level, int xp)
+        {
+            BuildIcons();
+            _level.text = $"Level {level}   ·   {xp}/{RosterCharacter.XpPerLevel} XP";
+            _notches.Set(xp);
+        }
+
+        IconText LineOf(StatRoll roll)
+        {
+            if (roll.IsWeaponSkill) return _skillLines.TryGetValue(roll.WeaponClass, out var skill) ? skill : null;
+            for (int i = 0; i < LeftStats.Length; i++) if (LeftStats[i] == roll.Stat) return _leftStats[i];
+            for (int i = 0; i < RightStats.Length; i++) if (RightStats[i] == roll.Stat) return _rightStats[i];
+            return null;
+        }
+
+        // Glows the stat's icon and tints its value, or puts it back to normal.
+        public void HighlightRoll(StatRoll roll, bool on, Color glow)
+        {
+            IconText line = LineOf(roll);
+            if (line == null) return;
+            UiGlow.Set(line.Badge.Root.GetComponent<Image>(), glow, on ? 1f : 0f);
+            line.Text.color = on ? glow : _textColor;
+        }
+
+        // Shows the stat's new value, followed by suffix (e.g. a green +1).
+        public void SetRollValue(StatRoll roll, int value, string suffix)
+        {
+            IconText line = LineOf(roll);
+            if (line == null || _roster == null || _roster.character == null) return;
+            var c = _roster.character;
+            if (roll.IsWeaponSkill)
+                line.Set(GameIcons.For(roll.WeaponClass), GameIcons.NameOf(roll.WeaponClass),
+                    $"<b>{value}</b><color={CapColor}>/{c.CapFor(roll.WeaponClass)}</color>{suffix}");
+            else SetStat(line, roll.Stat, value, c.CapFor(roll.Stat), suffix);
+        }
+
+        void ResetHighlight(IconText line)
+        {
+            UiGlow.Clear(line.Badge.Root.GetComponent<Image>());
+            line.Text.color = _textColor;
+        }
 
         // The armour icon (tooltip: Armour and the armour's name), then Deflect, Bruise and Bleed each after its icon.
         // No armour shows the unarmoured ratio (SU-90).
@@ -132,15 +190,19 @@ namespace BattlePrep.Tent
         }
 
         // "Weapon skills", then each listed skill as its weapon class icon and level / cap.
-        void SetSkills(CampaignCharacter c)
+        void SetSkills(RosterCharacter roster, CharacterSnapshot shown)
         {
+            var c = roster.character;
             int count = 0;
+            _skillLines.Clear();
             foreach (var skill in c.WeaponSkills)
             {
                 if (count == _skillParts.Count)
                     _skillParts.Add(TentIcons.Pair(_skillsRow, "Skill " + count, SkillIconSize, _skills, GroupGap));
                 _skillParts[count].Set(GameIcons.For(skill.Class), GameIcons.NameOf(skill.Class),
-                    $"<b>{skill.Level}</b><color={CapColor}>/{c.CapFor(skill.Class)}</color>");
+                    $"<b>{SkillValue(roster, shown, skill.Class)}</b><color={CapColor}>/{c.CapFor(skill.Class)}</color>");
+                ResetHighlight(_skillParts[count]);
+                _skillLines[skill.Class] = _skillParts[count];
                 count++;
             }
             for (int i = count; i < _skillParts.Count; i++) _skillParts[i].Hide();
@@ -152,6 +214,14 @@ namespace BattlePrep.Tent
         {
             if (_iconsBuilt) return;
             _iconsBuilt = true;
+            _textColor = _statsLeft.color;
+
+            // XP notches over the old XP bar, a little taller (SU-115).
+            var bar = (RectTransform)_xpFill.parent;
+            if (bar.TryGetComponent(out Image barImage)) barImage.enabled = false;
+            _xpFill.gameObject.SetActive(false);
+            bar.sizeDelta = new Vector2(bar.sizeDelta.x, Mathf.Max(bar.sizeDelta.y, 16f));
+            _notches = XpNotches.Create(bar, RosterCharacter.XpPerLevel, 4f);
 
             _classBadge = TentIcons.BadgeAtLeft(_class.transform, "Class Icon", ClassIconSize);
 

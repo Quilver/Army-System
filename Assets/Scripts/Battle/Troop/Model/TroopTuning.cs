@@ -107,6 +107,8 @@ public sealed class TroopTuning
     public int MaxWeaponSkillsPerSoldier => Soldier.MaxWeaponSkillsPerSoldier;
     public float BruiseHealPerSecond => Soldier.BruiseHealPerSecond;
     public float FatigueFraction => Soldier.FatigueFraction;
+    public bool StunAtZeroHp => Soldier.StunAtZeroHp;
+    public int StunRecoverHp => Soldier.StunRecoverHp;
     // Acceleration itself is CharacterProfile.Acceleration (Speed x AccelerationPerSpeedPoint).
     public float AccelerationPerSpeedPoint => Soldier.AccelerationPerSpeedPoint;
     public float SoldierAlignment => Soldier.SoldierAlignment;
@@ -123,6 +125,8 @@ public sealed class TroopTuning
     public float NaturalLineRadiusScale => Formation.NaturalLineRadiusScale;
     public float BlobRadiusScale => Formation.BlobRadiusScale;
     public float PivotSeparationScale => Formation.PivotSeparationScale;
+    public float FriendlyGap => Formation.FriendlyGap;
+    public float FriendlyGiveWaySpeedScale => Formation.FriendlyGiveWaySpeedScale;
     public float PathRebuildIntervalSeconds => Formation.PathRebuildIntervalSeconds;
     public float JointClearance => Formation.JointClearance;
     public float JointClearanceFraction => Formation.JointClearanceFraction;
@@ -139,16 +143,19 @@ public sealed class TroopTuning
     public float RetreatWaveDelaySeconds => Morale.RetreatWaveDelaySeconds;
     public float RetreatSoldierMoveSeconds => Morale.RetreatSoldierMoveSeconds;
     public float FlankShockMultiplier => Morale.FlankShockMultiplier;
+    public float DisorderSeconds => Morale.DisorderSeconds;
     public float FrontFaceHalfAngleDeg => Morale.FrontFaceHalfAngleDeg;
     public float RearFaceAngleDeg => Morale.RearFaceAngleDeg;
 
     // --- Melee Tuning ---
 
-    public float ChargeRangeScale => Melee.ChargeRangeScale;
+    public float ChargeGapTolerance => Melee.ChargeGapTolerance;
     public int ChargeCandidateCount => Melee.ChargeCandidateCount;
     public float ChargeSpeedScale => Melee.ChargeSpeedScale;
     public float ChargeTimeoutSeconds => Melee.ChargeTimeoutSeconds;
     public float ChargeFollowProbability => Melee.ChargeFollowProbability;
+    // Window for the charge rate: EffectiveAggression charges per this many seconds (SU-112).
+    public float ChargeWindowSeconds => Melee.ChargeWindowSeconds;
     public float ClashCooldownSeconds => Melee.ClashCooldownSeconds;
     public float SupportRadius => Melee.SupportRadius;
     public float SpearSupportRangeMultiplier => Melee.SpearSupportRangeMultiplier;
@@ -192,6 +199,16 @@ public sealed class TroopTuning
 
     // --- Derived values used in several places ---
 
-    public float ChargeRange => ChargeRangeScale * ADistance;
-    public float NaturalLineLength(float troopRadius) => LineGeometry.NaturalLength(troopRadius, NaturalLineRadiusScale);
+    // A soldier's charge reach (SU-95): A_Distance between the two soldiers' edges, like the footprint gap, so centre to
+    // centre it is A_Distance + 2 soldier radii. Lines held EngagementGap apart have their front ranks EngagementGap + 2
+    // radii apart, so with A_Distance = EngagementGap the front ranks can still reach each other.
+    public float ChargeRange => ADistance + 2f * TroopConstants.SoldierRadius;
+    // Soldiers start charges only while their troop is this close (footprint gap) to an enemy troop (SU-95).
+    public float ChargeGap => EngagementGap + ChargeGapTolerance;
+    public bool FrontRankChargesOnly => Melee.FrontRankChargesOnly;
+    // L_nat = Frontage x LineSpacing (SU-103).
+    public float NaturalLineLength(int frontage) => LineGeometry.NaturalLength(frontage);
+    // The troop's radius in world units from its frontage and soldier count (SU-103, LineGeometry.TroopRadius).
+    public float TroopRadius(int frontage, int soldiers) =>
+        LineGeometry.TroopRadius(frontage, soldiers, NaturalLineRadiusScale, BlobRadiusScale);
 }

@@ -29,9 +29,7 @@ public sealed class SoldierViewTests
     [TearDown]
     public void TearDown()
     {
-        foreach (var target in _created)
-            if (target != null) Object.DestroyImmediate(target);
-        _created.Clear();
+        TestScene.Destroy(_created);
         TroopTuning.OverrideForTests(null);
         _tuning?.DestroySections();
         _tuning = null;
@@ -45,12 +43,11 @@ public sealed class SoldierViewTests
         var character = CharacterProfile.CreateRuntimeProfile("Test", null, null, null, 12, 5,
             CombatStatLimits.Default, new CharacterEquipment(weapon, null, null), new SoldierStats(5, 5, 5, 5, 5, 5, 15));
         _created.Add(character);
-        var profile = TroopProfile.CreateRuntimeProfile(new List<CharacterProfile> { character }, 5f);
-        _created.Add(profile);
+        var troopCharacters = new List<CharacterProfile> { character };
         var root = new GameObject("View Test Troop");
         _created.Add(root);
         var troop = root.AddComponent<Troop>();
-        troop.Configure(0, profile);
+        troop.Configure(0, troopCharacters, 10);
         return troop;
     }
 

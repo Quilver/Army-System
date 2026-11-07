@@ -1,3 +1,4 @@
+using Deployment;
 using Campaign;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -16,24 +17,58 @@ static class BattleFlow
         Battle.Started += OnStarted;
         Battle.Ended += OnEnded;
         BattleEvents.SoldierKilled += OnSoldierKilled;
+        BattleEvents.TroopBroke += OnTroopBroke;
     }
 
     static void OnStarted(Battle battle)
     {
+        // Every battle tracks achievements, also a level whose scene has no AchievementController (SU-116).
+        if (Object.FindAnyObjectByType<AchievementSystem.AchievementController>() == null)
+            new GameObject("Achievement Controller").AddComponent<AchievementSystem.AchievementController>();
         if (!BattleReport.Exists) return;
-        BattleReport.timeTaken = 0f;
-        BattleReport.kills = 0;
-        BattleReport.deaths = 0;
+        BattleReport.ResetBattleStats();
+        foreach (var character in BattleReport.DeployedCharacters) BattleReport.RecordFor(character);
     }
 
-    // Kills: enemy soldiers that died. Deaths: player soldiers that died.
+    // Kills: enemy soldiers that died. Deaths: player soldiers that died. Each is also put on the record of the deployed
+    // character whose troop lost the soldier or dealt the killing blow (SU-115).
     static void OnSoldierKilled(Troop victim, SoldierAgentState soldier, Troop attacker)
     {
         Battle battle = Battle.Instance;
         if (battle == null || battle.IsOver || !BattleReport.Exists || victim == null) return;
         Army army = victim.Army;
-        if (army == battle.player) BattleReport.deaths++;
-        else if (army == battle.enemy) BattleReport.kills++;
+        if (army == battle.player)
+        {
+            BattleReport.deaths++;
+            // In a composite troop the casualty is the fallen soldier's own character's (SU-117).
+            var record = BattleReport.RecordFor(RosterTroops.CharacterOf(soldier?.Character) ?? RosterTroops.CharacterOf(victim));
+            if (record != null) record.Casualties++;
+        }
+        else if (army == battle.enemy)
+        {
+            BattleReport.kills++;
+            if (attacker != null && attacker.Army == battle.player)
+            {
+                var record = BattleReport.RecordFor(RosterTroops.CharacterOf(attacker));
+                if (record != null) record.Kills++;
+            }
+        }
+    }
+
+    // Routed troops of each side; a routed character is marked on its record.
+    static void OnTroopBroke(TroopBreakInfo info)
+    {
+        Battle battle = Battle.Instance;
+        if (info.Kind != TroopBreakKind.Rout || battle == null || battle.IsOver || !BattleReport.Exists || info.Troop == null)
+            return;
+        if (info.Troop.Army == battle.player)
+        {
+            BattleReport.PlayerTroopsRouted++;
+            // Every character in a routed composite troop routed with it (SU-117).
+            foreach (var character in RosterTroops.CharactersOf(info.Troop))
+                BattleReport.RecordFor(character).Routed = true;
+        }
+        else if (info.Troop.Army == battle.enemy) BattleReport.EnemyTroopsRouted++;
     }
 
     static void OnEnded(Battle battle, bool win)

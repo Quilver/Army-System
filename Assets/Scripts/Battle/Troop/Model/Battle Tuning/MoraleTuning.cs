@@ -26,6 +26,9 @@ public sealed class MoraleTuning : ScriptableObject
     float _retreatSoldierMoveSeconds = 1.2f;
     [SerializeField, Min(1f), Tooltip("Shock multiplier on flanked hits (spec §4.8).")]
     float _flankShockMultiplier = 3f;
+    [SerializeField, Min(0f), Tooltip("A troop that breaks while not engaged in melee is disordered instead of retreating: " +
+        "it cannot move for this many seconds (SU-104).")]
+    float _disorderSeconds = 10f;
 
     [Header("Faces (spec §4.8, Q-31)")]
     [SerializeField, Range(0f, 90f), Tooltip("Attacks within this angle of the facing hit the Front face.")]
@@ -42,6 +45,7 @@ public sealed class MoraleTuning : ScriptableObject
     public float RetreatWaveDelaySeconds => _retreatWaveDelaySeconds;
     public float RetreatSoldierMoveSeconds => _retreatSoldierMoveSeconds;
     public float FlankShockMultiplier => _flankShockMultiplier;
+    public float DisorderSeconds => _disorderSeconds;
 
     public float FrontFaceHalfAngleDeg => _frontFaceHalfAngleDeg;
     public float RearFaceAngleDeg => _rearFaceAngleDeg;

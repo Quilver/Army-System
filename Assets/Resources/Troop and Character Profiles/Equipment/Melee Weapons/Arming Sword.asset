@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Arming Sword
   m_EditorClassIdentifier: 
   _displayName: Arming Sword
-  _damage: 5
+  _damage: 2
   _provisional: 1
   _weaponClass: 1
   _chargeBonus: 3

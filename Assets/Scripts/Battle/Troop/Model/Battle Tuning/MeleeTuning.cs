@@ -9,8 +9,17 @@ public sealed class MeleeTuning : ScriptableObject
     public const string AssetName = "Melee Tuning";
 
     [Header("Charges and clashes (spec §4.3-§4.5)")]
-    [SerializeField, Min(0f), Tooltip("Charge range as a multiple of A_Distance (7.8 units at the spec A_Distance of 5.2). Q-25.")]
-    float _chargeRangeScale = 1.5f;
+    [SerializeField, Min(1f), Tooltip("Charge window (SU-112): a soldier makes about EffectiveAggression charges per this " +
+        "many seconds while it may charge (Aggression 3: one charge every 15 s). Ranged fire and Shock decay keep " +
+        "ActionWindowSeconds (Soldier Tuning).")]
+    float _chargeWindowSeconds = 45f;
+    [SerializeField, Min(0f), Tooltip("Soldiers charge only while their troop's footprint gap to an enemy troop is within " +
+        "EngagementGap plus this (units). It absorbs the jitter of lines held at EngagementGap by the barrier (SU-95). " +
+        "A soldier's charge reach is A_Distance (Formation Tuning).")]
+    float _chargeGapTolerance = 0.25f;
+    [SerializeField, Tooltip("Only the front rank charges (SU-106): of the soldiers of a troop, only as many as stand in one " +
+        "rank, those furthest toward the enemy, may start a charge. Off: any soldier within reach may.")]
+    bool _frontRankChargesOnly = true;
     [SerializeField, Min(1), Tooltip("Nearest enemy soldiers a charger picks its target from.")]
     int _chargeCandidateCount = 3;
     [SerializeField, Min(0.1f), Tooltip("Charge speed multiplier (max speed and acceleration).")]
@@ -41,7 +50,9 @@ public sealed class MeleeTuning : ScriptableObject
     [SerializeField, Min(0), Tooltip("Charge bonus during Assault, while charging.")]
     int _assaultChargeBonus = 5;
 
-    public float ChargeRangeScale => _chargeRangeScale;
+    public float ChargeWindowSeconds => _chargeWindowSeconds;
+    public float ChargeGapTolerance => _chargeGapTolerance;
+    public bool FrontRankChargesOnly => _frontRankChargesOnly;
     public int ChargeCandidateCount => _chargeCandidateCount;
     public float ChargeSpeedScale => _chargeSpeedScale;
     public float ChargeTimeoutSeconds => _chargeTimeoutSeconds;

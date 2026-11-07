@@ -10,7 +10,8 @@ public enum EngagementViewMode
 
 // For every pair of engaged troops, a red heat map across the gap between their lines (EngagementHeatStrip): a smooth
 // gradient, most intense in the middle of the line gap and fading to nothing at each troop's line and toward the ends
-// of the engagement. The number of soldiers fighting does not change it. Built each frame as one vertex-coloured
+// of the engagement. It covers only the stretch of front where the two troops are within A_Distance of each other
+// (SU-96). The number of soldiers fighting does not change it. Built each frame as one vertex-coloured
 // mesh (Resources/Shaders/TroopOverlayColor.shader) on the Terrain sorting layer, above the range mask and below the
 // soldiers. Owned and updated by TroopPlayerOrders.
 public sealed class TroopEngagementView
@@ -27,7 +28,7 @@ public sealed class TroopEngagementView
         public Color HeatDark;        // colour where the heat is full
         public float MaxHeatAlpha;    // opacity where the heat is full; it falls to 0 with the heat
         public float EndFade;         // world units over which the heat fades at each end of the engagement
-        public float ReachSlack;      // flank fallback: engaged-soldier reach beyond EngagementGap + 2 radii (EngagementFrontage)
+        public float ReachSlack;      // flank fallback: engaged-soldier reach beyond A_Distance + 2 radii (EngagementFrontage)
     }
 
     readonly List<(Troop first, Troop second)> _pairs = new();
@@ -52,11 +53,14 @@ public sealed class TroopEngagementView
         _vertices.Clear();
         _colors.Clear();
         _triangles.Clear();
-        float reach = EngagementFrontage.Reach(TroopTuning.Active.EngagementGap, style.ReachSlack);
+        float aDistance = TroopTuning.Active.ADistance;
+        float reach = EngagementFrontage.Reach(aDistance, style.ReachSlack);
         var settings = new EngagementHeatStrip.Settings
         {
             CellWidth = HeatColumnSpacing,
-            EndFade = style.EndFade
+            EndFade = style.EndFade,
+            LimitToReach = true,
+            MaxGap = aDistance
         };
         EngagementFrontage.CollectEngagedPairs(troops, _pairs);
         foreach (var (first, second) in _pairs)
@@ -65,6 +69,8 @@ public sealed class TroopEngagementView
             EngagementFrontage.Measure(first, second, reach, _links, out _, out _);
             TroopFootprint a = first.Footprint;
             TroopFootprint b = second.Footprint;
+            settings.HalfWidthA = LineHalfWidth(a);
+            settings.HalfWidthB = LineHalfWidth(b);
             if (!EngagementHeatStrip.Build(a.LinePoint(TroopConstants.RightEnd), a.LinePoint(TroopConstants.LeftEnd),
                     b.LinePoint(TroopConstants.RightEnd), b.LinePoint(TroopConstants.LeftEnd), _links, settings, _columns,
                     out Vector2 origin, out Vector2 along, out Vector2 across))
@@ -85,6 +91,9 @@ public sealed class TroopEngagementView
         _mesh.RecalculateBounds();
         SetVisible(true);
     }
+
+    // How far a troop's footprint reaches out from its line: the half-width of a line footprint, the radius of a blob.
+    static float LineHalfWidth(in TroopFootprint footprint) => footprint.HalfWidth + footprint.Rounding;
 
     public void Hide() => SetVisible(false);
 

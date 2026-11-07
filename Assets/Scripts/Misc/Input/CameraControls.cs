@@ -21,6 +21,8 @@ namespace PlayerControls
         [SerializeField, Range(10, 30)]
         float maxOrtho = 20.0f;
         PlayerInputMap inputs;
+        // Set while the pointer is over a scrollable battle panel (the combat log), so the wheel scrolls it instead.
+        public static bool ZoomBlocked { get; set; }
         void Awake()
         {
             targetOrtho = Camera.main.orthographicSize;
@@ -74,7 +76,7 @@ namespace PlayerControls
         void UpdateCamera()
         {
             Camera.main.transform.position += (Vector3)direction * Time.unscaledDeltaTime;
-            if(scroll != 0)
+            if(scroll != 0 && !ZoomBlocked)
             {
                 targetOrtho -= scroll * zoomSpeed;
                 targetOrtho = Mathf.Clamp(targetOrtho, minOrtho, maxOrtho);

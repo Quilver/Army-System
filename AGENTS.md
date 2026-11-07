@@ -20,6 +20,10 @@
   - `Misc/`: shared UI (hover tips, floating text), the input map and camera controls.
 - Dependency rule: `Battle/` and `Misc/` never reference `Tween/` or `Campaign/`; the battle reports through events
   (`BattleEvents`, `Battle.Started`/`Ended`) that `Tween/` listens to. Editor tools may cross this line.
+- Missions (see `Docs/Missions/README.md`): one folder per mission under `Assets/Missions/Mxx - <Title>/` with the
+  mission sheet (`MissionDefinition`, code in `Scripts/Campaign/Missions/`) and `PreBattle/`, `Battle/` (scene, navmesh,
+  `Map/` layer images) and `Tween/` folders. `Resources/MissionCatalog.asset` lists them in campaign order; make new
+  ones with **Leveraged Wars > Missions > New Mission**.
 - Battle prefabs (capture point, deployment zone, battle canvas) are in `Assets/Prefabs/Battle/`; campaign UI art and
   prefabs stay under `Assets/Campaign/`.
 - `CampaignDataManager` persists across scenes and saves `campaign.json` in `Application.persistentDataPath`. Bump
@@ -27,8 +31,10 @@
 - Runtime-loaded assets must remain under `Assets/Resources/` and use the existing `Resources.Load` paths, especially
   `Resources/Battle Tuning/`, `Resources/Battle/Soldiers/` (soldier material and shaders), `Resources/Shaders/`,
   `Resources/Troop and Character Profiles/` and `Resources/Levels/`.
-- The main battle flow uses build-settings scene indices: campaign code loads scene `1`, and `BattleFlow` loads scene
-  `2` on victory or scene `0` on defeat. Keep scene ordering synchronized with code when changing Build Settings.
+- Build Settings: the menu scenes keep indices `0` (Main menu), `1` (Battle Preparation, loaded by campaign code) and
+  `2` (Post battle, loaded by `BattleFlow` on victory; defeat loads `0`). The tent loads the current mission's battle
+  scene from the Mission Catalog, and Continue follows the mission's *Next Mission*. Missions' scenes follow the menus
+  in catalog order: run **Leveraged Wars > Missions > Sync Build Settings** after changing them.
 
 ## Editing Rules
 
@@ -44,4 +50,4 @@
 ## Verification
 
 - After C# or asset changes, let Unity finish importing and compiling, then check the Console for errors before running the affected scene.
-- For gameplay changes, exercise the relevant scenes in `Assets/Resources/Levels/` and verify campaign transitions and save/load behavior, not only compilation.
+- For gameplay changes, exercise the relevant mission scenes in `Assets/Missions/` (and test scenes in `Assets/Resources/Levels/`) and verify campaign transitions and save/load behavior, not only compilation.

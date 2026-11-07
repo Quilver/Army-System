@@ -21,6 +21,11 @@ public sealed class SoldierTuning : ScriptableObject
     float _bruiseHealPerSecond = 1f;
     [SerializeField, Range(0f, 1f), Tooltip("A soldier at or below this fraction of MaxHP is fatigued and cannot support.")]
     float _fatigueFraction = 0.5f;
+    [SerializeField, Tooltip("Stunned soldiers (SU-107): a soldier brought to 0 HP with at least half of it Bruise is stunned " +
+        "instead of killed. It cannot charge, and dies if its troop retreats from melee. Off: 0 HP always kills.")]
+    bool _stunAtZeroHp = true;
+    [SerializeField, Min(1), Tooltip("A stunned soldier recovers once its bruises have healed to this many HP (SU-107).")]
+    int _stunRecoverHp = 5;
 
     [Header("Soldier steering (shared by every character)")]
     [SerializeField, Min(0.01f), Tooltip("Soldier acceleration (units/s²) per Speed point. Speed 5 gives 8, the old fixed value.")]
@@ -38,6 +43,8 @@ public sealed class SoldierTuning : ScriptableObject
     public int MaxWeaponSkillsPerSoldier => _maxWeaponSkillsPerSoldier;
     public float BruiseHealPerSecond => _bruiseHealPerSecond;
     public float FatigueFraction => _fatigueFraction;
+    public bool StunAtZeroHp => _stunAtZeroHp;
+    public int StunRecoverHp => _stunRecoverHp;
 
     public float AccelerationPerSpeedPoint => _accelerationPerSpeedPoint;
     public float SoldierAlignment => _soldierAlignment;

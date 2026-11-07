@@ -9,6 +9,9 @@ using UnityEngine;
 //          separation; free friends give way;
 //   SU-47  auto-links need facings within 45 degrees, and an automatic link breaks past 60;
 //   SU-48  a troop with an attack order does not auto-link.
+// Also friendly outlines (SU-94: friends do not stand in or march through each other), the charge gate (SU-95:
+// soldiers charge only while their troop is within the engagement gap) and deployment placement (SU-101: a placed
+// troop, its outline and its soldiers show the same formation while time stands still).
 // Stepped in Edit mode like TroopScenarioTests, with fixed frame time and seed.
 [Category("Scenario")]
 public sealed class ChainEngagementScenarioTests
@@ -34,9 +37,7 @@ public sealed class ChainEngagementScenarioTests
     public void TearDown()
     {
         TroopObjects.FlushPending();
-        foreach (var target in _created)
-            if (target != null) Object.DestroyImmediate(target);
-        _created.Clear();
+        TestScene.Destroy(_created);
         TroopTuning.OverrideForTests(null);
         _tuning?.DestroySections();
         _tuning = null;
@@ -66,7 +67,7 @@ public sealed class ChainEngagementScenarioTests
         UseTuning("_engagementGap", 2f);
     }
 
-    Troop CreateTroop(string name, int team, Vector2 position, float radius = 5f, int soldiers = 12)
+    Troop CreateTroop(string name, int team, Vector2 position, int frontage = 10, int soldiers = 12)
     {
         var weapon = MeleeWeaponProfile.CreateRuntimeProfile("Test Sword", MeleeWeaponClass.Sword, 0, 0,
             null, false);
@@ -74,19 +75,18 @@ public sealed class ChainEngagementScenarioTests
         var character = CharacterProfile.CreateRuntimeProfile("Test", null, null, null, soldiers, 10,
             CombatStatLimits.Default, new CharacterEquipment(weapon, null, null), new SoldierStats(5, 5, 5, 5, 5, 5, 40));
         _created.Add(character);
-        var profile = TroopProfile.CreateRuntimeProfile(new List<CharacterProfile> { character }, radius);
-        _created.Add(profile);
+        var troopCharacters = new List<CharacterProfile> { character };
         var root = new GameObject(name);
         root.transform.position = position;
         _created.Add(root);
         var troop = root.AddComponent<Troop>();
-        troop.Configure(team, profile);
+        troop.Configure(team, troopCharacters, frontage);
         return troop;
     }
 
-    Troop LineTroop(string name, Vector2 position, Vector2 facing, int team = 0, float radius = 5f, int soldiers = 12)
+    Troop LineTroop(string name, Vector2 position, Vector2 facing, int team = 0, int frontage = 10, int soldiers = 12)
     {
-        Troop troop = CreateTroop(name, team, position, radius, soldiers);
+        Troop troop = CreateTroop(name, team, position, frontage, soldiers);
         troop.OrderLine(position, facing, troop.NaturalLineLength);
         return troop;
     }
@@ -146,16 +146,16 @@ public sealed class ChainEngagementScenarioTests
     public void ChainedFighter_IsNotDraggedAway_AndAnAttackerPassingTheChainReachesTheEnemy()
     {
         UseProjectDistances();
-        Troop enemy = CreateTroop("Enemy", 1, Vector2.zero, 3f, 13);
-        Troop fighter = LineTroop("Fighter", new Vector2(5.2f, 0.3f), Vector2.left, radius: 4f, soldiers: 22);
-        Troop archers = LineTroop("Archers", new Vector2(4f, -6.5f), new Vector2(-4f, 6.5f).normalized, radius: 2.5f,
+        Troop enemy = CreateTroop("Enemy", 1, Vector2.zero, 6, 13);
+        Troop fighter = LineTroop("Fighter", new Vector2(5.2f, 0.3f), Vector2.left, frontage: 8, soldiers: 22);
+        Troop archers = LineTroop("Archers", new Vector2(4f, -6.5f), new Vector2(-4f, 6.5f).normalized, frontage: 5,
             soldiers: 8);
         Simulate(0.2f);
         Assert.IsTrue(ChainLinker.LinkFromOrder(fighter, TroopConstants.LeftEnd, archers, TroopConstants.RightEnd));
         Simulate(3f);
         Assert.IsTrue(fighter.IsLinkActive(TroopConstants.LeftEnd), "Fighter and archers chained by the line order");
 
-        Troop attacker = CreateTroop("Attacker", 0, new Vector2(-8f, -8f), 3f, 6);
+        Troop attacker = CreateTroop("Attacker", 0, new Vector2(-8f, -8f), 6, 6);
         attacker.Pursue(enemy);
         Vector2 fighterStart = fighter.transform.position;
         int frames = Mathf.CeilToInt(12f / FrameTime);
@@ -269,5 +269,167 @@ public sealed class ChainEngagementScenarioTests
         Assert.AreEqual(Vector2.zero, (Vector2)attacker.transform.position, "The attacker is not pushed");
         Assert.GreaterOrEqual(Vector2.Distance(attacker.transform.position, idle.transform.position),
             FriendlyOverlapResolver.MinimumSpacing(attacker, idle) - 1e-3f, "The idle friend moves aside");
+    }
+
+    // --- SU-94: friendly outlines keep a gap ---
+
+    static float OutlineGap(Troop a, Troop b) => FootprintGap.Gap(a.Outline, b.Outline);
+
+    [Test]
+    public void StandingFriends_OnTopOfEachOther_MoveApart_SharingTheMove()
+    {
+        Troop a = CreateTroop("A", 0, Vector2.zero);
+        Troop b = CreateTroop("B", 0, new Vector2(3f, 0f));
+        Simulate(0.1f);
+        Assert.Less(OutlineGap(a, b), 0f, "the blobs overlap to begin with");
+
+        Simulate(6f);
+        Assert.GreaterOrEqual(OutlineGap(a, b), _tuning.FriendlyGap - 0.05f, "they stand clear of each other");
+        float aMoved = -a.transform.position.x;
+        float bMoved = b.transform.position.x - 3f;
+        Assert.Greater(aMoved, 0.5f);
+        Assert.AreEqual(aMoved, bMoved, 0.3f, "equals share the move");
+    }
+
+    [Test]
+    public void MarchingTroop_HasRightOfWay_OverAStandingFriend()
+    {
+        Troop standing = CreateTroop("Standing", 0, new Vector2(0f, 2f));
+        Troop marcher = CreateTroop("Marcher", 0, new Vector2(-15f, 0f));
+        Simulate(0.1f);
+        Vector2 standingStart = standing.transform.position;
+        marcher.MoveTo(new Vector2(15f, 0f));
+
+        float furthest = 0f;
+        for (int i = 0; i < Mathf.CeilToInt(20f / FrameTime) && marcher.IsMoving; i++)
+        {
+            _world.SimulateFrame(FrameTime);
+            furthest = Mathf.Max(furthest, Vector2.Distance(standingStart, standing.transform.position));
+        }
+        Assert.IsFalse(marcher.IsMoving, "the march is never held up for good");
+        Assert.Less(Vector2.Distance(marcher.transform.position, new Vector2(15f, 0f)), 2f, "and arrives");
+        Assert.Greater(furthest, 0.5f, "the standing friend gives way");
+    }
+
+    // An attacking troop (committed, SU-46) is never moved by a friend's outline; the friend gives way.
+    [Test]
+    public void AttackingTroop_IsNotMovedByAFriend()
+    {
+        Troop attacker = CreateTroop("Attacker", 0, Vector2.zero);
+        Troop friend = CreateTroop("Friend", 0, new Vector2(0f, 5f));
+        Troop enemy = CreateTroop("Enemy", 1, new Vector2(60f, 0f));
+        Simulate(0.1f);
+        attacker.Pursue(enemy);
+        Assert.IsTrue(attacker.IsCommitted && !friend.IsCommitted);
+        Assert.Less(OutlineGap(attacker, friend), 0f, "the friend stands in the attacker's way");
+
+        Vector2 attackerBefore = attacker.transform.position;
+        Vector2 friendBefore = friend.transform.position;
+        FriendlyOverlapResolver.SeparateOutlines(new List<Troop> { attacker, friend, enemy }, 0.5f);
+        Assert.AreEqual(attackerBefore, (Vector2)attacker.transform.position, "the attacker is not moved");
+        Assert.Greater(friend.transform.position.y - friendBefore.y, 0.1f, "the friend gives way, away from it");
+        Assert.LessOrEqual(Vector2.Distance(friendBefore, friend.transform.position),
+            friend.PivotSpeed * _tuning.FriendlyGiveWaySpeedScale * 0.5f + 1e-4f, "at most at its give-way speed");
+    }
+
+    [Test]
+    public void LinkedFriends_AreNotPushedApart()
+    {
+        Troop a = LineTroop("A", new Vector2(0f, 0f), Vector2.right);
+        Troop b = LineTroop("B", new Vector2(0f, 9f), Vector2.right);
+        Simulate(0.5f);
+        Assert.IsTrue(a.IsLinkActive(TroopConstants.LeftEnd), "linked into a chain");
+        Assert.IsTrue(FriendlyOverlapResolver.AreLinked(a, b));
+        Vector2 aBefore = a.transform.position, bBefore = b.transform.position;
+        Simulate(2f);
+        Assert.IsTrue(a.IsLinkActive(TroopConstants.LeftEnd), "still linked");
+        Assert.Less(Vector2.Distance(aBefore, a.transform.position), 0.1f);
+        Assert.Less(Vector2.Distance(bBefore, b.transform.position), 0.1f);
+    }
+
+    [Test]
+    public void OverlappingFriends_DoNotMove_WhileTimeStandsStill()
+    {
+        Troop a = CreateTroop("A", 0, Vector2.zero);
+        Troop b = CreateTroop("B", 0, new Vector2(4f, 0f));
+        for (int i = 0; i < 10; i++) _world.SimulateFrame(0f);
+        Assert.Less(OutlineGap(a, b), 0f);
+        Assert.AreEqual(Vector2.zero, (Vector2)a.transform.position, "paused or deploying: nothing gives way yet");
+        Assert.AreEqual(new Vector2(4f, 0f), (Vector2)b.transform.position);
+    }
+
+    // --- SU-95: charges need the troop within the engagement gap ---
+
+    [Test]
+    public void Charges_StartOnlyWithinTheEngagementGap()
+    {
+        // Code defaults: engaged at A_Distance 5.2, charges within EngagementGap 2 (+ 0.25). The lines form apart, then
+        // one closes to about 4 (engaged, beyond the engagement gap) and holds there.
+        Troop far = LineTroop("Far", Vector2.zero, Vector2.right);
+        Troop farEnemy = LineTroop("Far Enemy", new Vector2(20f, 0f), Vector2.left, team: 1);
+        Simulate(2f);
+        farEnemy.OrderLine(new Vector2(5.5f, 0f), Vector2.left, farEnemy.NaturalLineLength);
+        Simulate(6f);
+        float gap = FootprintGap.Gap(far.Footprint, farEnemy.Footprint);
+        Assert.IsTrue(far.IsEngaged, $"engaged at a gap of {gap:0.00}");
+        Assert.Greater(gap, _tuning.ChargeGap, "but beyond the engagement gap");
+        Assert.IsFalse(ChargeCoordinator.CanStartCharges(far));
+        far.ResetMeleeMetrics();
+        farEnemy.ResetMeleeMetrics();
+        Simulate(5f);
+        Assert.AreEqual(0, far.MeleeMetrics.Snapshot(far.LivingSoldierCount).Charges
+            + farEnemy.MeleeMetrics.Snapshot(farEnemy.LivingSoldierCount).Charges, "no charges outside the engagement gap");
+
+        Troop near = LineTroop("Near", new Vector2(0f, 40f), Vector2.right);
+        Troop nearEnemy = LineTroop("Near Enemy", new Vector2(3f, 40f), Vector2.left, team: 1);
+        Simulate(2f);
+        Assert.IsTrue(ChargeCoordinator.CanStartCharges(near), "within the engagement gap");
+        near.ResetMeleeMetrics();
+        Simulate(5f);
+        Assert.Greater(near.MeleeMetrics.Snapshot(near.LivingSoldierCount).Charges, 0, "soldiers charge");
+    }
+
+    [Test]
+    public void ChargeReach_IsADistanceBetweenSoldierEdges()
+    {
+        Assert.AreEqual(_tuning.ADistance + 2f * TroopConstants.SoldierRadius, _tuning.ChargeRange, 1e-5f);
+        Assert.AreEqual(_tuning.EngagementGap + _tuning.ChargeGapTolerance, _tuning.ChargeGap, 1e-5f);
+    }
+
+    // --- SU-101: deployment placement ---
+
+    static void StandStill(TroopCombatWorld world, int frames = 3)
+    {
+        for (int i = 0; i < frames; i++) world.SimulateFrame(0f);
+    }
+
+    [Test]
+    public void Placement_IdleShowsTheBlob_ALineShowsTheLine_WhileTimeStandsStill()
+    {
+        Troop troop = CreateTroop("Placed", 0, Vector2.zero);
+        troop.PlaceAt(Vector2.zero, Vector2.right, troop.NaturalLineLength, holdLine: false);
+        StandStill(_world);
+        Assert.AreEqual(FormationMode.Idle, troop.FormationMode, "a right-click placement stands Idle");
+        Assert.IsFalse(troop.HasManualLineOrder);
+        Assert.AreEqual(FootprintKind.Circle, troop.Outline.Kind, "and its outline is the blob");
+
+        Vector2 spot = new(10f, 5f);
+        troop.PlaceAt(spot, Vector2.up, troop.NaturalLineLength, holdLine: true);
+        StandStill(_world);
+        Assert.AreEqual(FormationMode.Line, troop.FormationMode, "a line placement holds the line");
+        TroopFootprint line = troop.Outline;
+        Assert.AreEqual(FootprintKind.Rect, line.Kind);
+        Assert.Less(Vector2.Distance(spot, line.Center), 0.01f, "the outline is on the troop");
+        Assert.Less(Vector2.Angle(Vector2.up, line.Facing), 0.5f, "facing the placed way");
+        foreach (var soldier in troop.Soldiers)
+            Assert.LessOrEqual(line.SignedDistance(troop.WorldPosition(soldier)), 1e-3f, "the soldiers stand in the line");
+
+        troop.PlaceAt(Vector2.zero, Vector2.right, troop.NaturalLineLength, holdLine: false);
+        StandStill(_world);
+        Assert.AreEqual(FormationMode.Idle, troop.FormationMode);
+        Assert.AreEqual(FootprintKind.Circle, troop.Outline.Kind);
+        float blob = troop.Radius * _tuning.BlobRadiusScale + 1e-3f;
+        foreach (var soldier in troop.Soldiers)
+            Assert.LessOrEqual(Vector2.Distance(troop.WorldPosition(soldier), Vector2.zero), blob, "back in the blob");
     }
 }

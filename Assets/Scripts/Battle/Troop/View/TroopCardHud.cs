@@ -223,7 +223,11 @@ public sealed class TroopCardHud
 
         var formationRow = new Rect(x, y, inner, LineHeight * s);
         GUI.Label(formationRow, "Formation", _caption);
-        DrawValue(formationRow, troop.FormationMode.ToString(), _bodyValue, troop.FormationMode == FormationMode.Rout);
+        // A disordered troop (SU-104) shows the seconds left before it can move again.
+        string formation = troop.IsDisordered
+            ? "Disordered " + Mathf.CeilToInt(troop.DisorderRemaining) + "s"
+            : troop.FormationMode.ToString();
+        DrawValue(formationRow, formation, _bodyValue, troop.FormationMode == FormationMode.Rout || troop.IsDisordered);
     }
 
     // One cell per character, side by side. Clicking a cell shows or hides that character's side panel.
@@ -401,12 +405,12 @@ public sealed class TroopCardHud
         if (!_expanded.Remove(key)) _expanded.Add(key);
     }
 
-    // Living and starting soldiers per character, in the troop profile's character order.
+    // Living and starting soldiers per character, in the troop's character order.
     void Tally(Troop troop)
     {
         _tallies.Clear();
-        if (troop.Profile != null)
-            foreach (var character in troop.Profile.Characters)
+        if (troop.Characters != null)
+            foreach (var character in troop.Characters)
                 if (character != null && Find(character) == null)
                     _tallies.Add(new CharacterTally { Character = character });
 

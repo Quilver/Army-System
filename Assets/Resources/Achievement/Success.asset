@@ -38,4 +38,4 @@ MonoBehaviour:
     - rid: 4568626260938588192
       type: {class: GiveXP, ns: AchievementSystem, asm: Assembly-CSharp}
       data:
-        xpPerLevel: 3
+        xpPerLevel: 0

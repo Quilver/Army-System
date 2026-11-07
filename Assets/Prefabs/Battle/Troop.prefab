@@ -86,8 +86,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _state: 1
   _teamId: 1
-  _profile: {fileID: 11400000, guid: 20e618b28b66b2d409669342760418e9, type: 2}
-  _troopRadius: 16.5
+  _characters:
+  - {fileID: 11400000, guid: 357cd6944e402b747b84f97bab5cdde1, type: 2}
   _soldierObstacleMask:
     serializedVersion: 2
     m_Bits: 0

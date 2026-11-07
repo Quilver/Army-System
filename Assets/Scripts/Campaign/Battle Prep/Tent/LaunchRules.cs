@@ -3,13 +3,22 @@ using UnityEngine.SceneManagement;
 namespace BattlePrep.Tent
 {
     // When the army may march out (spec TentHub.md §5). Same rules and messages as the old ToBattleButton, plus the
-    // deploy cap of 5 (SU-50), enforced when a character is deployed (TentDeployment.CanDeploy).
+    // deploy cap (SU-50; per mission since SU-119), enforced when a character is deployed (TentDeployment.CanDeploy).
     public static class LaunchRules
     {
         public const int MinimumDeployed = 2;
-        // At most this many characters can be deployed to a mission (SU-50).
-        public const int MaximumDeployed = 5;
-        // Build indices before the first level scene (ToBattleButton.NextLevel).
+        // Deploy cap of a mission that does not set one (SU-50).
+        public const int DefaultMaximumDeployed = 5;
+        // At most this many characters can be deployed to this mission: PreparationData.maxDeployed (SU-119).
+        public static int MaximumDeployed
+        {
+            get
+            {
+                var data = TentHubController.Data;
+                return data != null && data.maxDeployed > 0 ? data.maxDeployed : DefaultMaximumDeployed;
+            }
+        }
+        // Build indices before the first level scene (ToBattleButton.NextLevel). Only used without a MissionCatalog.
         const int EndOfNonLevelSceneIndexes = 2;
 
         public static int DeployedCount => BattleReport.DeployedCharacters?.Count ?? 0;
@@ -31,6 +40,9 @@ namespace BattlePrep.Tent
         public static bool TryLaunch()
         {
             if (!CanLaunch(out _)) return false;
+            // The current mission's battle scene (SU-119); without a mission catalog, the old build-index order.
+            var mission = Campaign.Missions.MissionCatalog.Current;
+            if (mission != null) return mission.LoadBattle();
             SceneManager.LoadScene(Campaign.CampaignDataManager.Data.CurrentLevel + EndOfNonLevelSceneIndexes);
             return true;
         }

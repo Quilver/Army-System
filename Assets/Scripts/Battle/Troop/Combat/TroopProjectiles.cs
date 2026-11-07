@@ -9,6 +9,8 @@ public sealed class TroopProjectiles
     public sealed class Projectile
     {
         public Troop Shooter;
+        // The soldier that shot it, for the combat log. May be null.
+        public SoldierAgentState ShooterSoldier;
         public Troop TargetTroop;
         public SoldierAgentState Target;
         public Vector2 From;
@@ -29,10 +31,11 @@ public sealed class TroopProjectiles
     public IReadOnlyList<Projectile> Active => _active;
 
     public void Launch(Troop shooter, Vector2 from, Troop targetTroop, SoldierAgentState target, int damage,
-        float hitChance, float speed, WeaponProfile weapon = null)
+        float hitChance, float speed, WeaponProfile weapon = null, SoldierAgentState shooterSoldier = null)
     {
         Projectile projectile = _pool.Count > 0 ? _pool.Pop() : new Projectile();
         projectile.Shooter = shooter;
+        projectile.ShooterSoldier = shooterSoldier;
         projectile.TargetTroop = targetTroop;
         projectile.Target = target;
         projectile.From = from;
@@ -55,6 +58,7 @@ public sealed class TroopProjectiles
             Land(projectile);
             _active.RemoveAt(i);
             projectile.Shooter = null;
+            projectile.ShooterSoldier = null;
             projectile.TargetTroop = null;
             projectile.Target = null;
             projectile.Weapon = null;
@@ -74,14 +78,34 @@ public sealed class TroopProjectiles
         Troop targetTroop = projectile.TargetTroop;
         if (targetTroop == null || projectile.Target == null || !projectile.Target.IsAlive) return;
         ITroopRandom random = shooter != null ? shooter.TroopRandom : targetTroop.TroopRandom;
-        bool hit = random.Value() < projectile.HitChance;
+        float hitRoll = random.Value();
+        bool hit = hitRoll < projectile.HitChance;
         if (shooter != null) shooter.MeleeMetrics.RecordShot(hit);
         BattleEvents.RaiseProjectileLanded(shooter, targetTroop, hit, targetTroop.WorldPosition(projectile.Target));
-        if (!hit) return;
+        var entry = new CombatLogEntry
+        {
+            Kind = CombatLogKind.Shot,
+            Time = CombatLog.Now,
+            Attacker = CombatLogSoldier.Of(shooter, projectile.ShooterSoldier),
+            Defender = CombatLogSoldier.Of(targetTroop, projectile.Target),
+            Weapon = projectile.Weapon != null ? projectile.Weapon.DisplayName : null,
+            HitChance = projectile.HitChance,
+            HitRoll = hitRoll,
+            Hit = hit,
+            Damage = new CombatLogDamage { WeaponDamage = projectile.Damage, Raw = projectile.Damage },
+        };
+        if (!hit)
+        {
+            CombatLog.Record(entry);
+            return;
+        }
         Vector2 origin = shooter != null ? (Vector2)shooter.transform.position : projectile.From;
-        int applied = targetTroop.ApplyDamage(projectile.Target, projectile.Damage, origin, flanked: false, shooter,
-            projectile.Weapon);
+        AppliedDamage taken = targetTroop.ApplyDamageDetailed(projectile.Target, projectile.Damage, origin, flanked: false,
+            shooter, projectile.Weapon, out MitigationResult mitigation);
+        int applied = taken.Total;
         if (shooter != null) shooter.MeleeMetrics.RecordDamageDone(applied);
         targetTroop.MeleeMetrics.RecordDamageReceived(applied);
+        DuelResolver.FillDamage(ref entry.Damage, mitigation, applied, projectile.Target);
+        CombatLog.Record(entry);
     }
 }

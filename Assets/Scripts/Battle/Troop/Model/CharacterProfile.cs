@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.Serialization;
 
 // A character (spec §1.1): a campaign commander and the soldiers they bring into battle. Pre-battle data only: a
-// TroopProfile lists one or more characters, and the troop spawns Numbers soldiers for each of them at deployment.
+// troop (Troop) lists one or more characters, and the troop spawns Numbers soldiers for each of them at deployment.
 // Every spawned soldier points back at its character for its soldier stats and equipment (SoldierAgentState.Character).
 // Morale and Discipline are this character's values; a troop of several characters resolves them with
 // CompositeTroopResolver (spec §1.2). Acceleration follows Speed; the other steering values are shared (TroopTuning).

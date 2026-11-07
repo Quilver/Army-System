@@ -68,12 +68,14 @@ All panels: UGUI overlay, title, close button, tent dimmed behind. Existing view
 - Every roster character: portrait, name, level, XP bar, stats, cost to field (`PCWrapper` data, as `UnitSelectionView`
   shows today). No selecting here; deployment lives on the Map.
 
-### 4.3 Map (Wired; pairing Stub; roster on CampaignCharacter, gold remaining / spent, SU-52, SU-55)
+### 4.3 Map (Wired; pairing SU-117; roster on CampaignCharacter, gold remaining / spent, SU-52, SU-55)
 - Page **Mission**: briefing text and image (`PreparationData.briefing`, `.image`), mission/level name, "Replay briefing".
 - Page **Deployment**: roster list with cost; click to deploy / undeploy (today's `UnitSelectionView.Select` rules,
   gold deducted and refunded). Deployed characters show as troop cards.
-- **Pairing (Stub):** each deployed troop card shows an empty second-character slot, disabled with the tooltip "Pairing
-  coming soon". Every deployed character fights as its own troop until pairing is built (spec §1.2) **[PB-Q4]**.
+- **Mandatory characters (SU-117):** `PreparationData.mandatoryCharacters` start deployed, free and locked (Julian in
+  Levels 1 and 2).
+- **Pairing (SU-117):** drag a deployed card onto another to form a composite troop (max 2 characters) under the
+  character dropped on, shown indented under it; dragging the follower off breaks it. Troop frontage comes from its soldier count.
 - **March Out** button: same as the Tent Flaps.
 
 ### 4.4 Inventory, Shop (Stub)

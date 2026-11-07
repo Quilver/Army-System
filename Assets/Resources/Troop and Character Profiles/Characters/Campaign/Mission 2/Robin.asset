@@ -15,9 +15,10 @@ MonoBehaviour:
   _characterName: Robin
   _class: {fileID: 11400000, guid: b4069752d9de85f43a7f5ef5fc533a61, type: 2}
   _className: 
-  _portrait: {fileID: 21300000, guid: d0661ae4dfbd06a41901f7f16c1b3328, type: 3}
+  _portrait: {fileID: 3475298383841109393, guid: 8d3bfb5153a3e0748b8f737f05435f1c,
+    type: 3}
   _soldierSprite: {fileID: 21300000, guid: c540b65e023733244bac2ec10e5a466b, type: 3}
-  _numbers: 8
+  _numbers: 10
   _morale: 4
   _discipline: 4
   _equipment:
@@ -26,13 +27,13 @@ MonoBehaviour:
     _armour: {fileID: 11400000, guid: 0b3e6c3eeea26934393ac7f846680920, type: 2}
     _weapons: []
   _soldierStats:
-    _speed: 6
+    _speed: 5
     _defence: 5
     _strength: 6
     _support: 4
-    _charge: 4
-    _aggression: 5
-    _maxHealth: 14
+    _charge: 3
+    _aggression: 3
+    _maxHealth: 16
     _weaponSkills:
     - Class: 3
       Level: 6

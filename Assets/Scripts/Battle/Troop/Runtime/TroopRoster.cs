@@ -147,6 +147,45 @@ public sealed class TroopRoster : MonoBehaviour
         soldier.Velocity += (Vector2)transform.InverseTransformVector(worldVelocityDelta);
     }
 
+    // Deployment (Troop.PlaceAt, SU-101): puts the living soldiers straight into the ranks of a line of this length
+    // through the pivot, as the line fill spreads them (SoldierSteering): files evenly spaced along the line, Ranks
+    // deep, the first rank in front. The troop faces local +x, so the line runs along local y.
+    internal void ArrangeInLine(float length)
+    {
+        int count = 0;
+        foreach (var soldier in _soldiers)
+            if (soldier.IsAlive) count++;
+        if (count == 0) return;
+        int ranks = LineGeometry.Ranks(count, length);
+        int files = (count + ranks - 1) / ranks;
+        float fileSpacing = length / Mathf.Max(1, files);
+        int k = 0;
+        foreach (var soldier in _soldiers)
+        {
+            if (!soldier.IsAlive) continue;
+            int file = k / ranks;
+            int rank = k % ranks;
+            float along = -length * 0.5f + (file + 0.5f) * fileSpacing;
+            float across = ((ranks - 1) * 0.5f - rank) * TroopConstants.LineSpacing;
+            Place(soldier, new Vector2(across, along));
+            k++;
+        }
+    }
+
+    // Deployment: puts the living soldiers back into a blob around the pivot, as when the troop was spawned.
+    internal void ScatterInBlob()
+    {
+        foreach (var soldier in _soldiers)
+            if (soldier.IsAlive) Place(soldier, RandomBlobOffset());
+    }
+
+    void Place(SoldierAgentState soldier, Vector2 localPosition)
+    {
+        soldier.Position = localPosition;
+        soldier.Velocity = Vector2.zero;
+        soldier.Facing = transform.right;
+    }
+
     Vector2 RandomBlobOffset()
     {
         float radius = _troop.Radius;

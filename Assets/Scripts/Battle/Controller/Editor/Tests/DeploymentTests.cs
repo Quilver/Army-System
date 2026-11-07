@@ -58,10 +58,32 @@ public sealed class DeploymentTests
 
         DeploymentZone.TroopSource = null;
         Assert.AreEqual(0, zone.TroopsToDeploy().Count, "no report: nothing to deploy");
-        var troop = ScriptableObject.CreateInstance<TroopProfile>();
-        _created.Add(troop);
-        DeploymentZone.TroopSource = () => new List<TroopProfile> { troop };
-        Assert.AreSame(troop, zone.TroopsToDeploy().Single(), "deploys the report's troops");
+        var character = ScriptableObject.CreateInstance<CharacterProfile>();
+        _created.Add(character);
+        IReadOnlyList<CharacterProfile> troop = new List<CharacterProfile> { character };
+        DeploymentZone.TroopSource = () => new List<IReadOnlyList<CharacterProfile>> { troop };
+        Assert.AreSame(troop, zone.TroopsToDeploy().Single(), "deploys the report's troops, each as its characters");
+    }
+
+    [Test]
+    public void Zone_AreaAndBorderShowOnlyWhileDeploying()
+    {
+        var go = new GameObject("Zone");
+        _created.Add(go);
+        var area = go.AddComponent<SpriteRenderer>();
+        var border = new GameObject("Border");
+        border.transform.SetParent(go.transform, false);
+        var borderRenderer = border.AddComponent<SpriteRenderer>();
+        var zone = go.AddComponent<DeploymentZone>(); // Awake does not run in Edit mode
+
+        zone.ApplyPhase(BattlePhase.Deployment);
+        Assert.IsTrue(area.enabled && borderRenderer.enabled, "area and border shown while deploying");
+        Assert.IsTrue(zone.IsShown);
+
+        zone.ApplyPhase(BattlePhase.Fighting);
+        Assert.IsFalse(area.enabled, "area hidden once fighting");
+        Assert.IsFalse(borderRenderer.enabled, "border hidden once fighting (it used to stay on screen)");
+        Assert.IsFalse(zone.IsShown);
     }
 
     static int ReportTroopCount(out BattleReport report)
@@ -69,7 +91,13 @@ public sealed class DeploymentTests
         report = Object.FindAnyObjectByType<BattleReport>(FindObjectsInactive.Include);
         Assert.IsNotNull(report, "the level's DataManager has a BattleReport");
         var list = new SerializedObject(report).FindProperty("_deployedTroops");
-        for (int i = 0; i < list.arraySize; i++) Assert.IsNotNull(list.GetArrayElementAtIndex(i).objectReferenceValue);
+        for (int i = 0; i < list.arraySize; i++)
+        {
+            SerializedProperty characters = list.GetArrayElementAtIndex(i).FindPropertyRelative("_characters");
+            Assert.Greater(characters.arraySize, 0, $"default troop {i} has characters");
+            for (int j = 0; j < characters.arraySize; j++)
+                Assert.IsNotNull(characters.GetArrayElementAtIndex(j).objectReferenceValue, $"default troop {i} character {j}");
+        }
         return list.arraySize;
     }
 
@@ -151,7 +179,7 @@ public sealed class DeploymentTests
 
         // Placing outside the zone keeps the troop inside it, with no march.
         Troop moved = mine[0];
-        Assert.IsTrue(zone.Place(moved, new Vector2(60f, 60f), Vector2.up, moved.NaturalLineLength));
+        Assert.IsTrue(zone.Place(moved, new Vector2(60f, 60f), Vector2.up, moved.NaturalLineLength, holdLine: false));
         Assert.IsTrue(zone.Contains(moved.transform.position, 0f), "placement clamped into the zone");
         Assert.IsFalse(moved.IsMoving, "placed, not marching");
 
@@ -166,7 +194,8 @@ public sealed class DeploymentTests
         Assert.IsFalse(GamePause.IsPaused);
         Assert.AreEqual(1f, Time.timeScale);
         if (orders != null) Assert.IsNull(orders.Placement, "orders are orders again");
-        Assert.IsFalse(zone.Place(moved, moved.transform.position, Vector2.up, moved.NaturalLineLength), "no placing once fighting");
+        Assert.IsFalse(zone.IsShown, "the zone's area and border are hidden once fighting");
+        Assert.IsFalse(zone.Place(moved, moved.transform.position, Vector2.up, moved.NaturalLineLength, holdLine: true), "no placing once fighting");
 
         Time.captureDeltaTime = 1f / 30f;
         float end = Time.time + 5f;

@@ -24,13 +24,13 @@ namespace BattlePrep.Tent.EditorTools
         const string LayoutPath = ArtDir + "TentLayout.json";
         const string HubName = "Tent Hub";
 
-        static readonly Color Parchment = new Color32(0xF3, 0xEA, 0xD6, 0xFF);
-        static readonly Color ParchmentDark = new Color32(0xE2, 0xD3, 0xB4, 0xFF);
-        static readonly Color Ink = new Color32(0x2B, 0x21, 0x18, 0xFF);
-        static readonly Color Wood = new Color32(0x5C, 0x45, 0x33, 0xFF);
-        static readonly Color Cream = new Color32(0xFE, 0xF3, 0xC7, 0xFF);
-        static readonly Color Rust = new Color32(0x7C, 0x2D, 0x12, 0xFF);
-        static readonly Color Gold = new Color32(0xD9, 0x77, 0x06, 0xFF);
+        internal static readonly Color Parchment = new Color32(0xF3, 0xEA, 0xD6, 0xFF);
+        internal static readonly Color ParchmentDark = new Color32(0xE2, 0xD3, 0xB4, 0xFF);
+        internal static readonly Color Ink = new Color32(0x2B, 0x21, 0x18, 0xFF);
+        internal static readonly Color Wood = new Color32(0x5C, 0x45, 0x33, 0xFF);
+        internal static readonly Color Cream = new Color32(0xFE, 0xF3, 0xC7, 0xFF);
+        internal static readonly Color Rust = new Color32(0x7C, 0x2D, 0x12, 0xFF);
+        internal static readonly Color Gold = new Color32(0xD9, 0x77, 0x06, 0xFF);
 
         [System.Serializable] class Layer { public string name; public float x, y, w, h; }
         [System.Serializable] class Layout { public Layer[] layers; }
@@ -243,10 +243,10 @@ namespace BattlePrep.Tent.EditorTools
 
         // --- Panels ---
 
-        static readonly Color Leather = new Color32(0x4A, 0x2C, 0x17, 0xFF);
-        static readonly Color CardStock = new Color32(0xFB, 0xF6, 0xE9, 0xFF);
-        static readonly Color Faded = new Color32(0x6B, 0x5A, 0x45, 0xFF);
-        static readonly Color Green = new Color32(0x3F, 0x62, 0x12, 0xFF);
+        internal static readonly Color Leather = new Color32(0x4A, 0x2C, 0x17, 0xFF);
+        internal static readonly Color CardStock = new Color32(0xFB, 0xF6, 0xE9, 0xFF);
+        internal static readonly Color Faded = new Color32(0x6B, 0x5A, 0x45, 0xFF);
+        internal static readonly Color Green = new Color32(0x3F, 0x62, 0x12, 0xFF);
 
         static T Panel<T>(Transform parent, string name, string title, Vector2 size, out RectTransform content,
             out TextMeshProUGUI titleText) where T : TentPanel
@@ -277,6 +277,16 @@ namespace BattlePrep.Tent.EditorTools
         static T Book<T>(Transform parent, string name, string title, out RectTransform cover, out RectTransform left,
             out RectTransform right) where T : TentPanel
         {
+            var root = BookFrame(parent, name, title, out cover, out left, out right, out var close);
+            var panel = root.AddComponent<T>();
+            Set(panel, "_closeButton", close);
+            return panel;
+        }
+
+        // The book itself (cover, pages, spine, title and close button; no bookmark, SU-116), also used by the post-battle book.
+        internal static GameObject BookFrame(Transform parent, string name, string title, out RectTransform cover,
+            out RectTransform left, out RectTransform right, out Button close)
+        {
             var root = UI(parent, name);
             Stretch(root);
             var coverImage = Img(root.transform, "Cover", Leather);
@@ -287,7 +297,7 @@ namespace BattlePrep.Tent.EditorTools
 
             var titleText = Label(cover, "Title", title, 22, Cream, TextAlignmentOptions.Center, true);
             Anchored(titleText.gameObject, new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -6), new Vector2(600, 34));
-            var close = Btn(cover, "Close", "X", 20);
+            close = Btn(cover, "Close", "X", 20);
             Anchored(close.gameObject, new Vector2(1, 1), new Vector2(1, 1), new Vector2(-10, -6), new Vector2(36, 36));
 
             var leftImage = Img(cover, "Left Page", Parchment);
@@ -297,16 +307,10 @@ namespace BattlePrep.Tent.EditorTools
             var spine = Img(cover, "Spine", new Color(0.17f, 0.1f, 0.05f, 0.45f));
             spine.raycastTarget = false;
             TopLeft(spine.gameObject, 576, 46, 28, 556);
-            var ribbon = Img(cover, "Bookmark", Rust);
-            ribbon.raycastTarget = false;
-            TopLeft(ribbon.gameObject, 1060, 40, 18, 590);
-
-            var panel = root.AddComponent<T>();
-            Set(panel, "_closeButton", close);
-            return panel;
+            return root;
         }
 
-        static void PageHeader(RectTransform page, string title, string subtitle)
+        internal static void PageHeader(RectTransform page, string title, string subtitle)
         {
             var header = Label(page, "Header", title, 26, Ink, TextAlignmentOptions.MidlineLeft, true);
             TopLeft(header.gameObject, 28, 16, 492, 36);
@@ -417,7 +421,7 @@ namespace BattlePrep.Tent.EditorTools
         }
 
         // One character per page (548 x 556).
-        static LedgerPage LedgerPageLayout(RectTransform page)
+        internal static LedgerPage LedgerPageLayout(RectTransform page)
         {
             var content = UI(page, "Content");
             Stretch(content);
@@ -484,7 +488,7 @@ namespace BattlePrep.Tent.EditorTools
             return component;
         }
 
-        static void Divider(Transform parent, float y)
+        internal static void Divider(Transform parent, float y)
         {
             var line = Img(parent, "Divider", new Color(Ink.r, Ink.g, Ink.b, 0.3f));
             line.raycastTarget = false;
@@ -598,7 +602,8 @@ namespace BattlePrep.Tent.EditorTools
             return component;
         }
 
-        // 470 x 56: portrait, name and class, gold spent, empty pairing slot.
+        // 470 x 56: portrait, name and class, gold spent. The card is dragged onto another deployed card to pair them
+        // (SU-117); a follower's card is shown indented under its leader's.
         static DeployedTroopCard DeployedCardTemplate(Transform parent)
         {
             var card = Img(parent, "Deployed Card Template", Parchment);
@@ -611,14 +616,10 @@ namespace BattlePrep.Tent.EditorTools
             TopLeft(name.gameObject, 62, 2, 230, 52);
             var cost = Label(card.transform, "Cost", "-0 g", 16, Rust, TextAlignmentOptions.MidlineRight, true);
             TopLeft(cost.gameObject, 296, 2, 80, 52);
-            var pair = Btn(card.transform, "Pair Slot", "+ Pair\n(soon)", 11);
-            TopLeft(pair.gameObject, 388, 8, 74, 40);
-            pair.interactable = false;
             var component = card.gameObject.AddComponent<DeployedTroopCard>();
             Set(component, "_portrait", portrait);
             Set(component, "_name", name);
             Set(component, "_cost", cost);
-            Set(component, "_pairSlot", pair);
             return component;
         }
 
@@ -677,7 +678,7 @@ namespace BattlePrep.Tent.EditorTools
             return dialogue;
         }
 
-        static void BuildTooltip(Transform parent)
+        internal static void BuildTooltip(Transform parent)
         {
             var holder = UI(parent, "Tooltip");
             Stretch(holder);
@@ -702,7 +703,7 @@ namespace BattlePrep.Tent.EditorTools
 
         // --- Helpers ---
 
-        static void EnsureEventSystem(List<string> log)
+        internal static void EnsureEventSystem(List<string> log)
         {
             if (Object.FindObjectsByType<EventSystem>(FindObjectsInactive.Exclude, FindObjectsSortMode.None).Length > 0) return;
             new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
@@ -716,7 +717,7 @@ namespace BattlePrep.Tent.EditorTools
             return prefab;
         }
 
-        static void Set(Object target, string field, Object value)
+        internal static void Set(Object target, string field, Object value)
         {
             var so = new SerializedObject(target);
             var prop = so.FindProperty(field);
@@ -729,7 +730,7 @@ namespace BattlePrep.Tent.EditorTools
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        static GameObject UI(Transform parent, string name)
+        internal static GameObject UI(Transform parent, string name)
         {
             var go = new GameObject(name, typeof(RectTransform));
             go.layer = LayerMask.NameToLayer("UI");
@@ -737,7 +738,7 @@ namespace BattlePrep.Tent.EditorTools
             return go;
         }
 
-        static Image Img(Transform parent, string name, Color color, Sprite sprite = null)
+        internal static Image Img(Transform parent, string name, Color color, Sprite sprite = null)
         {
             var image = UI(parent, name).AddComponent<Image>();
             image.color = color;
@@ -745,7 +746,7 @@ namespace BattlePrep.Tent.EditorTools
             return image;
         }
 
-        static TextMeshProUGUI Label(Transform parent, string name, string text, float size, Color color,
+        internal static TextMeshProUGUI Label(Transform parent, string name, string text, float size, Color color,
             TextAlignmentOptions alignment, bool bold = false)
         {
             var t = UI(parent, name).AddComponent<TextMeshProUGUI>();
@@ -758,7 +759,7 @@ namespace BattlePrep.Tent.EditorTools
             return t;
         }
 
-        static Button Btn(Transform parent, string name, string label, float size)
+        internal static Button Btn(Transform parent, string name, string label, float size)
         {
             var image = Img(parent, name, Wood);
             var button = image.gameObject.AddComponent<Button>();
@@ -802,7 +803,7 @@ namespace BattlePrep.Tent.EditorTools
             return content.transform;
         }
 
-        static RectTransform Stretch(GameObject go, float left = 0, float top = 0, float right = 0, float bottom = 0)
+        internal static RectTransform Stretch(GameObject go, float left = 0, float top = 0, float right = 0, float bottom = 0)
         {
             var rt = (RectTransform)go.transform;
             rt.anchorMin = Vector2.zero;
@@ -813,10 +814,10 @@ namespace BattlePrep.Tent.EditorTools
             return rt;
         }
 
-        static RectTransform Stretch(RectTransform rt, float left = 0, float top = 0, float right = 0, float bottom = 0) =>
+        internal static RectTransform Stretch(RectTransform rt, float left = 0, float top = 0, float right = 0, float bottom = 0) =>
             Stretch(rt.gameObject, left, top, right, bottom);
 
-        static RectTransform Anchored(GameObject go, Vector2 anchor, Vector2 pivot, Vector2 position, Vector2 size)
+        internal static RectTransform Anchored(GameObject go, Vector2 anchor, Vector2 pivot, Vector2 position, Vector2 size)
         {
             var rt = (RectTransform)go.transform;
             rt.anchorMin = rt.anchorMax = anchor;
@@ -827,7 +828,7 @@ namespace BattlePrep.Tent.EditorTools
         }
 
         // x, y from the parent's top-left corner, y down.
-        static RectTransform TopLeft(GameObject go, float x, float y, float w, float h) =>
+        internal static RectTransform TopLeft(GameObject go, float x, float y, float w, float h) =>
             Anchored(go, new Vector2(0, 1), new Vector2(0, 1), new Vector2(x, -y), new Vector2(w, h));
 
         // A layer from TentLayout.json (1280 x 720, top-left origin), pivot at its centre so the hover scale grows in place.

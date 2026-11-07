@@ -7,6 +7,7 @@ using UnityEngine;
 //   A is the charger; if both charge, the earlier charge; if neither, the lower soldier id (Q-28).
 //   A soldier fighting an enemy on its troop's flank or rear gets no support, and the Shock it takes is x3 (spec §4.8).
 //   A clash ends any charge of either soldier, and both soldiers start their clash cooldown.
+//   A stunned soldier (SU-107) that wins its clash deals no damage (SU-111).
 public sealed class DuelResolver
 {
     const float ClashPulseDuration = 0.2f;
@@ -35,8 +36,10 @@ public sealed class DuelResolver
 
         bool aFlanked = a.Troop.IsFlankedBy(b.Troop);
         bool bFlanked = b.Troop.IsFlankedBy(a.Troop);
-        int powerA = Power(a, positionA, aFlanked);
-        int powerB = Power(b, positionB, bFlanked);
+        CombatPowerParts partsA = Power(a, positionA, aFlanked);
+        CombatPowerParts partsB = Power(b, positionB, bFlanked);
+        int powerA = partsA.Total;
+        int powerB = partsB.Total;
         float roll = a.Troop.TroopRandom.Range(0f, 100f);
         DuelOutcome outcome = DuelRules.Resolve(powerA, powerB, roll, tuning.DominationDivisor);
 
@@ -44,8 +47,21 @@ public sealed class DuelResolver
         SoldierContact loser = outcome.AWins ? b : a;
         bool loserFlanked = outcome.AWins ? bFlanked : aFlanked;
         winner.Troop.MeleeMetrics.RecordDuelWin();
-        ApplyDamage(winner, loser, outcome.Domination, loserFlanked,
+        var entry = new CombatLogEntry
+        {
+            Kind = CombatLogKind.Clash,
+            Time = CombatLog.Now,
+            Attacker = CombatLogSoldier.Of(a.Troop, a.Soldier),
+            Defender = CombatLogSoldier.Of(b.Troop, b.Soldier),
+            AttackerPower = partsA,
+            DefenderPower = partsB,
+            ChanceA = powerA + powerB > 0 ? powerA / (float)(powerA + powerB) : 0.5f,
+            Roll = roll,
+            AttackerWins = outcome.AWins,
+        };
+        entry.Damage = ApplyDamage(winner, loser, outcome.Domination, loserFlanked,
             outcome.AWins ? positionB - positionA : positionA - positionB);
+        CombatLog.Record(entry);
 
         EndCharge(first.Soldier);
         EndCharge(second.Soldier);
@@ -62,28 +78,54 @@ public sealed class DuelResolver
         return DuelRules.FirstIsA(x.IsCharging, x.ChargeStartTime, x.Id, y.IsCharging, y.ChargeStartTime, y.Id);
     }
 
-    int Power(SoldierContact contact, Vector2 position, bool flanked)
+    // Combat Power (CombatPower.Compute) with its parts, for the combat log.
+    CombatPowerParts Power(SoldierContact contact, Vector2 position, bool flanked)
     {
         TroopTuning tuning = TroopTuning.Active;
         CharacterProfile profile = contact.Soldier.Character;
-        if (profile == null) return 0;
+        bool charging = contact.Soldier.IsCharging;
+        bool assault = contact.Troop.IsAssaulting;
+        if (profile == null) return new CombatPowerParts { Charging = charging, Assault = assault, Flanked = flanked };
         int support = _support.SupportBonus(contact.Troop, contact.Soldier, position, flanked);
-        return CombatPower.Compute(profile.MeleeWeaponSkill, contact.Soldier.IsCharging, profile.Charge,
-            profile.MeleeWeaponChargeBonus, contact.Troop.IsAssaulting, tuning.AssaultChargeBonus, support);
+        int total = CombatPower.Compute(profile.MeleeWeaponSkill, charging, profile.Charge,
+            profile.MeleeWeaponChargeBonus, assault, tuning.AssaultChargeBonus, support);
+        return new CombatPowerParts
+        {
+            Skill = profile.MeleeWeaponSkill,
+            Support = support,
+            Charge = total - profile.MeleeWeaponSkill - support,
+            ChargeStat = charging ? profile.Charge : 0,
+            WeaponCharge = charging ? profile.MeleeWeaponChargeBonus : 0,
+            AssaultCharge = charging && assault ? tuning.AssaultChargeBonus : 0,
+            Weapon = profile.MeleeWeapon.DisplayName,
+            Charging = charging,
+            Assault = assault,
+            Flanked = flanked,
+            Stunned = contact.Soldier.IsStunned,
+        };
     }
 
-    // A fleeing troop (retreating or routed) that wins a clash deals no damage (Q-37). A loser that takes damage plays
-    // its squash and stretch along pushDirection (from the winner toward the loser).
-    static void ApplyDamage(SoldierContact winner, SoldierContact loser, int domination, bool loserFlanked,
+    // A fleeing troop (retreating or routed) that wins a clash deals no damage (Q-37), nor does a stunned winner (SU-111).
+    // A loser that takes damage plays its squash and stretch along pushDirection (from the winner toward the loser).
+    // Returns what happened, for the log.
+    static CombatLogDamage ApplyDamage(SoldierContact winner, SoldierContact loser, int domination, bool loserFlanked,
         Vector2 pushDirection)
     {
+        var log = new CombatLogDamage { Domination = domination };
         CharacterProfile profile = winner.Soldier.Character;
-        if (profile == null || winner.Troop.State == TroopState.Fleeing) return;
+        if (profile == null) { log.NoDamageReason = "no character"; return log; }
+        if (winner.Troop.State == TroopState.Fleeing) { log.NoDamageReason = "winner fleeing"; return log; }
+        if (winner.Soldier.IsStunned) { log.NoDamageReason = "winner stunned"; return log; }
         bool lanceDouble = profile.HasCouchedLance && winner.Soldier.IsCharging;
         int raw = DamageRules.RawDamage(profile.Strength, profile.MeleeWeaponDamage, domination, lanceDouble);
-        if (raw <= 0) return;
-        int applied = loser.Troop.ApplyDamage(loser.Soldier, raw, winner.Troop.transform.position, loserFlanked,
-            winner.Troop, profile.MeleeWeapon);
+        log.Strength = profile.Strength;
+        log.WeaponDamage = profile.MeleeWeaponDamage;
+        log.LanceDoubled = lanceDouble;
+        log.Raw = raw;
+        if (raw <= 0) { log.NoDamageReason = "0 raw damage"; return log; }
+        AppliedDamage taken = loser.Troop.ApplyDamageDetailed(loser.Soldier, raw, winner.Troop.transform.position,
+            loserFlanked, winner.Troop, profile.MeleeWeapon, out MitigationResult mitigation);
+        int applied = taken.Total;
         winner.Troop.MeleeMetrics.RecordDamageDone(applied);
         loser.Troop.MeleeMetrics.RecordDamageReceived(applied);
         if (applied > 0)
@@ -91,6 +133,22 @@ public sealed class DuelResolver
             loser.Troop.PlayHitSquash(loser.Soldier, pushDirection);
             BattleEvents.RaiseSoldierStruck(winner.Troop, loser.Troop, loser.Troop.WorldPosition(loser.Soldier));
         }
+        FillDamage(ref log, mitigation, applied, loser.Soldier);
+        return log;
+    }
+
+    // The armour roll and its result on the target, for the combat log (also used for ranged hits).
+    internal static void FillDamage(ref CombatLogDamage log, in MitigationResult mitigation, int applied, SoldierAgentState target)
+    {
+        log.Dealt = true;
+        log.Deflected = mitigation.Deflected;
+        log.Bruised = mitigation.Bruised;
+        log.Bled = mitigation.Bled;
+        log.Overflow = mitigation.Overflow;
+        log.AppliedHp = applied;
+        log.HpLeft = target != null ? target.CurrentHp : 0;
+        log.Killed = target != null && !target.IsAlive;
+        log.Stunned = target != null && target.IsStunned;
     }
 
     // One charge = one clash: the charge ends on contact and the charger's followers return to the line.
@@ -104,7 +162,8 @@ public sealed class DuelResolver
     {
         Vector2 towardB = positionB - positionA;
         towardB = towardB.sqrMagnitude > 1e-8f ? towardB.normalized : Vector2.right;
-        float impactDistance = Mathf.Min(0.6f, Mathf.Min(a.Troop.Radius, b.Troop.Radius) * 0.06f);
+        // 0.3 units: what every radius-5 troop had before the frontage (SU-103), so a clash knocks back as before.
+        const float impactDistance = 0.3f;
         float maxSpeed = Mathf.Max(
             a.Soldier.Character != null ? a.Soldier.Character.MaxSpeed : 0f,
             b.Soldier.Character != null ? b.Soldier.Character.MaxSpeed : 0f);

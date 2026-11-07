@@ -1,7 +1,7 @@
 using System;
 
 // Charge rate (spec §4.3). Pure C#. Each frame a soldier that has an enemy in range charges with probability
-// 1 - exp(-rate x dt), where rate = EffectiveAggression / ActionWindowSeconds. Over a full window this gives an
+// 1 - exp(-rate x dt), where rate = EffectiveAggression / ChargeWindowSeconds (45 s, SU-112). Over a full window this gives an
 // expected Aggression charges per soldier.
 public static class ChargeRules
 {

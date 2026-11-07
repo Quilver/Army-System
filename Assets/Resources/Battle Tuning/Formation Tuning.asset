@@ -15,11 +15,13 @@ MonoBehaviour:
   _sDistance: 5
   _sDistanceExitHysteresis: 0
   _aDistance: 2
-  _engagementGap: 2
+  _engagementGap: 1.5
   _engagementHoldMargin: 1
   _naturalLineRadiusScale: 1.8
   _blobRadiusScale: 0.85
   _pivotSeparationScale: 0.25
+  _friendlyGap: 0.5
+  _friendlyGiveWaySpeedScale: 0.5
   _pathRebuildIntervalSeconds: 0.5
   _jointClearance: 0.45
   _jointClearanceFraction: 0.15

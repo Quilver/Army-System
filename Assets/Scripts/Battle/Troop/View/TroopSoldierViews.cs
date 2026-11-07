@@ -69,7 +69,8 @@ public sealed class TroopSoldierViews
                 continue;
             }
             renderer.enabled = true;
-            renderer.color = armyColor;
+            // A stunned soldier (SU-107) is drawn greyed like a corpse, without its glow, until it recovers.
+            renderer.color = soldier.IsStunned ? Color.Lerp(ClashPulseView.Grey(armyColor), armyColor, CorpseSaturation) : armyColor;
             UpdateEmission(i, renderer, soldier, deltaTime);
             UpdateHitSquash(i, renderer, deltaTime);
             renderer.transform.position = _troop.transform.TransformPoint(soldier.Position);
@@ -158,8 +159,12 @@ public sealed class TroopSoldierViews
         return 1f - Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((t - 0.5f) / 0.5f));
     }
 
-    static SoldierGlow Glow(SoldierAgentState soldier) =>
-        soldier.LifeState == SoldierLifeState.Fatigued ? SoldierGlow.Fatigued : SoldierGlow.Healthy;
+    static SoldierGlow Glow(SoldierAgentState soldier) => soldier.LifeState switch
+    {
+        SoldierLifeState.Fatigued => SoldierGlow.Fatigued,
+        SoldierLifeState.Stunned => SoldierGlow.Dead,
+        _ => SoldierGlow.Healthy,
+    };
 
     // A dead soldier stays where it fell (its sprite is no longer moved with the troop) and fades for CorpseSeconds.
     void UpdateCorpse(int index, SpriteRenderer renderer, Color armyColor, float deltaTime)

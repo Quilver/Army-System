@@ -20,12 +20,19 @@ public sealed class FormationTuning : ScriptableObject
     float _engagementHoldMargin = 1f;
 
     [Header("Formation and movement (spec §3)")]
-    [SerializeField, Min(0.1f), Tooltip("L_nat = this x TroopRadius. Provisional (Q-12).")]
+    [SerializeField, Min(0.1f), Tooltip("L_nat / troop radius. The natural line is Frontage x LineSpacing long (SU-103); the troop's radius in " +
+             "units (blob, soldier clamp) is L_nat / this, or larger when its soldiers need more room. Provisional (Q-12).")]
     float _naturalLineRadiusScale = 1.8f;
-    [SerializeField, Range(0.1f, 1f), Tooltip("Idle blob disc radius as a fraction of TroopRadius.")]
+    [SerializeField, Range(0.1f, 1f), Tooltip("Idle blob disc radius as a fraction of the troop radius.")]
     float _blobRadiusScale = 0.85f;
     [SerializeField, Min(0f), Tooltip("Minimum spacing of friendly pivots, x (r_A + r_B). Provisional.")]
     float _pivotSeparationScale = 0.25f;
+    [SerializeField, Min(0f), Tooltip("Smallest clear gap between the outlines of friendly troops that are not linked in a " +
+        "chain (units, SU-94). Overlapping friends are moved apart until they have it.")]
+    float _friendlyGap = 0.5f;
+    [SerializeField, Min(0f), Tooltip("How fast a troop gives way to an overlapping friend, x its march speed (SU-94). Below 1 " +
+        "so its soldiers keep up and a marching troop is never held up for good.")]
+    float _friendlyGiveWaySpeedScale = 0.5f;
     [SerializeField, Min(0.05f), Tooltip("Path rebuild interval while marching.")]
     float _pathRebuildIntervalSeconds = 0.5f;
     [SerializeField, Min(0f), Tooltip("Joint clearance at a linked end: min(this, fraction x length). Provisional.")]
@@ -44,6 +51,8 @@ public sealed class FormationTuning : ScriptableObject
     public float NaturalLineRadiusScale => _naturalLineRadiusScale;
     public float BlobRadiusScale => _blobRadiusScale;
     public float PivotSeparationScale => _pivotSeparationScale;
+    public float FriendlyGap => _friendlyGap;
+    public float FriendlyGiveWaySpeedScale => _friendlyGiveWaySpeedScale;
     public float PathRebuildIntervalSeconds => _pathRebuildIntervalSeconds;
     public float JointClearance => _jointClearance;
     public float JointClearanceFraction => _jointClearanceFraction;

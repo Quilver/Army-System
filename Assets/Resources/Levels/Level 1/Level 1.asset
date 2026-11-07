@@ -56,3 +56,5 @@ MonoBehaviour:
     dialogue: {fileID: 0}
     defaultLine: 
   questAvailable: 0
+  mandatoryCharacters:
+  - {fileID: 11400000, guid: fc6c4d66d563885409ecd9f40468f856, type: 2}

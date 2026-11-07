@@ -4,7 +4,9 @@ using UnityEngine;
 // The heat map of one engaged pair (TroopEngagementView), built from the two troops' lines. Pure maths.
 //   Frame   Along runs with the two lines (their mean direction), Across from the first troop's line toward the
 //           second's, Origin midway between the line centres.
-//   Extent  where the two lines overlap along Along: the engaged stretch of front.
+//   Extent  where the two lines overlap along Along and, with LimitToReach, where the two footprints are within MaxGap
+//           (A_Distance) of each other across the gap (SU-96): only the stretch of front that is within reach of the
+//           enemy. Lines at an angle are closer at one end, so the band stops where they draw further apart than that.
 //   Band    at each point along, from the first troop's line (SideA) to the second's (SideB), across the line gap.
 //   Heat    Weight x AcrossProfile: 0 on each troop's line, 1 in the middle of the gap (4v(1 - v), v = 0 on the first
 //           line, 1 on the second). Weight fades from 1 to 0 over EndFade toward both ends of the engagement. The heat
@@ -23,6 +25,10 @@ public static class EngagementHeatStrip
     {
         public float CellWidth;       // spacing of the columns along the front (world units)
         public float EndFade;         // fade length at each end of the engagement (world units)
+        public bool LimitToReach;     // keep only the stretch where the footprints are within MaxGap across the gap
+        public float MaxGap;          // A_Distance: the largest footprint gap that still shows heat (world units)
+        public float HalfWidthA;      // first troop's footprint half-width across its line (world units)
+        public float HalfWidthB;      // second troop's footprint half-width across its line (world units)
     }
 
     public struct Column
@@ -51,7 +57,16 @@ public static class EngagementHeatStrip
         float cell = Mathf.Max(0.01f, settings.CellWidth);
         float linkSideA = 0f, linkSideB = 0f;
         bool fromLines = TryLineFrame(a0, a1, b0, b1, cell, out origin, out along, out across, out float start, out float end);
-        if (!fromLines && !TryLinkFrame(links, cell, out origin, out along, out across, out start, out end,
+        if (fromLines && settings.LimitToReach)
+        {
+            // Facing lines that overlap: keep the stretch within reach, and draw nothing when none of it is.
+            float footprints = Mathf.Max(0f, settings.HalfWidthA) + Mathf.Max(0f, settings.HalfWidthB);
+            float maxCentreGap = Mathf.Max(0f, settings.MaxGap) + footprints;
+            float gapAtStart = SideAt(b0, b1, start, origin, along, across) - SideAt(a0, a1, start, origin, along, across);
+            float gapAtEnd = SideAt(b0, b1, end, origin, along, across) - SideAt(a0, a1, end, origin, along, across);
+            if (!WithinReach(gapAtStart, gapAtEnd, maxCentreGap, ref start, ref end) || end - start < cell) return false;
+        }
+        else if (!fromLines && !TryLinkFrame(links, cell, out origin, out along, out across, out start, out end,
                 out linkSideA, out linkSideB))
             return false;
 
@@ -75,6 +90,20 @@ public static class EngagementHeatStrip
             });
         }
         return true;
+    }
+
+    // The part of [start, end] where the gap between the line centres, which changes linearly from gapAtStart to
+    // gapAtEnd, is at most maxGap. False when no part of it is.
+    public static bool WithinReach(float gapAtStart, float gapAtEnd, float maxGap, ref float start, ref float end)
+    {
+        bool startIn = gapAtStart <= maxGap;
+        bool endIn = gapAtEnd <= maxGap;
+        if (startIn && endIn) return true;
+        if (!startIn && !endIn) return false;
+        float crossing = Mathf.Lerp(start, end, (maxGap - gapAtStart) / (gapAtEnd - gapAtStart));
+        if (startIn) end = crossing;
+        else start = crossing;
+        return end > start;
     }
 
     static bool TryLineFrame(Vector2 a0, Vector2 a1, Vector2 b0, Vector2 b1, float cell, out Vector2 origin,

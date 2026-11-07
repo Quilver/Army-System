@@ -38,6 +38,7 @@ public sealed class TroopSegmentPressureRules
         PruneStaleContacts(byId);
         ApplyLinePressure(troops, actionDistance, forces);
         FriendlyOverlapResolver.Resolve(troops);
+        FriendlyOverlapResolver.SeparateOutlines(troops, deltaTime);
         AlliedLinkTension.Apply(troops, forces);
         IntegrateLinePush(troops, forces, deltaTime);
     }

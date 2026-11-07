@@ -1106,8 +1106,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _state: 1
   _teamId: 0
-  _profile: {fileID: 11400000, guid: a6db3570c04ad2e42b45321fd814c472, type: 2}
-  _troopRadius: 5.304
+  _characters:
+  - {fileID: 11400000, guid: fc6c4d66d563885409ecd9f40468f856, type: 2}
   _soldierObstacleMask:
     serializedVersion: 2
     m_Bits: 0
@@ -3034,8 +3034,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _state: 1
   _teamId: 1
-  _profile: {fileID: 11400000, guid: a0575232ab356c046a2385b0978c62aa, type: 2}
-  _troopRadius: 5.304
+  _characters:
+  - {fileID: 11400000, guid: 53cb8be00998bc14dbe335cd4406f715, type: 2}
   _soldierObstacleMask:
     serializedVersion: 2
     m_Bits: 0
@@ -3523,8 +3523,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _state: 1
   _teamId: 0
-  _profile: {fileID: 11400000, guid: c42fbcc66532c064c915157fd0d3706a, type: 2}
-  _troopRadius: 5.304
+  _characters:
+  - {fileID: 11400000, guid: 4370e4f9c15df644193aabc5c8a7ec47, type: 2}
   _soldierObstacleMask:
     serializedVersion: 2
     m_Bits: 0
@@ -3896,8 +3896,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _state: 1
   _teamId: 0
-  _profile: {fileID: 11400000, guid: e8d49d17b3d1313458bda50f445cdbb9, type: 2}
-  _troopRadius: 4
+  _characters:
+  - {fileID: 11400000, guid: a73b75e7bc6360d44b2df98d1e1dfd6c, type: 2}
+  - {fileID: 11400000, guid: bfc0cb79111465d4d9bfd9a15efef6ce, type: 2}
   _soldierObstacleMask:
     serializedVersion: 2
     m_Bits: 0
@@ -4068,8 +4069,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _state: 1
   _teamId: 1
-  _profile: {fileID: 11400000, guid: 20e618b28b66b2d409669342760418e9, type: 2}
-  _troopRadius: 5.304
+  _characters:
+  - {fileID: 11400000, guid: 357cd6944e402b747b84f97bab5cdde1, type: 2}
   _soldierObstacleMask:
     serializedVersion: 2
     m_Bits: 0
@@ -4191,8 +4192,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _state: 1
   _teamId: 1
-  _profile: {fileID: 11400000, guid: df3114a95bd30484088ee043a50821e8, type: 2}
-  _troopRadius: 5.304
+  _characters:
+  - {fileID: 11400000, guid: 7aa7d72f8c97f2c47a4f58b1aba411d3, type: 2}
   _soldierObstacleMask:
     serializedVersion: 2
     m_Bits: 0
@@ -4470,8 +4471,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _state: 1
   _teamId: 1
-  _profile: {fileID: 11400000, guid: 53988383660d8ad48ab0d0745efb9d48, type: 2}
-  _troopRadius: 5.304
+  _characters:
+  - {fileID: 11400000, guid: ce5cb559320323844a0680063a04c7ab, type: 2}
   _soldierObstacleMask:
     serializedVersion: 2
     m_Bits: 0

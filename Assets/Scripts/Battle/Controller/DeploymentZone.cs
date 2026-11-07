@@ -4,17 +4,18 @@ using UnityEngine;
 
 // The area where an army's troops start the battle and, during the deployment phase, where the player may place them.
 // The area is this object's unit square: scale it to size (the sprite shows it while deploying).
-// At the start of the scene it spawns one troop per profile in BattleReport.DeployedTroops (TroopSource, set by the
-// campaign bridge): the level's default troops on the level's DataManager, or the roster chosen in battle preparation.
-// Troops are laid out in rows inside the area, facing the enemy.
+// At the start of the scene it spawns one troop per character list in BattleReport.DeployedTroops (TroopSource, set by
+// the campaign bridge): the level's default troops on the level's DataManager, or the roster chosen in battle
+// preparation. Each troop gets its characters and sets its own frontage from them (SU-117). Troops are laid out in rows
+// inside the area, facing the enemy, Idle (SU-101).
 // While the battle is deploying, player Move and Line orders place troops straight at their spot, kept inside the area
-// (ITroopPlacement through TroopPlayerOrders.Placement).
+// (ITroopPlacement through TroopPlayerOrders.Placement): a Move leaves them Idle, a Line puts them in that line.
 [DefaultExecutionOrder(-100)]
 public sealed class DeploymentZone : MonoBehaviour, ITroopPlacement
 {
-    // Supplies the troops to deploy (BattleReport.DeployedTroops). Set by the campaign bridge (Tween), which the battle
-    // may not reference. Null deploys nothing.
-    public static Func<IReadOnlyList<TroopProfile>> TroopSource;
+    // Supplies the troops to deploy (BattleReport.DeployedTroops), each as its characters, leader first. Set by the
+    // campaign bridge (Tween), which the battle may not reference. Null deploys nothing.
+    public static Func<IReadOnlyList<IReadOnlyList<CharacterProfile>>> TroopSource;
 
     static readonly List<DeploymentZone> Zones = new();
 
@@ -27,12 +28,15 @@ public sealed class DeploymentZone : MonoBehaviour, ITroopPlacement
     Troop _troopPrefab;
     [SerializeField, Min(0f), Tooltip("Gap between spawned troops (units).")]
     float _gap = 2f;
-    [SerializeField, Tooltip("Shows the area while deploying. Defaults to the SpriteRenderer on this object.")]
+    [SerializeField, Tooltip("Shows the area while deploying. Defaults to the SpriteRenderer on this object. Every other " +
+        "renderer under the zone (its border) shows and hides with it.")]
     SpriteRenderer _areaRenderer;
 
     const string VisualiserPrefabPath = "Troop and Character Profiles/Troop Visualiser";
 
     readonly List<Troop> _spawned = new();
+    // The area and everything drawn under the zone (the Border child): shown only while deploying.
+    readonly List<Renderer> _renderers = new();
     Battle _battle;
 
     public Army Army => _army;
@@ -55,11 +59,13 @@ public sealed class DeploymentZone : MonoBehaviour, ITroopPlacement
     }
 
     // The troops this zone deploys (BattleReport.DeployedTroops).
-    public IReadOnlyList<TroopProfile> TroopsToDeploy() => TroopSource?.Invoke() ?? Array.Empty<TroopProfile>();
+    public IReadOnlyList<IReadOnlyList<CharacterProfile>> TroopsToDeploy() =>
+        TroopSource?.Invoke() ?? Array.Empty<IReadOnlyList<CharacterProfile>>();
 
     void Awake()
     {
         if (_areaRenderer == null) _areaRenderer = GetComponent<SpriteRenderer>();
+        CollectRenderers();
         if (!Zones.Contains(this)) Zones.Add(this);
         Spawn(TroopsToDeploy());
     }
@@ -78,11 +84,39 @@ public sealed class DeploymentZone : MonoBehaviour, ITroopPlacement
         SetPlacement(false);
     }
 
-    void OnPhaseChanged(BattlePhase phase)
+    void OnPhaseChanged(BattlePhase phase) => ApplyPhase(phase);
+
+    // Shows the zone (area and border) and turns placement on only while deploying. Internal for tests.
+    internal void ApplyPhase(BattlePhase phase)
     {
         bool deploying = phase == BattlePhase.Deployment;
-        if (_areaRenderer != null) _areaRenderer.enabled = deploying;
+        if (_renderers.Count == 0) CollectRenderers();
+        foreach (var renderer in _renderers)
+            if (renderer != null) renderer.enabled = deploying;
         SetPlacement(deploying);
+    }
+
+    // The area renderer and every renderer below the zone, such as the border outline, which used to stay on screen
+    // after deployment. Collected before troops spawn and skipping anything inside a troop, in case a troop is ever
+    // parented under the zone.
+    void CollectRenderers()
+    {
+        _renderers.Clear();
+        if (_areaRenderer == null) _areaRenderer = GetComponent<SpriteRenderer>();
+        if (_areaRenderer != null) _renderers.Add(_areaRenderer);
+        foreach (var renderer in GetComponentsInChildren<Renderer>(true))
+            if (!_renderers.Contains(renderer) && renderer.GetComponentInParent<Troop>(true) == null) _renderers.Add(renderer);
+    }
+
+    // Read by tests: whether any part of the zone is drawn.
+    internal bool IsShown
+    {
+        get
+        {
+            foreach (var renderer in _renderers)
+                if (renderer != null && renderer.enabled) return true;
+            return false;
+        }
     }
 
     void SetPlacement(bool deploying)
@@ -136,46 +170,65 @@ public sealed class DeploymentZone : MonoBehaviour, ITroopPlacement
 
     // --- ITroopPlacement (deployment orders) ---
 
-    public bool Place(Troop troop, Vector2 center, Vector2 facing, float length)
+    public bool Place(Troop troop, Vector2 center, Vector2 facing, float length, bool holdLine)
     {
         if (troop == null || troop.Army != _army) return false;
         if (_battle != null && !_battle.IsDeploying) return false;
-        troop.PlaceAt(Clamp(center, Inset(troop)), facing, length);
+        troop.PlaceAt(Clamp(center, Inset(troop)), facing, length, holdLine);
         return true;
     }
 
     // --- Spawning ---
 
-    void Spawn(IReadOnlyList<TroopProfile> profiles)
+    void Spawn(IReadOnlyList<IReadOnlyList<CharacterProfile>> troopCharacters)
     {
-        if (profiles == null || profiles.Count == 0) return;
+        if (troopCharacters == null || troopCharacters.Count == 0) return;
         Vector2 facing = DeployFacing();
         Vector2 right = new Vector2(facing.y, -facing.x);
+        Vector2 centre = transform.position;
+
+        // Each troop is made from its characters first: it determines its frontage, and so its size, as it spawns.
+        var troops = new List<Troop>();
+        foreach (var characters in troopCharacters)
+        {
+            if (!HasCharacter(characters)) continue;
+            Troop troop = SpawnTroop(characters, centre);
+            if (troop != null) troops.Add(troop);
+        }
+        if (troops.Count == 0) return;
 
         float width = 0f, depth = 0f;
-        foreach (var profile in profiles)
+        foreach (var troop in troops)
         {
-            if (profile == null) continue;
-            width = Mathf.Max(width, TroopTuning.Active.NaturalLineLength(profile.TroopRadius) + _gap);
-            depth = Mathf.Max(depth, 2f * profile.TroopRadius * TroopTuning.Active.BlobRadiusScale + _gap);
+            width = Mathf.Max(width, troop.NaturalLineLength + _gap);
+            depth = Mathf.Max(depth, 2f * troop.Radius * TroopTuning.Active.BlobRadiusScale + _gap);
         }
 
         // Rows across the area's extent perpendicular to the facing, front row first.
         float span = AreaSpan(right);
-        int perRow = Mathf.Clamp(Mathf.FloorToInt(span / Mathf.Max(0.1f, width)), 1, profiles.Count);
-        int rows = Mathf.CeilToInt(profiles.Count / (float)perRow);
-        Vector2 centre = transform.position;
-        for (int i = 0; i < profiles.Count; i++)
+        int perRow = Mathf.Clamp(Mathf.FloorToInt(span / Mathf.Max(0.1f, width)), 1, troops.Count);
+        int rows = Mathf.CeilToInt(troops.Count / (float)perRow);
+        for (int i = 0; i < troops.Count; i++)
         {
-            if (profiles[i] == null) continue;
             int row = i / perRow;
-            int inRow = Mathf.Min(perRow, profiles.Count - row * perRow);
+            int inRow = Mathf.Min(perRow, troops.Count - row * perRow);
             int file = i % perRow;
             float x = (file - (inRow - 1) * 0.5f) * width;
             float y = ((rows - 1) * 0.5f - row) * depth;
-            Troop troop = SpawnTroop(profiles[i], centre + right * x + facing * y, facing);
-            if (troop != null) _spawned.Add(troop);
+            Troop troop = troops[i];
+            Vector2 position = centre + right * x + facing * y;
+            troop.PlaceAt(Clamp(position, troop.Radius * TroopTuning.Active.BlobRadiusScale), facing,
+                troop.NaturalLineLength, holdLine: false);
+            _spawned.Add(troop);
         }
+    }
+
+    static bool HasCharacter(IReadOnlyList<CharacterProfile> characters)
+    {
+        if (characters == null) return false;
+        foreach (var character in characters)
+            if (character != null) return true;
+        return false;
     }
 
     // Length of the area along a direction (through its centre).
@@ -186,7 +239,7 @@ public sealed class DeploymentZone : MonoBehaviour, ITroopPlacement
         return Mathf.Abs(Vector2.Dot(x, direction)) + Mathf.Abs(Vector2.Dot(y, direction));
     }
 
-    Troop SpawnTroop(TroopProfile profile, Vector2 position, Vector2 facing)
+    Troop SpawnTroop(IReadOnlyList<CharacterProfile> characters, Vector2 position)
     {
         Transform parent = _army != null ? _army.transform : null;
         Troop troop;
@@ -196,16 +249,15 @@ public sealed class DeploymentZone : MonoBehaviour, ITroopPlacement
         }
         else
         {
-            var root = new GameObject(profile.DisplayName);
+            var root = new GameObject("Troop");
             root.transform.SetParent(parent, false);
             var visualiser = Resources.Load<TroopVisualiser>(VisualiserPrefabPath);
             if (visualiser != null) Instantiate(visualiser, root.transform).name = visualiser.name;
             troop = root.AddComponent<Troop>();
         }
-        troop.name = profile.DisplayName;
         troop.transform.position = position;
-        troop.Configure(_teamId, profile);
-        troop.PlaceAt(Clamp(position, troop.Radius * TroopTuning.Active.BlobRadiusScale), facing, troop.NaturalLineLength);
+        troop.Configure(_teamId, characters);
+        troop.name = troop.DisplayName;
         return troop;
     }
 

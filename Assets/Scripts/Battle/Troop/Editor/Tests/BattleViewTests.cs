@@ -30,9 +30,7 @@ public sealed class BattleViewTests
     public void TearDown()
     {
         TroopObjects.FlushPending();
-        foreach (var target in _created)
-            if (target != null) Object.DestroyImmediate(target);
-        _created.Clear();
+        TestScene.Destroy(_created);
         // Soldier sprites are root objects removed by Troop.OnDestroy, which does not run in Edit mode. Remove them here
         // so this fixture leaves the scene as it found it: other scenario tests seed their random streams from the
         // troop's place in the hierarchy (Troop.StreamId), so leftover objects would change their results.
@@ -56,13 +54,12 @@ public sealed class BattleViewTests
 
     Troop CreateTroop(string name, int team, Vector2 position)
     {
-        var profile = TroopProfile.CreateRuntimeProfile(new List<CharacterProfile> { Character() }, 5f);
-        _created.Add(profile);
+        var troopCharacters = new List<CharacterProfile> { Character() };
         var root = new GameObject(name);
         root.transform.position = position;
         _created.Add(root);
         var troop = root.AddComponent<Troop>();
-        troop.Configure(team, profile);
+        troop.Configure(team, troopCharacters, 10);
         return troop;
     }
 
@@ -259,6 +256,61 @@ public sealed class BattleViewTests
             Assert.AreEqual(full[i].Weight, gap[i].Weight, 1e-5f, "Same heat with soldiers missing from the fight");
             Assert.AreEqual(full[i].Weight, none[i].Weight, 1e-5f, "Same heat with no soldier links");
         }
+    }
+
+    // SU-96: only the stretch of front within A_Distance of the enemy shows heat.
+    [Test]
+    public void WithinReach_KeepsThePartOfTheFrontThatIsCloseEnough()
+    {
+        float start = 0f, end = 10f;
+        Assert.IsTrue(EngagementHeatStrip.WithinReach(1f, 5f, 3f, ref start, ref end));
+        Assert.AreEqual(0f, start, 1e-4f);
+        Assert.AreEqual(5f, end, 1e-4f, "the gap passes 3 halfway");
+
+        start = 0f; end = 10f;
+        Assert.IsTrue(EngagementHeatStrip.WithinReach(5f, 1f, 3f, ref start, ref end));
+        Assert.AreEqual(5f, start, 1e-4f);
+        Assert.AreEqual(10f, end, 1e-4f);
+
+        start = 0f; end = 10f;
+        Assert.IsTrue(EngagementHeatStrip.WithinReach(1f, 2f, 3f, ref start, ref end), "all of it");
+        Assert.AreEqual(10f, end - start, 1e-4f);
+        Assert.IsFalse(EngagementHeatStrip.WithinReach(4f, 6f, 3f, ref start, ref end), "none of it");
+    }
+
+    [Test]
+    public void HeatStrip_AngledLines_StopWhereTheyAreFurtherApartThanADistance()
+    {
+        // The second line runs from 1 above the first at x = 0 to 1 + 4 x 0.9 = 4.6 above it at the far end. Footprints
+        // 0.5 wide either side: the footprint gap is 0 at x = 0 and reaches A_Distance (2) where the line gap is 3.
+        float length = FrontLength;
+        float rise = 3.6f / length;
+        var settings = HeatSettings();
+        settings.LimitToReach = true;
+        settings.MaxGap = 2f;
+        settings.HalfWidthA = 0.5f;
+        settings.HalfWidthB = 0.5f;
+        var columns = new List<EngagementHeatStrip.Column>();
+        Assert.IsTrue(EngagementHeatStrip.Build(Vector2.zero, new Vector2(length, 0f), new Vector2(length, 1f + 3.6f),
+            new Vector2(0f, 1f), new List<EngagementFrontage.Link>(), settings, columns, out Vector2 origin,
+            out Vector2 along, out Vector2 across));
+        float last = float.NegativeInfinity;
+        foreach (var column in columns)
+        {
+            last = Mathf.Max(last, column.Along);
+            Assert.LessOrEqual(column.SideB - column.SideA, 3f + 0.05f, "no heat where the lines are further apart");
+        }
+        // The gap is measured across the band (its frame bisects the two lines), so the band ends a little past x = 4.5,
+        // where the vertical gap between the lines is 3.
+        float lastX = Vector2.Dot(origin + along * last, Vector2.right);
+        Assert.Greater(lastX, 2f / rise, "the band reaches where the footprint gap is A_Distance");
+        Assert.AreEqual(4.65f, lastX, 0.1f, "and ends there, well short of the far end of the lines");
+
+        settings.MaxGap = 0f;
+        settings.HalfWidthA = settings.HalfWidthB = 0f;
+        Assert.IsFalse(EngagementHeatStrip.Build(Vector2.zero, new Vector2(length, 0f), new Vector2(length, 5f),
+            new Vector2(0f, 5f), Front(), settings, columns, out _, out _, out _),
+            "facing lines further apart than A_Distance show nothing, even with soldier links");
     }
 
     [Test]

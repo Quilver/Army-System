@@ -3,7 +3,7 @@ using UnityEngine;
 
 // Rolling record of one troop's melee over the last Window seconds: charges started by its soldiers, clashes they took
 // part in, duels they won, and damage dealt and taken. Samples older than the window are dropped; Reset starts a fresh
-// record. The charge rate per soldier is the check for spec §4.3 (about Aggression charges per ActionWindowSeconds).
+// record. The charge rate per soldier is the check for spec §4.3 (about Aggression charges per ChargeWindowSeconds, SU-112).
 public sealed class MeleeMetrics
 {
     public const float DefaultWindow = 30f;

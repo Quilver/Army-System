@@ -25,6 +25,23 @@ namespace BattlePrep
         [Tooltip("Shows the glowing sealed dispatch on the dispatch-bearer.")]
         public bool questAvailable;
 
+        // --- Deployment (SU-117) ---
+        [Header("Deployment")]
+        [Tooltip("Characters deployed automatically for this mission, free of charge, and locked: they cannot be undeployed.")]
+        public List<CampaignCharacter> mandatoryCharacters = new();
+        [Tooltip("Most characters the player may deploy to this mission (SU-119).")]
+        [Min(1)] public int maxDeployed = 5;
+
+        // --- Roster (SU-119) ---
+        [Header("Roster")]
+        [Tooltip("Characters who join the roster when this mission's tent opens, at level 1. They are not deployed " +
+                 "unless they are also mandatory.")]
+        public List<CampaignCharacter> newCharacters = new();
+
+        // Whether this mission forces the character into the army.
+        public bool IsMandatory(CampaignCharacter character) =>
+            character != null && mandatoryCharacters != null && mandatoryCharacters.Contains(character);
+
         // The court member at index, or null.
         public CourtMember Court(int index) =>
             court != null && index >= 0 && index < court.Length ? court[index] : null;

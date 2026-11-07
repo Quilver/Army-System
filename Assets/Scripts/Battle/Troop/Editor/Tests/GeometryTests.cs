@@ -18,6 +18,28 @@ public sealed class FootprintGapTests
         Assert.AreEqual(1f, FootprintGap.Gap(a, b), 1e-4f);
     }
 
+    // SU-94: the way to move one footprint off another.
+    [Test]
+    public void SeparationDirection_OverlappingLines_AlongTheLeastOverlap()
+    {
+        TroopFootprint a = Line(Vector2.zero, Vector2.up, 10f, 1f);                  // x in [-5, 5], y in [-1, 1]
+        TroopFootprint b = Line(new Vector2(1f, 1.5f), Vector2.up, 10f, 1f);         // overlaps 0.5 in y, 9 in x
+        Vector2 direction = FootprintGap.SeparationDirection(a, b);
+        Assert.AreEqual(0f, direction.x, 1e-4f);
+        Assert.AreEqual(1f, direction.y, 1e-4f, "b moves up, off a");
+        Assert.AreEqual(-1f, FootprintGap.SeparationDirection(b, a).y, 1e-4f, "and a moves down, off b");
+    }
+
+    [Test]
+    public void SeparationDirection_Circles_AlongTheCentres()
+    {
+        TroopFootprint a = TroopFootprint.Circle(Vector2.zero, 2f, Vector2.right);
+        TroopFootprint b = TroopFootprint.Circle(new Vector2(3f, 4f), 4f, Vector2.right);
+        Vector2 direction = FootprintGap.SeparationDirection(a, b);
+        Assert.AreEqual(0.6f, direction.x, 1e-4f);
+        Assert.AreEqual(0.8f, direction.y, 1e-4f);
+    }
+
     [Test]
     public void Overlapping_GapIsNegative()
     {
@@ -114,10 +136,24 @@ public sealed class FormationModeResolverTests
 
 public sealed class LineGeometryTests
 {
+    // SU-103: the line is Frontage x LineSpacing long, so a frontage of 5 stands 5 soldiers wide.
     [Test]
-    public void NaturalLength_ForRadius16_5_Is29_7()
+    public void NaturalLength_ForFrontage5_Is4_5_AndFiveSoldiersWide()
     {
-        Assert.AreEqual(29.7f, LineGeometry.NaturalLength(16.5f, 1.8f), 1e-4f);
+        Assert.AreEqual(4.5f, LineGeometry.NaturalLength(5), 1e-4f);
+        Assert.AreEqual(5, LineGeometry.SoldiersPerRank(LineGeometry.NaturalLength(5)));
+        Assert.AreEqual(29.7f, LineGeometry.NaturalLength(33), 1e-4f);
+    }
+
+    // SU-103: the radius is L_nat / 1.8 (frontage 10 is the old radius 5), unless the blob needs more room.
+    [Test]
+    public void TroopRadius_FromFrontage_OrLargerForACrowdedBlob()
+    {
+        Assert.AreEqual(5f, LineGeometry.TroopRadius(10, 16, 1.8f, 0.85f), 1e-4f);
+        Assert.AreEqual(2.5f, LineGeometry.TroopRadius(5, 16, 1.8f, 0.85f), 1e-4f);
+        float crowded = LineGeometry.TroopRadius(3, 40, 1.8f, 0.85f);
+        float blobArea = Mathf.PI * Mathf.Pow(crowded * 0.85f, 2f);
+        Assert.AreEqual(40f * LineGeometry.PackedAreaPerSoldier, blobArea, 1e-2f);
     }
 
     [Test]

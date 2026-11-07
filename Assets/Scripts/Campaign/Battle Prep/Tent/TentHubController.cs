@@ -22,7 +22,8 @@ namespace BattlePrep.Tent
         // This mission's preparation data (was PreparationContoller.Data).
         public static PreparationData Data { get; private set; }
 
-        [SerializeField, Tooltip("One entry per level, in level order (copied from the old PreparationContoller).")]
+        [SerializeField, Tooltip("Only used without a MissionCatalog (SU-119): one entry per level, in level order " +
+                                 "(copied from the old PreparationContoller). The catalog's missions take precedence.")]
         List<PreparationData> _preparationData = new();
 
         [Header("Scene")]
@@ -70,13 +71,19 @@ namespace BattlePrep.Tent
             }
 
             int level = Campaign.CampaignDataManager.Data.CurrentLevel;
+            var mission = Campaign.Missions.MissionCatalog.ByNumber(level);
             if (UsingSample && _sample.mission != null) Data = _sample.mission;
+            else if (mission != null && mission.preparation != null) Data = mission.preparation;   // SU-119
             else if (_preparationData.Count > 0) Data = _preparationData[Mathf.Clamp(level - 1, 0, _preparationData.Count - 1)];
             else if (_sample != null && _sample.mission != null) Data = _sample.mission;
             else Debug.LogError("Tent: no PreparationData assigned on TentHubController.", this);
             BattleReport.DeployedCharacters = new();
+            BattleReport.DeployedLeaders.Clear();
             BattleReport.DeployedTroops = new();
             EnsureRoster();
+            // Characters joining at this mission (SU-119), then the ones it requires (Prince Julian) start deployed, free and locked (SU-117).
+            TentDeployment.AddNewCharacters(Data, DefaultCostToField);
+            TentDeployment.DeployMandatory(Data, DefaultCostToField);
 
             foreach (var panel in AllPanels())
                 if (panel != null)

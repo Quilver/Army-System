@@ -6,8 +6,9 @@ using UnityEngine;
 //   A soldier is engaged when a living soldier of the opposing troop is within reach. Each engaged soldier, of either
 //   troop, is linked to its nearest such enemy, so the links cover exactly the stretch of front that is in contact and
 //   there are more of them where more soldiers fight.
-//   The default reach is two front ranks held EngagementGap apart (each footprint edge is a soldier radius beyond its
-//   front-rank centres) plus a slack, so the front rank counts and the rank behind it does not.
+//   The view's reach is A_Distance between soldier edges (two soldier radii more centre to centre) plus a slack (SU-96),
+//   so a soldier counts when an enemy soldier is within A_Distance of it. With A_Distance = EngagementGap the front rank
+//   of lines held at EngagementGap counts and the rank behind it does not.
 public static class EngagementFrontage
 {
     public readonly struct Link
@@ -29,8 +30,9 @@ public static class EngagementFrontage
     static readonly List<Vector2> FirstPositions = new();
     static readonly List<Vector2> SecondPositions = new();
 
-    public static float Reach(float engagementGap, float slack) =>
-        Mathf.Max(TroopConstants.ContactDistance, engagementGap + 2f * TroopConstants.SoldierRadius + Mathf.Max(0f, slack));
+    // Soldier centre-to-centre reach for a soldier-edge distance (A_Distance in the view) plus a slack.
+    public static float Reach(float edgeDistance, float slack) =>
+        Mathf.Max(TroopConstants.ContactDistance, edgeDistance + 2f * TroopConstants.SoldierRadius + Mathf.Max(0f, slack));
 
     // Every opposing pair of troops that are engaged this frame (Troop.Engagements), once per pair. Routed or empty troops
     // are left out.

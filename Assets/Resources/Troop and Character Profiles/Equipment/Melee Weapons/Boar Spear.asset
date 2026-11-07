@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Boar Spear
   m_EditorClassIdentifier: 
   _displayName: Boar Spear
-  _damage: 4
+  _damage: 1
   _specialRules:
   - _rule: 1
     _value: 0

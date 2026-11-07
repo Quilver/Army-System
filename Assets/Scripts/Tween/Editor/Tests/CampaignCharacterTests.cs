@@ -78,9 +78,6 @@ public sealed class CampaignCharacterTests
         var so = new SerializedObject(character);
         so.FindProperty("_className").stringValue = uniqueClass;
         so.ApplyModifiedPropertiesWithoutUndo();
-        var troop = TroopProfile.CreateRuntimeProfile(new List<CharacterProfile> { character }, 5f);
-        string troopPath = $"{TempFolder}/Brom's Troop.asset";
-        AssetDatabase.CreateAsset(troop, troopPath);
         AssetDatabase.SaveAssets();
         string guid = AssetDatabase.AssetPathToGUID(characterPath);
 
@@ -113,10 +110,25 @@ public sealed class CampaignCharacterTests
         Assert.AreEqual(20, campaign.CapFor(WeaponClass.Axe));
         foreach (CharacterStat stat in System.Enum.GetValues(typeof(CharacterStat)))
             Assert.AreEqual(StatGrowths.DefaultChance, campaign.GrowthFor(stat), stat.ToString());
+    }
 
-        // The troop still references the character (its file keeps the GUID, and the loaded troop is refreshed).
-        var reloadedTroop = AssetDatabase.LoadAssetAtPath<TroopProfile>(troopPath);
-        Assert.AreSame(campaign, reloadedTroop.Characters[0]);
+    // SU-99: the campaign characters sit in mission subfolders (Campaign/Mission 1, ...). A saved roster names a character
+    // by asset name only; it used to be looked up directly in Campaign/, so every saved character was lost on load.
+    [Test]
+    public void SavedRosterCharacter_IsFoundInAMissionSubfolder()
+    {
+        CampaignCharacter any = null;
+        foreach (var candidate in Resources.LoadAll<CampaignCharacter>(Campaign.RosterCharacter.CharacterFolder))
+        {
+            string path = AssetDatabase.GetAssetPath(candidate);
+            if (!path.Contains(Campaign.RosterCharacter.CharacterFolder + "/" + candidate.name + ".asset")) { any = candidate; break; }
+        }
+        if (any == null) Assert.Ignore("No campaign character in a subfolder to test with.");
+
+        var saved = JsonUtility.FromJson<Campaign.RosterCharacter>("{\"characterAsset\":\"" + any.name + "\"}");
+        Assert.IsNull(saved.character);
+        saved.ResolveCharacter();
+        Assert.AreSame(any, saved.character, $"{any.name} resolved from {AssetDatabase.GetAssetPath(any)}");
     }
 
     T Track<T>(T target) where T : Object

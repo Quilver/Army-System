@@ -25,6 +25,9 @@ public sealed class SoldierHealth
     public int Bruise => _bruise;
     public int CurrentHp => Math.Max(0, _maxHp - _bleed - _bruise);
     public bool IsDead => CurrentHp <= 0;
+    // At 0 HP with at least half of the damage Bruise (Bruise >= Bleed): stunned rather than killed when stuns are on
+    // (SU-107). Bruise still heals, so the soldier comes round.
+    public bool IsKnockedOut => IsDead && _bruise * 2 >= _maxHp;
 
     // CurrentHp <= MaxHp x fraction (spec §4.6). With the default 0.5 and MaxHp 15 the threshold is 7.5: 7 is fatigued,
     // 8 is not.
@@ -46,10 +49,11 @@ public sealed class SoldierHealth
     }
 
     // Heals bruise at healPerSecond points per second, one whole point at a time. Returns the points healed this call.
-    // Dead soldiers and soldiers with no bruise do not accumulate time.
-    public int TickBruiseHealing(float deltaTime, float healPerSecond = 1f)
+    // Soldiers on 0 HP (dead) and soldiers with no bruise do not accumulate time, unless healWhileDown (a stunned soldier
+    // on 0 HP, SU-107).
+    public int TickBruiseHealing(float deltaTime, float healPerSecond = 1f, bool healWhileDown = false)
     {
-        if (IsDead || _bruise <= 0 || healPerSecond <= 0f)
+        if ((IsDead && !healWhileDown) || _bruise <= 0 || healPerSecond <= 0f)
         {
             _healProgress = 0f;
             return 0;
@@ -65,6 +69,14 @@ public sealed class SoldierHealth
         }
         if (_bruise == 0) _healProgress = 0f;
         return healed;
+    }
+
+    // Makes up the rest of the pool as Bleed (a stunned soldier left behind by a retreat, SU-107). Returns the points.
+    public int BleedOut()
+    {
+        int points = CurrentHp;
+        _bleed += points;
+        return points;
     }
 
     int Clamp(int points) => points <= 0 ? 0 : Math.Min(points, CurrentHp);

@@ -1,32 +1,36 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+
 namespace AchievementSystem
 {
+    // A side objective: the player holds this capture point when the battle ends (e.g. bonus gold for a reclaimed farm).
+    // Set inline on the battle's AchievementController, since the capture point is a scene object.
     [Serializable]
-    public class CapturedVictoryPoint : RequirementGlobal
+    public class CapturedVictoryPoint : GlobalRequirement
     {
-        [SerializeField]
-        CapturePoint capturePoint;
-        [SerializeField] bool currentOwner;
-        public override void Setup()
+        [SerializeField] CapturePoint capturePoint;
+        [SerializeField, HideInInspector] bool currentOwner;
+
+        protected override bool CanTrack(AchievementContext context)
         {
-            if (capturePoint == null)
-            {
-                Debug.LogWarning("Capture point is not set");
-                return;
-            }
+            if (capturePoint != null) return true;
+            Debug.LogWarning("Captured Victory Point achievement: no capture point set; the achievement is skipped.");
+            return false;
+        }
+
+        protected override void OnBegin()
+        {
             currentOwner = capturePoint.Controller == CapturePoint.PointController.Player;
-            capturePoint.capturedBy += GetOwner;
+            capturePoint.capturedBy += OnCaptured;
         }
-        void GetOwner(bool playerIsOwner)
+
+        protected override void OnEnd()
         {
-            currentOwner = playerIsOwner;
+            if (capturePoint != null) capturePoint.capturedBy -= OnCaptured;
         }
-        public override int Succeeded()
-        {
-            return (currentOwner)? 1 : 0;
-        }
+
+        void OnCaptured(bool playerIsOwner) => currentOwner = playerIsOwner;
+
+        public override int Level => currentOwner ? 1 : 0;
     }
 }

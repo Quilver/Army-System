@@ -110,7 +110,7 @@ namespace BattlePrep.Tent.EditorTools
                 Roster = new List<Campaign.RosterCharacter>(),
             };
             int[] level = { 3, 1, 2, 4, 1, 2, 5, 1 };
-            int[] xp = { 40, 75, 10, 55, 0, 90, 20, 60 };
+            int[] xp = { 4, 7, 1, 5, 0, 9, 2, 6 };   // out of RosterCharacter.XpPerLevel (10, SU-115)
             int[] cost = { 30, 20, 25, 45, 15, 35, 50, 25 };
             for (int i = 0; i < characters.Count; i++)
                 campaign.Roster.Add(new Campaign.RosterCharacter

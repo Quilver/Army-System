@@ -130,11 +130,13 @@ public sealed class TroopOutline
         if (_stillTime >= StopHoldSeconds) _marching = false;
     }
 
-    // Eases the outline toward the target (kept relative to the pivot). The first call snaps to it.
+    // Eases the outline toward the target (kept relative to the pivot). The first call snaps to it, and so does a call
+    // with no time step (paused or deploying): nothing eases while time stands still, so a troop placed or re-ordered
+    // then would otherwise keep an outline offset to where its formation used to be.
     public TroopFootprint StepToward(in TroopFootprint target, Vector2 pivot, float deltaTime)
     {
         _kind = target.Kind;
-        if (!_seeded)
+        if (!_seeded || deltaTime <= 0f)
         {
             _offset = target.Center - pivot;
             _facingAngle = AngleOf(target.Facing);

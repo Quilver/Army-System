@@ -12,14 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f80f9b0a5814ef446b9f44c15be08421, type: 3}
   m_Name: Survived
   m_EditorClassIdentifier: 
-  icon: {fileID: 21300000, guid: a2fd3c8d2be683447a1055850dbf86b2, type: 3}
+  icon: {fileID: 21300000, guid: 56388c88723549e0956b6e037113f9d5, type: 3}
+  _title: Survivor
   _requirement:
     rid: 4568626260938588176
   rewards:
   - rid: 4568626260938588177
   - rid: 4568626260938588178
   - rid: 4568626260938588179
-  _description: survived the last battle
+  _description: survived the battle
   references:
     version: 2
     RefIds:
@@ -29,7 +30,7 @@ MonoBehaviour:
     - rid: 4568626260938588177
       type: {class: GiveXP, ns: AchievementSystem, asm: Assembly-CSharp}
       data:
-        xpPerLevel: 1
+        xpPerLevel: 2
     - rid: 4568626260938588178
       type: {class: Gold, ns: AchievementSystem, asm: Assembly-CSharp}
       data:

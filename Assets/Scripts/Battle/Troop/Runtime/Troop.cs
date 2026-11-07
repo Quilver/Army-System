@@ -15,8 +15,10 @@ public sealed class Troop : MonoBehaviour
 {
     [SerializeField] TroopState _state = TroopState.Idle;
     [SerializeField] int _teamId;
-    [SerializeField] TroopProfile _profile;
-    [SerializeField, HideInInspector, Min(0.1f), FormerlySerializedAs("_flockRadius")] float _troopRadius = 16.5f;
+    // The characters that make up this troop (spec §1.1, §1.2): one is an ordinary troop, two or more a composite troop.
+    // Each spawns its own Numbers of soldiers. The first one names the troop and gives its portrait.
+    [SerializeField, Tooltip("The characters in this troop. The first one names the troop and gives its portrait.")]
+    List<CharacterProfile> _characters = new();
     [SerializeField, FormerlySerializedAs("_boidObstacleMask")] LayerMask _soldierObstacleMask;
     [SerializeField, Min(1f)] float _meleeMetricsWindow = MeleeMetrics.DefaultWindow;
 
@@ -42,6 +44,11 @@ public sealed class Troop : MonoBehaviour
     TroopVisualiser _visualiser;
     bool _modulesReady;
     bool _initialized;
+    // Troop frontage (SU-103, SU-117), fixed when the soldiers are spawned at the start of the battle: the one given to
+    // Configure, otherwise TroopFrontageRule from the troop's total soldier count. 0 until then.
+    int _frontage;
+    int _frontageOverride;
+    readonly List<TroopStatLine> _statLines = new();
     bool _inMelee;
     bool _engaged;
     bool _selected;
@@ -49,6 +56,14 @@ public sealed class Troop : MonoBehaviour
     bool _chainSuppressed;
     float _chainSuppressOutsideTime;
     FormationMode _formationMode;
+    // Deployment: the soldiers were put straight into a placed line (PlaceAt), not left in their blob.
+    bool _soldiersInPlacedLine;
+    // Disordered (SU-104): seconds left during which the troop cannot move.
+    float _disorderRemaining;
+    // The enemy troop whose hit last damaged this troop (SU-114): credited with this troop's breaks.
+    Troop _lastAttacker;
+    bool _lastAttackRanged;
+    float _lastAttackTime = float.NegativeInfinity;
     TroopFootprint _footprint;
     readonly TroopOutline _outline = new();
 
@@ -110,15 +125,50 @@ public sealed class Troop : MonoBehaviour
 
     public bool InMelee => _inMelee;
     public int TeamId => _teamId;
-    public TroopProfile Profile => _profile;
-    public float Radius => Mathf.Max(0.1f, _profile != null ? _profile.TroopRadius : _troopRadius);
+    // The characters in this troop, leader first.
+    public IReadOnlyList<CharacterProfile> Characters => _characters;
+    public bool HasCharacters => FirstCharacter != null;
+    // The first character, or null when the troop has none.
+    public CharacterProfile FirstCharacter
+    {
+        get
+        {
+            if (_characters == null) return null;
+            foreach (var character in _characters)
+                if (character != null) return character;
+            return null;
+        }
+    }
+    // The troop's name and portrait are its first character's.
+    public string DisplayName => FirstCharacter != null ? FirstCharacter.CharacterName : name;
+    public Sprite Portrait => FirstCharacter != null ? FirstCharacter.Portrait : null;
+    // Troop stats resolved from the characters (spec §1.2, CompositeTroopResolver):
+    //   Move = min(Speed_i), BaseMorale = max(Morale_i), Discipline = max(Discipline_i), soldiers = sum(Numbers_i).
+    public ResolvedTroopStats Resolved
+    {
+        get
+        {
+            _statLines.Clear();
+            if (_characters != null)
+                foreach (var character in _characters)
+                    if (character != null) _statLines.Add(character.StatLine);
+            return CompositeTroopResolver.Resolve(_statLines);
+        }
+    }
+    // Troop frontage (SU-103): about how many soldiers wide the troop stands in line formation. Set when the battle
+    // starts (SU-117): from the troop's total soldier count by TroopFrontageRule, unless Configure was given one.
+    public int Frontage => _frontage > 0 ? _frontage : DetermineFrontage();
+    // The troop's size in world units (blob, soldier clamp, pivot spacing), derived from the frontage and the soldiers it
+    // was spawned with (LineGeometry.TroopRadius). It is no longer a profile value.
+    public float Radius => Tuning.TroopRadius(Frontage, SpawnedSoldierCount);
+    int SpawnedSoldierCount => _roster != null && _roster.Count > 0 ? _roster.Count : Resolved.InitialSoldierCount;
     public Color ArmyColor => _army != null ? _army.ArmyColour : Color.white;
     // The army this troop belongs to (its parent Army), or null.
     public Army Army => _army;
     static TroopTuning Tuning => TroopTuning.Active;
 
-    // Natural line length L_nat (spec §3.3). Independent of the living soldier count.
-    public float NaturalLineLength => Tuning.NaturalLineLength(Radius);
+    // Natural line length L_nat = Frontage x LineSpacing (spec §3.3, SU-103). Independent of the living soldier count.
+    public float NaturalLineLength => Tuning.NaturalLineLength(Frontage);
     // Shortest and longest line a troop may hold (spec §3.4 stretch envelope, §6.2).
     public float MinimumLineLength => NaturalLineLength * Tuning.ChainMinStretchScale;
     public float MaximumLineLength => NaturalLineLength * Tuning.ChainMaxStretchScale;
@@ -134,7 +184,7 @@ public sealed class Troop : MonoBehaviour
             return move > 0 ? move : CombatStatLimits.Default;
         }
     }
-    public int Discipline => Profile != null ? Profile.Discipline : CombatStatLimits.Default;
+    public int Discipline => HasCharacters ? Resolved.Discipline : CombatStatLimits.Default;
 
     public bool IsSelected => _selected;
     public bool IsHovered => _hovered;
@@ -171,7 +221,16 @@ public sealed class Troop : MonoBehaviour
     // Retreating after a break (not a sympathetic chain retreat).
     public bool IsRetreating => IsFaultSlipping && !_faultSlip.IsSympathetic;
     public bool IsRouted => _rout != null && _rout.IsRouted;
+    // Disordered (SU-104): broke while not engaged in melee, so it stands where it is, unable to move or take orders, for
+    // DisorderSeconds. It can still fight and shoot.
+    public bool IsDisordered => _disorderRemaining > 0f && !IsRouted;
+    public float DisorderRemaining => IsDisordered ? _disorderRemaining : 0f;
     public Vector2 RoutFleeDirection => _rout != null ? _rout.FleeDirection : Vector2.zero;
+    // The enemy troop whose hit last damaged this troop, whether it was a projectile, and when (Time.time). Null / -inf
+    // until the troop is first hurt by a known attacker (SU-114).
+    public Troop LastAttacker => _lastAttacker;
+    public bool LastAttackWasRanged => _lastAttackRanged;
+    public float LastAttackTime => _lastAttackTime;
     internal Vector2 FaultSlipAxis => _faultSlip.Axis;
 
     // --- Formation (TroopFormationState) and line orders ---
@@ -411,6 +470,7 @@ public sealed class Troop : MonoBehaviour
         if (_morale.enabled) _morale.Tick(deltaTime);
         if (_roster.enabled) _roster.TickHealing(deltaTime, Tuning.BruiseHealPerSecond);
         _assault.Tick(deltaTime);
+        if (_disorderRemaining > 0f) _disorderRemaining = Mathf.Max(0f, _disorderRemaining - deltaTime);
         _lineLinks.TickRelax(deltaTime, Tuning.ChainEndpointRelaxSpeed);
         if (_faultSlip.TickRecovery(deltaTime) && !IsRouted) State = TroopState.Idle;
         EvaluateBreak();
@@ -418,7 +478,9 @@ public sealed class Troop : MonoBehaviour
         _faultSlip.Tick(deltaTime);
         EvaluateBreak();
         TickRout(deltaTime);
-        _mover.Tick(deltaTime);
+        // A disordered troop does not march, pursue or get pushed along by line pressure (SU-104).
+        if (IsDisordered) _mover.SetLinePushVelocity(Vector2.zero);
+        else _mover.Tick(deltaTime);
         KeepPivotOnTheField(pivotBefore);
         CompleteOrderAtPathEnd();
         if (_roster.enabled) _steering.Simulate(deltaTime);
@@ -440,19 +502,34 @@ public sealed class Troop : MonoBehaviour
         if (_views != null) _views.DestroyAll();
     }
 
-    public void Configure(int teamId, TroopProfile profile)
+    // The troop is gone (all dead, or a rout despawned). Its soldier sprites go with it here as well as in OnDestroy, which
+    // Edit mode (the scenario tests) never calls.
+    void DestroyTroop()
+    {
+        _views?.DestroyAll();
+        TroopObjects.Destroy(gameObject);
+    }
+
+    // Sets up the troop for the battle from its characters (leader first) and spawns their soldiers. Its frontage is
+    // determined then from its total soldier count (TroopFrontageRule, SU-117); a frontage above 0 is used instead
+    // (tests and showcase scenes that need a fixed width).
+    public void Configure(int teamId, IEnumerable<CharacterProfile> characters, int frontage = 0)
     {
         EnsureModules();
         _teamId = teamId;
-        _profile = profile;
+        _characters = characters != null ? new List<CharacterProfile>(characters) : new List<CharacterProfile>();
+        _frontageOverride = Mathf.Max(0, frontage);
         ResetSoldiers();
     }
+
+    int DetermineFrontage() =>
+        _frontageOverride > 0 ? _frontageOverride : TroopFrontageRule.ForSoldierCount(Resolved.InitialSoldierCount);
 
     // --- Orders (spec §6). A routed troop ignores every order (spec §5.4). ---
 
     public void MoveTo(Vector2 worldPosition)
     {
-        if (IsRouted || IsRetreating) return;
+        if (IsRouted || IsRetreating || IsDisordered) return;
         _lineOrder.Cancel();
         _mover.MoveTo(worldPosition);
         State = TroopState.Moving;
@@ -460,7 +537,7 @@ public sealed class Troop : MonoBehaviour
 
     public void Pursue(Troop target)
     {
-        if (IsRouted || IsRetreating || target == null || target == this || target.TeamId == TeamId) return;
+        if (IsRouted || IsRetreating || IsDisordered || target == null || target == this || target.TeamId == TeamId) return;
         _lineOrder.Cancel();
         _mover.Pursue(target);
         State = TroopState.Moving;
@@ -469,15 +546,20 @@ public sealed class Troop : MonoBehaviour
     // Marches to center, turns to facing and holds a line of the given length (clamped to the stretch envelope).
     public void OrderLine(Vector2 center, Vector2 facing, float length)
     {
-        if (IsRouted || IsRetreating) return;
+        if (IsRouted || IsRetreating || IsDisordered) return;
         _lineOrder.Order(center, facing, Mathf.Clamp(length, MinimumLineLength, MaximumLineLength));
         _mover.MoveTo(center);
         State = TroopState.Moving;
     }
 
-    // Deployment: puts the troop straight at center, facing the given way, holding a line of the given length, without
-    // marching. Its soldiers move with the pivot and form the line once the battle runs. Ignored once routed.
-    public void PlaceAt(Vector2 center, Vector2 facing, float length)
+    // Deployment (SU-101): puts the troop straight at center, facing the given way, without marching. Time stands still
+    // while deploying, so its soldiers are put straight into the shape it is in, and the troop, its outline and its card
+    // all show the same formation:
+    //   holdLine   a right-drag line: it holds a line of the given length, its soldiers standing in that line's ranks.
+    //   otherwise  the spawn and a right-click: it stands Idle, like a troop arriving from a Move, its soldiers in the
+    //              blob around the pivot.
+    // Ignored once routed or retreating.
+    public void PlaceAt(Vector2 center, Vector2 facing, float length, bool holdLine)
     {
         EnsureInitialized();
         if (IsRouted || IsRetreating) return;
@@ -487,7 +569,26 @@ public sealed class Troop : MonoBehaviour
         _lineOrder.Cancel();
         transform.SetPositionAndRotation(new Vector3(center.x, center.y, transform.position.z),
             Quaternion.Euler(0f, 0f, Mathf.Atan2(facing.y, facing.x) * Mathf.Rad2Deg));
-        _lineOrder.Order(center, facing, Mathf.Clamp(length, MinimumLineLength, MaximumLineLength));
+        bool formationOn = _formationState != null && _formationState.enabled;
+        if (holdLine)
+        {
+            float lineLength = Mathf.Clamp(length, MinimumLineLength, MaximumLineLength);
+            _lineOrder.Order(center, facing, lineLength);
+            // The line moves with the troop at once: until the combat world rebuilds it next frame, the formation (and
+            // the outline drawn from it) would still be where the troop stood before it was placed (SU-92).
+            if (formationOn) Formation = TroopFormationState.Build(center, facing, lineLength, HasThreatWithinSDistance);
+            _formationMode = IsChained ? FormationMode.Chain : FormationMode.Line;
+            _roster.ArrangeInLine(lineLength);
+            _soldiersInPlacedLine = true;
+        }
+        else
+        {
+            if (formationOn) Formation = null;
+            _formationMode = FormationMode.Idle;
+            // Soldiers stood in a line from an earlier line placement: back into the blob.
+            if (_soldiersInPlacedLine) _roster.ScatterInBlob();
+            _soldiersInPlacedLine = false;
+        }
         _footprint = TroopFootprint.Circle(transform.position, Radius * Tuning.BlobRadiusScale, transform.right);
         _outline.Reset();
         State = TroopState.Idle;
@@ -508,10 +609,22 @@ public sealed class Troop : MonoBehaviour
     // attacker (optional) is credited with the kill in BattleEvents.SoldierKilled. weapon (optional) is the weapon that
     // dealt the damage; its Piercing and Bludgeoning change the armour roll (SU-89).
     public int ApplyDamage(SoldierAgentState target, int rawDamage, Vector2 attackerPivotPosition, bool flanked,
-        Troop attacker = null, WeaponProfile weapon = null)
+        Troop attacker = null, WeaponProfile weapon = null) =>
+        ApplyDamageDetailed(target, rawDamage, attackerPivotPosition, flanked, attacker, weapon, out _).Total;
+
+    // As ApplyDamage, also giving the armour roll (for the combat log). Returns what the soldier took.
+    internal AppliedDamage ApplyDamageDetailed(SoldierAgentState target, int rawDamage, Vector2 attackerPivotPosition,
+        bool flanked, Troop attacker, WeaponProfile weapon, out MitigationResult mitigation)
     {
-        if (target == null || rawDamage <= 0 || !target.IsAlive) return 0;
-        int applied = _damage.Apply(target, Mitigate(target, rawDamage, weapon), attackerPivotPosition, flanked).Total;
+        mitigation = default;
+        if (target == null || rawDamage <= 0 || !target.IsAlive) return default;
+        mitigation = Mitigate(target, rawDamage, weapon);
+        // Recorded before the hit lands, since the hit may break the troop at once; undone when it does no damage.
+        var previous = (_lastAttacker, _lastAttackRanged, _lastAttackTime);
+        if (attacker != null && attacker != this)
+            (_lastAttacker, _lastAttackRanged, _lastAttackTime) = (attacker, weapon is RangedWeaponProfile, Time.time);
+        AppliedDamage applied = _damage.Apply(target, mitigation, attackerPivotPosition, flanked);
+        if (applied.Total <= 0) (_lastAttacker, _lastAttackRanged, _lastAttackTime) = previous;
         if (!target.IsAlive) BattleEvents.RaiseSoldierKilled(this, target, attacker);
         return applied;
     }
@@ -546,6 +659,9 @@ public sealed class Troop : MonoBehaviour
 
     internal void RaiseSoldierDied(SoldierAgentState soldier) => SoldierDied?.Invoke(soldier);
 
+    // Test clean-up (TestScene): Edit mode never calls OnDestroy, so the soldier sprites are destroyed explicitly.
+    internal void DestroyViewsForTests() => _views?.DestroyAll();
+
     internal void PulseMeleeClash(SoldierAgentState soldier, float duration) => _views.PulseClash(soldier, duration);
     // Squash and stretch on a soldier that took damage and was pushed back (worldPushDirection points away from the hit).
     internal void PlayHitSquash(SoldierAgentState soldier, Vector2 worldPushDirection) =>
@@ -556,7 +672,7 @@ public sealed class Troop : MonoBehaviour
     {
         ChainLinker.BreakAllLinks(this, ChainBreakReason.Invalid);
         RaiseDefeated();
-        TroopObjects.Destroy(gameObject);
+        DestroyTroop();
     }
 
     void RaiseDefeated()
@@ -583,19 +699,43 @@ public sealed class Troop : MonoBehaviour
                 EnterRout();
                 break;
             case BreakCase.Retreat:
-                BeginRetreat();
+                // Retreats only come from melee (SU-104): out of melee the troop is disordered instead.
+                if (InMelee) BeginRetreat();
+                else BeginDisorder();
                 break;
             case BreakCase.SurroundedBreak:
                 _morale.RecordSurroundedBreak();
+                RaiseBroke(TroopBreakKind.SurroundedBreak);
                 CancelCharges();
                 break;
         }
     }
 
-    // Case B: accordion retreat away from the attacker, Shock resets, EffectiveMorale drops by the retreat penalty.
-    void BeginRetreat()
+    void RaiseBroke(TroopBreakKind kind) =>
+        BattleEvents.RaiseTroopBroke(new TroopBreakInfo(this, kind, _lastAttacker, _lastAttackRanged));
+
+    // Case B out of melee (SU-104): the troop is disordered for DisorderSeconds. It stops where it is and cannot move or
+    // take orders. Shock resets and EffectiveMorale drops by the retreat penalty, as for a retreat. Charges in flight are
+    // completed. Breaking again while disordered restarts the time (or retreats, if the troop is now in melee).
+    void BeginDisorder()
     {
         _morale.RecordRetreat();
+        RaiseBroke(TroopBreakKind.Disorder);
+        _mover.CancelOrders();
+        _lineOrder.Cancel();
+        _disorderRemaining = Tuning.DisorderSeconds;
+        if (!IsRouted) State = TroopState.Idle;
+    }
+
+    // Case B: accordion retreat away from the attacker, Shock resets, EffectiveMorale drops by the retreat penalty.
+    // Only a troop engaged in melee retreats (SU-104). A retreat ends any disorder. Stunned soldiers are left behind and
+    // die (SU-107).
+    void BeginRetreat()
+    {
+        _disorderRemaining = 0f;
+        _morale.RecordRetreat();
+        RaiseBroke(TroopBreakKind.Retreat);
+        if (KillStunnedSoldiers()) return;
         // Charges in flight are completed; the chargers then rush back to the retreating troop (SU-43).
         _mover.CancelOrders();
         _lineOrder.Cancel();
@@ -610,7 +750,7 @@ public sealed class Troop : MonoBehaviour
     // never move (SU-46).
     internal bool BeginSympatheticRetreat(Vector2 direction, float distance)
     {
-        if (IsRouted || IsFaultSlipping || IsCommitted || distance <= 0f) return false;
+        if (IsRouted || IsFaultSlipping || IsCommitted || IsDisordered || distance <= 0f) return false;
         _faultSlip.Begin(direction, distance, sympathetic: true);
         return true;
     }
@@ -625,9 +765,30 @@ public sealed class Troop : MonoBehaviour
         return -Facing;
     }
 
+    // Stunned soldiers of a troop falling back from melee are left behind and killed (SU-107), credited to the enemy it
+    // was engaged with. Returns true when that killed the last of the troop's soldiers (the troop is then removed).
+    bool KillStunnedSoldiers()
+    {
+        if (!InMelee) return false;
+        Troop killer = EngagedEnemy;
+        bool any = false;
+        foreach (var soldier in _roster.SoldierList)
+        {
+            if (!soldier.KillIfStunned()) continue;
+            any = true;
+            RaiseSoldierDied(soldier);
+            BattleEvents.RaiseSoldierKilled(this, soldier, killer);
+        }
+        if (!any || LivingSoldierCount > 0) return false;
+        OnAllSoldiersDead();
+        return true;
+    }
+
     // Case A (spec §5.4): final. Unlinks, scatters, flees away from the nearest enemy, raises the destroyed event once.
+    // A rout from melee leaves its stunned soldiers behind too (SU-107, assumption).
     void EnterRout()
     {
+        KillStunnedSoldiers();
         CancelCharges(returnToTroop: false);
         _mover.CancelOrders();
         _lineOrder.Cancel();
@@ -636,6 +797,7 @@ public sealed class Troop : MonoBehaviour
         _rout.Begin(AwayFromNearestEnemy());
         State = TroopState.Fleeing;
         Routed?.Invoke(this);
+        RaiseBroke(TroopBreakKind.Rout);
         RaiseDefeated();
     }
 
@@ -643,7 +805,7 @@ public sealed class Troop : MonoBehaviour
     {
         if (!IsRouted) return;
         _rout.UpdateFleeDirection(AwayFromNearestEnemy());
-        if (_rout.Tick(deltaTime, Tuning.RoutDespawnSeconds)) TroopObjects.Destroy(gameObject);
+        if (_rout.Tick(deltaTime, Tuning.RoutDespawnSeconds)) DestroyTroop();
     }
 
     Vector2 AwayFromNearestEnemy()
@@ -754,6 +916,7 @@ public sealed class Troop : MonoBehaviour
     void ResetSoldiers()
     {
         _initialized = false;
+        _frontage = 0;
         _roster.Clear();
         EnsureInitialized();
     }
@@ -761,9 +924,10 @@ public sealed class Troop : MonoBehaviour
     void EnsureInitialized()
     {
         EnsureModules();
-        IReadOnlyList<CharacterProfile> characters = _profile != null ? _profile.Characters : null;
+        IReadOnlyList<CharacterProfile> characters = _characters;
         if (_initialized || !_roster.enabled || characters == null || characters.Count == 0) return;
 
+        _frontage = DetermineFrontage();
         _roster.Spawn(characters);
         _morale.CaptureInitialSoldiers(_roster.LivingCount);
         _rangedFire.Reset();

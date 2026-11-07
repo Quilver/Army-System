@@ -34,8 +34,8 @@ Material:
     m_Ints: []
     m_Floats:
     - _Deform: 0
-    - _SquashAmount: 0.4
-    - _StretchAmount: 0.35
+    - _SquashAmount: 0.8
+    - _StretchAmount: 0.7
     - _TaperAmount: 0.8
     m_Colors:
     - _Color: {r: 1.2075472, g: 1.2075472, b: 1.2075472, a: 0.33333334}

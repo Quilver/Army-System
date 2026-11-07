@@ -25,19 +25,26 @@ public static class DeploymentSetup
     const string OldZonePrefabPath = "Assets/Prefabs/Battle/Deployement Zone.prefab";
     public const string CanvasPrefabPath = "Assets/Prefabs/Battle/Canvas.prefab";
     const string TroopPrefabPath = "Assets/Prefabs/Battle/Troop.prefab";
-    const string CampaignTroops = "Assets/Resources/Troop and Character Profiles/Characters/Campaign/";
+    const string CampaignCharacters = "Assets/Resources/Troop and Character Profiles/Characters/Campaign/";
 
     const string SpriteDefaultsName = "Troop Profile Sprite Defaults";
     public const string TestScene = "Assets/Resources/Levels/Test/Level 1 Troop Test.unity";
 
-    public static readonly string[] LevelScenes =
+    static readonly string[] LegacyLevelScenes =
     {
         "Assets/Resources/Levels/Level 1/Level 1.unity",
         "Assets/Resources/Levels/Level 2/Level 2.unity",
     };
 
-    // Default troops for a level with no player troops placed in it.
-    static readonly string[] FallbackDefaults = { "Julian's Troop", "Franz's Troop", "Jagen's Troop", "Robin's Troop" };
+    // Missions 1 and 2's battle scenes: from the Mission Catalog once the levels are migrated (SU-119), else the old paths.
+    public static string[] LevelScenes => new[]
+    {
+        global::Campaign.Missions.EditorTools.MissionTools.BattleScenePath(1, LegacyLevelScenes[0]),
+        global::Campaign.Missions.EditorTools.MissionTools.BattleScenePath(2, LegacyLevelScenes[1]),
+    };
+
+    // Default troops for a level with no player troops placed in it: one troop per campaign character, by asset name.
+    static readonly string[] FallbackDefaults = { "Julian", "Franz", "Jagen", "Robin" };
 
     [MenuItem("Leveraged Wars/Battle/Set Up Deployment (Levels 1 and 2)")]
     static void SetUpFromMenu()
@@ -131,7 +138,11 @@ public static class DeploymentSetup
 
         var hint = new GameObject("Hint", typeof(RectTransform)).AddComponent<TextMeshProUGUI>();
         hint.transform.SetParent(content.transform, false);
-        Place(hint.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -30f), new Vector2(1100f, 60f));
+        // Across the canvas with a small margin (a fixed 1100 was wider than the 960 reference canvas); it wraps.
+        Place(hint.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -30f), new Vector2(0f, 60f));
+        hint.rectTransform.anchorMin = new Vector2(0.04f, 1f);
+        hint.rectTransform.anchorMax = new Vector2(0.96f, 1f);
+        hint.textWrappingMode = TextWrappingModes.Normal;
         hint.text = "Deployment: select troops and right-click or drag inside the zone to place them";
         hint.fontSize = 28;
         hint.alignment = TextAlignmentOptions.Center;
@@ -201,27 +212,32 @@ public static class DeploymentSetup
             zoneSO.FindProperty("_army").objectReferenceValue = battle.player;
         zoneSO.ApplyModifiedPropertiesWithoutUndo();
 
-        // The level's default troops live in the BattleReport on this scene's DataManager (BattleReport.DeployedTroops),
-        // which a report coming from battle preparation replaces. Sources, first that has troops: the report itself,
-        // the zone's old Default Troops (SU-84, kept as prefab overrides), the player troops placed in the scene,
-        // FallbackDefaults.
+        // The level's default troops live in the BattleReport on this scene's DataManager (BattleReport.DeployedTroops,
+        // each the list of its characters), which a report coming from battle preparation replaces. Sources, first that
+        // has troops: the report itself, the player troops placed in the scene, FallbackDefaults.
         BattleReport report = FindInScene<BattleReport>(scene).FirstOrDefault()
             ?? throw new InvalidOperationException($"{scene.name} has no DataManager with a BattleReport.");
         var reportSO = new SerializedObject(report);
         SerializedProperty troops = reportSO.FindProperty("_deployedTroops");
-        List<TroopProfile> legacy = TakeLegacyZoneDefaults(zone);
         Troop[] placed = battle.player.GetComponentsInChildren<Troop>(true).OrderBy(t => t.transform.position.x).ToArray();
         if (troops.arraySize == 0)
         {
-            var profiles = legacy;
-            if (profiles.Count == 0) profiles = placed.Select(t => t.Profile).Where(p => p != null).ToList();
-            if (profiles.Count == 0)
-                profiles = FallbackDefaults.Select(n => AssetDatabase.LoadAssetAtPath<TroopProfile>(CampaignTroops + n + ".asset"))
-                    .Where(p => p != null).ToList();
-            troops.arraySize = profiles.Count;
-            for (int i = 0; i < profiles.Count; i++) troops.GetArrayElementAtIndex(i).objectReferenceValue = profiles[i];
+            List<List<CharacterProfile>> defaults = placed
+                .Select(t => t.Characters.Where(c => c != null).ToList()).Where(c => c.Count > 0).ToList();
+            if (defaults.Count == 0)
+                defaults = FallbackDefaults.Select(FindCampaignCharacter).Where(c => c != null)
+                    .Select(c => new List<CharacterProfile> { c }).ToList();
+            troops.arraySize = defaults.Count;
+            for (int i = 0; i < defaults.Count; i++)
+            {
+                SerializedProperty characters = troops.GetArrayElementAtIndex(i).FindPropertyRelative("_characters");
+                characters.arraySize = defaults[i].Count;
+                for (int j = 0; j < defaults[i].Count; j++)
+                    characters.GetArrayElementAtIndex(j).objectReferenceValue = defaults[i][j];
+            }
             reportSO.ApplyModifiedPropertiesWithoutUndo();
-            log.AppendLine($"  default troops on {report.name} (BattleReport.DeployedTroops): {string.Join(", ", profiles.Select(p => p.name))}");
+            log.AppendLine($"  default troops on {report.name} (BattleReport.DeployedTroops): " +
+                           string.Join(", ", defaults.Select(d => string.Join(" & ", d.Select(c => c.name)))));
         }
         foreach (Troop troop in placed)
         {
@@ -244,27 +260,13 @@ public static class DeploymentSetup
         return log.ToString();
     }
 
-    // The zone's Default Troops field is gone (SU-86); its values survive as overrides on the zone's prefab instance.
-    // Returns them in order and removes those overrides.
-    static List<TroopProfile> TakeLegacyZoneDefaults(DeploymentZone zone)
-    {
-        var result = new List<TroopProfile>();
-        if (!PrefabUtility.IsPartOfPrefabInstance(zone)) return result;
-        PropertyModification[] mods = PrefabUtility.GetPropertyModifications(zone.gameObject);
-        if (mods == null) return result;
-        const string prefix = "_defaultTroops.Array.data[";
-        var entries = new SortedDictionary<int, TroopProfile>();
-        foreach (var mod in mods)
-        {
-            if (mod.propertyPath == null || !mod.propertyPath.StartsWith(prefix)) continue;
-            if (int.TryParse(mod.propertyPath.Substring(prefix.Length).TrimEnd(']'), out int index) && mod.objectReference is TroopProfile p)
-                entries[index] = p;
-        }
-        result.AddRange(entries.Values);
-        var kept = mods.Where(m => m.propertyPath == null || !m.propertyPath.StartsWith("_defaultTroops")).ToArray();
-        if (kept.Length != mods.Length) PrefabUtility.SetPropertyModifications(zone.gameObject, kept);
-        return result;
-    }
+    // The campaign character asset with this name (in any mission subfolder of CampaignCharacters), or null.
+    static CharacterProfile FindCampaignCharacter(string characterName) =>
+        AssetDatabase.FindAssets($"{characterName} t:CharacterProfile", new[] { CampaignCharacters.TrimEnd('/') })
+            .Select(AssetDatabase.GUIDToAssetPath)
+            .Where(path => System.IO.Path.GetFileNameWithoutExtension(path) == characterName)
+            .Select(path => AssetDatabase.LoadAssetAtPath<CharacterProfile>(path))
+            .FirstOrDefault(c => c != null);
 
     // Removes the Troop Profile Sprite Defaults object (its script is deleted, SU-87).
     public static string RemoveSpriteDefaults(Scene scene)

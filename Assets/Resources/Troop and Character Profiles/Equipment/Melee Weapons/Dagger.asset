@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Dagger
   m_EditorClassIdentifier: 
   _displayName: Dagger
-  _damage: 2
+  _damage: 0
   _provisional: 1
   _weaponClass: 1
   _chargeBonus: 2

@@ -23,7 +23,9 @@ namespace LeveragedWars.Battle.AI.EditorTools
     /// </summary>
     public static class Mission1Setup
     {
-        public const string ScenePath = "Assets/Resources/Levels/Level 1/Level 1.unity";
+        public const string LegacyScenePath = "Assets/Resources/Levels/Level 1/Level 1.unity";
+        // Mission 1's battle scene: from the Mission Catalog once the levels are migrated (SU-119), else the old path.
+        public static string ScenePath => global::Campaign.Missions.EditorTools.MissionTools.BattleScenePath(1, LegacyScenePath);
         public const string EnemyAIName = "EnemyAI";
         public const string MarkersName = "Markers";
 
@@ -290,10 +292,10 @@ namespace LeveragedWars.Battle.AI.EditorTools
             ?? FindInScene<AIMission>(scene).Select(m => m.gameObject).FirstOrDefault();
 
         static bool IsRanged(Troop troop) =>
-            troop.Profile != null && troop.Profile.Characters.Any(c => c != null && TroopAIAdapter.IsMissileWeapon(c.RangedWeapon));
+            troop.Characters.Any(c => c != null && TroopAIAdapter.IsMissileWeapon(c.RangedWeapon));
 
         static bool IsCavalry(Troop troop) =>
-            Contains(troop.name, "cav") || (troop.Profile != null && Contains(troop.Profile.name, "cav"));
+            Contains(troop.name, "cav") || troop.Characters.Any(c => c != null && Contains(c.name, "cav"));
 
         static bool Contains(string s, string part) => s != null && s.IndexOf(part, StringComparison.OrdinalIgnoreCase) >= 0;
 

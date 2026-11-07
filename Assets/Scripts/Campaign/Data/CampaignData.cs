@@ -48,7 +48,7 @@ namespace Campaign
         public List<RosterCharacter> Roster = new();
 
         // Saves with another version are discarded (FileDataHandler). Bump when the save format changes.
-        public const int CurrentSaveVersion = 2;
+        public const int CurrentSaveVersion = 3;   // 3: XP per level 10, stat gains (SU-115)
         public int SaveVersion = CurrentSaveVersion;
 
         // Restores asset references after loading from JSON.

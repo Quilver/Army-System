@@ -19,7 +19,7 @@ public sealed class TroopMorale : MonoBehaviour
 
     TroopTuning Tuning => TroopTuning.Active;
 
-    public int BaseMorale => _troop != null && _troop.Profile != null ? _troop.Profile.BaseMorale : DefaultBaseMorale;
+    public int BaseMorale => _troop != null && _troop.HasCharacters ? _troop.Resolved.BaseMorale : DefaultBaseMorale;
     public int InitialSoldierCount => _initialSoldiers;
     public int RetreatCount => _retreatCount;
     public int SurroundedBreakCount => _surroundedBreakCount;

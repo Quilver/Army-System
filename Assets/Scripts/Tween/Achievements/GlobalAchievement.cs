@@ -1,50 +1,32 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+
 namespace AchievementSystem
 {
+    // An achievement for the whole battle (SU-114): victory, side objectives. Gold and prestige go to the campaign; XP goes
+    // to every roster character.
     [CreateAssetMenu(menuName = "Achievements/Global Achievement")]
     public class GlobalAchievement : Achievement
     {
         [SerializeReference, SubclassSelector]
-        RequirementGlobal _requirement;
-        [SerializeReference, SubclassSelector]
-        List<Reward> rewards;
-        [SerializeField, TextArea]
-        string _description;
-        public override string Description => _description;
+        GlobalRequirement _requirement;
+
+        public override Requirement Requirement => _requirement;
+
         public static GlobalAchievement CreateCustom(CustomGlobalAchievement data)
         {
-            GlobalAchievement globalAchievement = ScriptableObject.CreateInstance<GlobalAchievement>();
-            globalAchievement.icon = data._icon;
-            globalAchievement._description = data._description;
-            globalAchievement._requirement = data._requirement;
-            globalAchievement.rewards = data.rewards;
-            return globalAchievement;
-        }
-        public void Initialise()
-        {
-            _requirement.Setup();
-            BattleReport.Achievements.Add(this);
-        }
-        public override bool Achieved() => _requirement.Succeeded() > 0;
-        public override void Reward()
-        {
-            foreach (var reward in rewards)
-                reward.GiveReward(_requirement.Succeeded());
+            var achievement = CreateInstance<GlobalAchievement>();
+            achievement.name = string.IsNullOrEmpty(data._title) ? "Custom global achievement" : data._title;
+            achievement.SetData(data._icon, data._title, data._description, data.rewards);
+            achievement._requirement = data._requirement;
+            return achievement;
         }
     }
+
     [Serializable]
-    public class CustomGlobalAchievement
+    public class CustomGlobalAchievement : CustomAchievementData
     {
-        [SerializeField]
-        public Sprite _icon;
         [SerializeReference, SubclassSelector]
-        public RequirementGlobal _requirement;
-        [SerializeReference, SubclassSelector]
-        public List<Reward> rewards;
-        [SerializeField, TextArea]
-        public string _description;
+        public GlobalRequirement _requirement;
     }
 }

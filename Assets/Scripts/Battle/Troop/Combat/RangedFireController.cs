@@ -6,8 +6,12 @@ using UnityEngine;
 //   Reach (Decisions D-54): a shooter can hit an enemy soldier within its weapon range and within RangedFrontArcDeg of
 //   the troop's facing, measured from the shooter (RangedRules.CanReach).
 //   Target troop: the enemy troop not engaged in melee (Q-39) with the soldier nearest to a shooter that can reach it.
-//   Each volley, every shooter fires one projectile at a target soldier it can reach, spreading fire across them.
-//   After each volley the troop waits ActionWindowSeconds / FireRate (+/- 10% jitter) before the next (Q-43).
+//   Volley weapons (RangedWeaponProfile.Volley, SU-105): each volley, every soldier with one fires one projectile at a
+//   target soldier it can reach, spreading fire across them. After each volley the troop waits
+//   ActionWindowSeconds / FireRate (+/- 10% jitter) before the next (Q-43).
+//   Other weapons (the default): each soldier shoots on its own clock, one shot every ActionWindowSeconds / FireRate
+//   (+/- 10%), its first shot after a random part of that, so the troop's fire is spread out rather than in step. Each
+//   shot goes to the reachable soldier with the fewest of this troop's projectiles in flight at it.
 // Fire & Engage (SU-90): soldiers whose ranged weapon has the Fire & Engage rule also fire one volley when their troop
 // enters an engagement (at the enemy it engages) and one when the troop retreats (spec §5.5) from that engagement, though
 // it is engaged, moving or retreating. Both reset with each new engagement. These volleys need only weapon range (no
@@ -19,6 +23,9 @@ public sealed class RangedFireController
     readonly List<Vector2> _shooterPositions = new();
     readonly List<(SoldierAgentState soldier, float distance)> _targets = new();
     readonly List<int> _aimed = new();
+    readonly List<bool> _ready = new();
+    // Each soldier's own shot clock, for weapons that do not fire volleys (SU-105).
+    readonly Dictionary<SoldierAgentState, float> _shotCooldowns = new();
     float _cooldown;
     bool _primed;
 
@@ -40,6 +47,8 @@ public sealed class RangedFireController
     public int Volleys { get; private set; }
     // Fire & Engage volleys fired (SU-90).
     public int FireAndEngageVolleys { get; private set; }
+    // Shots fired by soldiers shooting on their own clocks (weapons without Volley, SU-105).
+    public int SingleShots { get; private set; }
 
     public void Reset()
     {
@@ -47,6 +56,8 @@ public sealed class RangedFireController
         _primed = false;
         Volleys = 0;
         FireAndEngageVolleys = 0;
+        SingleShots = 0;
+        _shotCooldowns.Clear();
         Target = null;
         IsFiring = false;
         _wasEngaged = false;
@@ -59,6 +70,7 @@ public sealed class RangedFireController
     {
         TroopTuning tuning = TroopTuning.Active;
         _cooldown = Mathf.Max(0f, _cooldown - deltaTime);
+        TickShotCooldowns(deltaTime);
         Target = null;
         IsFiring = false;
         TickFireAndEngage(projectiles, tuning);
@@ -70,6 +82,9 @@ public sealed class RangedFireController
         if (Target == null) return;
         IsFiring = true;
 
+        FireSingleShots(Target, projectiles, tuning);
+        if (fireRate <= 0) return;
+
         // The first volley waits a random part of an interval, so troops do not fire in step.
         if (!_primed)
         {
@@ -78,10 +93,76 @@ public sealed class RangedFireController
         }
         if (_cooldown > 0f) return;
 
+        if (!MarkShooters(VolleyWeapon)) return;
         FireVolley(Target, projectiles, tuning, useFrontArc: true);
         Volleys++;
         BattleEvents.RaiseVolleyFired(_troop);
         _cooldown = RangedRules.FireInterval(fireRate, tuning.ActionWindowSeconds, tuning.FireRateJitterFraction, _troop.TroopRandom);
+    }
+
+    static bool VolleyWeapon(RangedWeaponProfile weapon) => weapon.Volley;
+
+    // Marks the shooters whose weapon passes the test as ready to fire. Returns false when none does.
+    bool MarkShooters(System.Func<RangedWeaponProfile, bool> test)
+    {
+        _ready.Clear();
+        bool any = false;
+        foreach (var shooter in _shooters)
+        {
+            bool ready = test(shooter.Character.RangedWeapon);
+            _ready.Add(ready);
+            any |= ready;
+        }
+        return any;
+    }
+
+    // Soldiers whose weapon does not fire volleys (SU-105) count down their own clocks, at all times.
+    void TickShotCooldowns(float deltaTime)
+    {
+        if (_shotCooldowns.Count == 0 || deltaTime <= 0f) return;
+        _shotKeys.Clear();
+        _shotKeys.AddRange(_shotCooldowns.Keys);
+        foreach (var soldier in _shotKeys)
+        {
+            if (!soldier.IsAlive) { _shotCooldowns.Remove(soldier); continue; }
+            _shotCooldowns[soldier] = Mathf.Max(0f, _shotCooldowns[soldier] - deltaTime);
+        }
+    }
+
+    readonly List<SoldierAgentState> _shotKeys = new();
+
+    // Each soldier without a volley weapon fires when its own clock runs out (SU-105). Its first shot waits a random part
+    // of its interval, so the troop's shots are spread out. Shots go where the fewest of this troop's projectiles are
+    // already flying.
+    void FireSingleShots(Troop target, TroopProjectiles projectiles, TroopTuning tuning)
+    {
+        ITroopRandom random = _troop.TroopRandom;
+        _ready.Clear();
+        bool any = false;
+        foreach (var shooter in _shooters)
+        {
+            RangedWeaponProfile weapon = shooter.Character.RangedWeapon;
+            bool ready = false;
+            if (!weapon.Volley)
+            {
+                if (!_shotCooldowns.TryGetValue(shooter, out float remaining))
+                {
+                    remaining = RangedRules.BaseInterval(weapon.FireRate, tuning.ActionWindowSeconds) * random.Value();
+                    _shotCooldowns[shooter] = remaining;
+                }
+                ready = remaining <= 0f;
+            }
+            _ready.Add(ready);
+            any |= ready;
+        }
+        if (!any) return;
+
+        int fired = FireVolley(target, projectiles, tuning, useFrontArc: true, countInFlight: projectiles,
+            onFired: shooter => _shotCooldowns[shooter] = RangedRules.FireInterval(shooter.Character.RangedWeapon.FireRate,
+                tuning.ActionWindowSeconds, tuning.FireRateJitterFraction, random));
+        if (fired == 0) return;
+        SingleShots += fired;
+        BattleEvents.RaiseVolleyFired(_troop);
     }
 
     // Fire & Engage (SU-90). A new engagement (not engaged last frame, engaged now) fires one volley at the enemy engaged
@@ -123,6 +204,7 @@ public sealed class RangedFireController
             _shooterPositions.Add(_troop.WorldPosition(soldier));
         }
         if (_shooters.Count == 0) return;
+        MarkShooters(_ => true);
         if (FireVolley(enemy, projectiles, tuning, useFrontArc: false) == 0) return;
         Volleys++;
         FireAndEngageVolleys++;
@@ -175,7 +257,8 @@ public sealed class RangedFireController
             _shooters.Add(soldier);
             _shooterPositions.Add(_troop.WorldPosition(soldier));
             range = Mathf.Max(range, weapon.Range);
-            if (fireRate == 0) fireRate = weapon.FireRate;
+            // The volley clock runs at the first volley weapon's fire rate (0 when no soldier has one).
+            if (fireRate == 0 && weapon.Volley) fireRate = weapon.FireRate;
         }
     }
 
@@ -214,10 +297,13 @@ public sealed class RangedFireController
         return best;
     }
 
-    // Each shooter fires one projectile at a soldier of targetTroop it can reach. Fire is spread: a shooter picks the
-    // reachable soldier with the fewest shots aimed at it so far this volley, the nearest on a tie. Shooters that cannot
-    // reach any target soldier hold. useFrontArc false (Fire & Engage) checks weapon range only. Returns the shots fired.
-    int FireVolley(Troop targetTroop, TroopProjectiles projectiles, TroopTuning tuning, bool useFrontArc)
+    // Each ready shooter (_ready, set by MarkShooters or FireSingleShots) fires one projectile at a soldier of targetTroop
+    // it can reach. Fire is spread: a shooter picks the reachable soldier with the fewest shots aimed at it so far (this
+    // volley, plus this troop's projectiles already in flight when countInFlight is given), the nearest on a tie.
+    // Shooters that cannot reach any target soldier hold. useFrontArc false (Fire & Engage) checks weapon range only.
+    // onFired is called for each shooter that fired. Returns the shots fired.
+    int FireVolley(Troop targetTroop, TroopProjectiles projectiles, TroopTuning tuning, bool useFrontArc,
+        TroopProjectiles countInFlight = null, System.Action<SoldierAgentState> onFired = null)
     {
         _targets.Clear();
         _aimed.Clear();
@@ -227,10 +313,20 @@ public sealed class RangedFireController
         if (_targets.Count == 0) return 0;
         int fired = 0;
         for (int t = 0; t < _targets.Count; t++) _aimed.Add(0);
+        if (countInFlight != null)
+        {
+            foreach (var projectile in countInFlight.Active)
+            {
+                if (projectile.Shooter != _troop) continue;
+                for (int t = 0; t < _targets.Count; t++)
+                    if (_targets[t].soldier == projectile.Target) { _aimed[t]++; break; }
+            }
+        }
         Vector2 facing = _troop.Facing;
 
         for (int i = 0; i < _shooters.Count; i++)
         {
+            if (i < _ready.Count && !_ready[i]) continue;
             SoldierAgentState shooter = _shooters[i];
             RangedWeaponProfile weapon = shooter.Character.RangedWeapon;
             Vector2 from = _shooterPositions[i];
@@ -255,7 +351,8 @@ public sealed class RangedFireController
             SoldierAgentState target = _targets[chosen].soldier;
             float hitChance = RangedRules.HitChance(weapon.Accuracy, shooter.Character.SkillFor(weapon.Class), tuning.BaseShotDC);
             projectiles.Launch(_troop, from, targetTroop, target, RangedRules.RawDamage(weapon.Damage), hitChance,
-                tuning.ProjectileSpeed, weapon);
+                tuning.ProjectileSpeed, weapon, shooter);
+            onFired?.Invoke(shooter);
             fired++;
         }
         return fired;

@@ -5,7 +5,9 @@ public enum SoldierLifeState
 {
     Active,
     Fatigued,
-    Dead
+    Dead,
+    // Brought to 0 HP mostly by bruises (SU-107): down but alive. Cannot charge or support; recovers at StunRecoverHp.
+    Stunned
 }
 
 // One soldier: identity, life and motion. Charging, retreating, clash flashes and external separation each live in a
@@ -36,8 +38,10 @@ public sealed class SoldierAgentState
     public int MaxHp => _health.MaxHp;
     public bool IsAlive => _lifeState != SoldierLifeState.Dead;
 
-    // Alive and not fatigued: the soldier can take part in supporting its neighbours.
-    public bool CanSupport => IsAlive && _lifeState != SoldierLifeState.Fatigued;
+    // Alive and not fatigued or stunned: the soldier can take part in supporting its neighbours.
+    public bool CanSupport => _lifeState == SoldierLifeState.Active;
+    // Down at low HP from bruises (SU-107): alive, but cannot charge, follow or support.
+    public bool IsStunned => _lifeState == SoldierLifeState.Stunned;
 
     // Defence plus the armour bonus. Without a character or armour, only the soldier's Defence (or 0) counts.
     public int TotalDefence => _character == null ? 0 : _character.Defence + (_character.Armour != null ? _character.Armour.DefenceBonus : 0);
@@ -140,18 +144,37 @@ public sealed class SoldierAgentState
         return new AppliedDamage(bruised, shockBleed + overflowBled, shockBleed + bruised);
     }
 
-    // Advances bruise healing by one frame's time. Called once per frame by the troop after its morale tick.
+    // Advances bruise healing by one frame's time. Called once per frame by the troop after its morale tick. A stunned
+    // soldier heals too, from 0 HP.
     internal void TickHealing(float deltaTime, float healPerSecond)
     {
         if (!IsAlive) return;
-        if (_health.TickBruiseHealing(deltaTime, healPerSecond) > 0) SyncLifeState();
+        if (_health.TickBruiseHealing(deltaTime, healPerSecond, healWhileDown: IsStunned) > 0) SyncLifeState();
     }
 
+    // A stunned soldier whose troop retreats from melee is left behind and killed (SU-107). Returns true when it died.
+    internal bool KillIfStunned()
+    {
+        if (!IsStunned) return false;
+        _health.BleedOut();
+        _lifeState = SoldierLifeState.Dead;
+        _charge.End();
+        return true;
+    }
+
+    // Dead at 0 HP, or stunned when the bruises are at least half of it (SU-107). A stunned soldier stays stunned until it
+    // has healed to StunRecoverHp; a hit that brings it back to 0 HP with Bleed over half kills it.
     void SyncLifeState()
     {
-        _lifeState = _health.IsDead
-            ? SoldierLifeState.Dead
-            : _health.IsFatigued(TroopTuning.Active.FatigueFraction) ? SoldierLifeState.Fatigued : SoldierLifeState.Active;
+        TroopTuning tuning = TroopTuning.Active;
+        if (_health.IsDead)
+            _lifeState = tuning.StunAtZeroHp && _health.IsKnockedOut ? SoldierLifeState.Stunned : SoldierLifeState.Dead;
+        else if (_lifeState == SoldierLifeState.Stunned && _health.CurrentHp < tuning.StunRecoverHp)
+            _lifeState = SoldierLifeState.Stunned;
+        else
+            _lifeState = _health.IsFatigued(tuning.FatigueFraction) ? SoldierLifeState.Fatigued : SoldierLifeState.Active;
+        // A stunned soldier stops where it is (no rush back, SU-43); it drifts back to its troop with the field.
         if (_lifeState == SoldierLifeState.Dead) _charge.End();
+        else if (_lifeState == SoldierLifeState.Stunned) _charge.End(returnToTroop: false);
     }
 }

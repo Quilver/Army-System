@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5c1e7a2b9d4f4e0f8a6b3c2d1e0f9a8b, type: 3}
+  m_Name: Achievement Tuning
+  m_EditorClassIdentifier: 
+  _everyCharacter:
+  - {fileID: 11400000, guid: d0b34f0f935bec34eb6034c0637a6a8f, type: 2}
+  - {fileID: 11400000, guid: 9ab5ea444c50cbd47b6e03da6192df08, type: 2}
+  - {fileID: 11400000, guid: b6778d36439d49d19d08052f352d0df3, type: 2}
+  _everyBattle:
+  - {fileID: 11400000, guid: acd8fc35a35449a8b7015c59fce7aa7a, type: 2}

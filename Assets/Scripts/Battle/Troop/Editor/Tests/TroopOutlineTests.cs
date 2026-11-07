@@ -47,6 +47,21 @@ public sealed class TroopOutlineTests
         Assert.AreEqual(target.Center.y, result.Center.y, 1e-5f);
     }
 
+    // SU-92: while time stands still (deploying or paused) nothing eases, so the outline snaps to the formation. A troop
+    // placed during deployment used to keep an outline offset to where its line had been.
+    [Test]
+    public void NoTimeStep_SnapsToTheTarget()
+    {
+        var outline = new TroopOutline();
+        outline.StepToward(TroopOutline.Line(new Vector2(-5f, 0f), new Vector2(5f, 0f), Vector2.up, 40), Vector2.zero, Frame);
+        Vector2 placed = new(20f, 10f);
+        TroopFootprint moved = TroopOutline.Line(placed + new Vector2(-5f, 0f), placed + new Vector2(5f, 0f), Vector2.right, 40);
+        TroopFootprint result = outline.StepToward(moved, placed, 0f);
+        Assert.AreEqual(moved.Center.x, result.Center.x, 1e-4f, "on the placed troop, not where it was");
+        Assert.AreEqual(moved.Center.y, result.Center.y, 1e-4f);
+        Assert.AreEqual(0f, Vector2.Angle(moved.Facing, result.Facing), 0.01f);
+    }
+
     [Test]
     public void Outline_MovesExactlyWithThePivot()
     {

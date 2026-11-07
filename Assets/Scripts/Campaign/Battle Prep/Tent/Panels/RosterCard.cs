@@ -5,7 +5,8 @@ using UnityEngine.UI;
 
 namespace BattlePrep.Tent
 {
-    // A roster character on the Map's deployment page (SU-52, SU-53). Click to deploy / undeploy.
+    // A roster character on the Map's deployment page (SU-52, SU-53). Click to deploy / undeploy. A mandatory character
+    // (SU-117) is free and stays deployed.
     // The class is shown as its icon after the name (class name on hover), or as its name when it has no icon (SU-91).
     public class RosterCard : MonoBehaviour
     {
@@ -44,7 +45,7 @@ namespace BattlePrep.Tent
             _detail.text = c != null
                 ? $"Level {character.level}  ·  {c.Numbers} soldiers  ·  Speed {c.Speed}  ·  Morale {c.Morale}"
                 : $"Level {character.level}";
-            _cost.text = $"{character.costToField} g";
+            _cost.text = TentDeployment.IsMandatory(character) ? "Free" : $"{character.costToField} g";
             Refresh();
         }
 
@@ -54,7 +55,9 @@ namespace BattlePrep.Tent
             if (TentDeployment.IsDeployed(_character))
             {
                 _background.color = Deployed;
-                _state.text = "<color=#3f6212>DEPLOYED</color>";
+                _state.text = TentDeployment.IsMandatory(_character)
+                    ? "<color=#3f6212>DEPLOYED</color>  <color=#6b5a45>· required for this mission</color>"
+                    : "<color=#3f6212>DEPLOYED</color>";
             }
             else if (TentDeployment.CanDeploy(_character, out string reason))
             {

@@ -15,8 +15,8 @@ using UnityEngine.InputSystem;
 // inside the deployment zone; attack orders are ignored. Clicks on UI (the Start Battle button) are not orders.
 // The first selected troop and the troop under the cursor are shown on troop cards (TroopCardHud), and the soldier under
 // the cursor gets a small HP bar over its head (SoldierHealthBar). A hovered troop with ranged weapons shows a
-// transparent mask of where it can shoot (TroopRangeMask). A hovered troop with a Move, Line or Attack order shows the
-// path it is taking with arrows to its waypoint (TroopOrderPathView).
+// transparent mask of where it can shoot (TroopRangeMask). Every selected troop, and the troop under the cursor, with a
+// Move, Line or Attack order shows the path it is taking with arrows to its waypoint (TroopOrderPathView).
 // Engaged troops show a red heat map across the gap between their lines (TroopEngagementView): most intense in the
 // middle of the gap, fading toward each troop's line and the ends of the engagement. F5 toggles it.
 public sealed class TroopPlayerOrders : MonoBehaviour
@@ -34,7 +34,7 @@ public sealed class TroopPlayerOrders : MonoBehaviour
     [SerializeField] Color _rangeMaskOutline = new(0.05f, 0.4f, 0.85f, 1f);
     [SerializeField, Min(0f), Tooltip("Outline width in screen pixels.")] float _rangeMaskOutlinePixels = 3f;
 
-    [Header("Order path (hovered troop)")]
+    [Header("Order path (selected troops and the hovered troop)")]
     [SerializeField, Tooltip("Path and arrows of a Move or Line order.")] Color _orderPathMoveColor = new(0.95f, 0.95f, 0.85f, 0.95f);
     [SerializeField, Tooltip("Path and arrows of an Attack (pursue) order.")] Color _orderPathAttackColor = new(1f, 0.3f, 0.2f, 0.95f);
 
@@ -47,12 +47,14 @@ public sealed class TroopPlayerOrders : MonoBehaviour
     [SerializeField, Min(0f), Tooltip("World units over which the heat fades to nothing at each end of the engagement.")]
     float _engagementHeatEndFade = 2f;
     [SerializeField, Min(0f), Tooltip("Flank and rear attacks (lines not facing each other) draw the band between the engaged " +
-        "soldiers: a soldier is engaged when an enemy soldier is within EngagementGap + 2 soldier radii + this (world units).")]
+        "soldiers: a soldier is engaged when an enemy soldier is within A_Distance + 2 soldier radii + this (world units). " +
+        "Facing lines show heat only where they are within A_Distance of each other.")]
     float _engagementReachSlack = 0.45f;
 
     readonly TroopSelection _selection = new();
     readonly TroopCardHud _cards = new();
     readonly BattleSpeedHud _speedHud = new();
+    readonly CombatLogHud _combatLog = new();
     readonly SoldierHealthBar _healthBar = new();
     readonly TroopRangeMask _rangeMask = new();
     readonly TroopOrderPathView _orderPath = new();
@@ -105,7 +107,10 @@ public sealed class TroopPlayerOrders : MonoBehaviour
         var mouse = Mouse.current;
         if (mouse == null) return;
         _mousePosition = mouse.position.ReadValue();
-        bool overHud = _cards.Contains(_mousePosition) || _speedHud.Contains(_mousePosition);
+        bool overLog = _combatLog.Contains(_mousePosition);
+        bool overHud = _cards.Contains(_mousePosition) || _speedHud.Contains(_mousePosition) || overLog;
+        // Scrolling the combat log does not zoom the camera.
+        PlayerControls.CameraControls.ZoomBlocked = overLog;
         _selection.UpdateHover(overHud ? null : ScreenToWorld(_mousePosition),
             TroopScreenSpace.PixelsToWorld(_camera, _mousePosition, TroopTuning.Active.ClickPickRadiusPixels));
         _cards.Update(_selection.Selected, _selection.Hovered, _mousePosition);
@@ -194,6 +199,7 @@ public sealed class TroopPlayerOrders : MonoBehaviour
         // Leave the battle's speed behind: the campaign and the next battle run at normal speed.
         GamePause.SetSpeed(BattleSpeedHud.NormalSpeed);
         _speedHud.Destroy();
+        PlayerControls.CameraControls.ZoomBlocked = false;
         _rangeMask.Destroy();
         _engagementViewMesh.Destroy();
     }
@@ -249,9 +255,10 @@ public sealed class TroopPlayerOrders : MonoBehaviour
 
     void OnGUI()
     {
-        if (_camera != null) _orderPath.Draw(_camera, _selection.Hovered, OrderPathStyle());
+        if (_camera != null) DrawOrderPaths();
         if (_camera != null) _healthBar.Draw(_camera);
         _cards.Draw();
+        _combatLog.Draw();
 
         if (ShowSpeedBar())
         {
@@ -264,6 +271,21 @@ public sealed class TroopPlayerOrders : MonoBehaviour
             TroopOrderOverlay.DrawSelectionBox(_selectionStart.Value, _mousePosition);
         if (_orderStart.HasValue && Mouse.current != null && _camera != null && _selection.Selected.Count > 0)
             DrawOrderPreview(_orderStart.Value, _mousePosition);
+    }
+
+    // The order arrows of every selected troop, all the time, and of the hovered troop (any team), each drawn once.
+    void DrawOrderPaths()
+    {
+        TroopOrderPathView.Style style = OrderPathStyle();
+        Troop hovered = _selection.Hovered;
+        bool hoveredDrawn = false;
+        foreach (var troop in _selection.Selected)
+        {
+            if (troop == null) continue;
+            _orderPath.Draw(_camera, troop, style);
+            if (troop == hovered) hoveredDrawn = true;
+        }
+        if (!hoveredDrawn) _orderPath.Draw(_camera, hovered, style);
     }
 
     // Ghost preview while the right button is held: each troop's projected footprint (or a marker for a point order), the

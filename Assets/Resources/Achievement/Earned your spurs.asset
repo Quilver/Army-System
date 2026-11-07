@@ -12,7 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f80f9b0a5814ef446b9f44c15be08421, type: 3}
   m_Name: Earned your spurs
   m_EditorClassIdentifier: 
-  icon: {fileID: 21300000, guid: 7c29179568db2d644a4cea355dbc96b0, type: 3}
+  icon: {fileID: 21300000, guid: c724af3d342f44a78fdeb65d5898997c, type: 3}
+  _title: Earned Your Spurs
   _requirement:
     rid: 4568626464216317992
   rewards:
@@ -29,7 +30,7 @@ MonoBehaviour:
     - rid: 4568626464216317993
       type: {class: GiveXP, ns: AchievementSystem, asm: Assembly-CSharp}
       data:
-        xpPerLevel: 4
+        xpPerLevel: 2
     - rid: 4568626464216317994
       type: {class: Gold, ns: AchievementSystem, asm: Assembly-CSharp}
       data:
