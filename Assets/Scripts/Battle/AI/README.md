@@ -132,6 +132,13 @@ wall gap.
 - **Aggro and leash ranges** decide how easily detachments are baited. Test by deliberately pulling single troops away.
 - **Skirmish minimum range** must be well below the archer's range × preferred range fraction, or it will fall back as
   soon as it arrives (range 20 × 0.85 = 17, so 6 leaves room).
+- **Skirmish fall back never goes through the threat.** A skirmisher locked in melee does not fall back: it fights back
+  and morale decides. If the straight way to the fallback point passes within the clearance of the nearest enemy (half
+  of each troop's frontage + **Route Clearance Margin**, default 2), it first moves **Escape Distance** (default 8) away
+  from the enemy, kept inside **Max Distance From Fallback** and on the side from which the way on is clear, then heads
+  for the fallback point once the way is clear. Walking out to firing range never passes through an enemy either (it
+  stands and shoots instead). Nothing changes when the way is clear. The escape spot is drawn as a yellow line in the
+  Gizmos.
 - **Detachment broken threshold**: a detachment is broken when the share still fighting is *below* the threshold. At
   0.5, a two-troop detachment with one troop routed is not yet broken.
 - Tick rates and reflex settings (brace radius, hold arrival radius) are on `AIDirector`.

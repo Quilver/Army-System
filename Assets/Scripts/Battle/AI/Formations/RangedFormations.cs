@@ -24,17 +24,42 @@ namespace LeveragedWars.Battle.AI
         [Tooltip("Never stand further than this from the fallback point (units).")]
         public float maxDistanceFromFallback = 30f;
 
+        [Tooltip("Gap (units) a fall-back route keeps from the nearest enemy, on top of both troops' half-widths. A route " +
+                 "passing closer goes round the enemy by an escape spot first.")]
+        public float routeClearanceMargin = 2f;
+
+        [Tooltip("When the way to the fallback point is blocked by the enemy, first move this far away from it (units), " +
+                 "within the leash.")]
+        public float escapeDistance = 8f;
+
         public override Formation Create() => new SkirmishFormation(this);
     }
 
     /// <summary>
     /// Ranged harassment: advance to firing range of the nearest enemy, fall back to a safe point
     /// when enemies close in, then repeat.
+    /// Falling back never routes through or into the threat (the nearest enemy): a troop locked in melee stands and
+    /// fights (morale decides), and when the straight route to the fallback point passes within the clearance of the
+    /// threat (both troops' half-widths + Route Clearance Margin), the troop first moves Escape Distance away from it,
+    /// inside the leash and on the side that keeps clear of it, then heads for the fallback point once the way is clear.
+    /// Walking out to firing range never passes through an enemy either: the troop stands and shoots instead.
     /// </summary>
     public sealed class SkirmishFormation : Formation
     {
+        // Headings tried for the escape spot, in degrees from straight away from the threat, in order of preference.
+        static readonly float[] EscapeHeadingsDegrees = { 0f, 45f, -45f, 90f, -90f };
+        // Once escaping, the route must clear the threat by this much more (units) before the troop heads for the
+        // fallback point again, so it does not flicker between the two at the edge of the clearance.
+        const float RouteReleaseMargin = 1f;
+        // Inside the clearance, a route counts as pressing into the threat only if it comes this much closer (units)
+        // than the troop stands now; walking straight away from a close threat is allowed.
+        const float ApproachTolerance = 0.1f;
+
+        enum Withdrawal { Holding, Travelling, Fighting }
+
         readonly SkirmishDefinition def;
         readonly HashSet<AITroopAgent> fallingBack = new HashSet<AITroopAgent>();
+        readonly Dictionary<AITroopAgent, Vector3> escapeSpots = new Dictionary<AITroopAgent, Vector3>();
         Vector3 fallback;
         Vector3 fallbackFacing;
 
@@ -55,7 +80,9 @@ namespace LeveragedWars.Battle.AI
                 // Melee troops, and ranged troops out of ammunition, stay at the fallback point.
                 if (!a.Troop.IsRanged || !a.Troop.HasAmmo)
                 {
-                    if (ReturnToFallback(a, toFallback, faceEnemy)) retreating = true;
+                    Withdrawal w = Withdraw(a, nearest, faceEnemy);
+                    if (w == Withdrawal.Travelling) retreating = true;
+                    else if (w == Withdrawal.Fighting) engaged = true;
                     continue;
                 }
 
@@ -66,24 +93,34 @@ namespace LeveragedWars.Battle.AI
 
                 if (fallingBack.Contains(a))
                 {
-                    if (ReturnToFallback(a, toFallback, faceEnemy)) retreating = true;
-                    else if (a.Issued.Kind == AIOrderKind.Attack) engaged = true;
+                    Withdrawal w = Withdraw(a, nearest, faceEnemy);
+                    if (w == Withdrawal.Travelling) retreating = true;
+                    else if (w == Withdrawal.Fighting || a.Issued.Kind == AIOrderKind.Attack) engaged = true;
                     continue;
                 }
 
                 IAITroop target = Blackboard.NearestOpponent(fallback, def.maxDistanceFromFallback + a.Troop.MaxRange);
                 if (target == null)
                 {
-                    if (ReturnToFallback(a, toFallback, fallbackFacing)) moving = true;
+                    Withdrawal w = Withdraw(a, nearest, fallbackFacing);
+                    if (w == Withdrawal.Travelling) moving = true;
+                    else if (w == Withdrawal.Fighting) engaged = true;
                     continue;
                 }
 
                 // Stand at preferred range from the target, but no further than the leash from the fallback point.
+                escapeSpots.Remove(a);
                 Vector3 away = AIGeometry.Direction(target.Position, a.Position, -fallbackFacing);
-                Vector3 spot = target.Position + away * (a.Troop.MaxRange * def.preferredRangeFraction);
-                Vector3 offset = AIGeometry.Flat(spot - fallback);
-                if (offset.magnitude > def.maxDistanceFromFallback)
-                    spot = fallback + offset.normalized * def.maxDistanceFromFallback;
+                Vector3 spot = AIGeometry.ClampToCircle(target.Position + away * (a.Troop.MaxRange * def.preferredRangeFraction),
+                    fallback, def.maxDistanceFromFallback);
+
+                // The leash can put the spot on the far side of an enemy: never walk out through it, stand and shoot.
+                if (nearest != null && RouteBlocked(a, nearest, spot, 0f))
+                {
+                    a.Hold(a.Position, faceEnemy);
+                    if (a.Troop.IsInMelee || a.Issued.Kind == AIOrderKind.Attack) engaged = true;
+                    continue;
+                }
 
                 Vector3 face = AIGeometry.Direction(spot, target.Position, fallbackFacing);
                 if (FormationUtility.MoveOrHold(a, spot, face, false, ArrivalRadius)) moving = true;
@@ -96,10 +133,52 @@ namespace LeveragedWars.Battle.AI
                 : DetachmentState.Waiting;
         }
 
-        /// <summary>Falls back to the safe point, or holds there once arrived. Returns true while travelling.</summary>
-        bool ReturnToFallback(AITroopAgent agent, float toFallback, Vector3 facing)
+        /// <summary>
+        /// Goes back to the safe point without routing through or into the threat. In melee: stand and fight. Route to
+        /// the fallback point blocked by the threat: head for an escape spot first. Otherwise fall back, or hold once there.
+        /// </summary>
+        Withdrawal Withdraw(AITroopAgent agent, IAITroop threat, Vector3 facing)
         {
-            if (toFallback > ArrivalRadius)
+            // Turning away in melee only presses the troop into its attacker: fight back and let morale decide.
+            if (agent.Troop.IsInMelee)
+            {
+                escapeSpots.Remove(agent);
+                IAITroop opponent = agent.Troop.MeleeOpponent;
+                if (FormationUtility.IsValidTarget(opponent)) agent.Attack(opponent);
+                else agent.Hold(agent.Position, facing);
+                return Withdrawal.Fighting;
+            }
+
+            bool escaping = escapeSpots.ContainsKey(agent);
+            if (threat == null || !RouteBlocked(agent, threat, fallback, escaping ? RouteReleaseMargin : 0f))
+            {
+                escapeSpots.Remove(agent);
+                return ReturnToFallback(agent, facing) ? Withdrawal.Travelling : Withdrawal.Holding;
+            }
+
+            // Keep the escape spot chosen earlier while it is still short of reached and its way stays clear.
+            if (!escapeSpots.TryGetValue(agent, out Vector3 spot)
+                || AIGeometry.FlatDistance(agent.Position, spot) <= ArrivalRadius
+                || RouteBlocked(agent, threat, spot, 0f))
+            {
+                if (!TryFindEscapeSpot(agent, threat, out spot))
+                {
+                    // Cornered against the leash: face the threat where it stands rather than walk into it.
+                    escapeSpots.Remove(agent);
+                    agent.Hold(agent.Position, AIGeometry.Direction(agent.Position, threat.Position, facing));
+                    return Withdrawal.Holding;
+                }
+                escapeSpots[agent] = spot;
+            }
+
+            agent.FallBack(spot);
+            return Withdrawal.Travelling;
+        }
+
+        /// <summary>Falls back to the safe point, or holds there once arrived. Returns true while travelling.</summary>
+        bool ReturnToFallback(AITroopAgent agent, Vector3 facing)
+        {
+            if (AIGeometry.FlatDistance(agent.Position, fallback) > ArrivalRadius)
             {
                 agent.FallBack(fallback);
                 return true;
@@ -108,13 +187,68 @@ namespace LeveragedWars.Battle.AI
             return false;
         }
 
-        public override void Exit() => fallingBack.Clear();
+        /// <summary>How far (units) a route keeps from the threat: both troops' half-widths plus the margin.</summary>
+        float Clearance(AITroopAgent agent, IAITroop threat) =>
+            (agent.Troop.Frontage + threat.Frontage) * 0.5f + def.routeClearanceMargin;
+
+        /// <summary>
+        /// True when walking straight from the troop to the destination passes within the clearance (plus extra) of the
+        /// threat, i.e. through it or into it. A route that only keeps or opens the current distance is never blocked.
+        /// </summary>
+        bool RouteBlocked(AITroopAgent agent, IAITroop threat, Vector3 destination, float extra)
+        {
+            float closest = AIGeometry.DistanceToSegment(threat.Position, agent.Position, destination);
+            float now = AIGeometry.FlatDistance(agent.Position, threat.Position);
+            return closest < Clearance(agent, threat) + extra && closest < now - ApproachTolerance;
+        }
+
+        /// <summary>
+        /// A spot Escape Distance away from the threat, clamped to the leash, whose way there keeps clear of the threat.
+        /// Prefers spots from which the way on to the fallback point is clear (the nearest to it); otherwise the spot
+        /// furthest from the threat. False when every heading is blocked.
+        /// </summary>
+        bool TryFindEscapeSpot(AITroopAgent agent, IAITroop threat, out Vector3 best)
+        {
+            best = agent.Position;
+            bool found = false, bestClear = false;
+            float bestScore = float.NegativeInfinity;
+            float clearance = Clearance(agent, threat);
+            Vector3 away = AIGeometry.Direction(threat.Position, agent.Position, -fallbackFacing);
+
+            foreach (float turn in EscapeHeadingsDegrees)
+            {
+                Vector3 candidate = AIGeometry.ClampToCircle(agent.Position + AIGeometry.Rotate(away, turn) * def.escapeDistance,
+                    fallback, def.maxDistanceFromFallback);
+                if (AIGeometry.FlatDistance(agent.Position, candidate) <= ArrivalRadius) continue;
+                if (RouteBlocked(agent, threat, candidate, 0f)) continue;
+
+                bool clear = AIGeometry.DistanceToSegment(threat.Position, candidate, fallback) >= clearance;
+                float score = clear ? -AIGeometry.FlatDistance(candidate, fallback) : AIGeometry.FlatDistance(candidate, threat.Position);
+                if (found && ((bestClear && !clear) || (bestClear == clear && score <= bestScore))) continue;
+                found = true;
+                bestClear = clear;
+                bestScore = score;
+                best = candidate;
+            }
+            return found;
+        }
+
+        public override void Exit()
+        {
+            fallingBack.Clear();
+            escapeSpots.Clear();
+        }
 
         public override void DrawGizmos()
         {
             Gizmos.color = new Color(1f, 0.9f, 0.2f, 0.8f);
             Gizmos.DrawWireCube(fallback, Vector3.one);
             AIGizmos.Circle(fallback, def.maxDistanceFromFallback);
+            foreach (KeyValuePair<AITroopAgent, Vector3> escape in escapeSpots)
+            {
+                Gizmos.DrawLine(escape.Key.Position, escape.Value);
+                Gizmos.DrawWireSphere(escape.Value, 0.5f);
+            }
         }
     }
 
