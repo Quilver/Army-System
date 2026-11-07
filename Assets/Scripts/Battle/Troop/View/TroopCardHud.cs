@@ -12,7 +12,8 @@ using UnityEngine;
 //   - the characters' portraits side by side; clicking a portrait shows or hides that character's side panel;
 //   - Morale bar (blue, Effective Morale / initial, led by the Morale icon) and Shock bar (red) below it, on the same
 //     scale, so the troop breaks when the red bar passes the blue one (spec §5.3); a white tick on the Shock bar marks
-//     the current break point;
+//     the current break point. The Shock label is drawn after the tick, at the bar's left end, or at its right end when
+//     the tick would fall on the label (low morale puts the tick at the left);
 //   - formation state.
 // Side panel (one per character whose portrait was clicked; hidden by default): character name, class icon (the class
 // name when the class has no icon), living / starting soldiers, one column of soldier stats (HP, Defence, Armour,
@@ -47,6 +48,10 @@ public sealed class TroopCardHud
     const float ArmourPartGap = 12f;             // between the Deflect, Bruise and Bleed groups
     const float TooltipPadding = 6f;
     const float TooltipOffset = 16f;
+    const float BarTextPadding = 8f;             // between a bar's label and the end of the bar it sits at
+    const float BreakTickWidth = 2f;
+    const float LabelTickClearance = 6f;         // the tick must be this far past the label for the label to stay left
+    const float NoTick = -1f;
     const float LegacySearchInterval = 1f;
     const string LegacyCardObjectName = "SelectedUnit";
 
@@ -81,7 +86,7 @@ public sealed class TroopCardHud
     float _scale = -1f;
     float _nextLegacySearch;
     string _tooltip;                         // name of the icon under the cursor, drawn after the cards
-    GUIStyle _title, _sideTitle, _caption, _cellCaption, _value, _body, _bodyValue, _barText, _tooltipStyle;
+    GUIStyle _title, _sideTitle, _caption, _cellCaption, _value, _body, _bodyValue, _barText, _barTextRight, _tooltipStyle;
 
     // Called every frame after the hover troop is known. mouseScreen has its origin at the bottom-left.
     public void Update(IReadOnlyList<Troop> selected, Troop hovered, Vector2 mouseScreen)
@@ -216,9 +221,8 @@ public sealed class TroopCardHud
             moraleIcon, GameIcons.NameOf(CharacterStat.Morale));
         y += barHeight + BarGap * s;
         var shockBar = new Rect(x, y, inner, barHeight);
-        DrawBar(shockBar, troop.Shock / initial, ShockColor, "Shock  " + troop.Shock.ToString("0"));
-        float breakX = shockBar.x + shockBar.width * Mathf.Clamp01(morale / initial);
-        Fill(new Rect(breakX - s, shockBar.y, 2f * s, shockBar.height), BreakTickColor);
+        DrawBar(shockBar, troop.Shock / initial, ShockColor, "Shock  " + troop.Shock.ToString("0"),
+            tickFraction: morale / initial);
         y += barHeight + Gap * s;
 
         var formationRow = new Rect(x, y, inner, LineHeight * s);
@@ -462,7 +466,9 @@ public sealed class TroopCardHud
         _bodyValue = Style(21, FontStyle.Bold, TextAnchor.MiddleRight, Color.white);
         _cellCaption = Style(18, FontStyle.Normal, TextAnchor.MiddleCenter, CaptionColor);
         _barText = Style(18, FontStyle.Bold, TextAnchor.MiddleLeft, Color.white);
-        _barText.padding = new RectOffset(Mathf.RoundToInt(8f * scale), 0, 0, 0);
+        _barText.padding = new RectOffset(Mathf.RoundToInt(BarTextPadding * scale), 0, 0, 0);
+        _barTextRight = Style(18, FontStyle.Bold, TextAnchor.MiddleRight, Color.white);
+        _barTextRight.padding = new RectOffset(0, Mathf.RoundToInt(BarTextPadding * scale), 0, 0);
         _tooltipStyle = Style(18, FontStyle.Normal, TextAnchor.MiddleLeft, Color.white);
     }
 
@@ -484,7 +490,10 @@ public sealed class TroopCardHud
     }
 
     // A track with a filled part (fraction 0-1 of its width) and a label over it, led by an icon when one is given.
-    void DrawBar(Rect rect, float fraction, Color color, string label, Sprite icon = null, string iconName = null)
+    // With a tick (tickFraction 0-1 of the width; NoTick for none) a white tick is drawn there, then the label: at the
+    // left end, or at the right end when the tick would fall on it (LabelAtRightEnd).
+    void DrawBar(Rect rect, float fraction, Color color, string label, Sprite icon = null, string iconName = null,
+        float tickFraction = NoTick)
     {
         Fill(rect, CellColor);
         Fill(new Rect(rect.x, rect.y, rect.width * Mathf.Clamp01(fraction), rect.height), color);
@@ -496,8 +505,25 @@ public sealed class TroopCardHud
             Icon(iconRect, icon, iconName);
             labelRect.xMin = iconRect.xMax;
         }
-        GUI.Label(labelRect, label, _barText);
+        GUIStyle labelStyle = _barText;
+        if (tickFraction >= 0f)
+        {
+            float tickX = rect.x + rect.width * Mathf.Clamp01(tickFraction);
+            float tickWidth = BreakTickWidth * _scale;
+            Fill(new Rect(tickX - 0.5f * tickWidth, rect.y, tickWidth, rect.height), BreakTickColor);
+            _content.text = label;
+            float labelWidth = _barText.CalcSize(_content).x;   // includes the left padding
+            if (LabelAtRightEnd(tickX - labelRect.xMin, labelWidth, LabelTickClearance * _scale))
+                labelStyle = _barTextRight;
+        }
+        GUI.Label(labelRect, label, labelStyle);
     }
+
+    // True when a bar's label, normally at its left end and labelWidth wide, would be covered by a tick tickOffset from
+    // the label's left edge (within clearance past the label), so the label goes to the bar's right end. Internal for
+    // tests.
+    internal static bool LabelAtRightEnd(float tickOffset, float labelWidth, float clearance) =>
+        tickOffset <= labelWidth + clearance;
 
     // A square icon filling the height of a row of the given height, at the row's left edge.
     Rect IconRect(float x, float y, float height)
