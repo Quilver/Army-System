@@ -5,7 +5,9 @@ using UnityEngine;
 // SoldierSteering). The shape follows the troop's FormationMode:
 //   Line / Chain  the battle line. Linked ends are pulled in by the joint clearance so soldiers stay off the joint.
 //                 Soldiers are also spread evenly along the line so it fills its length (SoldierSteering line fill).
-//   Column        a trailing lane behind the pivot while marching, with lanes added as the troop grows.
+//   Column        a column trailing the pivot while marching: up to LineGeometry.MaxColumnLanes lanes, as many rows as
+//                 the soldiers need, always longer than wide (LineGeometry column helpers, SU-120). Soldiers are spread
+//                 along it row by row (SoldierSteering column fill).
 //   Idle          a disc of BlobRadiusScale x TroopRadius around the pivot (zero-length core).
 //   Rout          a wide disc: the soldiers scatter as the troop flees.
 // Chargers seek their enemy and followers keep near their charger instead of following the field.
@@ -17,24 +19,29 @@ public readonly struct FieldShape
     // Ranks of a battle line (Line / Chain), used to spread the soldiers along it (SoldierSteering line fill).
     // Zero for every other shape.
     public readonly int LineRanks;
+    // Lanes of a marching column, used to spread the soldiers along it row by row (SoldierSteering column fill, SU-120).
+    // Zero for every other shape.
+    public readonly int ColumnLanes;
 
     public bool IsLine => LineRanks > 0;
+    public bool IsColumn => ColumnLanes > 0;
 
-    public FieldShape(Vector2 start, Vector2 end, float halfWidth, int lineRanks = 0)
+    public FieldShape(Vector2 start, Vector2 end, float halfWidth, int lineRanks = 0, int columnLanes = 0)
     {
         Start = start;
         End = end;
         HalfWidth = halfWidth;
         LineRanks = lineRanks;
+        ColumnLanes = columnLanes;
     }
 }
 
 public sealed class SoldierFieldPlanner
 {
-    // Column lane: starts just behind the pivot and runs back for this fraction of the troop radius. Shared with the
-    // troop outline (TroopOutline), which draws the same lane.
-    public const float ColumnTrailFraction = 0.05f;
-    public const float ColumnLengthFraction = 0.8f;
+    // The column's core starts this fraction of the troop radius behind the pivot (LineGeometry.ColumnTrailFraction).
+    // Its length and width come from the soldier count and frontage (LineGeometry column helpers, SU-120), shared with
+    // the troop outline (TroopOutline), which draws the same column.
+    public const float ColumnTrailFraction = LineGeometry.ColumnTrailFraction;
     public const float MovingSpeedSquared = 0.0025f;
     // A follower keeps within this fraction of SupportRadius of its charger.
     const float FollowerSpacingFraction = 0.6f;
@@ -107,14 +114,22 @@ public sealed class SoldierFieldPlanner
             LineGeometry.Ranks(livingCount, length));
     }
 
-    // Lanes are added as the troop grows, so the column stays within the troop radius.
     FieldShape ColumnShape(int livingCount)
     {
-        float radius = _troop.Radius;
-        Vector2 heading = _troop.transform.InverseTransformVector(_troop.PivotVelocity).normalized;
-        float trail = radius * ColumnTrailFraction;
-        float length = radius * ColumnLengthFraction;
-        return new FieldShape(-heading * trail, -heading * (trail + length), LineGeometry.RankHalfWidth(length, livingCount));
+        Vector2 heading = _troop.transform.InverseTransformVector(_troop.PivotVelocity);
+        return Column(heading, _troop.Radius, _troop.Frontage, livingCount);
+    }
+
+    // The marching column in troop-local space (spec §3.2, SU-120): a core trailing the pivot along -heading, as long as
+    // the column's rows and as wide as its lanes (LineGeometry column helpers), so it is longer than it is wide for every
+    // troop size. It may reach past the troop radius; SoldierMotionConstraints widens the clamp to it.
+    public static FieldShape Column(Vector2 heading, float troopRadius, int frontage, int livingCount)
+    {
+        Vector2 forward = heading.sqrMagnitude > 1e-8f ? heading.normalized : Vector2.right;
+        float trail = LineGeometry.ColumnTrail(troopRadius);
+        float length = LineGeometry.ColumnLength(frontage, livingCount);
+        return new FieldShape(-forward * trail, -forward * (trail + length), LineGeometry.ColumnHalfWidth(frontage, livingCount),
+            columnLanes: LineGeometry.ColumnLanes(frontage, livingCount));
     }
 
     FieldShape BlobShape()

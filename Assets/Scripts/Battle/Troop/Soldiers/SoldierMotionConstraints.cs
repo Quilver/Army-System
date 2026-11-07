@@ -1,14 +1,22 @@
 using UnityEngine;
 
 // Keeps soldiers inside the troop radius and stops them, and the troop pivot, moving through terrain obstacles.
+// A marching column (SU-120) may be longer than the troop radius, so while the troop marches the clamp reaches the
+// column's tail; once it stops, the reach shrinks back at ColumnReachShrinkSpeed so the tail walks in rather than
+// being snapped to the radius.
 public sealed class SoldierMotionConstraints
 {
     const float CollisionSkin = 0.005f;
+    // World units per second the column's clamp reach shrinks by after the march ends. Below a soldier's walking speed
+    // (Move 5 x SpeedUnitsPerStatPoint 0.6 = 3), so soldiers walking in from the tail are not overtaken by the clamp.
+    public const float ColumnReachShrinkSpeed = 1.5f;
     readonly Troop _troop;
     readonly LayerMask _obstacleMask;
     readonly ContactFilter2D _obstacleFilter;
     readonly RaycastHit2D[] _obstacleHits = new RaycastHit2D[4];
     readonly RaycastHit2D[] _pivotHits = new RaycastHit2D[4];
+    // Extra clamp radius of a marching column (0 when not marching and fully shrunk).
+    float _columnReach;
 
     public SoldierMotionConstraints(Troop troop, LayerMask obstacleMask)
     {
@@ -38,14 +46,44 @@ public sealed class SoldierMotionConstraints
             if (soldier.IsAlive) ConstrainToRadius(soldier);
     }
 
+    // Called once per soldier step (SoldierSteering.Simulate). While the troop marches in Column (the condition under
+    // which SoldierFieldPlanner gives the column shape) the reach is the column's tail plus one LineSpacing of slack for
+    // stragglers, widened so that the tail is also inside the soft radius pull (SoldierSteering.SoftRadiusFraction);
+    // otherwise it shrinks toward zero (StepColumnReach).
+    public void TickColumnReach(float deltaTime)
+    {
+        _columnReach = StepColumnReach(_columnReach, ColumnReachTarget(), deltaTime);
+    }
+
+    float ColumnReachTarget()
+    {
+        if (_troop.FormationMode != FormationMode.Column
+            || _troop.PivotVelocity.sqrMagnitude <= SoldierFieldPlanner.MovingSpeedSquared)
+            return 0f;
+        float tail = LineGeometry.ColumnReach(_troop.Radius, _troop.Frontage, _troop.LivingSoldierCount);
+        return (tail + TroopConstants.LineSpacing) / SoldierSteering.SoftRadiusFraction;
+    }
+
+    // The column clamp reach (pure): grows to the target at once, shrinks toward it at ColumnReachShrinkSpeed.
+    public static float StepColumnReach(float current, float target, float deltaTime)
+    {
+        if (target >= current) return target;
+        return Mathf.Max(target, current - ColumnReachShrinkSpeed * Mathf.Max(0f, deltaTime));
+    }
+
+    // The column clamp reach this frame (0 when the troop has not marched recently).
+    public float ColumnReach => _columnReach;
+
     // The clamp radius. A stretched line (longer than the troop is wide) widens it to reach its line points: soldiers of a
-    // linked, stretched line may sit outside TroopRadius (Q-11 option a, working assumption). A routed troop scatters.
+    // linked, stretched line may sit outside TroopRadius (Q-11 option a, working assumption). A marching column widens it
+    // to the column's tail (SU-120), and it eases back after the march. A routed troop scatters.
     public float EffectiveRadius
     {
         get
         {
             float radius = _troop.Radius;
             if (_troop.IsRouted) return radius * TroopTuning.Active.RoutScatterRadiusScale;
+            radius = Mathf.Max(radius, _columnReach);
             TroopFormationData formation = _troop.Formation;
             if (formation == null) return radius;
             Vector2 pivot = _troop.transform.position;

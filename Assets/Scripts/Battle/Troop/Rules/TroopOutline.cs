@@ -4,7 +4,8 @@ using UnityEngine;
 // are steered into (SoldierFieldPlanner), not from where each soldier happens to stand, so it does not pulse as soldiers
 // sway, jostle and charge:
 //   Line / Chain  the battle line from line point to line point, as deep as its ranks (LineGeometry.RankHalfWidth).
-//   Column        the marching lane trailing the pivot, along a smoothed march heading.
+//   Column        the marching column trailing the pivot, along a smoothed march heading. Its length and width are the
+//                 soldier field's (LineGeometry column helpers, SU-120), so it hugs the column and is longer than wide.
 //   Idle          the blob disc (BlobRadiusScale x TroopRadius).
 //   Rout          the scatter disc.
 // Each is padded by one soldier radius. The outline is kept relative to the pivot, so a marching troop's outline moves
@@ -73,7 +74,7 @@ public sealed class TroopOutline
                 if (formation != null) return Line(formation.Start, formation.End, formation.Facing, living);
                 break;
             case FormationMode.Column:
-                if (_marching) return Column(pivot, _heading, troop.Radius, living);
+                if (_marching) return Column(pivot, _heading, troop.Radius, troop.Frontage, living);
                 break;
         }
         return Blob(pivot, troop.Radius * tuning.BlobRadiusScale, troop.Facing);
@@ -88,15 +89,20 @@ public sealed class TroopOutline
         return TroopFootprint.Rect(start, end, facing, LineGeometry.RankHalfWidth(length, livingSoldiers) + Padding);
     }
 
-    // The marching lane: a capsule trailing the pivot along -heading, with its long axis on the facing so that a line
-    // turning into a column (or back) morphs without spinning.
-    public static TroopFootprint Column(Vector2 pivot, Vector2 heading, float troopRadius, int livingSoldiers)
+    // The marching column for a troop whose frontage comes from its soldier count (TroopFrontageRule, SU-117).
+    public static TroopFootprint Column(Vector2 pivot, Vector2 heading, float troopRadius, int livingSoldiers) =>
+        Column(pivot, heading, troopRadius, TroopFrontageRule.ForSoldierCount(livingSoldiers), livingSoldiers);
+
+    // The marching column: a capsule around the soldier field's column core (SoldierFieldPlanner.Column), trailing the
+    // pivot along -heading, with its long axis on the facing so that a line turning into a column (or back) morphs
+    // without spinning. Its width is the column's lanes (LineGeometry.ColumnHalfWidth), not the troop radius (SU-120).
+    public static TroopFootprint Column(Vector2 pivot, Vector2 heading, float troopRadius, int frontage, int livingSoldiers)
     {
         Vector2 forward = heading.sqrMagnitude > 1e-8f ? heading.normalized : Vector2.right;
-        float trail = troopRadius * SoldierFieldPlanner.ColumnTrailFraction;
-        float length = troopRadius * SoldierFieldPlanner.ColumnLengthFraction;
+        float trail = LineGeometry.ColumnTrail(troopRadius);
+        float length = LineGeometry.ColumnLength(frontage, livingSoldiers);
         Vector2 center = pivot - forward * (trail + length * 0.5f);
-        float laneHalfWidth = LineGeometry.RankHalfWidth(length, livingSoldiers) + Padding;
+        float laneHalfWidth = LineGeometry.ColumnHalfWidth(frontage, livingSoldiers) + Padding;
         return new TroopFootprint(FootprintKind.Capsule, center, forward, 0f, length * 0.5f, laneHalfWidth);
     }
 

@@ -7,7 +7,8 @@ using UnityEngine;
 //     the troop's shape and spreads away from crowded neighbours, so the shape fills evenly without slots. Separation
 //     keeps soldiers apart, and ResolveMinimumSeparation enforces the minimum when they press together.
 //   - In a battle line (Line / Chain) the field also spreads soldiers evenly along the line, so it fills its whole
-//     length instead of bunching at the middle (see PlanLineFill).
+//     length instead of bunching at the middle (see PlanLineFill). A marching column is filled the same way, row by
+//     row from the pivot back, so the soldiers form the column instead of a blob (SU-120).
 // No soldier is pulled toward another.
 //   - Composite troops (some soldiers with ranged weapons, some without) in a battle line (Line / Chain) sort themselves
 //     by rank (Decisions D-55): when
@@ -38,8 +39,9 @@ public sealed class SoldierSteering
     const int MinimumSeparationPasses = 3;
     // Line fill: pull toward the soldier's place along the line, relative to the attraction strength.
     const float LineFillGain = 0.8f;
-    // Soldiers are pulled back inside this fraction of the troop radius.
-    const float SoftRadiusFraction = 0.92f;
+    // Soldiers are pulled back inside this fraction of the troop radius (also sizes the column clamp reach,
+    // SoldierMotionConstraints.TickColumnReach).
+    internal const float SoftRadiusFraction = 0.92f;
     // Return after a charge (SU-43): the soldier is home within this distance of its formation band. The return gives up
     // after ReturnTimeoutSeconds so a soldier that cannot reach its place does not stay fast and unclamped.
     const float ReturnArrivalSlack = TroopConstants.LineSpacing;
@@ -72,6 +74,7 @@ public sealed class SoldierSteering
     public void Simulate(float deltaTime)
     {
         _random = _troop.TroopRandom;
+        _constraints.TickColumnReach(deltaTime);
         List<SoldierAgentState> soldiers = _troop.Roster.SoldierList;
         _grid.Rebuild(soldiers);
         while (_nextPositions.Count < soldiers.Count)
@@ -243,10 +246,14 @@ public sealed class SoldierSteering
     // Composite troops (D-55): the ranged and the melee soldiers are filled separately, each group spread evenly over
     // the whole length (with as many ranks as it needs for the line's files), so both kinds are spread along the line
     // and the rank plan only sorts them front to back. Without this a group that ended up at one end stays there.
+    // Column fill (SU-120): a marching column is filled the same way with files of ColumnLanes soldiers (its rows), the
+    // first row at the core's start (behind the pivot) and the last at its end, since the column's core runs from the
+    // first row's soldiers to the last's (LineGeometry.ColumnLength). The rank plan is off in a column, so composite
+    // troops fill it as one group.
     void PlanLineFill(List<SoldierAgentState> soldiers, FieldShape shape)
     {
         for (int i = 0; i < soldiers.Count; i++) _fillTargets[i] = float.NaN;
-        if (!shape.IsLine || _troop.IsRouted) return;
+        if (!(shape.IsLine || shape.IsColumn) || _troop.IsRouted) return;
 
         Vector2 segment = shape.End - shape.Start;
         float length = segment.magnitude;
@@ -266,6 +273,12 @@ public sealed class SoldierSteering
         int count = _fillOrder.Count + _fillOrderShooters.Count;
         if (count == 0) return;
 
+        if (shape.IsColumn)
+        {
+            _fillOrder.AddRange(_fillOrderShooters);
+            AssignFill(soldiers, _fillOrder, shape.ColumnLanes, length, spanEnds: true);
+            return;
+        }
         int ranks = Mathf.Max(1, shape.LineRanks);
         if (_fillOrderShooters.Count == 0)
         {
@@ -280,21 +293,31 @@ public sealed class SoldierSteering
     // Ranks a group needs so that it spans no more files than the line has.
     static int GroupRanks(int groupCount, int lineFiles) => Mathf.Max(1, (groupCount + lineFiles - 1) / Mathf.Max(1, lineFiles));
 
-    // Orders the group along the line and spreads it over the whole length in files of `ranks` soldiers.
-    void AssignFill(List<SoldierAgentState> soldiers, List<int> order, int ranks, float length)
+    // Orders the group along the line and spreads it over the whole length in files of `ranks` soldiers. Files sit in
+    // the middle of equal shares of the length, or with spanEnds (column rows) from one end of the core to the other.
+    void AssignFill(List<SoldierAgentState> soldiers, List<int> order, int ranks, float length, bool spanEnds = false)
     {
         int count = order.Count;
         if (count == 0) return;
+        ranks = Mathf.Max(1, ranks);
         order.Sort(_byAlong);
         int files = (count + ranks - 1) / ranks;
-        float fileSpacing = length / files;
         for (int k = 0; k < count; k++)
         {
             int index = order[k];
             var soldier = soldiers[index];
             if (_seeks[index] || soldier.IsRetreatTracking) continue;
-            _fillTargets[index] = (k / ranks + 0.5f) * fileSpacing;
+            _fillTargets[index] = FillPlace(k / ranks, files, length, spanEnds);
         }
+    }
+
+    // Place along the core of file `file` of `files`: the middle of its share of the length, or with spanEnds evenly
+    // from 0 to length (a single file in the middle).
+    internal static float FillPlace(int file, int files, float length, bool spanEnds)
+    {
+        if (!spanEnds) return (file + 0.5f) * (length / Mathf.Max(1, files));
+        if (files <= 1) return length * 0.5f;
+        return file * length / (files - 1);
     }
 
     static Vector2 NearestOnSegment(Vector2 point, Vector2 start, Vector2 end)

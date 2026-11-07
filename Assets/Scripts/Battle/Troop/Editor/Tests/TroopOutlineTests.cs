@@ -34,6 +34,8 @@ public sealed class TroopOutlineTests
         Assert.AreEqual(0f, column.Center.y, 1e-4f);
         Assert.IsTrue(column.Contains(new Vector2(-4f, 0f)));
         Assert.IsFalse(column.Contains(new Vector2(3f, 0f)));
+        // SU-120: 30 soldiers march 3 lanes wide, so the outline does not reach far to the side of the column.
+        Assert.IsFalse(column.Contains(new Vector2(-4f, 3f)), "no wider than its lanes");
     }
 
     [Test]
@@ -133,6 +135,8 @@ public sealed class TroopOutlineTests
         Assert.Greater(TroopOutlinePolygon.SignedArea(points), 0f);
     }
 
+    // SU-120: the column's length comes from its rows (LineGeometry.ColumnLength), not from the troop radius; the radius
+    // only sets how far behind the pivot it starts.
     [Test]
     public void Polygon_OfAColumn_SpansTheLane()
     {
@@ -147,7 +151,7 @@ public sealed class TroopOutlineTests
             max = Mathf.Max(max, point.x);
         }
         float trail = 10f * SoldierFieldPlanner.ColumnTrailFraction;
-        float length = 10f * SoldierFieldPlanner.ColumnLengthFraction;
+        float length = LineGeometry.ColumnLength(TroopFrontageRule.ForSoldierCount(1), 1);
         Assert.AreEqual(-(trail + length) - column.Rounding, min, 1e-3f);
         Assert.AreEqual(-trail + column.Rounding, max, 1e-3f);
     }
