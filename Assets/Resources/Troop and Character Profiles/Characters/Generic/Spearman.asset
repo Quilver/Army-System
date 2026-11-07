@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 44a895c451f14ddba52eb35252a62001, type: 3}
   m_Name: Spearman
   m_EditorClassIdentifier: 
-  _characterName: Borgo
+  _characterName: Spearmen
   _class: {fileID: 11400000, guid: 4381aca2d879b6343a959b19cc3df1f3, type: 2}
   _className: 
   _portrait: {fileID: -2755132360896767358, guid: 5c30f96a06545a0439002bde0d30a40a,
