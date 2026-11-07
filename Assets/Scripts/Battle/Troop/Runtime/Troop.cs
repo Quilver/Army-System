@@ -225,7 +225,14 @@ public sealed class Troop : MonoBehaviour
     // DisorderSeconds. It can still fight and shoot.
     public bool IsDisordered => _disorderRemaining > 0f && !IsRouted;
     public float DisorderRemaining => IsDisordered ? _disorderRemaining : 0f;
-    public Vector2 RoutFleeDirection => _rout != null ? _rout.FleeDirection : Vector2.zero;
+    // While routed: the way the troop runs (along its NavMesh flee path, else away from the nearest enemy).
+    public Vector2 RoutFleeDirection => _rout != null ? _rout.MoveDirection : Vector2.zero;
+    // The rout's flee goal on the NavMesh (RoutFleePlanner); false without a NavMesh, when the flight is a straight line.
+    internal bool TryGetRoutFleeGoal(out Vector2 goal)
+    {
+        goal = _rout != null ? _rout.FleeGoal : Vector2.zero;
+        return _rout != null && _rout.HasFleeGoal;
+    }
     // The enemy troop whose hit last damaged this troop, whether it was a projectile, and when (Time.time). Null / -inf
     // until the troop is first hurt by a known attacker (SU-114).
     public Troop LastAttacker => _lastAttacker;
@@ -805,6 +812,7 @@ public sealed class Troop : MonoBehaviour
     {
         if (!IsRouted) return;
         _rout.UpdateFleeDirection(AwayFromNearestEnemy());
+        _rout.SteerAlongPath(_mover.PivotSpeed, deltaTime);
         if (_rout.Tick(deltaTime, Tuning.RoutDespawnSeconds)) DestroyTroop();
     }
 
@@ -896,7 +904,7 @@ public sealed class Troop : MonoBehaviour
         _path = new TroopPathFollower(this);
         _mover = new TroopPivotMover(this, _path);
         _faultSlip = new FaultSlipMotion(this);
-        _rout = new TroopRout(this);
+        _rout = new TroopRout(this, _path);
         _lineOrder = new TroopLineOrder(this);
         _damage = new TroopDamageReceiver(this);
         _rangedFire = new RangedFireController(this);
