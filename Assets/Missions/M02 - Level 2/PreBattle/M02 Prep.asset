@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cdbcd89adde538c4083e157c445381c9, type: 3}
-  m_Name: Level 2 prep
+  m_Name: M02 Prep
   m_EditorClassIdentifier: 
   briefing: 'AMBUSH!!
 

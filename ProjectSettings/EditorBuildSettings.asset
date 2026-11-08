@@ -15,10 +15,10 @@ EditorBuildSettings:
     path: Assets/Resources/Levels/Menu levels/Post battle.unity
     guid: 1d17550ee4e293f4abd372b91017f44a
   - enabled: 1
-    path: Assets/Resources/Levels/Level 1/Level 1.unity
+    path: Assets/Missions/M01 - Level 1/Battle/M01 Battle.unity
     guid: 19614a577bf39504c9259b7fb3c68976
   - enabled: 1
-    path: Assets/Resources/Levels/Level 2/Level 2.unity
+    path: Assets/Missions/M02 - Level 2/Battle/M02 Battle.unity
     guid: a9f9c7c4e8daa3a4b8eaa6617b684394
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 4efd21a8964e3d74582d4d50a0d777a2,
