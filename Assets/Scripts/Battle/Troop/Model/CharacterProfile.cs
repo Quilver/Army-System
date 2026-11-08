@@ -66,6 +66,26 @@ public class CharacterProfile : ScriptableObject
     public IReadOnlyList<WeaponSkill> WeaponSkills => _soldierStats.WeaponSkills;
     public int SkillFor(WeaponClass weaponClass) => _soldierStats.SkillFor(weaponClass);
 
+    // The weapons this character carries without skill in their class (SU-140, Q-2): the melee weapon, then the ranged
+    // weapon. This is a warning, not an error: the soldiers still deploy and fight with skill 0 (no WeaponSkill term in
+    // Combat Power or the hit chance). Used by OnValidate, Troops > Check Weapon Skills and the troop's spawn warning.
+    public List<WeaponProfile> UnskilledWeapons()
+    {
+        var weapons = new List<WeaponProfile>(2);
+        WeaponProfile melee = _equipment?.MeleeWeapon;
+        WeaponProfile ranged = _equipment?.RangedWeapon;
+        if (melee != null && IsUnskilledWith(melee)) weapons.Add(melee);
+        if (ranged != null && IsUnskilledWith(ranged)) weapons.Add(ranged);
+        return weapons;
+    }
+
+    bool IsUnskilledWith(WeaponProfile weapon) => _soldierStats == null || _soldierStats.SkillFor(weapon.Class) <= 0;
+
+    // The warning for one unskilled weapon (SU-140), naming the character, the weapon and its class.
+    public string UnskilledWeaponWarning(WeaponProfile weapon) =>
+        $"{CharacterName}: carries {weapon.DisplayName} ({weapon.Class}) but has no {weapon.Class} skill, so its " +
+        "soldiers fight with skill 0 (Q-2, SU-140).";
+
     public ArmourProfile Armour => _equipment.Armour;
     // The character's melee weapon. Every character has one (spec §1.6, Decisions D-52): throws if it is missing.
     public MeleeWeaponProfile MeleeWeapon
@@ -110,6 +130,9 @@ public class CharacterProfile : ScriptableObject
         _soldierStats ??= new SoldierStats();
         _equipment.Validate(this);
         _soldierStats.Validate(this);
+        // SU-140: a weapon outside the character's weapon skills is allowed but warned about.
+        foreach (WeaponProfile weapon in UnskilledWeapons())
+            Debug.LogWarning(UnskilledWeaponWarning(weapon), this);
     }
 
     // Throws MissingMeleeWeaponException if equipment is null or has no melee weapon.

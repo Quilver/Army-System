@@ -73,6 +73,25 @@ public sealed class TroopRoster : MonoBehaviour
             for (int i = 0; i < character.Numbers; i++)
                 _soldiers.Add(new SoldierAgentState(_nextSoldierId++, character, RandomBlobOffset()) { Facing = transform.right });
         }
+
+        foreach (string warning in UnskilledWeaponWarnings(characters))
+            Debug.LogWarning($"{name}: {warning}", this);
+    }
+
+    // SU-140 (Q-2): one warning per character and weapon it has no skill in, logged once when the troop spawns (not per
+    // soldier). A character listed twice warns once. The soldiers still fight, with skill 0.
+    internal static List<string> UnskilledWeaponWarnings(IReadOnlyList<CharacterProfile> characters)
+    {
+        var warnings = new List<string>();
+        if (characters == null) return warnings;
+        var seen = new HashSet<CharacterProfile>();
+        foreach (var character in characters)
+        {
+            if (character == null || !seen.Add(character)) continue;
+            foreach (WeaponProfile weapon in character.UnskilledWeapons())
+                warnings.Add(character.UnskilledWeaponWarning(weapon));
+        }
+        return warnings;
     }
 
     public float AverageProfileValue(System.Func<CharacterProfile, float> valueSelector)

@@ -60,3 +60,27 @@ public static class SoldierHealthGUI
         EditorGUI.ProgressBar(rect, fraction, label);
     }
 }
+
+// Troops > Check Weapon Skills (SU-140, Q-2): logs every character under Resources/Troop and Character Profiles that
+// carries a weapon it has no skill in. A warning, not an error: such soldiers still deploy and fight with skill 0.
+public static class WeaponSkillCheck
+{
+    const string ProfilesFolder = "Assets/Resources/Troop and Character Profiles";
+
+    [MenuItem("Troops/Check Weapon Skills")]
+    public static void CheckWeaponSkills()
+    {
+        int characters = 0, unskilled = 0;
+        foreach (string guid in AssetDatabase.FindAssets("t:CharacterProfile", new[] { ProfilesFolder }))
+        {
+            var character = AssetDatabase.LoadAssetAtPath<CharacterProfile>(AssetDatabase.GUIDToAssetPath(guid));
+            if (character == null) continue;
+            characters++;
+            var weapons = character.UnskilledWeapons();
+            if (weapons.Count > 0) unskilled++;
+            foreach (WeaponProfile weapon in weapons)
+                Debug.LogWarning(character.UnskilledWeaponWarning(weapon), character);
+        }
+        Debug.Log($"Check Weapon Skills: {unskilled} of {characters} characters carry a weapon they have no skill in.");
+    }
+}
