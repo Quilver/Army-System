@@ -1,7 +1,8 @@
 using UnityEngine;
 
 // Applies a mitigated hit to one of the troop's soldiers and reports the consequences: a soldier death, the whole troop
-// dying, or the shock that may break the troop. Overflow and damage past zero HP add no shock (spec §4.6).
+// dying, or the shock that may break the troop. Every applied point of bruise or bleed adds shock, overflow included
+// (SU-128); damage past zero HP adds none (spec §4.6).
 public sealed class TroopDamageReceiver
 {
     readonly Troop _troop;

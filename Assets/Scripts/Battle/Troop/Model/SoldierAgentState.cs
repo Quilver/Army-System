@@ -141,7 +141,7 @@ public sealed class SoldierAgentState
         int bruised = _health.ApplyBruise(mitigation.Bruised);
         int overflowBled = _health.ApplyBleed(mitigation.Overflow);
         SyncLifeState();
-        return new AppliedDamage(bruised, shockBleed + overflowBled, shockBleed + bruised);
+        return new AppliedDamage(bruised, shockBleed + overflowBled, shockBleed + overflowBled + bruised);
     }
 
     // Advances bruise healing by one frame's time. Called once per frame by the troop after its morale tick. A stunned

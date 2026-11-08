@@ -17,7 +17,7 @@ public sealed class MitigationResolverTests
         MitigationResult result = MitigationResolver.Resolve(12, 8, 3, 5, 2, new SeededTroopRandom(1));
         Assert.AreEqual(8, result.Deflected + result.Bruised + result.Bled);
         Assert.AreEqual(4, result.Overflow);
-        Assert.AreEqual(result.Bruised + result.Bled, result.ShockPoints);
+        Assert.AreEqual(result.Bruised + result.Bled + result.Overflow, result.ShockPoints, "Overflow bleed counts as shock (SU-128)");
     }
 
     [Test]
@@ -151,12 +151,21 @@ public sealed class SoldierHealthTests
     }
 
     [Test]
-    public void Shock_IsAppliedBruisePlusBleed_WithoutOverflow()
+    public void Shock_IsAppliedBruisePlusBleed_IncludingOverflow()
     {
         var soldier = new SoldierAgentState(1, null, UnityEngine.Vector2.zero); // 15 HP
         AppliedDamage applied = soldier.ApplyMitigation(new MitigationResult(2, 3, 4, 6));
-        Assert.AreEqual(7, applied.Shock);
+        Assert.AreEqual(13, applied.Shock, "Every applied bruise and bleed point counts, overflow included (SU-128)");
         Assert.AreEqual(13, applied.Total);
+    }
+
+    [Test]
+    public void Shock_ExcludesDamagePastZeroHp()
+    {
+        var soldier = new SoldierAgentState(1, null, UnityEngine.Vector2.zero); // 15 HP
+        AppliedDamage applied = soldier.ApplyMitigation(new MitigationResult(0, 4, 6, 10));
+        Assert.AreEqual(15, applied.Total, "Only the 15 HP the soldier had are applied");
+        Assert.AreEqual(15, applied.Shock, "Damage past zero HP adds no shock");
     }
 }
 

@@ -4,8 +4,8 @@ using System;
 // Unity.
 //   Each point up to TotalDefence rolls once: Deflect, Bruise or Bleed, weighted by the armour's Deflect : Bruise : Bleed
 //   ratio. The attacking weapon's Piercing is added to the Bleed part and its Bludgeoning to the Bruise part first.
-//   Points above TotalDefence become Overflow (bleed, no shock).
-//   Without armour every point rolls (no TotalDefence cap, no Overflow, decision 7) against the unarmoured ratio
+//   Points above TotalDefence become Overflow (bleed, which counts as shock, SU-128).
+//   Without armour every point rolls (no TotalDefence cap, no Overflow) against the unarmoured ratio
 //   0 : 3 : 7, so Piercing and Bludgeoning still apply (SU-90).
 public static class MitigationResolver
 {

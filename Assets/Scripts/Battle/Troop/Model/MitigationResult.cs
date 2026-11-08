@@ -2,8 +2,8 @@
 //   Deflected: points stopped by the armour.
 //   Bruised:   points that become bruise (heals over time).
 //   Bled:      rolled points that become bleed.
-//   Overflow:  points above TotalDefence. These always become bleed, but do not count as shock.
-// ShockPoints is the rolled part only (Bruised + Bled), so overflow never adds shock.
+//   Overflow:  points above TotalDefence. These always become bleed, and count as shock like any other bleed (SU-128).
+// ShockPoints is every point that becomes bruise or bleed (Bruised + Bled + Overflow); only Deflected adds no shock.
 public readonly struct MitigationResult
 {
     public readonly int Deflected;
@@ -19,11 +19,11 @@ public readonly struct MitigationResult
         Overflow = overflow;
     }
 
-    public int ShockPoints => Bruised + Bled;
+    public int ShockPoints => Bruised + Bled + Overflow;
 }
 
-// Points actually applied to a soldier after its HP clamp. Shock is the applied rolled bleed plus applied bruise. Overflow
-// is excluded, and so is any damage past zero HP.
+// Points actually applied to a soldier after its HP clamp. Shock is every applied point of bruise and bleed (overflow
+// included, SU-128); damage past zero HP is not applied and adds no shock.
 public readonly struct AppliedDamage
 {
     public readonly int Bruised;
