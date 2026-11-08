@@ -62,7 +62,6 @@ public static class WeaponProfileMigration
         public string DisplayName;
         public int WeaponClass;
         public int Damage;
-        public bool Provisional;
         public float Range;
         public int Accuracy;
         public int FireRate;
@@ -84,7 +83,6 @@ public static class WeaponProfileMigration
                 DisplayName = so.FindProperty("_displayName").stringValue,
                 WeaponClass = weaponClass,
                 Damage = so.FindProperty("_damage").intValue,
-                Provisional = so.FindProperty("_provisional").boolValue,
                 Range = so.FindProperty("_range").floatValue,
                 Accuracy = so.FindProperty("_accuracy").intValue,
                 FireRate = so.FindProperty("_fireRate").intValue,
@@ -184,7 +182,6 @@ public static class WeaponProfileMigration
         so.FindProperty("_displayName").stringValue = values.DisplayName;
         so.FindProperty("_weaponClass").intValue = values.WeaponClass;
         so.FindProperty("_damage").intValue = values.Damage;
-        so.FindProperty("_provisional").boolValue = values.Provisional;
         so.FindProperty("_range").floatValue = values.Range;
         so.FindProperty("_accuracy").intValue = values.Accuracy;
         so.FindProperty("_fireRate").intValue = values.FireRate;

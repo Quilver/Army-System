@@ -14,7 +14,7 @@ using UnityEngine;
 // - Each sheet's class name becomes a CharacterClass asset (Classes/<Name>), shared by characters of that class.
 // - Campaign characters (CampaignCharacter) found at a sheet's path are left alone.
 // - Every sheet value is checked against its range. Out-of-range values are logged as errors and the asset is clamped.
-// - Stats not on the sheets are placeholders, and the weapon and armour values are marked Provisional.
+// - Stats not on the sheets are placeholders, and so are the weapon and armour values the sheets do not give.
 // - Melee classes become MeleeWeaponProfile assets and ranged classes RangedWeaponProfile assets (Decisions D-52).
 //   Old combined weapon assets are converted first (WeaponProfileMigration). Each sheet must list one melee weapon.
 public static class Phase01DataGenerator
@@ -35,7 +35,6 @@ public static class Phase01DataGenerator
         public int Accuracy;
         public int FireRate;
         public WeaponSpecialRule Special;
-        public bool Provisional;
     }
 
     struct ArmourDef
@@ -65,23 +64,23 @@ public static class Phase01DataGenerator
         public int Support;
     }
 
-    // Melee weapon. Damage is the damage bonus. Zero means the sheet gives no value (provisional placeholder).
+    // Melee weapon. Damage is the damage bonus. Zero means the sheet gives no value (placeholder).
     static WeaponDef Melee(string name, WeaponClass weaponClass, int damage = 0, int chargeBonus = 0,
-        WeaponSpecialRule special = WeaponSpecialRule.None, bool provisional = true)
+        WeaponSpecialRule special = WeaponSpecialRule.None)
     {
         return new WeaponDef
         {
             Name = name, Class = weaponClass, Damage = damage, ChargeBonus = chargeBonus,
-            Special = special, Provisional = provisional
+            Special = special
         };
     }
 
-    // Ranged weapon with the v0.8 bow baseline (spec §4.5 provisional values). Used where the sheet gives no stats.
+    // Ranged weapon with the v0.8 bow baseline. Used where the sheet gives no stats.
     static WeaponDef RangedBaseline(string name, WeaponClass weaponClass)
     {
         return new WeaponDef
         {
-            Name = name, Class = weaponClass, Damage = 5, Range = 10f, Accuracy = 4, FireRate = 5, Provisional = true
+            Name = name, Class = weaponClass, Damage = 5, Range = 10f, Accuracy = 4, FireRate = 5
         };
     }
 
@@ -97,15 +96,14 @@ public static class Phase01DataGenerator
         Melee("Broadsword", WeaponClass.Sword),
         RangedBaseline("Javelin", WeaponClass.Javelin),
         // Spec §1.6 sample. The sheet for Gareth writes "Shortsword", which is the same weapon.
-        Melee("Short Sword", WeaponClass.Sword, damage: 5, chargeBonus: 3, provisional: false),
+        Melee("Short Sword", WeaponClass.Sword, damage: 5, chargeBonus: 3),
         Melee("Greatsword", WeaponClass.Sword),
         Melee("Felling Axe", WeaponClass.Axe),
         RangedBaseline("Throwing Hatchet", WeaponClass.Javelin),
         // Spec §1.6 Long Bow: damage 10, range 20, accuracy 2, fire rate 10.
         new WeaponDef
         {
-            Name = "Longbow", Class = WeaponClass.Bow, Damage = 10, Range = 20f, Accuracy = 2, FireRate = 10,
-            Provisional = false
+            Name = "Longbow", Class = WeaponClass.Bow, Damage = 10, Range = 20f, Accuracy = 2, FireRate = 10
         },
         Melee("Bearded Axe", WeaponClass.Axe),
         RangedBaseline("Throwing Axe", WeaponClass.Javelin),
@@ -113,11 +111,11 @@ public static class Phase01DataGenerator
         Melee("Arming Sword", WeaponClass.Sword),
         // Spec §1.6 Lance: damage 3, charge bonus 8, Couched Lance (double damage while charging).
         Melee("Lance", WeaponClass.Spear, damage: 3, chargeBonus: 8,
-            special: WeaponSpecialRule.CouchedLance, provisional: false),
+            special: WeaponSpecialRule.CouchedLance),
     };
 
-    // Light armour and Heavy armour are the spec §1.6 samples. Every other armour is mapped to the nearest sample and
-    // is provisional (Questions.md Q-54). Chainmail + Shield uses the 60/30/10 split from Q-6.
+    // Light armour and Heavy armour are the spec §1.6 samples. Every other armour is mapped to the nearest sample
+    // (a placeholder until it is tuned). Chainmail + Shield uses the 60/30/10 split from Q-6.
     static readonly ArmourDef[] Armours =
     {
         new ArmourDef { Name = "Light Armour", Deflect = 3, Bruise = 5, Bleed = 2, DefenceBonus = 4 },
@@ -246,15 +244,14 @@ public static class Phase01DataGenerator
             if (def.Class.IsRanged())
             {
                 RangedWeaponProfile fresh = RangedWeaponProfile.CreateRuntimeProfile(
-                    def.Name, def.Class.ToRangedClass(), def.Damage, def.Range, def.Accuracy, def.FireRate, def.Provisional);
+                    def.Name, def.Class.ToRangedClass(), def.Damage, def.Range, def.Accuracy, def.FireRate);
                 weaponAssets[def.Name] = CreateOrUpdate(weaponPath, fresh);
             }
             else
             {
                 MeleeWeaponProfile fresh = MeleeWeaponProfile.CreateRuntimeProfile(
                     def.Name, def.Class.ToMeleeClass(), def.Damage, def.ChargeBonus,
-                    def.Special == WeaponSpecialRule.None ? null : new[] { new WeaponSpecialRuleEntry(def.Special) },
-                    def.Provisional);
+                    def.Special == WeaponSpecialRule.None ? null : new[] { new WeaponSpecialRuleEntry(def.Special) });
                 weaponAssets[def.Name] = CreateOrUpdate(weaponPath, fresh);
             }
         }
@@ -263,7 +260,7 @@ public static class Phase01DataGenerator
         foreach (ArmourDef def in Armours)
         {
             ArmourProfile fresh = ArmourProfile.CreateRuntimeProfile(
-                def.Name, def.Deflect, def.Bruise, def.Bleed, def.DefenceBonus, provisional: true);
+                def.Name, def.Deflect, def.Bruise, def.Bleed, def.DefenceBonus);
             armourAssets[def.Name] = CreateOrUpdate($"{ArmourFolder}/{def.Name}.asset", fresh);
         }
 

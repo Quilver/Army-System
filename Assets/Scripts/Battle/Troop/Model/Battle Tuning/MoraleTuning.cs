@@ -18,7 +18,7 @@ public sealed class MoraleTuning : ScriptableObject
     float _routMoraleThresholdFraction = 0.50f;
     [SerializeField, Min(0f), Tooltip("Seconds after a rout before the troop is destroyed.")]
     float _routDespawnSeconds = 60f;
-    [SerializeField, Min(0f), Tooltip("Retreat distance in world units, the same for every troop. Provisional (Q-34).")]
+    [SerializeField, Min(0f), Tooltip("Retreat distance in world units, the same for every troop.")]
     float _retreatDistance = 5f;
     [SerializeField, Min(0f), Tooltip("Retreat wave: delay between the rearmost soldier and the frontmost soldier starting to fall back.")]
     float _retreatWaveDelaySeconds = 0.6f;

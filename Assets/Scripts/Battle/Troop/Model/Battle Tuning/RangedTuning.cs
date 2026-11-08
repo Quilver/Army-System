@@ -12,7 +12,7 @@ public sealed class RangedTuning : ScriptableObject
     int _baseShotDC = 10;
     [SerializeField, Range(0f, 1f), Tooltip("Random variation of the fire interval.")]
     float _fireRateJitterFraction = 0.1f;
-    [SerializeField, Min(0.1f), Tooltip("Projectile speed. Not in the spec (Q-42), provisional.")]
+    [SerializeField, Min(0.1f), Tooltip("Projectile speed in units/s.")]
     float _projectileSpeed = 20f;
     [SerializeField, Range(0f, 180f), Tooltip("A shooter can hit an enemy soldier within its weapon range and within this " +
         "angle of the troop's facing, measured from the shooter (Q-41, Decisions D-54).")]

@@ -36,11 +36,10 @@ public sealed class MeleeWeaponProfile : WeaponProfile
         MeleeWeaponClass weaponClass,
         int damage,
         int chargeBonus,
-        IEnumerable<WeaponSpecialRuleEntry> specialRules,
-        bool provisional)
+        IEnumerable<WeaponSpecialRuleEntry> specialRules)
     {
         var profile = CreateInstance<MeleeWeaponProfile>();
-        profile.SetBaseValues(displayName, damage, provisional);
+        profile.SetBaseValues(displayName, damage);
         profile._weaponClass = weaponClass;
         profile._chargeBonus = Mathf.Max(0, chargeBonus);
         profile.SetSpecialRules(specialRules);

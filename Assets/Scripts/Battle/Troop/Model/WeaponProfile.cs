@@ -14,14 +14,12 @@ public abstract class WeaponProfile : ScriptableObject
     [SerializeField, Min(0), Tooltip("Melee: damage bonus added to Strength. Ranged: base damage per hit.")] int _damage;
     [SerializeField, Tooltip("Special rules. Value is X for Piercing X and Bludgeoning X; the other rules ignore it.")]
     List<WeaponSpecialRuleEntry> _specialRules = new();
-    [SerializeField, Tooltip("Values are not confirmed by the designer. Replace them before tuning.")] bool _provisional;
 
     public string DisplayName => string.IsNullOrEmpty(_displayName) ? name : _displayName;
     // The class used to look up the bearer's weapon skill.
     public abstract WeaponClass Class { get; }
     public abstract bool IsRanged { get; }
     public int Damage => _damage;
-    public bool Provisional => _provisional;
     public IReadOnlyList<WeaponSpecialRuleEntry> SpecialRules => _specialRules;
 
     // Whether the weapon has the rule and the rule applies to this kind of weapon (melee or ranged).
@@ -46,11 +44,10 @@ public abstract class WeaponProfile : ScriptableObject
     public int Piercing => RuleValue(WeaponSpecialRule.Piercing);
     public int Bludgeoning => RuleValue(WeaponSpecialRule.Bludgeoning);
 
-    protected void SetBaseValues(string displayName, int damage, bool provisional)
+    protected void SetBaseValues(string displayName, int damage)
     {
         _displayName = displayName;
         _damage = Mathf.Max(0, damage);
-        _provisional = provisional;
     }
 
     protected void SetSpecialRules(IEnumerable<WeaponSpecialRuleEntry> rules)

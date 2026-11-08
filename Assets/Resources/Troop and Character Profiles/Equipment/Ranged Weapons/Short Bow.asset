@@ -15,7 +15,6 @@ MonoBehaviour:
   _displayName: Short Bow
   _damage: 5
   _specialRules: []
-  _provisional: 1
   _weaponClass: 3
   _range: 15
   _accuracy: 4

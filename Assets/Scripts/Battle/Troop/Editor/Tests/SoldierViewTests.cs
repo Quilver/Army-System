@@ -38,7 +38,7 @@ public sealed class SoldierViewTests
     Troop CreateTroop()
     {
         var weapon = MeleeWeaponProfile.CreateRuntimeProfile("Test Sword", MeleeWeaponClass.Sword, 0, 0,
-            null, false);
+            null);
         _created.Add(weapon);
         var character = CharacterProfile.CreateRuntimeProfile("Test", null, null, null, 12, 5,
             CombatStatLimits.Default, new CharacterEquipment(weapon, null, null), new SoldierStats(5, 5, 5, 5, 5, 5, 15));

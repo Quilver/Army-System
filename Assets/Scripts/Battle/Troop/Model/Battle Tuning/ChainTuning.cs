@@ -26,7 +26,7 @@ public sealed class ChainTuning : ScriptableObject
     float _chainRetreatStretchThreshold = 1.4f;
     [SerializeField, Range(0f, 180f), Tooltip("Hinge bend (180 - inner angle) that makes an unengaged neighbour retreat. Q-13.")]
     float _chainRetreatHingeBendDeg = 30f;
-    [SerializeField, Range(0f, 1f), Tooltip("Fraction of the retreat distance lost per hop. Provisional (Q-21).")]
+    [SerializeField, Range(0f, 1f), Tooltip("Fraction of the retreat distance lost per hop.")]
     float _chainRetreatFalloff = 0.3f;
     [SerializeField, Min(0.01f), Tooltip("Speed at which a stretched endpoint relaxes to L_nat after its link breaks.")]
     float _chainEndpointRelaxSpeed = 2f;

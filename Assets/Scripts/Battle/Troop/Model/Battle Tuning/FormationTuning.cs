@@ -21,11 +21,11 @@ public sealed class FormationTuning : ScriptableObject
 
     [Header("Formation and movement (spec §3)")]
     [SerializeField, Min(0.1f), Tooltip("L_nat / troop radius. The natural line is Frontage x LineSpacing long (SU-103); the troop's radius in " +
-             "units (blob, soldier clamp) is L_nat / this, or larger when its soldiers need more room. Provisional (Q-12).")]
+             "units (blob, soldier clamp) is L_nat / this, or larger when its soldiers need more room.")]
     float _naturalLineRadiusScale = 1.8f;
     [SerializeField, Range(0.1f, 1f), Tooltip("Idle blob disc radius as a fraction of the troop radius.")]
     float _blobRadiusScale = 0.85f;
-    [SerializeField, Min(0f), Tooltip("Minimum spacing of friendly pivots, x (r_A + r_B). Provisional.")]
+    [SerializeField, Min(0f), Tooltip("Minimum spacing of friendly pivots, x (r_A + r_B).")]
     float _pivotSeparationScale = 0.25f;
     [SerializeField, Min(0f), Tooltip("Smallest clear gap between the outlines of friendly troops that are not linked in a " +
         "chain (units, SU-94). Overlapping friends are moved apart until they have it.")]
@@ -35,7 +35,7 @@ public sealed class FormationTuning : ScriptableObject
     float _friendlyGiveWaySpeedScale = 0.5f;
     [SerializeField, Min(0.05f), Tooltip("Path rebuild interval while marching.")]
     float _pathRebuildIntervalSeconds = 0.5f;
-    [SerializeField, Min(0f), Tooltip("Joint clearance at a linked end: min(this, fraction x length). Provisional.")]
+    [SerializeField, Min(0f), Tooltip("Joint clearance at a linked end: min(this, fraction x length).")]
     float _jointClearance = 0.45f;
     [SerializeField, Range(0f, 0.5f), Tooltip("Joint clearance as a fraction of the line length.")]
     float _jointClearanceFraction = 0.15f;

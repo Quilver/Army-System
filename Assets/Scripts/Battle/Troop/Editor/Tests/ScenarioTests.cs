@@ -43,7 +43,7 @@ public sealed class TroopScenarioTests
     MeleeWeaponProfile TestMeleeWeapon()
     {
         var weapon = MeleeWeaponProfile.CreateRuntimeProfile("Test Sword", MeleeWeaponClass.Sword, 0, 0,
-            null, false);
+            null);
         _created.Add(weapon);
         return weapon;
     }

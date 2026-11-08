@@ -49,7 +49,7 @@ public sealed class CampaignCharacterTests
     public void ClassName_ComesFromClassAsset_OrFallsBackToCharacterName()
     {
         var weapon = Track(MeleeWeaponProfile.CreateRuntimeProfile("Sword", MeleeWeaponClass.Sword, 0, 0,
-            null, false));
+            null));
         var logger = Track(CharacterClass.CreateRuntimeClass("Logger"));
         var withClass = Track(CharacterProfile.CreateRuntimeProfile("Brom", logger, null, null, 12, 5, 5,
             new CharacterEquipment(weapon, null, null), null));
@@ -67,7 +67,7 @@ public sealed class CampaignCharacterTests
         AssetDatabase.CreateFolder("Assets", "__CampaignCharacterTests");
         string uniqueClass = "Test Class " + System.Guid.NewGuid().ToString("N");
 
-        var weapon = MeleeWeaponProfile.CreateRuntimeProfile("Axe", MeleeWeaponClass.Axe, 4, 2, null, false);
+        var weapon = MeleeWeaponProfile.CreateRuntimeProfile("Axe", MeleeWeaponClass.Axe, 4, 2, null);
         AssetDatabase.CreateAsset(weapon, $"{TempFolder}/Axe.asset");
         var stats = new SoldierStats(6, 7, 8, 4, 6, 6, 22, new List<WeaponSkill> { new(WeaponClass.Axe, 5) });
         var character = CharacterProfile.CreateRuntimeProfile("Brom", null, null, null, 12, 5, 3,

@@ -9,7 +9,7 @@ public sealed class SoldierTuning : ScriptableObject
     public const float DefaultSoldierSeparation = 1.8f;
 
     [Header("Stats and actions")]
-    [SerializeField, Min(0.01f), Tooltip("Speed stat point to units/s. Speed 5 gives 3.0 units/s. Provisional (Q-1).")]
+    [SerializeField, Min(0.01f), Tooltip("Speed stat point to units/s. Speed 5 gives 3.0 units/s.")]
     float _speedUnitsPerStatPoint = 0.6f;
     [SerializeField, Min(1f), Tooltip("Window over which Aggression, FireRate and Shock decay are measured.")]
     float _actionWindowSeconds = 30f;

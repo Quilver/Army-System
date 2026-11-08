@@ -148,7 +148,7 @@ public class CharacterProfile : ScriptableObject
     public static CharacterProfile CreateRuntimeProfile(Sprite soldierSprite, int numbers)
     {
         MeleeWeaponProfile placeholder = MeleeWeaponProfile.CreateRuntimeProfile(
-            "Placeholder Sword", MeleeWeaponClass.Sword, 0, 0, null, provisional: true);
+            "Placeholder Sword", MeleeWeaponClass.Sword, 0, 0, null);
         placeholder.hideFlags = HideFlags.DontSave;
         return CreateRuntimeProfile(null, null, null, soldierSprite, numbers, CombatStatLimits.Default,
             CombatStatLimits.Default, new CharacterEquipment(placeholder, null, null), null);

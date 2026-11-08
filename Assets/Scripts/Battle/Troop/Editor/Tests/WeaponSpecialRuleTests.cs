@@ -12,7 +12,7 @@ public sealed class WeaponSpecialRuleTests
             {
                 new WeaponSpecialRuleEntry(WeaponSpecialRule.CouchedLance),
                 new WeaponSpecialRuleEntry(WeaponSpecialRule.Piercing, 2)
-            }, false);
+            });
         try
         {
             Assert.IsTrue(weapon.HasRule(WeaponSpecialRule.CouchedLance));
@@ -28,8 +28,8 @@ public sealed class WeaponSpecialRuleTests
     public void RulesForTheOtherKindOfWeapon_HaveNoEffect()
     {
         var melee = MeleeWeaponProfile.CreateRuntimeProfile("Sword", MeleeWeaponClass.Sword, 1, 0,
-            new[] { new WeaponSpecialRuleEntry(WeaponSpecialRule.FireAndEngage) }, false);
-        var ranged = RangedWeaponProfile.CreateRuntimeProfile("Bow", RangedWeaponClass.Bow, 1, 20f, 2, 10, false,
+            new[] { new WeaponSpecialRuleEntry(WeaponSpecialRule.FireAndEngage) });
+        var ranged = RangedWeaponProfile.CreateRuntimeProfile("Bow", RangedWeaponClass.Bow, 1, 20f, 2, 10,
             new[]
             {
                 new WeaponSpecialRuleEntry(WeaponSpecialRule.SpearSupport),
@@ -53,7 +53,7 @@ public sealed class WeaponSpecialRuleTests
     [Test]
     public void RepeatedValuedRules_AddUp()
     {
-        var weapon = RangedWeaponProfile.CreateRuntimeProfile("Bow", RangedWeaponClass.Bow, 1, 20f, 2, 10, false,
+        var weapon = RangedWeaponProfile.CreateRuntimeProfile("Bow", RangedWeaponClass.Bow, 1, 20f, 2, 10,
             new[]
             {
                 new WeaponSpecialRuleEntry(WeaponSpecialRule.Piercing, 1),

@@ -43,7 +43,7 @@ public sealed class ChainAndRangedScenarioTests
         if (melee == null)
         {
             melee = MeleeWeaponProfile.CreateRuntimeProfile("Test Sword", MeleeWeaponClass.Sword, 0, 0,
-                null, false);
+                null);
             _created.Add(melee);
         }
         var profile = CharacterProfile.CreateRuntimeProfile("Test", null, null, null, 12, morale, CombatStatLimits.Default,
@@ -162,10 +162,9 @@ public sealed class ChainAndRangedScenarioTests
     {
         // Long bow range, accuracy and fire rate; damage 1 so the target does not break and walk out of range. Volley
         // fire (SU-105): the whole troop shoots in sync.
-        RangedWeaponProfile bow = RangedWeaponProfile.CreateRuntimeProfile("Long bow", RangedWeaponClass.Bow, 1, 20f, 2, 10,
-            false, volley: true);
+        RangedWeaponProfile bow = RangedWeaponProfile.CreateRuntimeProfile("Long bow", RangedWeaponClass.Bow, 1, 20f, 2, 10, volley: true);
         MeleeWeaponProfile knife = MeleeWeaponProfile.CreateRuntimeProfile("Knife", MeleeWeaponClass.Sword, 1, 0,
-            null, false);
+            null);
         _created.Add(bow);
         _created.Add(knife);
         CharacterProfile archer = Character(5, 15, knife, bow,
@@ -187,8 +186,7 @@ public sealed class ChainAndRangedScenarioTests
     [Test]
     public void ArchersWithoutVolley_ShootOnTheirOwnTiming()
     {
-        RangedWeaponProfile bow = RangedWeaponProfile.CreateRuntimeProfile("Long bow", RangedWeaponClass.Bow, 1, 20f, 2, 10,
-            false);
+        RangedWeaponProfile bow = RangedWeaponProfile.CreateRuntimeProfile("Long bow", RangedWeaponClass.Bow, 1, 20f, 2, 10);
         _created.Add(bow);
         Assert.IsFalse(bow.Volley, "Volley is off by default");
         CharacterProfile archer = Character(5, 15, ranged: bow,
@@ -226,8 +224,7 @@ public sealed class ChainAndRangedScenarioTests
     [Test]
     public void MovingOrEngagedArchers_DoNotFire()
     {
-        RangedWeaponProfile bow = RangedWeaponProfile.CreateRuntimeProfile("Long bow", RangedWeaponClass.Bow, 10, 20f, 2, 10,
-            false);
+        RangedWeaponProfile bow = RangedWeaponProfile.CreateRuntimeProfile("Long bow", RangedWeaponClass.Bow, 10, 20f, 2, 10);
         _created.Add(bow);
         CharacterProfile archer = Character(5, 15, ranged: bow, skills: new List<WeaponSkill> { new(WeaponClass.Bow, 8) });
         Troop archers = LineTroop("Archers", Vector2.zero, Vector2.right, character: archer);
@@ -243,7 +240,7 @@ public sealed class ChainAndRangedScenarioTests
     public void FireAndEngageArchers_FireOnceWhenTheEngagementStarts()
     {
         RangedWeaponProfile bow = RangedWeaponProfile.CreateRuntimeProfile("Fire & Engage bow", RangedWeaponClass.Bow, 1,
-            20f, 2, 10, false, new[] { new WeaponSpecialRuleEntry(WeaponSpecialRule.FireAndEngage) });
+            20f, 2, 10, new[] { new WeaponSpecialRuleEntry(WeaponSpecialRule.FireAndEngage) });
         _created.Add(bow);
         CharacterProfile archer = Character(20, 40, ranged: bow, skills: new List<WeaponSkill> { new(WeaponClass.Bow, 8) });
         Troop archers = LineTroop("Archers", Vector2.zero, Vector2.right, character: archer);
@@ -255,14 +252,14 @@ public sealed class ChainAndRangedScenarioTests
 
     RangedWeaponProfile LongBow()
     {
-        RangedWeaponProfile bow = RangedWeaponProfile.CreateRuntimeProfile("Long bow", RangedWeaponClass.Bow, 1, 20f, 2, 10, false);
+        RangedWeaponProfile bow = RangedWeaponProfile.CreateRuntimeProfile("Long bow", RangedWeaponClass.Bow, 1, 20f, 2, 10);
         _created.Add(bow);
         return bow;
     }
 
     CharacterProfile Squad(int numbers, RangedWeaponProfile ranged, int maxHealth = 15)
     {
-        var sword = MeleeWeaponProfile.CreateRuntimeProfile("Sword", MeleeWeaponClass.Sword, 1, 0, null, false);
+        var sword = MeleeWeaponProfile.CreateRuntimeProfile("Sword", MeleeWeaponClass.Sword, 1, 0, null);
         _created.Add(sword);
         var profile = CharacterProfile.CreateRuntimeProfile("Squad", null, null, null, numbers, 20, CombatStatLimits.Default,
             new CharacterEquipment(sword, ranged, null),

@@ -54,7 +54,7 @@ public sealed class SurroundAndFootprintTests
 
     Troop CreateTroop(string name, int team, int soldiers, int frontage)
     {
-        var weapon = MeleeWeaponProfile.CreateRuntimeProfile("Test Sword", MeleeWeaponClass.Sword, 0, 0, null, false);
+        var weapon = MeleeWeaponProfile.CreateRuntimeProfile("Test Sword", MeleeWeaponClass.Sword, 0, 0, null);
         _created.Add(weapon);
         var character = CharacterProfile.CreateRuntimeProfile("Test", null, null, null, soldiers, BaseMorale,
             CombatStatLimits.Default, new CharacterEquipment(weapon, null, null), new SoldierStats(5, 5, 5, 5, 5, 5, 15));

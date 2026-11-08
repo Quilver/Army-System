@@ -70,7 +70,7 @@ public sealed class ChainEngagementScenarioTests
     Troop CreateTroop(string name, int team, Vector2 position, int frontage = 10, int soldiers = 12)
     {
         var weapon = MeleeWeaponProfile.CreateRuntimeProfile("Test Sword", MeleeWeaponClass.Sword, 0, 0,
-            null, false);
+            null);
         _created.Add(weapon);
         var character = CharacterProfile.CreateRuntimeProfile("Test", null, null, null, soldiers, 10,
             CombatStatLimits.Default, new CharacterEquipment(weapon, null, null), new SoldierStats(5, 5, 5, 5, 5, 5, 40));

@@ -24,11 +24,11 @@ public sealed class MeleeTuning : ScriptableObject
     int _chargeCandidateCount = 3;
     [SerializeField, Min(0.1f), Tooltip("Charge speed multiplier (max speed and acceleration).")]
     float _chargeSpeedScale = 2f;
-    [SerializeField, Min(0.1f), Tooltip("Charge cancel timeout. Provisional (Q-27).")]
+    [SerializeField, Min(0.1f), Tooltip("Charge cancel timeout.")]
     float _chargeTimeoutSeconds = 3f;
     [SerializeField, Range(0f, 1f), Tooltip("Chance each Discipline-nearest friend follows a charger.")]
     float _chargeFollowProbability = 0.5f;
-    [SerializeField, Min(0f), Tooltip("Per-soldier clash rate limit for contacts that are not charges. Provisional (Q-26).")]
+    [SerializeField, Min(0f), Tooltip("Per-soldier clash rate limit for contacts that are not charges.")]
     float _clashCooldownSeconds = 1f;
 
     [Header("Support and duel (spec §4.5)")]

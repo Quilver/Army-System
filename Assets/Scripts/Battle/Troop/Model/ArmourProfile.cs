@@ -12,14 +12,12 @@ public sealed class ArmourProfile : ScriptableObject
     [SerializeField, Min(0), Tooltip("Bruise part of the Deflect : Bruise : Bleed ratio.")] int _bruise = 5;
     [SerializeField, Min(0), Tooltip("Bleed part of the Deflect : Bruise : Bleed ratio.")] int _bleed = 2;
     [SerializeField, Min(0), Tooltip("Added to the soldier's Defence to give TotalDefence.")] int _defenceBonus = 4;
-    [SerializeField, Tooltip("Values are not confirmed by the designer. Replace them before tuning.")] bool _provisional;
 
     public string DisplayName => string.IsNullOrEmpty(_displayName) ? name : _displayName;
     public int Deflect => _deflect;
     public int Bruise => _bruise;
     public int Bleed => _bleed;
     public int DefenceBonus => _defenceBonus;
-    public bool Provisional => _provisional;
     // Sum of the three ratio parts.
     public int RatioTotal => _deflect + _bruise + _bleed;
     public bool IsValid => _deflect >= 0 && _bruise >= 0 && _bleed >= 0 && RatioTotal > 0;
@@ -37,8 +35,7 @@ public sealed class ArmourProfile : ScriptableObject
         int deflect,
         int bruise,
         int bleed,
-        int defenceBonus,
-        bool provisional)
+        int defenceBonus)
     {
         var profile = CreateInstance<ArmourProfile>();
         profile._displayName = displayName;
@@ -46,7 +43,6 @@ public sealed class ArmourProfile : ScriptableObject
         profile._bruise = Mathf.Max(0, bruise);
         profile._bleed = Mathf.Max(0, bleed);
         profile._defenceBonus = Mathf.Max(0, defenceBonus);
-        profile._provisional = provisional;
         return profile;
     }
 }

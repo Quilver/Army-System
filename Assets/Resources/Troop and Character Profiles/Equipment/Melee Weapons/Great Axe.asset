@@ -17,7 +17,6 @@ MonoBehaviour:
   _specialRules:
   - _rule: 3
     _value: 3
-  _provisional: 1
   _weaponClass: 2
   _chargeBonus: 4
   _range: 0

@@ -29,12 +29,11 @@ public sealed class RangedWeaponProfile : WeaponProfile
         float range,
         int accuracy,
         int fireRate,
-        bool provisional,
         IEnumerable<WeaponSpecialRuleEntry> specialRules = null,
         bool volley = false)
     {
         var profile = CreateInstance<RangedWeaponProfile>();
-        profile.SetBaseValues(displayName, damage, provisional);
+        profile.SetBaseValues(displayName, damage);
         profile._weaponClass = weaponClass;
         profile._range = Mathf.Max(0f, range);
         profile._accuracy = Mathf.Max(0, accuracy);

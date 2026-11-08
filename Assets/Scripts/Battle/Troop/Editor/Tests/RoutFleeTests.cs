@@ -195,7 +195,7 @@ public sealed class RoutFleeTests
 
     static Troop CreateTroop(List<Object> created, string name, int team, Vector2 position)
     {
-        var weapon = MeleeWeaponProfile.CreateRuntimeProfile("Test Sword", MeleeWeaponClass.Sword, 0, 0, null, false);
+        var weapon = MeleeWeaponProfile.CreateRuntimeProfile("Test Sword", MeleeWeaponClass.Sword, 0, 0, null);
         created.Add(weapon);
         var character = CharacterProfile.CreateRuntimeProfile("Test", null, null, null, 10, 10,
             CombatStatLimits.Default, new CharacterEquipment(weapon, null, null), new SoldierStats(5, 5, 5, 5, 5, 5, 40));
