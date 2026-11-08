@@ -21,9 +21,11 @@ public sealed class MoraleTuning : ScriptableObject
     [SerializeField, Min(0f), Tooltip("Retreat distance in world units, the same for every troop.")]
     float _retreatDistance = 5f;
     [SerializeField, Min(0f), Tooltip("Retreat wave: delay between the rearmost soldier and the frontmost soldier starting to fall back.")]
-    float _retreatWaveDelaySeconds = 0.6f;
-    [SerializeField, Min(0.05f), Tooltip("Time each soldier takes to fall back to its new place in a retreat.")]
-    float _retreatSoldierMoveSeconds = 1.2f;
+    float _retreatWaveDelaySeconds = 1.0f;
+    [SerializeField, Min(0.05f), Tooltip("Time the rearmost soldier takes to fall back to its new place in a retreat (fastest, SU-133).")]
+    float _retreatRearMoveSeconds = 0.8f;
+    [SerializeField, Min(0.05f), Tooltip("Time the frontmost soldier takes to fall back to its new place in a retreat (slowest, SU-133).")]
+    float _retreatFrontMoveSeconds = 1.8f;
     [SerializeField, Min(1f), Tooltip("Shock multiplier on flanked hits (spec §4.8).")]
     float _flankShockMultiplier = 3f;
     [SerializeField, Min(0f), Tooltip("A troop that breaks while not engaged in melee is disordered instead of retreating: " +
@@ -43,7 +45,8 @@ public sealed class MoraleTuning : ScriptableObject
     public float RoutDespawnSeconds => _routDespawnSeconds;
     public float RetreatDistance => _retreatDistance;
     public float RetreatWaveDelaySeconds => _retreatWaveDelaySeconds;
-    public float RetreatSoldierMoveSeconds => _retreatSoldierMoveSeconds;
+    public float RetreatRearMoveSeconds => _retreatRearMoveSeconds;
+    public float RetreatFrontMoveSeconds => _retreatFrontMoveSeconds;
     public float FlankShockMultiplier => _flankShockMultiplier;
     public float DisorderSeconds => _disorderSeconds;
 

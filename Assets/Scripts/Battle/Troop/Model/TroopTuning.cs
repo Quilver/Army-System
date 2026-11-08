@@ -142,7 +142,13 @@ public sealed class TroopTuning
     public float RoutDespawnSeconds => Morale.RoutDespawnSeconds;
     public float RetreatDistance => Morale.RetreatDistance;
     public float RetreatWaveDelaySeconds => Morale.RetreatWaveDelaySeconds;
-    public float RetreatSoldierMoveSeconds => Morale.RetreatSoldierMoveSeconds;
+    public float RetreatRearMoveSeconds => Morale.RetreatRearMoveSeconds;
+    public float RetreatFrontMoveSeconds => Morale.RetreatFrontMoveSeconds;
+    // Move time for a soldier at frontness 0 (rear) to 1 (front) of a retreat (SU-133).
+    public float RetreatMoveSecondsAt(float frontness) =>
+        Mathf.Lerp(RetreatRearMoveSeconds, RetreatFrontMoveSeconds, Mathf.Clamp01(frontness));
+    // The slowest soldier's move time sets the retreat's length.
+    public float RetreatSlowestMoveSeconds => Mathf.Max(RetreatRearMoveSeconds, RetreatFrontMoveSeconds);
     public float FlankShockMultiplier => Morale.FlankShockMultiplier;
     public float DisorderSeconds => Morale.DisorderSeconds;
     public float FrontFaceHalfAngleDeg => Morale.FrontFaceHalfAngleDeg;

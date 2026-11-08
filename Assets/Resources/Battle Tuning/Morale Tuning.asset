@@ -18,8 +18,9 @@ MonoBehaviour:
   _routMoraleThresholdFraction: 0.5
   _routDespawnSeconds: 60
   _retreatDistance: 5
-  _retreatWaveDelaySeconds: 0.6
-  _retreatSoldierMoveSeconds: 1.2
+  _retreatWaveDelaySeconds: 1
+  _retreatRearMoveSeconds: 0.8
+  _retreatFrontMoveSeconds: 1.8
   _flankShockMultiplier: 3
   _frontFaceHalfAngleDeg: 45
   _rearFaceAngleDeg: 135

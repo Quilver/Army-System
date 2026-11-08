@@ -190,7 +190,8 @@ public sealed class TroopScenarioTests
         Assert.AreEqual(TroopTuning.Active.RetreatDistance, moved, 0.05f, "Retreat distance");
     }
 
-    // SU-14: the rear ranks start first and move faster; the front ranks start later and move slower (accordion).
+    // SU-133 (the lost SU-14): the rear ranks start first and move faster; the front ranks start later and move slower
+    // (accordion).
     [Test]
     public void Retreat_RearRanksFallBackFirstAndFaster()
     {
