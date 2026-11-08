@@ -12,7 +12,7 @@ public enum OrderKind
 //   below OrderDragMinPixels on an enemy troop        -> Pursue
 //   below OrderDragMinPixels on empty ground          -> Move
 //   at or above OrderDragMinPixels, several troops    -> Line (battle line)
-//   at or above OrderDragMinPixels, a single troop    -> Move to the release point (SU-16). A single troop is never
+//   at or above OrderDragMinPixels, a single troop    -> Move to the release point (SU-129). A single troop is never
 //                                                        given a facing; its line forms and faces the threat on its own
 //                                                        (automatic Line, spec §3.3 trigger 1).
 public static class OrderClassifier

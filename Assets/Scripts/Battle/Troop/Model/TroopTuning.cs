@@ -196,6 +196,7 @@ public sealed class TroopTuning
     public float BoxSelectMinDragPixels => Input.BoxSelectMinDragPixels;
     public float OrderDragMinPixels => Input.OrderDragMinPixels;
     public float ClickPickRadiusPixels => Input.ClickPickRadiusPixels;
+    public float DoubleClickSeconds => Input.DoubleClickSeconds;
 
     // --- Derived values used in several places ---
 

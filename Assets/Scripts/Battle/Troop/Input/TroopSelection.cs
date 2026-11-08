@@ -2,7 +2,8 @@ using System.Collections.Generic;
 using UnityEngine;
 
 // Tracks the troops in the scene, which one the cursor is over, and which of the player's troops are selected (spec §6.1).
-// Shift toggles: a selected troop is deselected and an unselected troop is added.
+// Shift toggles: a selected troop is deselected and an unselected troop is added. A double click on a troop selects its
+// whole chain (SU-129).
 public sealed class TroopSelection
 {
     const float RefreshInterval = 0.5f;
@@ -67,6 +68,46 @@ public sealed class TroopSelection
             return;
         }
         if (closest != null) Toggle(closest);
+    }
+
+    // Left press on one of the player's troops (SU-129): a single click selects just that troop, a double click selects
+    // every troop in its chain. Shift adds them instead (a single Shift click toggles the troop, as SelectAtPoint).
+    public void SelectTroop(Troop troop, bool wholeChain, bool toggle)
+    {
+        if (troop == null) return;
+        if (!wholeChain)
+        {
+            if (toggle) Toggle(troop);
+            else
+            {
+                Clear();
+                Add(troop);
+            }
+            return;
+        }
+        if (!toggle) Clear();
+        foreach (Troop member in ChainMembers(troop)) Add(member);
+    }
+
+    // The troop and every troop linked to it, directly or through others (pending links from a line order included).
+    public static List<Troop> ChainMembers(Troop troop)
+    {
+        var members = new List<Troop>();
+        if (troop == null) return members;
+        var open = new Stack<Troop>();
+        open.Push(troop);
+        while (open.Count > 0)
+        {
+            Troop current = open.Pop();
+            if (current == null || members.Contains(current)) continue;
+            members.Add(current);
+            for (int end = 0; end < TroopConstants.MaxChainLinks; end++)
+            {
+                TroopEndpointLink link = current.GetLineLink(end);
+                if (link != null && link.Other != null && !link.Other.IsRouted) open.Push(link.Other);
+            }
+        }
+        return members;
     }
 
     // Nearest troop of the given team (or of any other team when sameTeam is false) under the point.

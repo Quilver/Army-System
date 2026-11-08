@@ -3,7 +3,10 @@ using UnityEngine.InputSystem;
 
 // Controller for player control of troops (spec §6): reads the new Input System directly, then delegates to selection
 // and order planning. Every threshold is in screen pixels, so it does not depend on zoom.
-//   LMB click / drag      select (box select from BoxSelectMinDragPixels); Shift toggles
+//   LMB click / drag      select (box select from BoxSelectMinDragPixels, starting off the player's troops); Shift toggles.
+//                         A click on a troop selects just it; a double click selects its whole chain (SU-129).
+//   LMB drag from a troop press on one of the player's troops, keep the button down and drag: on release the selection
+//                         (that troop, or its chain after a double click) moves to the release point (SU-129)
 //   RMB click / drag      Pursue (on an enemy), Move (on ground); a drag from OrderDragMinPixels is a battle line for
 //                         two or more troops and a Move for one troop (a single troop is never given a facing)
 //   Alt                   force unlink of chained troops / keep reserves from linking (spec §6.3)
@@ -62,6 +65,10 @@ public sealed class TroopPlayerOrders : MonoBehaviour
     TroopOrderPlanner _planner;
     Camera _camera;
     Vector2? _selectionStart;
+    // The player's troop under the left press, if any: dragging from it moves the selection (SU-129).
+    Troop _pressTroop;
+    Troop _lastClickTroop;
+    float _lastClickTime;
     Vector2? _orderStart;
     Vector2 _mousePosition;
     bool _toggleSelection;
@@ -129,11 +136,14 @@ public sealed class TroopPlayerOrders : MonoBehaviour
         {
             _selectionStart = _mousePosition;
             _toggleSelection = IsShiftHeld();
+            PressOnTroop(_mousePosition);
         }
         if (mouse.leftButton.wasReleasedThisFrame && _selectionStart.HasValue)
         {
-            FinishSelection(_selectionStart.Value, _mousePosition);
+            if (_pressTroop != null) FinishTroopDrag(_selectionStart.Value, _mousePosition);
+            else FinishSelection(_selectionStart.Value, _mousePosition);
             _selectionStart = null;
+            _pressTroop = null;
         }
 
         if (mouse.rightButton.wasPressedThisFrame && !overHud && !overUi)
@@ -204,6 +214,40 @@ public sealed class TroopPlayerOrders : MonoBehaviour
         _engagementViewMesh.Destroy();
     }
 
+    // A left press on one of the player's troops selects it at once (a double click: its whole chain), so a drag that
+    // follows moves what was just selected (SU-129).
+    void PressOnTroop(Vector2 screenPosition)
+    {
+        Troop troop = _selection.TroopAtPoint(ScreenToWorld(screenPosition),
+            TroopScreenSpace.PixelsToWorld(_camera, screenPosition, TroopTuning.Active.ClickPickRadiusPixels),
+            _playerTeamId, sameTeam: true);
+        _pressTroop = troop;
+        if (troop == null)
+        {
+            _lastClickTroop = null;
+            return;
+        }
+        bool doubleClick = troop == _lastClickTroop &&
+                           Time.unscaledTime - _lastClickTime <= TroopTuning.Active.DoubleClickSeconds;
+        _selection.SelectTroop(troop, doubleClick, _toggleSelection);
+        // A third click starts a new double click rather than completing another one.
+        _lastClickTroop = doubleClick ? null : troop;
+        _lastClickTime = Time.unscaledTime;
+    }
+
+    // Left release after a press on a troop: the selection was made on the press; a drag of at least OrderDragMinPixels
+    // (without Shift) moves the selection to the release point, or places it while deploying.
+    void FinishTroopDrag(Vector2 start, Vector2 end)
+    {
+        if (!IsTroopDrag(start, end)) return;
+        if (Placement != null) _planner.FinishPlacementMove(end, _camera, Placement);
+        else _planner.FinishMove(end, _camera, IsAltHeld());
+    }
+
+    bool IsTroopDrag(Vector2 start, Vector2 end) =>
+        _pressTroop != null && !_toggleSelection && _selection.Selected.Count > 0 &&
+        Vector2.Distance(start, end) >= TroopTuning.Active.OrderDragMinPixels;
+
     void FinishSelection(Vector2 start, Vector2 end)
     {
         TroopTuning tuning = TroopTuning.Active;
@@ -267,7 +311,11 @@ public sealed class TroopPlayerOrders : MonoBehaviour
         }
         else _speedHud.Hide();
 
-        if (_selectionStart.HasValue && Mouse.current != null)
+        if (_selectionStart.HasValue && Mouse.current != null && _camera != null && _pressTroop != null)
+        {
+            if (IsTroopDrag(_selectionStart.Value, _mousePosition)) DrawMovePreview(_mousePosition);
+        }
+        else if (_selectionStart.HasValue && Mouse.current != null)
             TroopOrderOverlay.DrawSelectionBox(_selectionStart.Value, _mousePosition);
         if (_orderStart.HasValue && Mouse.current != null && _camera != null && _selection.Selected.Count > 0)
             DrawOrderPreview(_orderStart.Value, _mousePosition);
@@ -286,6 +334,18 @@ public sealed class TroopPlayerOrders : MonoBehaviour
             if (troop == hovered) hoveredDrawn = true;
         }
         if (!hoveredDrawn) _orderPath.Draw(_camera, hovered, style);
+    }
+
+    // Ghost preview of a left-drag move (SU-129): a marker at each troop's planned spot and its chain tethers.
+    void DrawMovePreview(Vector2 screenEnd)
+    {
+        bool alt = IsAltHeld();
+        _planner.PreviewMove(screenEnd, _camera, alt);
+        foreach (var placement in _planner.Placements)
+            TroopOrderOverlay.DrawMarker(TroopScreenSpace.WorldToGui(_camera, placement.Center), placement.Troop.ArmyColor);
+        foreach (var tether in _planner.Tethers)
+            TroopOrderOverlay.DrawTether(TroopScreenSpace.WorldToGui(_camera, tether.From),
+                TroopScreenSpace.WorldToGui(_camera, tether.To), tether.StaysLinked && !alt);
     }
 
     // Ghost preview while the right button is held: each troop's projected footprint (or a marker for a point order), the

@@ -3,13 +3,15 @@ using UnityEngine;
 
 // Turns a right-button release into orders for the selected troops (spec §6.2, §6.3):
 //   Pursue  click on an enemy troop: every selected troop pursues it (Assault applies on engagement).
-//   Move    click on ground, or any drag with a single troop selected: the troops keep their relative offsets and
-//           translate to the release point; they arrive Idle. A single troop is never given a facing (SU-16).
+//   Move    click on ground, or a right-drag with a single troop selected: the troops keep their relative offsets and
+//           translate to the release point; they arrive Idle. A single troop is never given a facing (SU-129).
+//           A left-drag that starts on one of the player's troops is also a Move of the selection (FinishMove, SU-129).
 //   Line    drag with several troops: a battle line along the drag. The troops split the span in order along the drag,
 //           adjacent line points meet at joints, and the order creates their links explicitly (Q-19).
 // Chain rules for a troop linked to a troop that is not part of the order: inside the envelope (stretch <= 3.0 x L_nat,
 // inner angle >= 65 degrees) the link stays; outside it, or with Alt held, the link is severed when the order is issued
-// and the troop is ChainSuppressed. Alt on an unlinked troop suppresses auto-linking until its order completes (Q-23).
+// and the troop is ChainSuppressed. Alt on an unlinked troop suppresses auto-linking the same way: until it has been outside every attach radius for
+// ChainSuppressCooldownSeconds (SU-130).
 public sealed class TroopOrderPlanner
 {
     public struct Placement
@@ -84,6 +86,41 @@ public sealed class TroopOrderPlanner
         }
     }
 
+    // Left-drag move (SU-129): the selection moves to the release point, keeping its relative offsets, whatever the
+    // drag length. Chain rules apply as for a right-click Move, so a selected whole chain moves together.
+    public void FinishMove(Vector2 releaseScreen, Camera camera, bool altHeld)
+    {
+        var selected = LiveSelection();
+        if (selected.Count == 0) return;
+        PlanMove(selected, TroopScreenSpace.ScreenToWorld(camera, releaseScreen));
+        foreach (var placement in _placements)
+        {
+            ApplyChainRules(placement.Troop, placement, selected, altHeld, forceUnlinkOutside: false);
+            placement.Troop.MoveTo(placement.Center);
+        }
+    }
+
+    // Left-drag move while deploying: the selection is put straight at the release point and stands Idle.
+    public void FinishPlacementMove(Vector2 releaseScreen, Camera camera, ITroopPlacement placement)
+    {
+        var selected = LiveSelection();
+        if (selected.Count == 0 || placement == null) return;
+        PlanMove(selected, TroopScreenSpace.ScreenToWorld(camera, releaseScreen));
+        BreakLinksWithin(selected);
+        foreach (var planned in _placements)
+            placement.Place(planned.Troop, planned.Center, planned.Facing, planned.Length, false);
+    }
+
+    // Ghost preview of a left-drag move: the planned spot of each selected troop and its chain tethers.
+    public void PreviewMove(Vector2 currentScreen, Camera camera, bool altHeld)
+    {
+        var selected = LiveSelection();
+        PlanMove(selected, TroopScreenSpace.ScreenToWorld(camera, currentScreen));
+        _tethers.Clear();
+        foreach (var placement in _placements)
+            CollectTethers(placement, selected, altHeld);
+    }
+
     // Deployment: the same Move and Line plans as FinishOrder, but each troop is put straight at its planned spot.
     // Attack orders do nothing while deploying.
     public void FinishPlacement(Vector2 pressScreen, Vector2 releaseScreen, Camera camera, ITroopPlacement placement)
@@ -96,7 +133,7 @@ public sealed class TroopOrderPlanner
         if (kind == OrderKind.Line) PlanLine(selected, worldStart, worldEnd);
         else PlanMove(selected, worldEnd);
         BreakLinksWithin(selected);
-        // A line stands in its line; a move (one troop's drag included, SU-16) stands Idle, as it arrives in battle.
+        // A line stands in its line; a move (one troop's right-drag included, SU-129) stands Idle, as it arrives in battle.
         bool holdLine = kind == OrderKind.Line;
         foreach (var planned in _placements)
             placement.Place(planned.Troop, planned.Center, planned.Facing, planned.Length, holdLine);
@@ -143,7 +180,7 @@ public sealed class TroopOrderPlanner
     }
 
     // Several troops split the span in order along the drag (Q-18); each length is its share, clamped to
-    // [0.7, 3.0] x L_nat. The player never orders a single troop into a line (SU-16: a single-troop drag is a Move).
+    // [0.7, 3.0] x L_nat. The player never orders a single troop into a line (SU-129: a single-troop drag is a Move).
     public void PlanLine(List<Troop> selected, Vector2 start, Vector2 end)
     {
         _placements.Clear();
