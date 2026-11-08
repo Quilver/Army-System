@@ -29,8 +29,10 @@
   ones with **Leveraged Wars > Missions > New Mission**.
 - Battle prefabs (capture point, deployment zone, battle canvas) are in `Assets/Prefabs/Battle/`; campaign UI art and
   prefabs stay under `Assets/Campaign/`.
-- `CampaignDataManager` persists across scenes and saves `campaign.json` in `Application.persistentDataPath`. Bump
-  `CampaignData.CurrentSaveVersion` when the save format changes; older saves are deleted.
+- `CampaignDataManager` persists across scenes and holds the campaign in memory. **Saving is switched off while the game
+  is prototyped** (`CampaignDataManager.SavingEnabled = false`, SU-132): nothing is loaded from or saved to
+  `campaign.json`. When saving is switched back on, bump `CampaignData.CurrentSaveVersion` when the save format changes;
+  older saves are deleted.
 - Runtime-loaded assets must remain under `Assets/Resources/` and use the existing `Resources.Load` paths, especially
   `Resources/Battle Tuning/`, `Resources/Battle/Soldiers/` (soldier material and shaders), `Resources/Shaders/`,
   `Resources/Troop and Character Profiles/` and `Resources/Levels/`.
@@ -48,7 +50,11 @@
 
 ## Docs
 
-- `Docs/Archive/` holds out-of-date documents kept for history; do not use them as guidance.
+- `Docs/Battle/specifications.md` is the battle spec; `SpecificationUpdate.md` is the change log, `AssumptionsReview.md`
+  the designer's checklist of assumptions and `Questions.md` the open questions. Out-of-date documents are deleted
+  rather than archived (git history keeps them).
+- Every value on the Battle Tuning assets is a tunable variable; the spec lists them with their current values (§8).
+  When a change adds or changes one, update that table.
 
 ## Specification Log
 

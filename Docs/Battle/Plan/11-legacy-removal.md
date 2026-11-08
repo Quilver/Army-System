@@ -1,4 +1,4 @@
-# Plan 11: Remove the Legacy Unit/Model System
+# Plan 11: Remove the Legacy Unit/Model System (complete)
 
 **Goal:** Troops and Soldiers fully replace the old Unit and Model scripts and resources, the old AI is gone (a new AI
 comes later), and the scripts move into `Assets/Scripts/` split by system.
@@ -43,10 +43,7 @@ Dependency rule: Battle and Misc never reference Tween or Campaign. Tween and Ca
 - [x] 8. Docs: `AGENTS.md`, `Architecture.md`, `Troop/README.md`, `Questions.md` (Q-49).
 - [x] 9. Delete `Assets/Editor/Legacy Removal/`.
 
-## Known issues
+## Status
 
-- New folders (`Assets/Scripts/...`, `Assets/Prefabs/...`) get their `.meta` files from the Editor on the next refresh;
-  commit them.
-
-- `TroopScenarioTests.Retreat_RearRanksFallBackFirstAndFaster` was already failing before this work (12:43 run).
-- Stat growth on level-up is not applied yet (SU-62).
+Complete. The two issues noted here at the time are resolved: the rear-first retreat test passes again (SU-133), and
+level-up stat gains are applied in battle (SU-132).

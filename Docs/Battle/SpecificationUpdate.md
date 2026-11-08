@@ -1,9 +1,116 @@
 # Specification Update Log
 
 Running log of changes to the battle system and of assumptions made while building it, against
-`Docs/Battle/specifications.md` (v0.9). Newest entries first. Each entry gives what changed, the spec sections it
-touches, and whether it is a **Decision** (asked for by the designer) or an **Assumption** (filled in to make the
-change work; confirm or replace). `specifications.md` itself is not edited; fold entries into it when they are agreed.
+`Docs/Battle/specifications.md`. Newest entries first. Each entry gives what changed, the spec sections it touches, and
+whether it is a **Decision** (asked for by the designer) or an **Assumption** (filled in to make the change work;
+confirm or replace).
+
+**Spec v0.10 (2026-11-08)** folds in every Decision up to SU-135. Assumptions stay here until the designer confirms
+them in `AssumptionsReview.md`; the spec tags text that rests on one as **[A: SU-n]**. Section numbers in entries before
+SU-128 refer to v0.9 and may have moved.
+
+---
+
+## 2026-11-08: Answers to the battle docs review
+
+### SU-128 Overflow damage counts as Shock (Decision, spec §4.6, §5.2)
+- Decision: damage that causes Bleed or Bruise causes Shock; armoured soldiers take less Shock. Points above
+  TotalDefence (overflow) become Bleed and now add Shock like any other Bleed. Before, they added none, which contradicted
+  spec v0.9 §4.6 and meant a heavy hit on an armoured soldier caused less Shock per point than on an unarmoured one.
+- Unchanged: deflected points add no Shock, and damage beyond the HP a soldier has left adds none.
+- Code: `MitigationResult.ShockPoints`, `SoldierAgentState.ApplyMitigation`. Tests: `MitigationResolverTests`
+  (`Shock_IsAppliedBruisePlusBleed_IncludingOverflow`, `Shock_ExcludesDamagePastZeroHp`).
+
+### SU-129 Left-drag from a troop moves it; double click selects the chain (Decision + Assumptions, spec §6.1, §6.2)
+- Decision: after left-clicking a troop to select it, the player can keep the button down and drag to a spot; releasing
+  gives the selection a Move order there. A single left click applies only to that troop; a **double left click selects
+  the whole chain**, and a drag after it moves the whole chain.
+- Decision (restored): with one troop selected, a right-drag is a Move to the release point; the player never gives a
+  lone troop a facing directly. This was SU-16 in the "Update to UI and retreat" commit (3d6160f0), whose entries
+  (SU-14 to SU-17) were lost in the merge 4be238d0; the code still cited "SU-16". In a chain a troop's facing can be
+  shaped only by placing its neighbours.
+- Assumption: a left press on one of the player's troops selects at once (on the press, not the release), so the drag
+  that follows moves what was just selected. A press on empty ground still starts a box select.
+- Assumption: a double click is two presses on the same troop within `DoubleClickSeconds` (0.35 s, Input Tuning). A
+  third click starts a new double click. Pending links from a line order count as chain links; routed troops are left
+  out.
+- Assumption: the drag needs `OrderDragMinPixels` (8 px) and keeps the troops' relative offsets; chain rules apply as for
+  a right-click Move (links inside the selection move with it; links to troops outside follow the envelope and Alt).
+  While deploying it places the selection, Idle. With Shift held, the press toggles the troop and the drag does nothing.
+- Assumption: while dragging, a marker shows each troop's planned spot, plus chain tethers.
+- Code: `TroopPlayerOrders` (`PressOnTroop`, `FinishTroopDrag`), `TroopSelection.SelectTroop` / `ChainMembers`,
+  `TroopOrderPlanner.FinishMove` / `FinishPlacementMove` / `PreviewMove`, `InputTuning.DoubleClickSeconds`. Tests:
+  `ChainEngagementScenarioTests.ClickSelectsTheTroop_DoubleClickSelectsItsChain`.
+
+### SU-130 ChainSuppressed ends 3 s after leaving every attach radius (Decision, answers Q-22, spec §3.4.1)
+- Decision (Q-22 option 2): a detached troop stays unlinked until it leaves the attach radius and then 3 s pass
+  (`ChainSuppressCooldownSeconds`). Finishing its order no longer ends suppression (it used to, which gave option 1).
+- Assumption: Alt suppression on an unlinked reserve ends the same way (answers Q-23).
+- Code: `ChainLinker.UpdateSuppression`, `Troop.OnOrderComplete`. Tests:
+  `ChainEngagementScenarioTests.ChainSuppressed_EndsOnlyAfterLeavingTheAttachRadiusForThreeSeconds`.
+
+### SU-131 Troops are 50% larger (Decision + Assumption, amends SU-103, spec §3.3)
+- Decision: troops were too small for their soldiers to fit nicely; they get about 50% more size. RetreatDistance stays
+  5 units.
+- Assumption: one multiplier, Formation Tuning **`TroopSizeScale` = 1.5**, on the troop radius (blob, soldier clamp,
+  pivot spacing, deployment spacing, paths). Frontage, `L_nat` and line spacing are unchanged, so lines are as wide as
+  before; idle blobs and the room around a troop are 1.5x. Spearmen (16 soldiers, frontage 5): radius 2.5 → 3.75.
+- Effect: from the larger spawn blob a composite troop takes longer to sort its archers to the front; the slowest test
+  seed needs about 20 s (the test now waits 20 s, was 10).
+- Code: `FormationTuning.TroopSizeScale`, `LineGeometry.TroopRadius(..., sizeScale)`. Tests:
+  `LineGeometryTests.TroopRadius_IsScaledByTroopSizeScale`.
+
+### SU-132 Saving off; level-up gains are used in battle (Decision + Assumptions, closes the SU-115 open item)
+- Decision: saving and loading are switched off while the game is prototyped and tuned
+  (`CampaignDataManager.SavingEnabled = false`). Decision: level-up stat gains carry to the next mission and are used in
+  battle.
+- Assumption: with saving off the campaign lives in memory on the persistent `CampaignDataManager` for the play session.
+  The prefab's Load Data / Save Data ticks are ignored, Continue goes on with the campaign in memory (or the starting
+  data), and nothing touches `campaign.json`. Set `SavingEnabled` to true to bring saves back.
+- Assumption: a deployed roster character fights as a runtime copy of its `CampaignCharacter` with its gains added
+  (`CharacterProfile.CreateWithGains`, made by `RosterCharacter.BattleCharacter()` when the deployment zone asks for its
+  troops). Every stat, Numbers (one more soldier per point) and weapon skill gain applies; stats stay within their limits.
+  The copy is never saved and is reused until the gains change.
+- Assumption: the copy keeps a link to its asset (`CharacterProfile.Source`), and everything that matches a troop's
+  characters to the roster (achievements, kill and casualty records, the post-battle book) compares the asset, so
+  records still reach the right character. Characters with no roster entry (a level's default troops, enemies) are used
+  unchanged.
+- Code: `CampaignDataManager`, `CharacterProfile.CreateWithGains` / `Source`, `RosterCharacter.BattleCharacter`,
+  `RosterTroops` (`WithGains`, `CharacterOf`), `AchievementController`. Tests:
+  `AchievementTests.LevelUpGains_AreInTheCharacterTheBattleUses`.
+
+### SU-133 Retreat: rear first and fastest, restored and fixed (Decision + Assumptions, spec §5.5)
+- Decision (restored): the rear ranks start first **and** move fastest; the front start last and move slowest, so the
+  troop stretches out hard and then closes up. This was SU-14 (and SU-15) in commit 3d6160f0, lost in the merge
+  4be238d0 (see SU-48's test note). `RetreatSoldierMoveSeconds` (1.2 s, one value for all) is replaced by
+  **`RetreatRearMoveSeconds` 0.8 s** and **`RetreatFrontMoveSeconds` 1.8 s**, and `RetreatWaveDelaySeconds` is 1.0 s
+  (was 0.6). A retreat lasts 1.0 + 1.8 + 0.5 = 3.3 s (was 2.3 s). Morale Tuning asset updated.
+- Assumption (SU-15, restored): retreat acceleration headroom 6x (was 3x) so the rear can keep to 0.8 s.
+- Bug fix: while the pivot slipped back, each soldier's retreat target looked as if it was moving toward the enemy at
+  the slip speed (the target is kept in troop space, which moves with the pivot), so every soldier was first thrown about
+  0.6 units toward the enemy. The previous target now moves with the soldier's compensation, so a soldier holds its
+  ground until its start time.
+- `TroopScenarioTests.Retreat_RearRanksFallBackFirstAndFaster`, failing since 4be238d0, passes.
+- Code: `MoraleTuning`, `TroopTuning.RetreatMoveSecondsAt`, `FaultSlipMotion`, `SoldierSteering`.
+
+### SU-134 The Provisional flag is removed from weapons and armour (Decision)
+- Decision: weapons and armour no longer have a Provisional tick; the "Provisional" notes are removed from the Battle
+  Tuning tooltips. Every value is a tunable variable (SU-135). The 13 assets that stored the flag were cleaned.
+- Code: `WeaponProfile`, `ArmourProfile`, the `CreateRuntimeProfile` factories, `Phase01DataGenerator`,
+  `WeaponProfileMigration`.
+
+### SU-135 Spec v0.10: tunable variables; docs brought up to date (Decision)
+- Decision: every value in the Battle Tuning assets is a **variable** that can be adjusted; the spec lists them with
+  their current values (spec §8) instead of treating the distances as fixed spec values. This answers the open questions
+  about S_Distance, A_Distance and EngagementGap: the live values are S_Distance 5, A_Distance 2 and EngagementGap
+  **1.5** (the asset was set to 1.5 in commit 91d57f73 without a log entry; recorded here).
+- Decision: `specifications.md` becomes v0.10 with every Decision up to SU-135 folded in. `Decisions.md` and
+  `Plan/00-10` (the Phase 01–10 build record) are removed; the decision IDs code still cites are kept in spec
+  Appendix A. `Questions.md` keeps only open questions. `Architecture.md`, `AssumptionsReview.md`, `AGENTS.md`, Plan 11
+  and the Troop README are updated. The "decision 7" citation (SU-89, SU-90, `MitigationResolver`) is removed.
+- Decision: thrown-weapon troops are hybrids: the AI orders them as melee and they still throw (Q-51). The player's
+  loss rule (every troop) is fine for now (SU-78). An engaged chain end does not refuse its flank by itself; that needs
+  an order (movement edge case 18).
 
 ---
 
@@ -622,7 +729,7 @@ change work; confirm or replace). `specifications.md` itself is not edited; fold
   unarmoured soldiers. The *Unarmoured* armour asset is also set to 0 : 3 : 7 (its DefenceBonus 4 is unchanged). The
   troop card shows 0 : 3 : 7 for a character with no armour.
 - Assumption: a soldier with **no armour** still has **no TotalDefence cap**: every point rolls against 0 : 3 : 7, so
-  all of it counts as Shock as before (decision 7). The change is that about 30% now lands as Bruise (heals) instead of
+  all of it counts as Shock as before. The change is that about 30% now lands as Bruise (heals) instead of
   Bleed. Seeded scenario tests that use unarmoured characters may need their expectations re-checked.
 - Decision: **Fire & Engage** fires **once at the start of each engagement and once on the retreat**, per engagement
   (not once per battle):
@@ -673,7 +780,7 @@ change work; confirm or replace). `specifications.md` itself is not edited; fold
   none), so both **melee and ranged** weapons can have them, and one weapon may have both. They are separate from the
   single melee `SpecialRule` (Boar Spear, Lance), so a weapon can carry a special rule as well.
 - Assumption: a melee hit uses the winner's **melee weapon**; a projectile uses the **ranged weapon that fired it**.
-- Assumption: a soldier with **no armour at all** still takes every point as Bleed with no roll (decision 7), so
+- Assumption: a soldier with **no armour at all** still takes every point as Bleed with no roll, so
   Bludgeoning does not turn that damage into Bruise. A character wearing the *Unarmoured* asset does roll, and the
   abilities apply.
 - Assumption: no existing weapon has Piercing or Bludgeoning yet (all 0); set them per weapon in the Inspector.

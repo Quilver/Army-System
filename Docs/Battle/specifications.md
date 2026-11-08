@@ -1,39 +1,14 @@
-# Leveraged Wars: Battle System Specification (v0.9)
+# Leveraged Wars: Battle System Specification (v0.10)
 
-> **Status:** Supersedes v0.8 and the WIP `Assets/Battle Scripts/Troop/README.md` where they conflict.
-> Items tagged **[Q-n]** are unresolved and listed in `Questions.md`. Items tagged **[PROVISIONAL]** have a working value
-> that must be implemented as a named tuning constant, not a magic number.
-> Items tagged **[DEPRECATED]** must be removed from code and docs.
-
----
-
-## 0. Changes from v0.8
-
-| Area | v0.8 | v0.9 |
-|---|---|---|
-| Hinge limit | `ChainMaxBendAngleDeg = 65°` (ambiguous) | **Minimum inner hinge angle 65°** (angle at the joint between the two troops' lines). |
-| Chain break | `R_BreakScale = 3.0` (distance) | **Break when required line length exceeds `ChainMaxStretchScale = 3.0 × L_nat`.** `R_BreakScale` is removed. |
-| Domination | `|P_winner − R| / 10` | **`|R − P_charger| / 10`** for either side, rounded to nearest whole number. |
-| Line spacing | `0.6` | **`0.9`** (equal to the minimum soldier centre spacing). |
-| Natural line length | Soldier-count based | **Based on Troop Radius.** |
-| Move | Separate stat | **Derived:** minimum soldier `Speed` in the troop. |
-| Discipline | Soldier-level, drives strike beat | **Troop-level.** Selects charge followers only. |
-| Melee attacks | Banked attacks, 1 s strike beat, Lunge | **[DEPRECATED].** Replaced by stochastic charges (§4.3). |
-| Clash trigger | Attack spent on contact | **Charge reaches contact, or any opposing contact** (rate-limited, §4.5). |
-| Morale | `FaultPressure` + non-decaying Shock | **[DEPRECATED].** Shock decays continuously (§5). |
-| Clash cooldown / break cooldown | Present | Break cooldown and charge lock **[Q-34]**. Clash rate limit is new **[PROVISIONAL]**. |
-| Facing damage multiplier (4×/2×/1×) | Present in code, not in spec | **[DEPRECATED].** Flanking is handled by face penalties (§3.3). **[Q-38]** |
-| Support radius | `1.0` (×2 for pikes) | **`3`.** Pike multiplier replaced by the Boar Spear rule (§1.6). |
-| Bruise | 30 s timer | **Heals 1 HP per second per soldier.** |
-| Selection / order thresholds | World units / pixels mixed | **Screen pixels** (zoom-independent). |
-| Friendly (support, pivot separation) | Undefined | **Same army.** |
-| `InitialTroopCount` | Name | **`InitialSoldierCount`.** |
-| Pursuit | Undefined | **Only by explicit Pursue order.** |
-| Weapon classes | Spear, Sword, Axe, Bow, Javelin | **+ Mace, Crossbow** (Phase 01, Q-52). |
-| Soldier loadout | Undefined | **Up to 2 weapons (list), first melee and first ranged are used.** Q-3 open for two melee weapons. |
-| Combat stat type | Floats, various scales | **All combat stats are integers 1–20, default 5.** Includes BaseMorale, Discipline and weapon skill levels. |
-| HP | Average 18, float | **Integer 10–40, default 15.** |
-| Discipline range | 0–20 | **1–20, default 5.** Q-10 resolved. Minimum 1 means every troop has at least one possible follower. |
+> **Status (2026-11-08):** v0.10 folds every designer **Decision** recorded in `SpecificationUpdate.md` up to SU-135,
+> and the answers to the docs review, into the spec. It replaces v0.9.
+> - Text that rests on an unconfirmed **Assumption** is tagged **[A: SU-n]**. Those are listed for review in
+>   `AssumptionsReview.md`; once a group is confirmed the tag is removed.
+> - Items tagged **[Q-n]** are open and listed in `Questions.md`.
+> - Every number in §8 is a **tunable variable**: a field on a Battle Tuning asset that can be adjusted in the
+>   Inspector. Values elsewhere in this document are the current ones and point to §8.
+> - Decision IDs from the Phase 01–10 build that code still cites (D-01, D-03, D-52, D-54, D-55) are listed in
+>   Appendix A.
 
 ---
 
@@ -41,231 +16,294 @@
 
 ### 1.1 Entities
 
-- **Troop:** The commandable unit controlled by the player or AI. At battle time it receives a resolved `TroopProfile` and
-  spawns a roster of `Soldier` agents from its composition.
-- **Soldier:** An autonomous fighter simulated as plain state (`SoldierAgentState`), steered by the troop's vector field.
-  Soldiers have no fixed slots.
-- **Character:** A campaign commander. Each character commands **one soldier type**.
-- **Composite Troop:** Two or more characters paired before battle. The battle system does not know about pairing; it only
-  receives the resolved `TroopProfile`.
+- **Troop:** the unit the player or the AI commands. It holds a list of **Characters**, leader first, and spawns their
+  soldiers at the start of the battle. The troop's name and portrait are its leader's (SU-118).
+- **Soldier:** an autonomous fighter simulated as plain state (`SoldierAgentState`) and steered by its troop's vector
+  field. Soldiers have no fixed slots. Each soldier takes its stats and equipment from its own character.
+- **Character:** a `CharacterProfile`: one soldier type with its stats, equipment, class and soldier count (Numbers).
+  Characters in the player's roster are `CampaignCharacter` assets, which add stat growths (SU-56, D-56).
+- **Composite troop:** a troop of two characters, paired in the pre-battle tent by dragging one deployed character's
+  card onto another's (SU-117). At most 2 characters per troop. The battle only sees the list of characters.
+- **Detachment / Formation (AI):** the enemy AI groups troops into Detachments and gives each a Formation (its role,
+  e.g. Guard, Flank). See `Assets/Scripts/Battle/AI/README.md`. A troop's own shape is its *formation mode* (§3.1).
 
-### 1.2 Composite Troop Resolution (pre-battle)
+### 1.2 Composite Troop Resolution
 
-| Troop stat | Rule |
+| Troop value | Rule |
 |---|---|
-| `Move` | `min(Speed_i)`, where each character's `Speed_i` is the minimum soldier `Speed` of its soldier type (§1.3). |
-| `BaseMorale` | `max(BaseMorale_i)` |
-| `Discipline` | `max(Discipline_i)` |
-| `InitialSoldierCount` | `Σ SoldierCount_i`. Each character spawns its own soldier type. |
+| `Move` | Lowest soldier `Speed` in the troop (§1.3). |
+| `BaseMorale` | `max` of the characters' Morale. |
+| `Discipline` | `max` of the characters' Discipline. |
+| `InitialSoldierCount` | Sum of the characters' Numbers. Each character spawns its own soldiers. |
+| `Frontage` | From the total soldier count (§3.3, SU-117, SU-118). |
 
 ### 1.3 Stat Scale
 
-- **Combat stats are integers from 1 to 20, default 5** (`CombatStatLimits`). This covers Speed, Defence, Strength,
-  Support, Charge, Aggression, BaseMorale, Discipline and weapon skill levels.
-- **HP (MaxHP) is an integer from 10 to 40, default 15.**
-- Soldier counts (Numbers) are not stats and have no range.
-- **Speed conversion [PROVISIONAL, Q-1]:** `UnitsPerSecond = StatValue × SpeedUnitsPerStatPoint`, with
-  `SpeedUnitsPerStatPoint = 0.6` (Speed 5 = 3.0 units/s, matching the current Swordsmen asset).
-- **Pivot speed** = troop `Move` × `SpeedUnitsPerStatPoint`. No soldier is slower than the pivot, because `Move` is the minimum.
+- **Combat stats are integers 1–20, default 5** (`CombatStatLimits`): Speed, Defence, Strength, Support, Charge,
+  Aggression, Morale, Discipline and every weapon skill level.
+- **HP (MaxHP) is an integer 10–40, default 15.**
+- Numbers (soldier count) is not a combat stat and has no range. Its level-up cap is 20.
+- **Speed:** `units/s = Speed × SpeedUnitsPerStatPoint` (0.6, so Speed 5 = 3.0 units/s). Acceleration =
+  `Speed × AccelerationPerSpeedPoint` (1.6, so Speed 5 = 8 units/s²) (SU-15).
+- **Pivot speed** = troop `Move × SpeedUnitsPerStatPoint`. No soldier is slower than its pivot.
 
-### 1.4 Troop-Level Stats
-
-| Stat | Scale | Notes |
-|---|---|---|
-| `Move` | 1–20 (derived) | Minimum soldier `Speed` (§1.2). Not stored separately. |
-| `BaseMorale` | integer 1–20, default 5 | Morale per soldier. `EffectiveMorale` = `BaseMorale × CurrentSoldierCount` minus penalties (§5). |
-| `Discipline` | integer 1–20, default 5 | Number of nearest friendly soldiers that may follow a charger (§4.4). |
-| `InitialSoldierCount` | integer | Soldiers at deployment. Used for the rout threshold. |
-| `CurrentSoldierCount` | integer | Living soldiers. |
-| `TroopRadius` | units | Profile value. How it is set for stretched lines is open **[Q-11]**. |
-
-### 1.5 Soldier-Level Stats
+### 1.4 Character Stats
 
 | Stat | Scale | Notes |
 |---|---|---|
-| `MaxHP` | integer 10–40, default 15 | Combined pool for Bruise and Bleed (§4.6). |
-| `Speed` | integer 1–20, default 5 | Individual speed along the vector field. Lowest value in a troop sets its `Move`. |
-| `Defence` | integer 1–20, default 5 | Mitigation (§4.6). |
-| `Strength` | integer 1–20, default 5 | Melee damage bonus. |
-| `Support` (`MaxSupportCount`) | integer 1–20, default 5 | Cap on supporting allies in a clash. |
-| `Charge` (`ChargeBonus`) | integer 1–20, default 5 | Added to Combat Power when charging. |
-| `Aggression` | integer 1–20, default 5 | Expected charges per `ActionWindowSeconds` while engaged. |
-| `WeaponSkill[class]` | integer 1–20, default 5 when added **[Q-2]** | Up to 2 classes per soldier. A class that is not listed is unskilled (0). A listed skill is never 0. |
+| `Numbers` | integer ≥ 0 | Soldiers the character brings into battle. |
+| `Morale` (BaseMorale) | 1–20 | Morale per soldier (§5.1). |
+| `Discipline` | 1–20 | Nearest same-troop soldiers that may follow a charger (§4.4). Minimum 1 **[Q-58]**. |
+| `MaxHP` | 10–40 | Combined pool for Bruise and Bleed (§4.6). |
+| `Speed` | 1–20 | Lowest value in a troop sets its `Move`. |
+| `Defence` | 1–20 | Mitigation (§4.6). |
+| `Strength` | 1–20 | Melee damage. |
+| `Support` | 1–20 | Cap on supporting allies in a clash (§4.5). |
+| `Charge` | 1–20 | Added to Combat Power while charging (§4.5). |
+| `Aggression` | 1–20 | Expected charges per `ChargeWindowSeconds` while the soldier may charge (§4.3). |
+| `WeaponSkill[class]` | 1–20 | Up to 2 classes. A class that is not listed is unskilled (0) **[Q-2]**. A listed skill is never 0. |
+
+### 1.5 Levels and Growth (campaign → battle)
+
+- A roster character levels up every **10 XP** (SU-115). Each level rolls every stat (Numbers included) and each listed
+  weapon skill against its growth chance (default 20%); a success below the class cap adds +1. Class caps come from the
+  character's `CharacterClass` (default 20, HP 40, Numbers 20).
+- **Gains are used in battle and carry to the next mission** (SU-132). A deployed roster character fights as a runtime
+  copy of its `CampaignCharacter` with its gains added (`RosterCharacter.BattleCharacter()`); a Numbers gain adds a
+  soldier.
+- **Saving is switched off** while the game is prototyped (`CampaignDataManager.SavingEnabled = false`, SU-132). The
+  campaign lives in memory for the play session; nothing is read from or written to `campaign.json`.
 
 ### 1.6 Equipment
 
-**Loadout rules**
-- A soldier carries **up to 2 weapons** and has skill in **up to 2 weapon classes**.
-- Weapon classes: **Spear, Sword, Axe, Bow, Javelin, Mace, Crossbow**. Mace is melee. Crossbow is ranged. (Mace and
-  Crossbow added in Phase 01, Decisions D-03, pending sign-off Q-52.)
-- Ranged troops (such as archers) always carry a ranged weapon **and** a melee weapon. In melee they use the melee weapon.
-- Which melee weapon is used when a soldier carries two **[Q-3]**.
+**Loadout (D-52)**
+- A character carries **one melee weapon (required)**, **an optional ranged weapon**, and armour (or none).
+- Melee weapon classes: **Sword, Axe, Spear, Mace**. Ranged weapon classes: **Bow, Crossbow, Javelin** (Mace and
+  Crossbow: D-03).
+- Ranged troops always carry a melee weapon and use it in melee.
+- **Thrown weapons** (Javelin class: javelin, pilum, throwing axe) make a **hybrid** troop: it still throws on its own
+  (§4.7), but the AI orders it as a melee troop (SU-79). Only Bow and Crossbow make a troop *ranged* for the AI.
 
 **Armour**
 
 | Field | Meaning |
 |---|---|
-| `Resistance` | Deflect / Bruise / Bleed percentages for each point of damage up to `TotalDefence`. Must sum to 100. |
-| `DefenceBonus` | Added to the soldier's `Defence` to give `TotalDefence`. |
+| `Deflect : Bruise : Bleed` | A **ratio** of whole numbers ≥ 0 (SU-89). Each point of damage up to `TotalDefence` rolls one of the three with chance proportional to its part. |
+| `DefenceBonus` | Added to the soldier's Defence to give `TotalDefence`. |
+
+- **No armour:** every point rolls against **0 : 3 : 7**, with **no TotalDefence cap** (SU-90).
 
 **Melee weapons**
 
 | Field | Meaning |
 |---|---|
-| `WeaponClass` | Spear, Sword, Axe. |
-| `DamageBonus` | Added to melee damage (`WeaponDamage`). |
-| `ChargeBonus` | Added to Charge only while charging **[Q-4]**. |
-| `SpecialRule` | Optional (see below). |
+| `Damage` | Added to Strength in melee damage. |
+| `ChargeBonus` | Added to Charge in Combat Power while charging. |
+| `SpecialRules` | A list (SU-90), below. |
 
 **Ranged weapons**
 
 | Field | Meaning |
 |---|---|
-| `WeaponClass` | Bow, Javelin. |
-| `Damage` | Base damage per hit. |
-| `Range` | Units. |
-| `Accuracy` | Added to skill in the hit formula (§4.7). |
+| `Damage` | Damage per hit (Strength is not added). |
+| `Range` | World units. |
+| `Accuracy` | Added to skill in the hit chance (§4.7). |
 | `FireRate` | Shots per `ActionWindowSeconds` (30 s). |
+| `Volley` | Off by default: soldiers shoot on their own timing. On: the soldiers with this weapon shoot together (SU-105). |
+| `SpecialRules` | A list (SU-90), below. |
 
-**Special rules**
-- **Boar Spear:** when this soldier provides a support bonus, its support range is doubled (`SupportRadius × 2`) [Q-7].
-- **Lance:** total melee damage is doubled while the bearer is charging [Q-8].
+**Special rules (SU-90)**
 
-**Sample data**
+| Rule | Weapons | Effect |
+|---|---|---|
+| Spear Support | Melee | The bearer's support range is `SupportRadius × SpearSupportRangeMultiplier` (2) when it supports. |
+| Couched Lance | Melee | Total melee damage is doubled while the bearer is charging. |
+| Piercing X | Melee, ranged | +X to the Bleed part of the target's armour ratio for this weapon's hits. |
+| Bludgeoning X | Melee, ranged | +X to the Bruise part of the target's armour ratio for this weapon's hits. |
+| Fire & Engage | Ranged | One volley when the troop enters an engagement and one when it begins a Case B retreat from it (§4.7). |
 
-| Item | Values |
-|---|---|
-| Light armour and shield | Resistance 30 / 50 / 20 (Deflect / Bruise / Bleed); DefenceBonus +4 |
-| Heavy armour | Resistance 60 / 30 / 10; DefenceBonus +7 |
-| Short sword | Sword; DamageBonus 5; ChargeBonus 3 |
-| Boar spear | Spear; DamageBonus 3; special: double support range |
-| Lance | Spear; DamageBonus 3; ChargeBonus 8; special: double damage while charging |
-| Long bow | Bow; Damage 10; Range 20; Accuracy 2; FireRate 10 |
+A rule on the wrong kind of weapon has no effect and logs a warning; repeated Piercing or Bludgeoning entries add up
+**[A: SU-90]**.
 
-Armour values above are read as Deflect / Bruise / Bleed. The Light armour values differ from v0.8 (30/30/40) [Q-6]. Javelin and Crossbow values are not yet given [Q-45].
+**Data:** weapon and armour values are set on their assets in `Resources/Troop and Character Profiles/`. Values the
+character sheets did not give are placeholders until tuned (Q-54, Q-55). Melee weapon damage was cut by 3 to lengthen
+melee (SU-108).
 
 ---
 
-## 2. Soldier Simulation, Vector Fields & Physics
+## 2. Soldier Simulation & Physics
 
-Soldiers are plain state objects (`SoldierAgentState`) simulated by their troop and drawn by view objects.
+Soldiers are plain state objects simulated by their troop and drawn by view objects.
 
 ### 2.1 Vector Field Steering
 
-Each frame the troop builds a local `FieldShape`: a **core segment** and a **half-width**.
+Each frame the troop builds a `FieldShape`: a **core segment** and a **half-width**.
 
-- **Attraction:** a non-charging soldier moves toward the nearest point on the core. Speed grows with distance outside the half-width, slows as it nears the core, and matches the troop velocity so it does not overshoot.
-- **Density spreading:** soldiers within `SpreadRadius` (`1.2`) push each other apart tangentially along the shape. The force fades to zero at `SpreadRadius`.
-- **No cohesion:** soldiers have no attraction to each other. Alignment only matches velocity.
+- **Attraction:** a soldier that is not charging moves toward the nearest point on the core. Speed grows with distance
+  outside the half-width and slows near the core, matching the troop's velocity.
+- **Line fill:** in a line, living soldiers are sorted along the core and grouped into files; each file is pulled toward
+  an evenly spaced point (`LineFillGain` 0.8) (SU-01, SU-02). Chargers, followers and retreating soldiers keep their
+  place in the sort but are not pulled.
+- **Composite ranks:** in a line (Line or Chain mode), ranged soldiers are steered to the front and melee soldiers to the
+  back while not engaged, reversed while engaged (D-55, `CompositeRankGain`, `CompositeRankDepthFraction`). Both kinds
+  are spread along the whole line.
+- **Density spreading:** soldiers within `SpreadRadius` (1.2) push each other apart along the shape.
+- **No cohesion:** soldiers do not attract each other. Alignment only matches velocity.
 
 ### 2.2 Separation, Drive Pressure & Mass
 
-- **Intra-troop separation:** same-troop soldiers keep centres at least `SeparationRadius = SeparationRadiusScale × SoldierRadius = 3.0 × 0.3 = 0.9` apart. A soft repulsion acts when there is room. A hard pass (`ResolveMinimumSeparation`, 3 iterations) enforces the minimum when compressed.
-- **Drive fraction:** `DriveFraction = DesiredSpeed / MaxSpeed`.
-- **Mass:** a driving soldier is up to `1 + PressureMassPerDrive = 4×` heavier than a settled one (`PressureMassPerDrive = 3.0`). It shoves settled teammates aside and passes approach velocity into them.
-- **Cross-troop separation:** soldiers of different troops repel with a distance falloff (`CrossTroopSeparation`).
-- **Contact and knock-back:** soldiers of different troops that overlap within `ContactDistance = 0.85` are pushed apart. Knock-back on clash is kept (§4.5).
+- **Intra-troop separation:** same-troop soldiers keep centres at least `SeparationRadius = 3 × SoldierRadius = 0.9`
+  apart (soft repulsion, plus a hard pass of 3 iterations when compressed).
+- **Drive fraction:** `DesiredSpeed / MaxSpeed`. A driving soldier is up to `1 + PressureMassPerDrive = 4×` heavier
+  than a settled one and shoves settled teammates aside.
+- **Cross-troop separation:** soldiers of different troops repel with a distance falloff.
+- **Contact:** soldiers of different troops closer than `ContactDistance` (0.85) are pushed apart.
 
 ### 2.3 Exemptions & Constraints
 
-- **Charging soldiers and their passive followers** (§4.4) are **excluded from intra-troop separation, density spreading and drive pressure, in both directions**. They slip through their own ranks.
-- **Retreating and charging soldiers** are exempt from the troop radius pull.
-- **Retreat (`FaultSlipMotion`):** a retreating soldier queries the field shifted back by its fault offset. Rear ranks fall back first and front ranks catch up. The base shape does not deform.
-- **Terrain and radius:** non-exempt soldiers are clamped to the troop radius and checked against impassable terrain with `CircleCast` (`SoldierMotionConstraints`).
+- **Chargers, their followers and soldiers rushing back** (§4.3) skip intra-troop separation, density spreading and
+  drive pressure in both directions, and may leave the troop radius.
+- **Retreating soldiers** follow their retreat schedule (§5.5) and may leave the troop radius.
+- **Stunned soldiers** are not snapped back inside the radius; they walk back with the field (SU-107).
+- **Troop radius clamp:** other soldiers are pulled back inside `0.92 × TroopRadius` and checked against impassable
+  terrain with `CircleCast`. A line longer than the troop is wide widens the clamp to reach its line points (D-36). A
+  marching column's clamp reaches its tail and shrinks back at 1.5 units/s after the march **[A: SU-120]**.
 
-### 2.4 Allied Pivot Separation
+### 2.4 Friendly Troops
 
-- Pivots of **friendly** troops (same army) keep a minimum spacing of `PivotSeparationScale × (r_A + r_B)`, with `PivotSeparationScale = 0.25` **[PROVISIONAL]**. This prevents blobbing.
-- **Line endpoints are not part of this check.** Endpoint attachment (§3.4) is never blocked by pivot separation.
-- Whether linked pairs are exempt from pivot separation **[Q-15]**.
+- **Pivot separation:** friendly pivots keep at least `PivotSeparationScale × (r_A + r_B)` (0.25) apart. Line
+  endpoints are not part of this check.
+- **Outline separation (SU-94):** friendly troops keep their outlines at least `FriendlyGap` (0.5) apart. Right of way:
+  a committed troop (engaged, or with an attack order) over a marching or retreating troop, over a standing one; equals
+  share the move **[A: SU-94]**. The troop giving way moves at no more than `FriendlyGiveWaySpeedScale` (0.5) × its march
+  speed **[A: SU-94]**. Chained troops (or troops with a pending link) and routed troops are exempt **[A: SU-94]**.
+- **Committed troops are never moved by friends** (SU-46): chain tension, pivot separation and outline separation move
+  the free friend instead.
 
 ---
 
 ## 3. Formations, Movement & Geometry
 
-### 3.1 Formation States
+### 3.1 Formation Modes
 
-Ascending priority. A higher state overrides a lower one.
+Ascending priority; a higher mode overrides a lower one.
 
-| Priority | State | Trigger |
+| Priority | Mode | Trigger |
 |---|---|---|
-| 1 | **Idle (Blob)** | Default when stationary and not in another state. |
-| 2 | **Column** | Executing a move order. |
-| 3 | **Line** | Enemy within `S_Distance`, or a player line order. |
+| 1 | **Idle (Blob)** | Default when stationary. |
+| 2 | **Column** | Executing a Move or Pursue order. |
+| 3 | **Line** | An enemy within `S_Distance`, or a held line order. |
 | 4 | **Chain** | Linked to a friendly neighbour while in Line. |
-| 5 | **Rout** | Break with `EffectiveMorale < RoutMoraleThresholdFraction × InitialEffectiveMorale` (§5). |
+| 5 | **Rout** | A Case A break (§5.3). Final. |
 
-- A **chained troop that is moving marches in Line formation, not Column**. This is intended.
-- `S_Distance` is measured between footprints **[Q-16]**. It has **no hysteresis**.
+- A chained troop that is moving marches in Line, not Column.
+- **Disordered** (§5.5) and **retreating** are states on top of the mode, not modes of their own.
+- A troop that already faces a threat keeps its line until the footprint gap passes `S_Distance` plus an exit margin of
+  at least `BlobRadiusScale × (r_A + r_B)` **[A: SU-24]**; `SDistanceExitHysteresis` (0) applies when larger.
 
 ### 3.2 Idle (Blob) & Column
 
-**Idle (Blob):** a disc of radius `BlobRadiusScale × TroopRadius` (`0.85`) around the pivot, with a zero-length core.
+**Idle:** a disc of `BlobRadiusScale × TroopRadius` (0.85) around the pivot.
 
-**Column (Marching):**
-- **Trigger:** active move order (`Move` or `Pursue`) and not overridden by Line, Chain or Rout.
-- **Pathing:** the pivot follows a `NavPathfinder` path toward the destination. The path is rebuilt every `PathRebuildIntervalSeconds = 0.5` or when the destination changes.
-- **Pivot speed:** `Move × SpeedUnitsPerStatPoint` (§1.3).
-- **Geometry:** the core runs behind the pivot along the travel direction. Lanes are added as the troop grows, so the column stays within the troop radius.
-- **Choke points:** in narrow terrain, `SoldierMotionConstraints` and density spreading compress the lanes. High drive pressure pushes trailing soldiers forward.
-- **Arrival:** the troop becomes Idle. Any move order is complete.
+**Column (SU-120):**
+- **Pathing:** the pivot follows a NavMesh path, rebuilt every `PathRebuildIntervalSeconds` (0.5) or when the
+  destination changes. The pivot and destination are snapped onto the NavMesh; a straight line is used only when the
+  way is clear (SU-73). A march whose path ends short completes where it ends **[A: SU-73]**.
+- **Geometry:** always longer than wide. Lanes = `clamp(ceil(Frontage / 2), 1, 3)`, one fewer while there would be no
+  more rows than lanes; rows = `ceil(living / lanes)`; the core is `max(LineSpacing, (rows − 1) × LineSpacing)` long
+  and starts `0.05 × TroopRadius` behind the pivot **[A: SU-120]**. Soldiers are spread row by row (column fill).
+- **Arrival:** the troop becomes Idle.
 
-### 3.3 Battle Line & Footprints
+### 3.3 Troop Size, Battle Line & Footprints
 
-**Triggers**
-1. **Automatic:** an opposing troop enters `S_Distance = 30.0` (footprint gap). The troop turns to face the threat.
-2. **Player line order** (`TroopLineOrder`): the troop marches its pivot to the line centre, turns to the ordered facing, and holds the line while stationary (`HasIdleLine = true`).
+**Size (SU-103, SU-117, SU-131)**
+- **Frontage** (soldiers wide in a line) is set when the troop spawns, from its total soldier count
+  (`TroopFrontageRule`): up to 4 soldiers, frontage = soldiers; up to 10, half (rounded up); up to 16, a third; more
+  than 16, a quarter (minimum 1).
+- **Natural line length** `L_nat = Frontage × LineSpacing` (0.9).
+- **Troop radius** (blob, soldier clamp, pivot, deployment and path spacing) =
+  `max(L_nat / NaturalLineRadiusScale, radius of a blob holding the soldiers packed at LineSpacing / BlobRadiusScale)
+  × TroopSizeScale` (1.8, 0.85, **1.5**). It is not a profile value.
+
+**Line triggers**
+1. **Automatic:** an opposing troop within `S_Distance` (footprint gap). The troop faces the threat.
+2. **Line order** (`TroopLineOrder`, several troops, §6.2): the troop marches to its place, turns to the ordered facing
+   and **holds the line after arrival** until the next order (D-38).
 
 **Geometry**
-- Pivot **P** and two line points **L_Left** and **L_Right**.
-- **Natural length:** `L_nat = NaturalLineRadiusScale × TroopRadius`, with `NaturalLineRadiusScale = 1.8` **[PROVISIONAL, Q-12]**. This does not depend on the living soldier count.
-- **Soldiers per rank:** `floor(L / LineSpacing)`, with `LineSpacing = 0.9`. The number of ranks is derived from the soldier count.
-- **Footprint half-width:** the furthest soldier on either side of the centre line plus `SoldierRadius`.
-- **Thick line:** an oriented rectangle with four faces: **Front, Left Flank, Right Flank, Rear**.
-- **Joint clearance:** at a linked end, the soldier field core is pulled inward by a small clearance so soldiers stay off the joint (`min(0.45, 0.15 × length)`, existing values, **[PROVISIONAL]**).
-- **Facing:** locked while engaged (§4.1). The line does not rotate toward a moving enemy during melee.
+- Pivot **P** and two line points (left and right wing). Soldiers per rank = `floor(L / LineSpacing)`; ranks =
+  `ceil(soldiers / per rank)`.
+- **Footprint** (engagement, faces, surround): a Line/Chain troop is a rectangle around its line with four faces
+  (Front, Left Flank, Right Flank, Rear). Ahead of and behind the line it reaches the furthest soldier on that side +
+  `SoldierRadius`, and at least the rank field **[A: SU-123]**. A marching troop's footprint is a capsule, an Idle or
+  routed troop's a circle. Chargers and soldiers rushing back are left out (SU-43).
+- **Outline** (what the player sees, clicks and hovers): drawn from the formation the soldiers are steered into, not
+  from the soldiers, so it does not jitter (SU-44). Picking: a living soldier within the pick radius, then the outline
+  the point is deepest inside, then a pivot (SU-42).
+- **Joint clearance:** at a linked end the core is pulled in by `min(JointClearance, JointClearanceFraction × length)`
+  (0.45, 0.15).
+- **Facing:** locked while engaged (§4.1), except for a pursuer engaged with its target (SU-75).
 
 **Line-vs-line pressure (`TroopSegmentPressureRules`)**
-- When two opposing footprints are within `A_Distance = 5.2` (footprint gap), a resistive barrier keeps a clear gap of `LineGap = 0.3` between them.
-- **Stored intrusion:** the barrier tracks, per enemy pair, how far each pivot has advanced into the gap along the engagement axis. Restoring force is shared strictly in proportion to stored intrusion. A stationary troop is never pushed back only because an enemy footprint widened.
-- **Resistive term:** only opposes a troop that is advancing (has an order).
+- Engaged opposing lines are held `EngagementGap` apart (footprint gap) by a resistive barrier (SU-07). Restoring force
+  is shared in proportion to each pivot's stored intrusion, and the resistive term only opposes a troop that is
+  advancing. Pressure contact starts at `max(0.5 × A_Distance, EngagementGap) × 1.25` and releases at × 1.6
+  **[A: SU-09]**.
+- Because engaged lines stand apart, soldiers meet only when they charge (SU-10, SU-95).
+
+**Pivots stay on the map (SU-74):** every pivot movement is limited to the NavMesh's bounding rectangle (inset by the
+blob radius) and clipped against terrain colliders, sliding along obstacles.
 
 ### 3.4 Chain (Linked Battle Lines)
 
 **Linking**
-- A chain forms between a free **Line Point** on troop A and a free Line Point on troop B when:
-  - Both are free (not already linked).
-  - The endpoints are within `R_AttachScale × L_nat` (`0.25`).
-  - Complementary wings meet (`L_A,Right ↔ L_B,Left`, and the reverse), and their forward vectors have a positive dot product (`F_A · F_B > 0`).
-- Each troop has at most `MaxChainLinks = 2` links, one per Line Point.
-- Attachment is endpoint-to-endpoint, not pivot-to-pivot.
+- A link forms between a free line point of troop A and a free line point of troop B when the points are within
+  `AttachScale × L_nat` (0.25), complementary wings meet (A's right with B's left, or the reverse), there is a clear
+  line of sight (D-45), and:
+  - **automatic links:** the troops' own facings are within `AutoLinkMaxFacingDeg` (45°) (SU-47), and neither troop has
+    an attack order (SU-48);
+  - **order links:** a multi-troop line order creates **pending** links between adjacent troops that activate when both
+    have arrived and drop if either gets a new order (Q-19, D-39). They use only the stretch and hinge envelope.
+- At most `MaxChainLinks` (2) links per troop, one per line point. Endpoint-to-endpoint, not pivot-to-pivot.
 
 **Hinge geometry**
-- **Shared joint J:** the weighted average of the two natural endpoints, clamped so each troop's line length stays within `ChainMinStretchScale = 0.7` to `ChainMaxStretchScale = 3.0` × `L_nat`.
-- **Inner hinge angle θ:** the angle at **J** between the two troops' lines (straight chain = 180°).
-- **Minimum inner angle:** `ChainMinInnerAngleDeg = 65°`. A sharper hinge breaks the link **[Q-13]**.
+- **Joint J:** the weighted average of the two natural line points; a committed troop's point is pinned (weight 1),
+  otherwise the midpoint (D-44, SU-46). Each line stays within `ChainMinStretchScale` – `ChainMaxStretchScale` × `L_nat`
+  (0.7–3.0).
+- **Inner hinge angle θ** at J (straight = 180°). Minimum `ChainMinInnerAngleDeg` (65°).
 
 **Breaking**
-- **Stretch:** a link breaks when the length required to keep J within the envelope exceeds `ChainMaxStretchScale × L_nat` (3.0). Stretch is the only distance-based break rule.
-- **Hinge:** a link breaks when θ < 65°.
-- **Obstruction:** each frame, if impassable terrain bisects the segment between linked pivots through J, or blocks J, the link breaks (§3.4.1).
-- **Rout:** a routing troop breaks both its links immediately (§3.4.1).
-- **Player unlink:** on an order outside the envelope (§6.3).
+- **Stretch:** the length needed to keep J exceeds `ChainMaxStretchScale × L_nat`.
+- **Hinge:** θ < 65°.
+- **Facing (automatic links only):** the facings drift more than `AutoLinkBreakFacingDeg` (60°) apart **[A: SU-47]**.
+- **Obstruction:** terrain between the pivots through J, or at J.
+- **Rout:** a routing troop breaks both its links at once.
+- **Player unlink:** an order outside the envelope, or with Alt (§6.3).
+
 **Shared retreat**
-- When a troop retreats by distance `d`, each neighbour's shared joint pulls back immediately.
-- A neighbour that is **not engaged** retreats sympathetically when its stretch exceeds `ChainRetreatStretchThreshold = 1.4 × L_nat` or its hinge bend (`180° − θ`) exceeds `ChainRetreatHingeBendDeg = 30°`.
-- **Falloff:** each hop passes on `(1 − 0.30) = 70%` of the retreat distance **[PROVISIONAL, Q-21]**.
-- Engaged neighbours do not retreat sympathetically **[Q-20]**. Their link is held by tension (§3.4.1).
+- When a troop retreats by `d`, each neighbour's joint pulls back. A neighbour that is **not committed** retreats
+  sympathetically (no morale cost) when its stretch would pass `ChainRetreatStretchThreshold × L_nat` (1.4) or its bend
+  (180° − θ) would pass `ChainRetreatHingeBendDeg` (30°).
+- **Falloff:** each hop passes on `1 − ChainRetreatFalloff` (70%) of the previous distance (10 → 7 → 4.9).
+- Committed neighbours (engaged, or attacking) never retreat sympathetically; their link is held by tension and snaps
+  at the stretch or hinge limit (SU-46).
 
 #### 3.4.1 Edge Cases & Topology
 
-- **No loops:** before linking two free Line Points, `AlliedLineConnector` checks whether both troops are already in one chain. If so, the link is rejected. Chains are always open paths.
-- **No link stealing:** already-linked Line Points are excluded from candidate searches. A third troop marching behind a joint can never take it.
-- **Tie-break:** if two troops enter `R_AttachScale` of the same free Line Point on the same tick, `LineLinkAssigner` picks the shortest endpoint distance. Exact ties go to the lower troop instance ID.
-- **Obstruction bisection:** linked chains are checked every frame for impassable terrain between linked pivots (see Hinge geometry above).
-- **Mid-chain rout:** if troop 3 routs in a `1–2–3–4–5` chain, both of its links sever at once. This leaves `1–2` and `4–5`. Shared retreat does not cross the gap.
-- **Endpoint snap-back damping:** an inner endpoint that was stretched when its link breaks does not teleport to natural length. It relaxes toward `L_nat` at `ChainEndpointRelaxSpeed = 2.0` units/s.
-- **Pinned anchor:** if one end of a chain is engaged while neighbours march or retreat away, `AlliedLinkTension` applies a damped spring to the **unengaged** side only. Tension never forces an engaged troop out of melee. If the stretch limit (§3.4) or hinge limit is exceeded, the link snaps instead of dragging the engaged troop.
+- **No loops:** a link that would close a loop is rejected (`ChainTopology`). Chains are open paths.
+- **No link stealing:** linked line points are never candidates.
+- **Tie-break:** the shortest endpoint distance, then the lower troop instance ID.
+- **Mid-chain rout:** in `1–2–3–4–5`, if 3 routs, both its links sever, leaving `1–2` and `4–5`.
+- **Snap-back damping:** a stretched line point whose link breaks relaxes toward `L_nat` at
+  `ChainEndpointRelaxSpeed` (2 units/s).
+- **Pinned anchor (`AlliedLinkTension`):** a damped spring acts only on the free side; it never pulls a committed troop
+  out of a fight.
+- **Engaged chain end:** a troop at the end of a chain does not turn to refuse an attack on its open flank by itself.
+  Refusing the flank takes a player (or AI) order. (Movement edge case 18.)
+- **ChainSuppressed (SU-130, Q-22 option 2):** a troop detached by a single-troop order, or given an order with Alt,
+  is flagged `ChainSuppressed`. It stays unlinked until its line points have been outside every attach radius for
+  `ChainSuppressCooldownSeconds` (3 s) in a row. Finishing its order does not end it, so a troop that stops inside a
+  neighbour's attach radius stays unlinked until it leaves and the 3 s pass.
 
 ---
 
@@ -273,155 +311,162 @@ Ascending priority. A higher state overrides a lower one.
 
 ### 4.1 Engagement
 
-- **Engagement:** two opposing troops whose footprints are within `A_Distance = 5.2` (footprint gap). They halt and face each other across `LineGap = 0.3`.
-- **Facing lock:** an engaged troop's facing does not rotate while engaged.
-- **Entry and exit:** hysteresis on engagement exit is not specified **[Q-16]**.
+- **Engaged:** two opposing troops whose footprint gap is `A_Distance` or less. Once engaged they stay engaged until
+  the gap passes `A_Distance + EngagementHoldMargin` (SU-45). The hold is per pair; there is no hold on entry.
+- Engaged lines are held `EngagementGap` apart (§3.3).
+- **In melee** (`Troop.InMelee`): engaged with an enemy troop **[A: SU-104]**.
+- **Facing lock:** an engaged troop does not turn, except a troop pursuing its target, which squares up to the face it
+  attacks (SU-75).
+- All distances between troops (S_Distance, A_Distance, EngagementGap, surround, ranged targeting) are **footprint
+  gaps**, never pivot or centre-line distances (SU-08).
 
 ### 4.2 Assault & Pursuit
 
-- **Assault trigger:** a troop with an active order (`Move`, `Pursue` or `Line`) that moves into engagement with an enemy enters **Assault** for `AssaultDurationSeconds = 10.0`.
-- **Pursue end condition:** [Q-24]
-- **Assault buffs** (all soldiers in the troop):
-  - `AssaultAggressionBonus = +5` to Aggression.
-  - `AssaultChargeBonus = +5` to Charge. Applies only while charging.
-- **Pursuit:** only by an explicit `Pursue` order. A pursuing troop that re-engages an enemy which retreated **refreshes** Assault (timer and bonuses reset to 10 s).
-- Troops without an order do not gain Assault, even when engaged.
+- **Assault:** a troop with an active Move, Pursue or Line order that enters engagement gets, for
+  `AssaultDurationSeconds` (10 s), `+AssaultAggressionBonus` (5) Aggression and `+AssaultChargeBonus` (5) Charge while
+  charging. Troops without an order never gain Assault. A fight that stays inside the engagement hold does not
+  retrigger it (SU-45).
+- **Pursuit:** only by an explicit Pursue order. A pursuing troop that re-engages an enemy that retreated refreshes
+  Assault. A Pursue ends when its target is destroyed (routed or wiped out) or the player gives a new order **[Q-24]**.
+  A pursuer whose target is within `S_Distance` takes its heading from that target alone and squares up to the face it
+  attacks (SU-75).
 
 ### 4.3 Charges
 
-- **Charge range:** `ChargeRangeScale × A_Distance = 1.5 × 5.2 = 7.8`. A soldier may charge if an enemy soldier is within this range **[Q-25]**.
-- **Rate:** each soldier charges at an expected rate of `EffectiveAggression / ActionWindowSeconds` per second. `EffectiveAggression = Aggression + AssaultAggressionBonus (if Assault)`. Each frame, the chance is `1 − exp(−rate × dt)`.
-- **Cooldown after a charge:** none beyond the rate and the clash rule [Q-29].
-- **Target:** a charger picks one of the `ChargeCandidateCount = 3` nearest enemy soldiers at random.
-- **Speed:** a charger moves at `ChargeSpeedScale = 2.0×` normal speed (max speed and acceleration).
-- **One charge = one clash.** A charge ends on contact (§4.5).
-- **Cancel:** the charge is cancelled if the target dies, the charger's troop breaks, or `ChargeTimeoutSeconds = 3.0` elapses **[PROVISIONAL, Q-27]**.
-- **Neighbour contagion:** no. The charge rate depends only on the soldier's own Aggression and Assault. The Ising-style neighbour model in the current code is removed **[Q-30]**.
+- **Who may charge:** only soldiers in the **front rank** (SU-106): one rank's worth of living soldiers, taken as those
+  standing furthest toward each enemy troop the troop may charge **[A: SU-106]**. Stunned soldiers never charge.
+  `FrontRankChargesOnly` switches the rule.
+- **Gate:** a troop's soldiers may start charges only while the troop is within `EngagementGap + ChargeGapTolerance`
+  (2 + 0.25, footprint gap) of an enemy troop (SU-95) **[A: SU-95 tolerance]**.
+- **Rate:** each eligible soldier charges at an expected `EffectiveAggression / ChargeWindowSeconds` per second (45 s,
+  SU-112); each frame the chance is `1 − exp(−rate × dt)`. `EffectiveAggression = Aggression + AssaultAggressionBonus`
+  during Assault. No cooldown after a charge, no neighbour contagion.
+- **Target:** a random pick among the `ChargeCandidateCount` (3) nearest enemy soldiers of gated troops within reach.
+  Reach is `A_Distance` measured between the two soldiers' edges, i.e. `A_Distance + 2 × SoldierRadius` centre to centre
+  (SU-95) **[A: SU-95]**. A roll with no target in reach does nothing.
+- **Speed:** `ChargeSpeedScale` (2×) normal speed and acceleration.
+- **One charge = one clash.** The charge ends on contact (§4.5).
+- **Cancel:** the target dies, the charger's troop **routs**, or `ChargeTimeoutSeconds` (3 s) pass. A retreat does not
+  cancel a charge (SU-43). No retargeting.
+- **Rushing back (SU-43):** when a charge ends, the soldier rushes back at charge speed if its troop is retreating, no
+  longer engaged, or the soldier is outside `0.92 × TroopRadius`; otherwise it rejoins the line. It counts as home within
+  `LineSpacing` of its band; the return gives up after 6 s **[A: SU-43]**.
 
 ### 4.4 Discipline & Charge Support
 
-- When a soldier starts a charge, the troop's `Discipline` selects the `Discipline` nearest **friendly soldiers in the same troop** **[Q-9]**.
-- Each selected soldier follows with probability `ChargeFollowProbability = 0.50`.
-- **Followers are passive:**
-  - They move with the charger to stay within `SupportRadius` of it.
-  - They **bypass** separation, density spreading and drive pressure, the same as the charger.
-  - They provide `SupportBonus` to the charger's clash.
-  - They **do not** start clashes of their own, even when they overlap an enemy.
-  - After the clash, they return to the line.
+- When a soldier starts a charge, the troop's `Discipline` nearest living soldiers **of the same troop** are selected;
+  each follows with probability `ChargeFollowProbability` (0.5).
+- **Followers are passive:** they keep within `0.6 × SupportRadius` of the charger at charge speed, skip separation like
+  the charger, provide support to its clash, never start a clash of their own, and return when the charger's charge
+  ends (D-35). Stunned soldiers do not follow.
 
 ### 4.5 Clash & Duel
 
-**Contact and trigger**
-- **Contact:** centres closer than `ContactDistance = 0.85`.
-- A clash occurs when:
-  - (a) a charger reaches contact with an enemy soldier, or
-  - (b) two opposing soldiers are in contact and neither is charging.
-- **Rate limit (case b):** each soldier takes part in at most one clash per `ClashCooldownSeconds = 1.0` **[PROVISIONAL, Q-26]**.
-- **Knock-back:** both soldiers are knocked back on clash. Magnitudes are kept from the current code **[PROVISIONAL]**.
+**Trigger**
+- **Contact:** centres closer than `ContactDistance` (0.85).
+- A charger in contact with an enemy soldier always clashes (its charge ends). Followers never start a clash. Any other
+  contact clashes only when both soldiers are off their `ClashCooldownSeconds` (1 s) clash cooldown.
+- **Knock-back:** both soldiers are pushed apart by 0.3 units (SU-103).
 
-**Combat Power (both sides, at contact)**
+**Combat Power** (each side, at contact)
 
 $$\text{CombatPower} = \text{WeaponSkill} + \text{ChargeBonus (if charging)} + \text{SupportBonus}$$
 
-- `WeaponSkill` is for the class of the weapon in use.
-- `ChargeBonus = Charge + weapon ChargeBonus + AssaultChargeBonus (if Assault)`.
-- When **both** soldiers are charging, **both** receive the charge bonus.
-- `EquipmentClashBonus` is removed. Weapon charge bonuses count only while charging **[Q-4]**.
-- The duel roll's attacker/defender labels are defined in the next subsection **[Q-28]**.
+- `WeaponSkill` is the soldier's skill in its melee weapon's class.
+- `ChargeBonus = Charge + weapon ChargeBonus + AssaultChargeBonus (if Assault)`. When both soldiers are charging, both
+  get it.
 
 **Support**
-- Eligible supporters are **non-fatigued, same-army** soldiers within `SupportRadius = 3` of the clashing soldier. A Boar Spear supporter counts within `2 × SupportRadius = 6`.
-- `SupportingSoldiers = min(EligibleNearbyAllies, Support)`.
-- `SupportBonus = SupportingSoldiers × SupportBonusPerAlly`, with `SupportBonusPerAlly = 2`.
-- **Fatigue:** soldiers at or below `FatigueFraction = 0.50` of `MaxHP` cannot support.
-- **Flanking:** in clashes against an enemy troop attacking this troop's Flank or Rear face, this troop receives **0** support (§3.3, §4.8).
+- Eligible supporters: living, non-fatigued, non-stunned soldiers **of the same army** within `SupportRadius` (3) of the
+  clashing soldier; a Spear Support bearer counts within `SupportRadius × SpearSupportRangeMultiplier` (6).
+- `SupportBonus = min(eligible, Support) × SupportBonusPerAlly` (2).
+- Against an enemy attacking this troop's Flank or Rear face, this troop gets **0** support (§4.8).
 
-**Duel roll**
-- Let **A** be the charger and **B** the defender. If both are charging, A is the one whose charge began first. If neither is charging, A is the lower soldier ID. **[Q-28]**
-- $P_A = \dfrac{\text{CombatPower}_A}{\text{CombatPower}_A + \text{CombatPower}_B}$
-- Roll $R \in [0, 100]$. A wins if $R \le P_A \times 100$.
+**Duel**
+- **A** is the charger; if both charge, the earlier charge; if neither, the lower soldier ID.
+- $P_A = \dfrac{CP_A}{CP_A + CP_B}$. Roll $R \in [0, 100]$; A wins if $R \le 100\,P_A$.
+- **Domination** (winner's bonus damage) = `round(|R − 100 P_A| / DominationDivisor)` (10), rounding half up (D-46).
+  Example: `P_A = 60%`, `R = 40`: A wins with Domination 2.
+- A winner whose troop is fleeing (retreating or routed), or a stunned winner, deals **no damage** (Q-37, SU-111).
 
-**Domination**
-- The winner gains bonus damage:
-
-$$\text{Domination} = \text{round}\left(\frac{|R - P_{A}\%|}{\text{DominationDivisor}}\right), \quad \text{DominationDivisor} = 10$$
-
-- Rounded to the nearest whole number. Worked example: `P_A = 60%`, `R = 40%`. A wins (`40 ≤ 60`) with Domination `|40 − 60| / 10 = 2`.
-- If the defender B wins (`R > 60`), it gains `|R − 60| / 10`, using the same formula. The formula is symmetric about `P_A`.
-
-### 4.6 Damage, Mitigation & Combined HP Pool
+### 4.6 Damage, Mitigation & HP
 
 **Raw melee damage**
 
-$$\text{Damage} = \text{Strength} + \text{WeaponDamageBonus} + \text{Domination}$$
+$$\text{Damage} = \text{Strength} + \text{weapon Damage} + \text{Domination}$$
 
-- Lance bearer: total damage is **doubled** while charging **[Q-8]**.
+- Couched Lance: doubled while charging (Domination included).
+- Ranged damage is the weapon's Damage only.
 
-**Defence**
-- $\text{TotalDefence} = \text{Defence} + \text{ArmourDefenceBonus}$.
-- **Up to `TotalDefence`:** each whole point of damage rolls once against the defender's armour `Resistance`:
-  - **Deflect:** point ignored. 0 HP, 0 Shock.
-  - **Bruise:** temporary HP loss. Counts for Shock.
-  - **Bleed:** permanent HP loss. Counts for Shock.
-- **Above `TotalDefence`:** `Damage − TotalDefence` is converted directly to **Bleed**. Counts for Shock.
+**Mitigation** (`TotalDefence = Defence + armour DefenceBonus`)
+- **Up to `TotalDefence`:** each point rolls once against the armour ratio `Deflect : Bruise : Bleed`, with the
+  attacking weapon's Piercing added to Bleed and its Bludgeoning to Bruise.
+  - **Deflect:** ignored.
+  - **Bruise:** temporary HP loss.
+  - **Bleed:** permanent HP loss.
+- **Above `TotalDefence` (overflow):** every point becomes **Bleed**.
+- **No armour:** every point rolls against 0 : 3 : 7 (no TotalDefence cap).
 
-**Bruise recovery**
-- Each soldier's Bruise pool heals **1 HP per second**. This replaces the old bruise timer.
-- Bruises can kill, because the HP pool is shared.
+**Shock from damage (SU-128):** every point that becomes Bruise or Bleed (overflow included) adds 1 Shock to the troop
+(×3 when flanked, §4.8). Deflected points add none, so armour reduces Shock. Damage beyond the HP a soldier has left
+adds none.
 
 **Combined HP pool**
-
-$$\text{CurrentHP} = \text{MaxHP} - \text{BleedDamage} - \text{BruiseDamage}$$
-
-- `CurrentHP ≤ MaxHP × FatigueFraction`: **Fatigued**.
-- `CurrentHP ≤ 0`: **dies**.
-- **Overflow:** damage beyond the HP a soldier has left does not count toward Shock.
+- `CurrentHP = MaxHP − Bleed − Bruise`. Bruise heals `BruiseHealPerSecond` (1) per soldier; bruises can kill.
+- **Fatigued:** `CurrentHP ≤ FatigueFraction × MaxHP` (0.5). Fatigued soldiers cannot support.
+- **Stunned (SU-107):** a soldier brought to 0 HP with Bruise ≥ Bleed is stunned, not killed (`StunAtZeroHp`). It stays
+  alive (it counts for the troop's soldiers, morale and capture points), cannot charge, follow or support, heals from
+  0 HP and recovers at `StunRecoverHp` (5 HP). Stunned soldiers die when their troop retreats or routs from melee
+  **[A: SU-107 rout]**. Overflow counts as Bleed for the test **[A: SU-107]**.
+- **Dead:** `CurrentHP ≤ 0` otherwise. A corpse stays 10 s (SU-35).
 
 ### 4.7 Ranged Combat
 
 **Firing condition**
-- A troop with a ranged weapon that is **stationary and not engaged** fires at enemy troops in front of its line, within `WeaponRange`.
-- Ranged troops carry a melee weapon for melee (§1.6). Whether they also fire while in melee is covered by [Q-46].
+- A troop fires while **stationary, not engaged, not retreating and not routed**. Fire & Engage volleys are the
+  exception (below).
 
-**Targeting**
-- The **nearest enemy troop** in range and in front of the line is chosen. The **nearest soldiers** of that troop are shot at **[Q-41]**.
-- The troop does **not** fire into melee **[Q-39]**.
-- **No friendly fire** **[Q-40]**.
-- **Ammunition:** unlimited.
+**Targeting (D-54)**
+- Reach is **per shooter**: a shooter can hit an enemy soldier within its weapon range and within `RangedFrontArcDeg`
+  (±45°) of the troop's facing, measured from the shooter.
+- **Target troop:** the enemy troop **not engaged in melee** with the soldier nearest to a shooter that can reach it
+  (Q-39 a). Troops in melee are never targeted.
+- **Target soldier:** each shot goes to the reachable enemy soldier with the fewest of the troop's projectiles already
+  aimed at it, then the nearest.
+- No friendly fire: only enemy soldiers can be hit; projectiles are not blocked by troops or terrain **[Q-40]**.
+- Unlimited ammunition. No flank bonus for ranged hits.
+
+**Timing**
+- **Single shots (default, SU-105):** each soldier shoots every `ActionWindowSeconds / FireRate` (± `FireRateJitter`
+  10%), its first shot after a random part of that interval.
+- **Volley (weapon's Volley on):** those soldiers shoot together every `ActionWindowSeconds / FireRate` (± 10%).
+- **Fire & Engage:** one volley when the troop goes from not engaged to engaged, at the enemy it engaged, and one when it
+  begins a Case B retreat from an engagement. These ignore the usual firing limits and the front arc; charging soldiers
+  fire too. Once per engagement each **[A: SU-90]**.
 
 **Projectiles**
-- Shots are **projectiles**, not instant hits **[Q-42]**.
-- **Ranged attacks do not gain flanking bonuses.**
+- Projectiles fly at `ProjectileSpeed` (20 units/s). The hit is rolled when they land:
 
-**Fire timing**
-- Interval between shots: `ActionWindowSeconds / FireRate` (30 / 10 = 3 s for a Long bow), with ±`FireRateJitterFraction = 0.10` random variation [Q-43].
-- After each shot, the troop waits one interval before the next.
+$$P(\text{Hit}) = \frac{\text{Accuracy} + \text{WeaponSkill}}{\text{Accuracy} + \text{WeaponSkill} + \text{BaseShotDC}}$$
 
-**Hit probability**
-- Uses `BaseShotDC = 10`:
+  with `BaseShotDC` 10 and the skill for the weapon's class. Example: Long bow (Accuracy 2), skill 6: 8 / 18 ≈ 44%.
+- Damage is mitigated as §4.6.
 
-$$P(\text{Hit}) = \frac{\text{Accuracy} + \text{WeaponSkill}}{\text{Accuracy} + \text{WeaponSkill} + \text{BaseShotDC}} \quad \text{[Q-44]}$$
+### 4.8 Faces & Flanking
 
-- Example: Long bow (`Accuracy = 2`), skill 6: `P(Hit) = 8 / 18 ≈ 44%`.
-
-**Damage**
-- `RangedDamage = WeaponDamage` (for Long bow, 10), mitigated by the target's `TotalDefence` and armour `Resistance` (§4.6) **[Q-5]**.
-
-### 4.8 Faces & Flanking (per opponent)
-
-- Each engaged troop's footprint has four faces: **Front, Left Flank, Right Flank, Rear**.
-- The **attacking face** is determined for each opposing troop **[Q-31]**. Troops in Blob or Column have no rectangle; how they are classified is open **[Q-32]**.
-- **Front:** standard frontal engagement.
-- **Flank or Rear:** the clash is **flanked**.
-- **Flank penalties, per clash scope:**
-  - Clashes against the flanking enemy: **0 support** received, and damage sustained in those clashes counts **×3 Shock** (`FlankShockMultiplier = 3.0`).
-  - Clashes against enemies on the front face resolve normally.
-- The facing damage multiplier from the current code (4× / 2× / 1× by angle) is **[DEPRECATED]**.
+- Each engaged troop's footprint has four faces. The **attacking face** of each opposing troop is the angle from the
+  defender's pivot to the attacker's nearest footprint point, against the defender's facing: within
+  `FrontFaceHalfAngleDeg` (±45°) **Front**, beyond `RearFaceAngleDeg` (135°) **Rear**, otherwise Left or Right
+  **Flank**. Troops without a rectangle use their current heading.
+- **Flank or Rear:** in clashes against that enemy the defender gets **0 support** and the damage it takes counts
+  `FlankShockMultiplier` (×3) Shock. Clashes against enemies on its front resolve normally.
 
 ### 4.9 Surrounded
 
-- A troop is **Surrounded** when its retreat is blocked. Retreat is blocked if the path of length `RetreatDistance` behind the rear face is obstructed by terrain or by other troops **[Q-33]**.
-- Surrounded troops cannot retreat. See §5.
+- A troop is **Surrounded** when the box `RetreatDistance` long behind its rear face is blocked by terrain or by a living
+  enemy soldier standing in it (not charging, following or rushing back). Enemy footprints alone do not block it;
+  routed enemies and friendly troops never do (SU-122) **[A: SU-122]**.
+- Surrounded troops cannot retreat (§5.3).
 
 ---
 
@@ -431,238 +476,336 @@ $$P(\text{Hit}) = \frac{\text{Accuracy} + \text{WeaponSkill}}{\text{Accuracy} + 
 
 $$\text{InitialEffectiveMorale} = \text{BaseMorale} \times \text{InitialSoldierCount}$$
 
-$$\text{EffectiveMorale} = (\text{BaseMorale} \times \text{CurrentSoldierCount}) - (\text{RetreatCount} \times \text{RetreatMoralePenalty}) - (\text{SurroundedBreakCount} \times \text{SurroundedMoralePenalty})$$
+$$\text{EffectiveMorale} = \text{BaseMorale} \times \text{CurrentSoldierCount} - \text{RetreatCount} \times \text{RetreatMoralePenalty} - \text{SurroundedBreakCount} \times \text{SurroundedMoralePenalty}$$
 
-- `RetreatMoralePenalty = 5`, `SurroundedMoralePenalty = 20`.
-- Worked example: Franz (`BaseMorale = 5`, `InitialSoldierCount = 12`) starts at 60. After losing 2 soldiers he has 50.
+- `RetreatMoralePenalty` 5 (retreats and disorders), `SurroundedMoralePenalty` 20. Stunned soldiers count as living.
+- Example: Franz (BaseMorale 5, 12 soldiers) starts at 60; after losing 2 soldiers he has 50.
 
 ### 5.2 Shock
 
-- **Accumulation:** each **applied** point of Bruise or Bleed adds 1 Shock. Deflect adds 0. Overflow adds 0 (§4.6). Flank hits are multiplied by `FlankShockMultiplier = 3.0` (§4.8).
-- **Continuous decay (`ShockDecayFractionPer30s = 0.20`):** Shock decays at all times, including in melee, clamped at 0:
+- **Accumulation:** see §4.6 (every applied point of Bruise or Bleed, ×3 when flanked).
+- **Decay:** continuous, also in melee, clamped at 0:
+  `ShockDecayFractionPerWindow × max(0, EffectiveMorale) / ActionWindowSeconds` per second (0.2, 30 s). Example: Franz
+  at 50 decays 0.33 Shock/s.
 
-$$\text{ShockDecayRatePerSecond} = \frac{0.20 \times \max(0, \text{EffectiveMorale})}{30}$$
+### 5.3 Break
 
-- Worked example: Franz with 50 EffectiveMorale decays `0.20 × 50 / 30 = 0.33` Shock/s.
-
-### 5.3 Break Trigger
-
-- A break occurs whenever **`Shock > EffectiveMorale`**. This happens when Shock rises, or when EffectiveMorale falls below current Shock through soldier deaths or penalties.
-- On a break the troop tests:
+- A break happens whenever **Shock > EffectiveMorale** (Shock rises, or EffectiveMorale falls below it).
+- A retreating troop cannot break again until its retreat ends; a routed troop never breaks again (D-30). There is no
+  break cooldown and no charge lock.
 
 | Case | Condition | Result |
 |---|---|---|
-| **A: Rout** | `EffectiveMorale < 0.50 × InitialEffectiveMorale` (regardless of surround) | §5.4 |
-| **B: Retreat** | `EffectiveMorale ≥ 0.50 × InitialEffectiveMorale` and not Surrounded | Retreat (§5.5) |
-| **C: Surrounded break** | `EffectiveMorale ≥ 0.50 × InitialEffectiveMorale` and Surrounded | Surrounded break (§5.6) |
+| **A: Rout** | `EffectiveMorale < RoutMoraleThresholdFraction × Initial` (0.5) | Rout (§5.4). |
+| **B: Retreat** | Not A, not Surrounded, **in melee** | Retreat (§5.5). |
+| **B: Disorder** | Not A, not Surrounded, **not in melee** | Disorder (§5.5) (SU-104). |
+| **C: Surrounded break** | Not A, Surrounded | Shock 0, `−SurroundedMoralePenalty`, no motion. |
 
 ### 5.4 Rout
 
-- **Final.** A routed troop does not recover.
-- **Effects:** unlinks from any chain at once (§3.4.1), forms a loose blob, and flees.
-- **Flee direction:** away from the nearest enemy **[Q-35]**.
-- **Attackable:** yes. A fleeing troop receiving a winning clash deals no damage in the current code **[Q-37]**.
-- **Counts as destroyed** for `Rout.cs` (`OnUnitDestroyed`) and for the battle win condition. The event is raised at rout, not at despawn **[Q-36]**. Battle-level wiring is out of scope **[Q-49]**.
-- **Despawn:** after `RoutDespawnSeconds = 60`, regardless of position.
+- **Final.** The troop breaks every link, cancels its orders, scatters (`RoutScatterRadiusScale`) and flees. It ignores
+  orders. Its stunned soldiers in melee die **[A: SU-107]**.
+- **Flight (SU-121):** with a NavMesh it runs to a goal on the battlefield edge within ±90° of "away from the nearest
+  non-routed enemy" (the whole circle when nothing there is reachable), re-planned every 1 s; a troop that moves less
+  than 0.5 units in 1 s is stuck and avoids that heading for 5 s **[A: SU-121]**. Without a NavMesh it flees in a
+  straight line. It never leaves the map: at the edge it runs along it **[A: SU-74, SU-121]**.
+- **Attackable:** yes; a fleeing winner deals no damage (§4.5).
+- **Defeated:** the troop is defeated once, at rout (or when its last soldier dies first): `Troop.Routed`,
+  `Troop.Defeated` and `BattleEvents.TroopDefeated` are raised then, not at despawn (SU-57).
+- **Despawn:** after `RoutDespawnSeconds` (60), wherever it is.
 
-### 5.5 Normal Retreat (Case B)
+### 5.5 Retreat and Disorder (Case B)
 
-1. The troop performs an accordion retreat (`FaultSlipMotion`). Rear soldiers fall back first and front ranks catch up.
-2. Retreat distance is `RetreatDistance` **[PROVISIONAL, Q-34]**.
-3. Shock resets to 0.
-4. `EffectiveMorale` is reduced by `RetreatMoralePenalty = 5`.
+**Retreat (in melee)**
+1. Shock resets to 0 and EffectiveMorale drops by `RetreatMoralePenalty`.
+2. The pivot slips `RetreatDistance` (5 units, the same for every troop) away from the pivot of the last troop that hit
+   it, or straight back when nothing did (SU-11, D-31).
+3. **Accordion (SU-12, SU-133):** each soldier holds its ground until its start time, then eases to its place in the
+   new line. Start times run from the rear (away from the attacker) to the front over `RetreatWaveDelaySeconds` (1.0 s),
+   and move times from `RetreatRearMoveSeconds` (0.8 s) at the rear to `RetreatFrontMoveSeconds` (1.8 s) at the front,
+   so the rear falls back first and fastest and the troop stretches out, then closes up. The retreat lasts
+   `wave delay + slowest move + 0.5 s` (3.3 s).
+4. Charges in flight complete, then those soldiers rush back (SU-43). Stunned soldiers die (SU-107).
+5. Chained neighbours may retreat sympathetically (§3.4).
 
-### 5.6 Surrounded Break (Case C)
-
-1. The troop **cannot retreat**. No `FaultSlipMotion`.
-2. Shock resets to 0.
-3. `EffectiveMorale` is reduced by `SurroundedMoralePenalty = 20`.
-
-### 5.7 Cooldowns
-
-- `BreakCooldownSeconds = 1.6` and `ChargeLockAfterBreakSeconds = 1.2` are kept as **[PROVISIONAL, Q-34]**.
+**Disorder (not in melee, SU-104)**
+- Shock resets to 0 and EffectiveMorale drops by `RetreatMoralePenalty` (it counts in RetreatCount).
+- For `DisorderSeconds` (10 s) the troop cannot move: its Move, Pursue and Line orders are cancelled and new ones are
+  refused; it is not marched, pursued, pushed by line pressure or pulled by its chain. It can still fight, charge and
+  shoot **[A: SU-104]**.
+- Breaking again while disordered restarts the 10 s with another penalty; if it is in melee by then it retreats instead,
+  which ends the disorder **[A: SU-104]**.
 
 ---
-
 ## 6. Player Controls & Orders
 
-Player input (`TroopPlayerOrders`, `TroopSelection`, `TroopOrderPlanner`, `TroopOrderOverlay`) reads the new Input System
-directly. Input thresholds are in **screen pixels** so they do not depend on zoom.
+Player input (`TroopPlayerOrders`, `TroopSelection`, `TroopOrderPlanner`, `TroopOrderOverlay`) reads the Input System
+directly (D-42). Every threshold is in **screen pixels**, so it does not depend on zoom. Selection and orders also work
+while the battle is paused; troops act on them once time runs again (SU-88).
 
 ### 6.1 Selection (LMB)
 
-- **Click:** selects the nearest player-team troop under the cursor (pivot/footprint, screen-space radius). Clicking empty ground clears the selection, unless Shift is held.
-- **Box select:** a drag of at least `BoxSelectMinDragPixels = 8` px draws a marquee. All player troops with a pivot or any living soldier inside the box are selected [Q-48].
-- **Shift:** **toggles** membership of the clicked or boxed troops. A selected troop is deselected, and an unselected troop is added.
-- **Hover:** every frame, over any team.
+- **Click on a troop:** selects just that troop. **Double click** (within `DoubleClickSeconds`, 0.35 s) selects every
+  troop in its chain (SU-129).
+- **Click on empty ground:** clears the selection.
+- **Box select:** a drag of at least `BoxSelectMinDragPixels` (8) that starts off the player's troops draws a marquee;
+  every player troop with its pivot or a living soldier inside is selected.
+- **Shift:** toggles: a selected troop is deselected, an unselected one added (a Shift double click adds the chain).
+- **Picking:** a living soldier within `ClickPickRadiusPixels` (24), then the outline the point is deepest inside, then a
+  pivot within the pick radius (SU-42). The same test finds the hovered troop (any team).
 
-### 6.2 Orders (RMB)
+### 6.2 Orders
 
-The order type is determined when the button is released.
+**LMB drag from a troop (SU-129):** press on one of the player's troops, keep the button down and drag at least
+`OrderDragMinPixels` (8): on release the selection (that troop, or its whole chain after a double click) moves to the
+release point, keeping relative offsets. Chain rules apply as for a Move (§6.3), so a selected chain moves together. A
+marker previews each troop's spot while dragging. With Shift held the drag does nothing.
 
-**Click or drag below `OrderDragMinPixels = 8` px [PROVISIONAL, Q-47]: point order**
-- **On an enemy troop:** `Pursue`. Every selected troop pursues. Assault applies on engagement (§4.2).
-- **On empty ground:** `Move`. Selected troops keep their relative offsets and translate to the target. On arrival they become Idle [Q-14].
+**RMB click (below `OrderDragMinPixels`)**
+- **On an enemy troop:** `Pursue` by every selected troop.
+- **On empty ground:** `Move`. Selected troops keep their relative offsets; they arrive Idle (Q-14).
 
-**Drag at or above `OrderDragMinPixels`: battle line (`OrderLine`)**
-- **Tangent:** `T = D_end − D_start` is the lateral direction of the line.
-- **Facing:** the front face is the normal on the side nearest the nearest enemy troop. If no enemy is present, the front is the right-hand normal of `T` **[Q-17]**.
-- **Single troop:** marches to the midpoint of `[D_start, D_end]`, turns to the facing, and holds the line (`HasIdleLine = true`). Line width equals the drag length, clamped to `[MinimumLineWidth, 1.8 × Radius]`.
-- **Multiple troops (chain):** the span is split across the `N` selected troops in order along the drag direction **[Q-18]**. Each troop's width is its share of the span. Adjacent troops' line points meet at joints. The order creates the links explicitly for each adjacent pair **[Q-19]**. Each troop's length stays within `0.7–3.0 × L_nat`.
-- **Ghost preview:** while the button is held, `TroopOrderOverlay` draws each troop's projected footprint, facing arrows and the shared joints.
+**RMB drag (at or above `OrderDragMinPixels`)**
+- **Two or more troops: battle line.** The span is split across the troops in order along the drag (Q-18); each length
+  is its share, clamped to `[0.7, 3.0] × L_nat`. The front faces the nearest enemy troop, or the right-hand normal of the
+  drag if there is none; the player cannot choose the front (Q-17). The order links adjacent troops with pending links
+  (§3.4). Each troop holds its line after arriving.
+- **One troop: Move** to the release point (SU-129). The player never gives a single troop a facing; its line forms and
+  faces the threat by itself (§3.3). A lone troop's facing can be shaped only indirectly, by placing its neighbours in a
+  chain.
+- **Ghost preview:** while the button is held, each troop's projected footprint (or a marker for a move), the shared
+  joints and any chain tethers. No facing arrow (SU-33).
+
+**Order paths:** every selected troop, and the hovered troop of any team, with a Move, Line or Attack order shows its
+path with arrows (SU-37, SU-97).
 
 ### 6.3 Chain Manipulation
 
-**Envelope.** A destination is inside the chain envelope if the resulting stretch is `≤ 3.0 × L_nat` **and** the inner hinge angle is `≥ 65°`.
+**Envelope.** A destination is inside the chain envelope if the resulting stretch is `≤ 3.0 × L_nat` and the inner
+hinge angle is `≥ 65°`.
 
-- **Staying chained:** a single linked troop ordered to a destination **inside the envelope** stays chained. Its joint J hinges, and the adjacent lines stretch or angle.
-- **Exiting:** a single linked troop ordered to a destination **outside the envelope** is unlinked **on mouse release**, at the moment the order is issued.
-- **Ghost tether** (shown while a single chained troop's destination is previewed):
-  - **Solid green/white:** inside the envelope. The troop stays chained.
-  - **Dashed red:** outside the envelope, or Alt is held. Release severs the link.
-- **Middle extraction:** removing troop B from `A–B–C` leaves A and C with free inner Line Points. They do **not** auto-link across the gap, even within 3.0 × stretch. Auto-linking only uses `R_AttachScale`.
-- **ChainSuppressed:** a troop detached by a single-unit order is flagged `ChainSuppressed` so it does not relink while marching past neighbours. The exact end condition is **[Q-22]**.
+- **Links inside the selection** move with it (a selected chain moves together).
+- **Staying chained:** a troop linked to a troop outside the order, ordered to a destination inside the envelope, keeps
+  the link; the joint hinges.
+- **Exiting:** outside the envelope the link is severed when the order is issued (on release), and the troop is
+  ChainSuppressed (§3.4.1).
+- **Ghost tether:** solid green/white = stays linked; dashed red = outside the envelope, or Alt held: release severs.
+- **Middle extraction:** removing B from `A–B–C` leaves A and C with free inner line points; they do not auto-link
+  across the gap unless they come within the attach distance.
+- **Attack orders** break an attacker's links to troops outside the selection.
 
-**Alt modifier**
-- **Alt + move order on a chained troop:** forces an immediate unlink, even for a micro-adjustment inside the envelope.
-- **Alt + move or line-drag on unlinked reserves:** suppresses automatic chain linking (`ChainSuppressed = true`), so reserves can sit close behind a line without snapping to its wings. Duration **[Q-23]**.
+**Alt**
+- **Alt + order on a chained troop:** unlinks it at once, even inside the envelope.
+- **Alt + order on an unlinked troop:** sets ChainSuppressed, so reserves can stand close behind a line without
+  snapping onto its wings. It ends as in §3.4.1 (SU-130).
+
+### 6.4 Battle Screen
+
+- **Troop cards** (`TroopCardHud`): the selected troop bottom left, the hovered troop bottom right (any team). Name(s)
+  joined with " + ", living / starting soldiers, portraits, a blue Effective Morale bar with the red Shock bar on the
+  same scale and a white tick at the break point, formation mode or "Disordered Ns"; character side panels open from
+  the portraits; stats, weapon skills and armour shown as icons with tooltips (SU-19 to SU-29, SU-91, SU-127).
+- **Speed bar** (top right): Pause, ½, Play, 2× (SU-88). **P** / gamepad Start toggles pause, keeping the speed.
+- **Combat log:** an arrow tab on the left edge opens a log of every clash and landed shot with its Combat Power parts,
+  roll, damage split and HP lost (SU-110, SU-113).
+- **Engagement heat map** (F5): a red band across the gap between engaged lines, only where they are within
+  `A_Distance` of each other (SU-40, SU-41, SU-96).
+- **Range mask:** hovering a troop that can shoot shows the union of its shooters' sectors as a heat map (D-53).
+- **Soldier HP bar** over the hovered soldier; injured glow and corpses (SU-31, SU-34, SU-35); hit squash and stretch
+  (SU-36, SU-109).
 
 ---
 
-## 7. Glossary & Tuning
+## 7. Battle Flow
 
-### 7.1 Glossary
+- **Deployment phase (SU-81, SU-82, SU-101):** with `Battle.Deployment` on, the battle opens paused. The player's
+  troops spawn in the deployment zone (one troop per deployed character list, `BattleReport.DeployedTroops`) and stand
+  Idle facing the enemy. Selected troops are **placed** instead of ordered: a move places them at the spot (kept inside
+  the zone) and Idle, a multi-troop line places them in that line. Attack orders do nothing. **Start Battle** begins the
+  fight. The enemy AI starts with the scene and acts once time runs. The camera opens centred on the player's zone
+  (SU-126).
+- **Battle time** counts only fighting time **[A: SU-81]**.
+- **Win and loss:** a `Rout` condition ends the battle when more than `Rout Share` of an army's troops are defeated (1 =
+  every troop). Mission 1's enemy uses 0.5; the player's loss stays at every troop (SU-78, confirmed for now).
+- **Capture points** count the living soldiers of each army inside them four times a second (SU-59).
+- **Battle events** (`BattleEvents`): soldier killed, soldier struck, volley fired, projectile landed, troop broke (rout,
+  retreat, disorder, surrounded break, with its cause) and troop defeated. Achievements, the battle report and sounds
+  listen to them; battle code never references the campaign (SU-57, SU-114).
+
+---
+## 8. Tunable Variables
+
+Every value below is a **variable**: a field on one of the Battle Tuning assets in `Assets/Resources/Battle Tuning/`,
+read through `TroopTuning.Active`, and adjustable in the Inspector (menu **Battle Tuning**). The column gives the value
+in use now: the asset's value, or the code default for a field the asset has not saved yet (marked *default*). Code
+defaults are used when an asset is missing. Values in the rest of this document are these.
+
+**Soldier Tuning**
+
+| Variable | Value | Unit | Description |
+|---|---|---|---|
+| `SpeedUnitsPerStatPoint` | 0.6 | units/s per point | Speed stat to units/s. |
+| `AccelerationPerSpeedPoint` | 1.6 | units/s² per point | Acceleration from Speed. |
+| `ActionWindowSeconds` | 30 | s | Window for FireRate and Shock decay. |
+| `MaxWeaponSkillsPerSoldier` | 2 | int | Weapon classes a character can be skilled in. |
+| `MaxWeaponsPerSoldier` | 2 | int | Not read since D-52 (one melee + one ranged weapon). |
+| `BruiseHealPerSecond` | 1 | HP/s | Bruise recovery per soldier. |
+| `FatigueFraction` | 0.5 | 0–1 | Fatigued at or below this fraction of MaxHP. |
+| `StunAtZeroHp` | on (*default*) | bool | 0 HP with Bruise ≥ Bleed stuns instead of killing. |
+| `StunRecoverHp` | 5 (*default*) | HP | A stunned soldier recovers at this HP. |
+| `SoldierAlignment` | 0.5 | gain | Velocity matching. |
+| `SoldierSeparation` | 1.8 | gain | Same-troop separation; cross-troop separation scales with it. |
+| `SoldierBrownianMotion` | 0.04 | gain | Random jitter. |
+
+**Formation Tuning**
+
+| Variable | Value | Unit | Description |
+|---|---|---|---|
+| `S_Distance` | 5 | units (footprint gap) | An enemy this close makes a troop form a line. Code default 30. |
+| `SDistanceExitHysteresis` | 0 | units | Extra exit distance for S_Distance (the shape-based margin of §3.1 applies too). |
+| `A_Distance` | 2 | units (footprint gap) | Engagement distance; also the charge reach (§4.3). Code default 5.2. |
+| `EngagementGap` | 1.5 | units (footprint gap) | Engaged lines are held this far apart; charge gate. Code default 2. |
+| `EngagementHoldMargin` | 1 | units | Engaged troops stay engaged until A_Distance + this. |
+| `NaturalLineRadiusScale` | 1.8 | × | Troop radius from L_nat (radius = L_nat / this, before TroopSizeScale). |
+| `TroopSizeScale` | 1.5 (*default*) | × | Multiplies the troop radius so soldiers have room (SU-131). |
+| `BlobRadiusScale` | 0.85 | × radius | Idle blob disc. |
+| `PivotSeparationScale` | 0.25 | × (r_A + r_B) | Minimum friendly pivot spacing. |
+| `FriendlyGap` | 0.5 | units | Minimum gap between friendly outlines. |
+| `FriendlyGiveWaySpeedScale` | 0.5 | × march speed | Fastest a troop giving way moves. |
+| `PathRebuildIntervalSeconds` | 0.5 | s | Path rebuild interval. |
+| `JointClearance` / `JointClearanceFraction` | 0.45 / 0.15 | units / × length | Pull-in at a linked end: min(of the two). |
+| `RoutScatterRadiusScale` | 1.6 | × radius | Routed troop scatter disc. |
+
+**Morale Tuning**
+
+| Variable | Value | Unit | Description |
+|---|---|---|---|
+| `RetreatMoralePenalty` | 5 | morale | Per retreat or disorder. |
+| `SurroundedMoralePenalty` | 20 | morale | Per surrounded break. |
+| `ShockDecayFractionPerWindow` | 0.2 | 0–1 | Shock decay per ActionWindowSeconds, as a fraction of EffectiveMorale. |
+| `RoutMoraleThresholdFraction` | 0.5 | 0–1 | Rout below this fraction of the initial EffectiveMorale. |
+| `RoutDespawnSeconds` | 60 | s | Routed troops despawn after this. |
+| `RetreatDistance` | 5 | units | Retreat distance, the same for every troop; also the surround box length. |
+| `RetreatWaveDelaySeconds` | 1.0 | s | Delay between the rearmost and the frontmost soldier starting to fall back. |
+| `RetreatRearMoveSeconds` | 0.8 | s | Rearmost soldier's move time (fastest). |
+| `RetreatFrontMoveSeconds` | 1.8 | s | Frontmost soldier's move time (slowest). |
+| `DisorderSeconds` | 10 (*default*) | s | Time a disordered troop cannot move. |
+| `FlankShockMultiplier` | 3 | × | Shock multiplier on flank and rear hits. |
+| `FrontFaceHalfAngleDeg` | 45 | deg | Front face half-angle. |
+| `RearFaceAngleDeg` | 135 | deg | Rear face starts here. |
+
+**Melee Tuning**
+
+| Variable | Value | Unit | Description |
+|---|---|---|---|
+| `ChargeWindowSeconds` | 45 (*default*) | s | A soldier makes about EffectiveAggression charges per this window. |
+| `ChargeGapTolerance` | 0.25 (*default*) | units | Charge gate tolerance beyond EngagementGap. |
+| `FrontRankChargesOnly` | on (*default*) | bool | Only the front rank starts charges. |
+| `ChargeCandidateCount` | 3 | int | Nearest enemy soldiers a charger picks from. |
+| `ChargeSpeedScale` | 2 | × | Charger, follower and rush-back speed and acceleration. |
+| `ChargeTimeoutSeconds` | 3 | s | Charge cancel timeout. |
+| `ChargeFollowProbability` | 0.5 | 0–1 | Chance each selected follower joins. |
+| `ClashCooldownSeconds` | 1 | s | Per-soldier clash rate limit for contacts that are not charges. |
+| `SupportRadius` | 3 | units | Support range. |
+| `SpearSupportRangeMultiplier` | 2 | × | Spear Support range. |
+| `SupportBonusPerAlly` | 2 | int | Combat Power per supporter. |
+| `DominationDivisor` | 10 | float | Divisor in the Domination formula. |
+| `AssaultDurationSeconds` | 10 | s | Assault length. |
+| `AssaultAggressionBonus` | 5 | int | Aggression during Assault. |
+| `AssaultChargeBonus` | 5 | int | Charge during Assault, while charging. |
+
+**Chain Tuning**
+
+| Variable | Value | Unit | Description |
+|---|---|---|---|
+| `ChainMinStretchScale` | 0.7 | × L_nat | Shortest linked line. |
+| `ChainMaxStretchScale` | 3.0 | × L_nat | Longest linked line; break threshold. |
+| `ChainMinInnerAngleDeg` | 65 | deg | Smallest inner hinge angle; break threshold. |
+| `AttachScale` | 0.25 | × L_nat | Endpoint attach distance. |
+| `AutoLinkMaxFacingDeg` | 45 | deg | Automatic links need facings within this. |
+| `AutoLinkBreakFacingDeg` | 60 | deg | An automatic link breaks past this. |
+| `ChainSuppressCooldownSeconds` | 3 | s | ChainSuppressed ends after this long outside every attach radius. |
+| `ChainRetreatStretchThreshold` | 1.4 | × L_nat | Stretch that triggers a sympathetic retreat. |
+| `ChainRetreatHingeBendDeg` | 30 | deg | Bend (180° − inner) that triggers a sympathetic retreat. |
+| `ChainRetreatFalloff` | 0.3 | 0–1 | Retreat distance lost per hop. |
+| `ChainEndpointRelaxSpeed` | 2 | units/s | Relax rate of a broken, stretched line point. |
+| `LinkSlack` / `LinkStiffness` / `LinkMaxForce` | 0.1 / 5 / 10.4 | units / gain / force | Link tension spring. |
+
+**Ranged Tuning**
+
+| Variable | Value | Unit | Description |
+|---|---|---|---|
+| `BaseShotDC` | 10 | int | Shot difficulty. |
+| `FireRateJitterFraction` | 0.1 | 0–1 | Random variation on the fire interval. |
+| `ProjectileSpeed` | 20 | units/s | Projectile speed. |
+| `RangedFrontArcDeg` | 45 | deg | Shooter's arc either side of the troop's facing. |
+| `CompositeRankGain` | 0.8 | gain | Strength of composite rank sorting (0 = off). |
+| `CompositeRankDepthFraction` | 0.8 | × half-depth | Target depth of the ranged / melee ranks. |
+
+**Input Tuning**
+
+| Variable | Value | Unit | Description |
+|---|---|---|---|
+| `BoxSelectMinDragPixels` | 8 | px | Minimum drag for a box select. |
+| `OrderDragMinPixels` | 8 | px | Minimum drag for a drag order (line, or LMB drag move). |
+| `ClickPickRadiusPixels` | 24 | px | Pick radius around a soldier or pivot. |
+| `DoubleClickSeconds` | 0.35 (*default*) | s | Two clicks on a troop within this select its chain. |
+
+**Constants (`TroopConstants`, not tunable):** `SoldierRadius` 0.3, `SeparationRadius` 0.9 (3 × soldier radius),
+`LineSpacing` 0.9, `SpreadRadius` 1.2, `PressureMassPerDrive` 3, `ContactDistance` 0.85, `NeighborRadius` 2.5,
+`MaxChainLinks` 2. Column: at most 3 lanes, 2 frontage per lane, core starting 0.05 × radius behind the pivot.
+Stat limits are in `CombatStatLimits` (1–20, default 5; HP 10–40, default 15).
+
+**Other tuning assets:** Achievement Tuning (`Resources/Battle Tuning/`) and Post Battle Tuning
+(`Resources/Campaign Tuning/`) hold the achievement lists and post-battle book timings.
+
+---
+
+## 9. Glossary
 
 | Term | Definition |
 |---|---|
-| **Troop** | The commandable unit, composed of Soldiers. |
+| **Troop** | The commandable unit: a list of characters, leader first, and their soldiers. |
 | **Soldier** | An autonomous fighter steered by its troop's vector field. |
-| **Character** | A campaign commander commanding one soldier type. Can be paired pre-battle into a Composite Troop. |
-| **Composite Troop** | A troop made from paired Characters. Takes min Move, max Morale, max Discipline, and the sum of soldier counts. |
-| **Drive Fraction & Pressure** | Ratio of desired to max speed. Scales dynamic mass up to 4×. |
-| **Idle / Column / Line / Chain / Rout** | The five formation states, in ascending priority. |
-| **Thick Line (Rectangle)** | The oriented footprint of a Line troop. Its four faces decide flanking. |
-| **Engaged** | Two opposing footprints within `A_Distance` (5.2). |
-| **Assault** | 10 s buff (+5 Aggression, +5 Charge while charging) granted to an advancing troop that enters engagement. Refreshed by pursuit. |
-| **Pursuit** | Following a retreating enemy under an explicit Pursue order. Refreshes Assault. |
-| **Surrounded** | A troop whose retreat path is blocked. Cannot retreat. |
-| **Charge** | A soldier leaves its line at double speed to clash with one of the 3 nearest enemy soldiers. One charge = one clash. |
-| **Charge Support** | Friendly soldiers chosen by Discipline who follow a charger and provide support without starting clashes. |
-| **Clash & Duel** | A melee contact (`Clash`), resolved by a probability roll on Combat Power (`Duel`). |
-| **Domination** | Bonus damage to the duel winner, from how far the roll beat their win chance. |
-| **Deflect / Bruise / Bleed** | Outcomes of rolling damage against Defence. Bruise heals at 1 HP/s. Bleed is permanent. |
-| **Fatigue** | `CurrentHP ≤ 50% MaxHP`. Fatigued soldiers cannot support. |
-| **Effective Morale** | The troop's morale pool (`BaseMorale × Count` minus penalties). The Shock threshold. |
-| **Shock** | Damage-driven stress. Decays continuously. Break when `Shock > EffectiveMorale`. |
-| **ChainSuppressed** | Flag preventing a detached troop from auto-relinking. |
-| **Hinge (J)** | The joint between two chained troops. |
-| **Inner hinge angle** | Angle at J between the two troops' lines. Straight = 180°. |
+| **Character** | A soldier type with stats, equipment, class and Numbers (`CharacterProfile`; `CampaignCharacter` in the roster). |
+| **Composite troop** | A troop of two characters paired in the tent. Min Move, max Morale and Discipline, summed soldiers. |
+| **Frontage** | Soldiers wide in a line, from the soldier count. Sets `L_nat` and the troop radius. |
+| **Formation mode** | Idle, Column, Line, Chain or Rout (§3.1). |
+| **Detachment / Formation (AI)** | The AI's grouping of troops, and that group's role. |
+| **Footprint** | The troop's shape for engagement, faces and surround (rectangle, capsule or circle). |
+| **Outline** | The steady shape drawn, clicked and hovered (§3.3). |
+| **Engaged** | Footprints within `A_Distance` (held to `A_Distance + EngagementHoldMargin`). |
+| **Committed** | Engaged, or carrying an attack order. Friends never move a committed troop. |
+| **Assault** | 10 s of +5 Aggression and +5 Charge for a troop that enters engagement under an order. |
+| **Charge** | A front-rank soldier runs at double speed to clash with one of the 3 nearest enemy soldiers in reach. |
+| **Charge support** | Same-troop soldiers chosen by Discipline who follow a charger and support its clash. |
+| **Clash & Duel** | A melee contact and its Combat Power roll. |
+| **Domination** | Bonus damage to the duel winner. |
+| **Deflect / Bruise / Bleed** | Outcomes of a point of damage. Bruise heals at 1 HP/s; Bleed is permanent. |
+| **Overflow** | Damage above TotalDefence: always Bleed, counts for Shock. |
+| **Fatigued** | `CurrentHP ≤ 50% MaxHP`. Cannot support. |
+| **Stunned** | At 0 HP with Bruise ≥ Bleed: alive but out of the fight until healed to 5 HP. |
+| **Effective Morale** | `BaseMorale × living soldiers` minus penalties; the Shock threshold. |
+| **Shock** | Damage-driven stress; decays continuously. Break when `Shock > EffectiveMorale`. |
+| **Retreat / Disorder** | A Case B break in melee / out of melee. |
+| **Surrounded** | A troop whose retreat box is blocked by terrain or enemy soldiers. |
+| **ChainSuppressed** | A troop that may not auto-link until 3 s outside every attach radius. |
+| **Hinge (J), inner angle** | The joint between two chained troops, and the angle at it (straight = 180°). |
 
-### 7.2 Tuning Variables
+---
 
-Constants marked **[Q-n]** have an open question. Values marked `PROVISIONAL` may change.
+## Appendix A. Decision IDs still cited in code
 
-**Stats & Soldiers**
+The Phase 01–10 decision log (`Decisions.md`) has been retired. These decisions are cited by code comments and stay in
+force:
 
-| Name | Value | Unit | Description |
-|---|---|---|---|
-| `CombatStatMin / Max / Default` | 1 / 20 / 5 | int | Range and default for every combat stat (`CombatStatLimits`). |
-| `HpMin / HpMax / HpDefault` | 10 / 40 / 15 | int | Range and default for soldier HP (`CombatStatLimits`). |
-| `SpeedUnitsPerStatPoint` | 0.6 | units/s per point **[Q-1]** | Converts Speed/Move to units/s. |
-| `ActionWindowSeconds` | 30.0 | s | Window for Aggression and FireRate. |
-| `SoldierRadius` | 0.3 | units | Soldier collision radius. |
-| `SeparationRadiusScale` | 3.0 | × | `SeparationRadius = 3 × 0.3 = 0.9`. |
-| `SpreadRadius` | 1.2 | units | Density spreading radius. |
-| `PressureMassPerDrive` | 3.0 | × | Mass gain at full drive (up to 4× total). |
-| `PivotSeparationScale` | 0.25 | × (r_A + r_B) **[PROVISIONAL]** | Minimum friendly pivot spacing. |
+| ID | Decision | Spec |
+|---|---|---|
+| D-01 | The designer's character sheets were the Phase 01 source of truth for character data. | §1 |
+| D-03 | Weapon classes include Mace (melee) and Crossbow (ranged). | §1.6 |
+| D-52 | A character has one required melee weapon and an optional ranged weapon (`MeleeWeaponProfile`, `RangedWeaponProfile`). A character without a melee weapon cannot be created or deployed (`MissingMeleeWeaponException`). | §1.6 |
+| D-54 | Ranged reach and targeting are per shooter. | §4.7 |
+| D-55 | Composite troops sort ranged soldiers to the front and melee to the back in a line, reversed while engaged. | §2.1 |
 
-**Formation & Movement**
-
-| Name | Value | Unit | Description |
-|---|---|---|---|
-| `LineSpacing` | 0.9 | units | Soldier spacing along a line and between ranks. |
-| `NaturalLineRadiusScale` | 1.8 | × TroopRadius **[PROVISIONAL, Q-12]** | `L_nat = 1.8 × TroopRadius`. |
-| `PathRebuildIntervalSeconds` | 0.5 | s | Path rebuild interval. |
-| `BlobRadiusScale` | 0.85 | × | Idle disc radius. |
-| `S_Distance` | 30.0 | units (footprint gap) **[Q-16]** | Skirmish distance. No hysteresis. |
-| `A_Distance` | 5.2 | units (footprint gap) | Engagement distance. |
-| `LineGap` | 0.3 | units | Clear gap between opposing footprints. |
-| `ContactDistance` | 0.85 | units | Centre distance for a clash. |
-| `JointClearance` | `min(0.45, 0.15 × length)` **[PROVISIONAL]** | units | Pull-in at linked ends. |
-
-**Combat**
-
-| Name | Value | Unit | Description |
-|---|---|---|---|
-| `ChargeRangeScale` | 1.5 | × A_Distance | Charge range = 7.8 units. |
-| `ChargeSpeedScale` | 2.0 | × | Charger speed multiplier. |
-| `ChargeCandidateCount` | 3 | int | Nearest enemy soldiers a charger picks from. |
-| `ChargeTimeoutSeconds` | 3.0 **[PROVISIONAL, Q-27]** | s | Charge cancel timeout. |
-| `ChargeFollowProbability` | 0.50 | 0–1 | Chance each Discipline-nearest friend follows. |
-| `ClashCooldownSeconds` | 1.0 **[PROVISIONAL, Q-26]** | s | Per-soldier clash rate limit (non-charge contacts). |
-| `AssaultDurationSeconds` | 10.0 | s | Assault length. |
-| `AssaultAggressionBonus` | 5 | int | Aggression bonus during Assault. |
-| `AssaultChargeBonus` | 5 | int | Charge bonus during Assault, while charging. |
-| `SupportRadius` | 3.0 | units | Support range. |
-| `BoarSpearSupportRangeMultiplier` | 2.0 | × | Boar Spear support range. |
-| `SupportBonusPerAlly` | 2 | int | Combat Power per supporting ally. |
-| `FatigueFraction` | 0.50 | 0–1 | Fatigue threshold. |
-| `DominationDivisor` | 10.0 | float | Divisor in the Domination formula. |
-| `FlankShockMultiplier` | 3.0 | × | Shock multiplier on flank hits. |
-| `BaseShotDC` | 10 | int | Shot difficulty class. |
-| `FireRateJitterFraction` | 0.10 | 0–1 | Random variation on fire interval. |
-| `BruiseHealPerSecond` | 1 | HP/s | Bruise recovery per soldier. |
-
-**Morale & Retreat**
-
-| Name | Value | Unit | Description |
-|---|---|---|---|
-| `ShockDecayFractionPer30s` | 0.20 | 0–1 | Shock decay as a fraction of EffectiveMorale per 30 s. |
-| `RoutMoraleThresholdFraction` | 0.50 | 0–1 | Rout below this fraction of Initial EffectiveMorale. |
-| `RetreatMoralePenalty` | 5 | float | Per normal retreat. |
-| `SurroundedMoralePenalty` | 20 | float | Per surrounded break. |
-| `RetreatDistance` | `1.0 × TroopRadius` **[PROVISIONAL, Q-34]** | units | Retreat distance. |
-| `BreakCooldownSeconds` | 1.6 **[PROVISIONAL, Q-34]** | s | Cooldown after a break. |
-| `ChargeLockAfterBreakSeconds` | 1.2 **[PROVISIONAL, Q-34]** | s | No new charges after a break. |
-| `RoutDespawnSeconds` | 60 | s | Despawn time after rout. |
-
-**Chain**
-
-| Name | Value | Unit | Description |
-|---|---|---|---|
-| `MaxChainLinks` | 2 | int | Links per troop (one per Line Point). |
-| `ChainMinStretchScale` | 0.7 | × L_nat | Minimum line length. |
-| `ChainMaxStretchScale` | 3.0 | × L_nat | Maximum line length. Break threshold. |
-| `ChainMinInnerAngleDeg` | 65.0 | deg | Minimum inner hinge angle. Break threshold. |
-| `R_AttachScale` | 0.25 | × L_nat | Endpoint-to-endpoint attach distance. |
-| `ChainSuppressCooldownSeconds` | 3.0 **[Q-22]** | s | Relink cooldown after leaving attach range. |
-| `ChainRetreatStretchThreshold` | 1.4 | × L_nat | Stretch that triggers sympathetic retreat. |
-| `ChainRetreatHingeBendDeg` | 30.0 **[Q-13]** | deg | Hinge bend (180° − inner) that triggers sympathetic retreat. |
-| `ChainRetreatFalloff` | 0.30 **[PROVISIONAL, Q-21]** | 0–1 | Retreat decay per hop. |
-| `ChainEndpointRelaxSpeed` | 2.0 | units/s | Relax rate for an unlinked stretched endpoint. |
-
-**Input**
-
-| Name | Value | Unit | Description |
-|---|---|---|---|
-| `BoxSelectMinDragPixels` | 8 | px | Minimum drag for box select. |
-| `OrderDragMinPixels` | 8 **[PROVISIONAL, Q-47]** | px | Minimum drag for a battle-line order. |
-
-### 7.3 Equipment Sample Values
-
-See §1.6. These are the starting values for the data assets.
-
-### 7.4 Removed Values
-
-| Removed | Replaced by |
-|---|---|
-| `LungeDuration`, `MeleeBeatInterval`, `PerMeleeTime` (name) | Charge system; `ActionWindowSeconds`. |
-| `MaxPendingAttacks` and banked attacks | Stochastic charge rate. |
-| `BruiseDurationSeconds` | `BruiseHealPerSecond`. |
-| `R_BreakScale` | `ChainMaxStretchScale`. |
-| `ChainMaxBendAngleDeg` | `ChainMinInnerAngleDeg`. |
-| `PikeSupportRangeMultiplier` | Boar Spear special rule. |
-| `BowRange`, `BowAccuracy`, `BowDamage`, `BowFireRate` | Weapon data (§1.6). |
-| `FaultPressure` | Removed. |
-| Facing damage multiplier (4×/2×/1×) | Removed. Face penalties (§4.8). |
-| Neighbour charge contagion | Removed (§4.3). |
+Other D-numbers mentioned in this document (D-30, D-31, D-35, D-36, D-38, D-39, D-42, D-44, D-45, D-46, D-53, D-56)
+are described where they are cited.

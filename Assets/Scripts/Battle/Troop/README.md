@@ -2,10 +2,12 @@
 
 Battle units for Leveraged Wars. A **Troop** is the unit the player commands; it is made of **Soldiers**, autonomous
 fighters simulated as plain state and steered by the troop's vector field. The rules follow
-`Docs/Battle/specifications.md` (v0.9). The class-by-class description is in `Docs/Battle/Architecture.md`; decisions
-and open items are in `Docs/Battle/Decisions.md` and `Docs/Battle/Questions.md`.
+`Docs/Battle/specifications.md` (v0.10). The class-by-class description is in `Docs/Battle/Architecture.md`; the change
+log is `Docs/Battle/SpecificationUpdate.md` and open items are in `Docs/Battle/Questions.md` and
+`Docs/Battle/AssumptionsReview.md`.
 
-Troops are the only battle units: Level 1, Level 2 and `Assets/Resources/Levels/Test/Level 1 Troop Test.unity` use them.
+Troops are the only battle units: the mission battles (`Assets/Missions/`) and
+`Assets/Resources/Levels/Test/Level 1 Troop Test.unity` use them.
 The battle-wide events in `Combat/BattleEvents.cs` are how the rest of the game (battle end, achievements, the battle
 report, sounds) follows a battle; Troop code never references the campaign.
 
@@ -47,11 +49,15 @@ report, sounds) follows a battle; Troop code never references the campaign.
 
 ## Controls (battle scenes)
 
-- **LMB** click or drag (8 px): select player troops. **Shift** toggles.
-- **P** (or gamepad Start): pause and resume. No selection or orders while paused.
+- **LMB** click on a troop: select it. **Double click**: select its whole chain. Click on ground: clear. Drag from
+  ground (8 px): box select. **Shift** toggles.
+- **LMB drag from a troop** (8 px): move the selection (that troop, or its chain after a double click) to where the
+  button is released, keeping offsets (SU-129).
+- **P** (or gamepad Start), or the speed bar (top right): pause and resume. Selection and orders still work while paused.
 - **RMB** on an enemy: pursue (Assault on contact). **RMB** on ground: move, keeping offsets; troops arrive Idle.
-- **RMB drag** (8 px): battle line. Several troops split the line in order along the drag and are linked into a chain.
-  The front faces the nearest enemy, or the right-hand side of the drag.
+- **RMB drag** (8 px): with two or more troops, a battle line: the troops split the line in order along the drag and are
+  linked into a chain; the front faces the nearest enemy, or the right-hand side of the drag. With one troop, a move
+  (a lone troop is never given a facing).
 - Moving one chained troop: inside the envelope (3.0 x L_nat stretch, 65 degree hinge) it stays linked; outside it the
   link breaks on release. The ghost tether shows which (green = stays, dashed red = breaks).
 - **Alt** + order: unlink a chained troop, or keep an unlinked reserve from snapping onto a line.
@@ -67,13 +73,13 @@ report, sounds) follows a battle; Troop code never references the campaign.
 
 ## Tuning
 
-Every value from spec §7.2 is a field on one of the Battle Tuning assets in `Assets/Resources/Battle Tuning/`, or a
+Every tunable variable (spec §8) is a field on one of the Battle Tuning assets in `Assets/Resources/Battle Tuning/`, or a
 constant in `TroopConstants` when it never changes:
 
 | Asset | Sections |
 |---|---|
 | Soldier Tuning | Stats and actions, soldier steering |
-| Formation Tuning | Distances (S_Distance, A_Distance, EngagementGap), formation and movement, friendly gap |
+| Formation Tuning | Distances (S_Distance, A_Distance, EngagementGap), formation and movement, troop size, friendly gap |
 | Morale Tuning | Morale and retreat, faces |
 | Melee Tuning | Charges and clashes, support and duel, Assault |
 | Chain Tuning | Chains, link spring |
