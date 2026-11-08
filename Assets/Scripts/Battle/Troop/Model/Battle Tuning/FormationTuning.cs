@@ -23,6 +23,9 @@ public sealed class FormationTuning : ScriptableObject
     [SerializeField, Min(0.1f), Tooltip("L_nat / troop radius. The natural line is Frontage x LineSpacing long (SU-103); the troop's radius in " +
              "units (blob, soldier clamp) is L_nat / this, or larger when its soldiers need more room.")]
     float _naturalLineRadiusScale = 1.8f;
+    [SerializeField, Min(0.1f), Tooltip("Multiplies the troop's radius (blob, soldier clamp, pivot and deployment spacing) so its soldiers " +
+             "have room (SU-131). 1 is the size from frontage and soldier count alone.")]
+    float _troopSizeScale = 1.5f;
     [SerializeField, Range(0.1f, 1f), Tooltip("Idle blob disc radius as a fraction of the troop radius.")]
     float _blobRadiusScale = 0.85f;
     [SerializeField, Min(0f), Tooltip("Minimum spacing of friendly pivots, x (r_A + r_B).")]
@@ -49,6 +52,7 @@ public sealed class FormationTuning : ScriptableObject
     public float EngagementHoldMargin => _engagementHoldMargin;
 
     public float NaturalLineRadiusScale => _naturalLineRadiusScale;
+    public float TroopSizeScale => _troopSizeScale;
     public float BlobRadiusScale => _blobRadiusScale;
     public float PivotSeparationScale => _pivotSeparationScale;
     public float FriendlyGap => _friendlyGap;

@@ -156,6 +156,23 @@ public sealed class LineGeometryTests
         Assert.AreEqual(40f * LineGeometry.PackedAreaPerSoldier, blobArea, 1e-2f);
     }
 
+    // SU-131: TroopSizeScale multiplies the radius (Formation Tuning default 1.5).
+    [Test]
+    public void TroopRadius_IsScaledByTroopSizeScale()
+    {
+        Assert.AreEqual(3.75f, LineGeometry.TroopRadius(5, 16, 1.8f, 0.85f, 1.5f), 1e-4f);
+        TroopTuning tuning = TroopTuning.CreateDefaults();
+        try
+        {
+            Assert.AreEqual(1.5f, tuning.TroopSizeScale, 1e-6f);
+            Assert.AreEqual(3.75f, tuning.TroopRadius(5, 16), 1e-4f);
+        }
+        finally
+        {
+            tuning.DestroySections();
+        }
+    }
+
     [Test]
     public void SoldiersPerRank_Is33_For29_7()
     {

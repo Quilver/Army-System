@@ -325,7 +325,9 @@ public sealed class ChainAndRangedScenarioTests
     float CompositeLeads()
     {
         Troop mixed = TroopOf("Mixed", 0, Vector2.zero, Vector2.right, Squad(8, LongBow()), Squad(12, null));
-        Simulate(10f);
+        // The soldiers spawn in the blob; since troops are 1.5x larger (SU-131) the slowest seed takes about 20 s to
+        // sort its ranks from there.
+        Simulate(20f);
         float free = ShooterLead(mixed);
         Debug.Log($"Composite rank lead (free): {free:0.00}");
         Assert.Greater(free, 0.5f, "Archers stand in front of the melee soldiers");

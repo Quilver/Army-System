@@ -5,7 +5,7 @@ using System;
 //   living soldier count (Q-12).
 //   Soldiers per rank = floor(length / LineSpacing). Ranks = ceil(soldiers / per rank).
 //   Troop radius (world units, used for the blob, the soldier clamp and spacing) = L_nat / NaturalLineRadiusScale, but at
-//   least the radius of a blob that holds the troop's soldiers.
+//   least the radius of a blob that holds the troop's soldiers, times TroopSizeScale (1.5, SU-131) so they have room.
 public static class LineGeometry
 {
     // Half the thickness of a single rank. Soldiers stay in their rank but can spread along it.
@@ -20,11 +20,13 @@ public static class LineGeometry
     // The troop's radius in world units (SU-103): L_nat / naturalLineRadiusScale (the old radius-to-line ratio, so a
     // frontage of 10 is the old radius 5), but never smaller than the radius whose blob (blobRadiusScale x radius) holds
     // the soldiers packed at LineSpacing.
-    public static float TroopRadius(int frontage, int soldiers, float naturalLineRadiusScale, float blobRadiusScale)
+    // sizeScale (Formation Tuning TroopSizeScale, SU-131) multiplies the result.
+    public static float TroopRadius(int frontage, int soldiers, float naturalLineRadiusScale, float blobRadiusScale,
+        float sizeScale = 1f)
     {
         float fromFrontage = NaturalLength(frontage) / Math.Max(0.1f, naturalLineRadiusScale);
         float packedBlob = (float)Math.Sqrt(Math.Max(0, soldiers) * PackedAreaPerSoldier / Math.PI);
-        return Math.Max(fromFrontage, packedBlob / Math.Max(0.1f, blobRadiusScale));
+        return Math.Max(fromFrontage, packedBlob / Math.Max(0.1f, blobRadiusScale)) * Math.Max(0.1f, sizeScale);
     }
 
     public static int SoldiersPerRank(float length, float spacing = TroopConstants.LineSpacing) =>

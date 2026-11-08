@@ -123,6 +123,7 @@ public sealed class TroopTuning
     public float EngagementGap => Formation.EngagementGap;
     public float EngagementHoldMargin => Formation.EngagementHoldMargin;
     public float NaturalLineRadiusScale => Formation.NaturalLineRadiusScale;
+    public float TroopSizeScale => Formation.TroopSizeScale;
     public float BlobRadiusScale => Formation.BlobRadiusScale;
     public float PivotSeparationScale => Formation.PivotSeparationScale;
     public float FriendlyGap => Formation.FriendlyGap;
@@ -211,5 +212,5 @@ public sealed class TroopTuning
     public float NaturalLineLength(int frontage) => LineGeometry.NaturalLength(frontage);
     // The troop's radius in world units from its frontage and soldier count (SU-103, LineGeometry.TroopRadius).
     public float TroopRadius(int frontage, int soldiers) =>
-        LineGeometry.TroopRadius(frontage, soldiers, NaturalLineRadiusScale, BlobRadiusScale);
+        LineGeometry.TroopRadius(frontage, soldiers, NaturalLineRadiusScale, BlobRadiusScale, TroopSizeScale);
 }
