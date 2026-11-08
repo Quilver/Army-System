@@ -218,6 +218,45 @@ public sealed class AchievementTests
         }
     }
 
+    // SU-132: level-up gains reach battle. The roster character fights as a runtime copy of its CampaignCharacter with
+    // the gains added; the copy points back at the asset, and saving stays off while prototyping.
+    [Test]
+    public void LevelUpGains_AreInTheCharacterTheBattleUses()
+    {
+        var saved = RosterCharacter.GrowthRoll;
+        try
+        {
+            var character = ScriptableObject.CreateInstance<CampaignCharacter>();
+            _created.Add(character);
+            var roster = new RosterCharacter { character = character, level = 1, xp = 0 };
+            Assert.AreSame(character, roster.BattleCharacter(), "no gains: the asset itself");
+
+            RosterCharacter.GrowthRoll = _ => true;
+            int gained = 0, levels = 0;
+            roster.GainedXp += _ => gained++;
+            roster.LevelledUp += _ => levels++;
+            roster.AddXp(RosterCharacter.XpPerLevel);
+            Assert.AreEqual(2, roster.level, $"xp {roster.xp}, per level {RosterCharacter.XpPerLevel}, gained {gained}, levels {levels}");
+            Assert.AreEqual(1, roster.GainOf(CharacterStat.Strength), "the level-up added a point of Strength");
+            CharacterProfile fighting = roster.BattleCharacter();
+            _created.Add(fighting);
+            Assert.AreNotSame(character, fighting);
+            Assert.IsInstanceOf<CampaignCharacter>(fighting, "the copy is still a campaign character");
+            Assert.AreSame(character, fighting.Source, "the copy points back at the asset");
+            Assert.AreEqual(roster.Stat(CharacterStat.Strength), fighting.Strength);
+            Assert.AreEqual(character.Strength + 1, fighting.Strength);
+            Assert.AreEqual(character.Numbers + 1, fighting.Numbers, "a Numbers gain adds a soldier");
+            Assert.AreEqual(roster.Stat(CharacterStat.Morale), fighting.Morale);
+            Assert.AreEqual(roster.Stat(CharacterStat.MaxHealth), fighting.MaxHealth);
+            Assert.AreSame(fighting, roster.BattleCharacter(), "the copy is reused until the gains change");
+            Assert.IsFalse(CampaignDataManager.SavingEnabled, "saving is off while prototyping");
+        }
+        finally
+        {
+            RosterCharacter.GrowthRoll = saved;
+        }
+    }
+
     [Test]
     public void PostBattleResults_GrantEverythingOnce_AndRecordEachCharactersXpAndLevelUps()
     {

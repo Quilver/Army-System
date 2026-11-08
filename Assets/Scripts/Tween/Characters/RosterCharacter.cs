@@ -140,6 +140,37 @@ namespace Campaign
             skillGains.Add(new SkillGain { weaponClass = weaponClass, amount = 1 });
         }
 
+        // The character as it fights now (SU-132): the CampaignCharacter with its level-up gains added, as a runtime copy
+        // (CharacterProfile.CreateWithGains, Source = the asset). The asset itself when nothing has been gained. The copy
+        // is kept until the gains change, so every troop in one battle gets the same object.
+        public CharacterProfile BattleCharacter()
+        {
+            if (character == null) return null;
+            if ((statGains == null || statGains.Count == 0) && (skillGains == null || skillGains.Count == 0)) return character;
+            string key = GainKey();
+            if (_battleCopy != null && _battleCopyKey == key) return _battleCopy;
+            var stats = new Dictionary<CharacterStat, int>();
+            foreach (var gain in statGains) stats[gain.stat] = gain.amount;
+            var skills = new Dictionary<WeaponClass, int>();
+            foreach (var gain in skillGains) skills[gain.weaponClass] = gain.amount;
+            _battleCopy = character.CreateWithGains(stats, skills);
+            _battleCopyKey = key;
+            return _battleCopy;
+        }
+
+        [System.NonSerialized] CharacterProfile _battleCopy;
+        [System.NonSerialized] string _battleCopyKey;
+
+        string GainKey()
+        {
+            var key = new System.Text.StringBuilder();
+            key.Append(character.GetInstanceID()).Append('|');
+            if (statGains != null) foreach (var gain in statGains) key.Append((int)gain.stat).Append(':').Append(gain.amount).Append(',');
+            key.Append('|');
+            if (skillGains != null) foreach (var gain in skillGains) key.Append((int)gain.weaponClass).Append(':').Append(gain.amount).Append(',');
+            return key.ToString();
+        }
+
         // Level, XP and stats as they are now, for showing a page as it was before rewards were granted.
         public CharacterSnapshot Snapshot()
         {

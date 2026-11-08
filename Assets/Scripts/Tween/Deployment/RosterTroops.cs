@@ -17,7 +17,28 @@ namespace Deployment
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Hook()
         {
-            DeploymentZone.TroopSource = () => BattleReport.Exists ? BattleReport.DeployedTroopCharacters() : null;
+            DeploymentZone.TroopSource = () => BattleReport.Exists ? WithGains(BattleReport.DeployedTroopCharacters()) : null;
+        }
+
+        // Every character that belongs to a deployed roster character fights with its level-up gains (SU-132): it is
+        // swapped for RosterCharacter.BattleCharacter(). Characters with no roster entry (a level's default troops played
+        // on their own, enemies) are unchanged.
+        static List<IReadOnlyList<CharacterProfile>> WithGains(List<IReadOnlyList<CharacterProfile>> troops)
+        {
+            if (troops == null) return null;
+            var result = new List<IReadOnlyList<CharacterProfile>>();
+            foreach (var troop in troops)
+            {
+                var characters = new List<CharacterProfile>();
+                foreach (CharacterProfile member in troop)
+                {
+                    RosterCharacter roster = CharacterOf(member);
+                    CharacterProfile fighting = roster != null ? roster.BattleCharacter() : null;
+                    characters.Add(fighting != null ? fighting : member);
+                }
+                result.Add(characters);
+            }
+            return result;
         }
 
         // Rebuilds BattleReport.DeployedTroops from BattleReport.DeployedCharacters and DeployedLeaders: one troop per
@@ -62,7 +83,8 @@ namespace Deployment
                 if (troop == null) continue;
                 foreach (var member in troop.Characters)
                 {
-                    if (member is not CampaignCharacter character || deployed.Exists(r => r.character == character)) continue;
+                    if (member == null || member.Source is not CampaignCharacter character ||
+                        deployed.Exists(r => r.character == character)) continue;
                     RosterCharacter entry = campaign?.Roster?.Find(r => r != null && r.character == character)
                                             ?? new RosterCharacter { character = character };
                     deployed.Add(entry);
@@ -98,12 +120,13 @@ namespace Deployment
             return result;
         }
 
-        // The deployed character made from this character profile, or null.
+        // The deployed character made from this character profile (or from the asset a battle copy was made from), or null.
         public static RosterCharacter CharacterOf(CharacterProfile profile)
         {
             if (profile == null || !BattleReport.Exists) return null;
+            CharacterProfile source = profile.Source;
             foreach (RosterCharacter character in BattleReport.DeployedCharacters)
-                if (character != null && character.character == profile) return character;
+                if (character != null && character.character == source) return character;
             return null;
         }
 

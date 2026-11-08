@@ -156,7 +156,7 @@ namespace AchievementSystem
             foreach (var troop in army.Troops)
                 if (troop != null)
                     foreach (var member in troop.Characters)
-                        if (member == character.character) return troop;
+                        if (member != null && member.Source == character.character) return troop;
             return null;
         }
     }

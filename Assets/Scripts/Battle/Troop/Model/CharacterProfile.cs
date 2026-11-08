@@ -154,6 +154,43 @@ public class CharacterProfile : ScriptableObject
             CombatStatLimits.Default, new CharacterEquipment(placeholder, null, null), null);
     }
 
+    // The asset a runtime copy (CreateWithGains) was made from; the profile itself for an asset. Code that matches a
+    // troop's characters to the campaign's (achievements, battle records) compares Source.
+    [System.NonSerialized] CharacterProfile _source;
+    public CharacterProfile Source => _source != null ? _source : this;
+
+    // A copy of this character with points added to its stats and weapon skills, never saved (SU-132): how a roster
+    // character fights after its level-ups. The copy keeps its type (a CampaignCharacter stays one), name, class,
+    // sprites and equipment. Stats are kept in range (CombatStatLimits); a gain for an unlisted weapon class is ignored.
+    public CharacterProfile CreateWithGains(IReadOnlyDictionary<CharacterStat, int> statGains,
+        IReadOnlyDictionary<WeaponClass, int> skillGains)
+    {
+        int Gain(CharacterStat stat) => statGains != null && statGains.TryGetValue(stat, out int gain) ? gain : 0;
+        int SkillGain(WeaponClass weaponClass) =>
+            skillGains != null && skillGains.TryGetValue(weaponClass, out int gain) ? gain : 0;
+
+        CharacterProfile copy = Instantiate(this);
+        copy.name = name;
+        copy.hideFlags = HideFlags.DontSave;
+        copy._source = Source;
+        copy._numbers = Mathf.Max(0, _numbers + Gain(CharacterStat.Numbers));
+        copy._morale = CombatStatLimits.Clamp(_morale + Gain(CharacterStat.Morale));
+        copy._discipline = CombatStatLimits.Clamp(_discipline + Gain(CharacterStat.Discipline));
+        var skills = new List<WeaponSkill>();
+        foreach (WeaponSkill skill in WeaponSkills)
+            skills.Add(new WeaponSkill(skill.Class, skill.Level + SkillGain(skill.Class)));
+        copy._soldierStats = new SoldierStats(
+            Speed + Gain(CharacterStat.Speed),
+            Defence + Gain(CharacterStat.Defence),
+            Strength + Gain(CharacterStat.Strength),
+            Support + Gain(CharacterStat.Support),
+            Charge + Gain(CharacterStat.Charge),
+            Aggression + Gain(CharacterStat.Aggression),
+            MaxHealth + Gain(CharacterStat.MaxHealth),
+            skills);
+        return copy;
+    }
+
     public void SetSpriteIfMissing(Sprite sprite)
     {
         if (_soldierSprite == null) _soldierSprite = sprite;

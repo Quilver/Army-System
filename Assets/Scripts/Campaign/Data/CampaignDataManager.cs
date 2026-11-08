@@ -10,6 +10,11 @@ namespace Campaign
     
     public class CampaignDataManager: MonoBehaviour 
     {
+        // Saving and loading are switched off while the game is prototyped and tuned (SU-132): the campaign lives in
+        // memory on this persistent manager for the play session, so the roster's levels and stat gains carry from one
+        // mission to the next, but nothing is read from or written to campaign.json. Set to true to bring saves back.
+        public static bool SavingEnabled = false;
+
         [SerializeField]
         bool LoadData, SaveData;
         [SerializeField]
@@ -18,10 +23,11 @@ namespace Campaign
         {
             get
             {
-                if (CampaignDataManager.instance.LoadData || CampaignDataManager.instance.data == null)
+                if ((SavingEnabled && CampaignDataManager.instance.LoadData) || CampaignDataManager.instance.data == null)
                 {
-                    // No save: keep the starting data set on the DataManager prefab (or an empty campaign).
-                    CampaignData loaded = CampaignDataManager.instance.SaverLoader.Load();
+                    // No save (or saving switched off): keep the starting data set on the DataManager prefab (or an
+                    // empty campaign).
+                    CampaignData loaded = SavingEnabled ? CampaignDataManager.instance.SaverLoader.Load() : null;
                     if (loaded != null) CampaignDataManager.instance.data = loaded;
                     else CampaignDataManager.instance.data ??= new CampaignData();
                     CampaignDataManager.instance.LoadData = false;
@@ -64,6 +70,12 @@ namespace Campaign
         
         public void LoadGame()
         {
+            // Saving off: continue with the campaign already in memory (or the DataManager's starting data).
+            if (!SavingEnabled)
+            {
+                SceneManager.LoadScene(1);
+                return;
+            }
             Data = SaverLoader.Load();
             if (data == null)
             {
@@ -77,7 +89,7 @@ namespace Campaign
         }
         public void SaveGame()
         {
-            if(SaveData)
+            if (SavingEnabled && SaveData)
                 SaverLoader.Save(data);
         }
         private void OnApplicationQuit()
