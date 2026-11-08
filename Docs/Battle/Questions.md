@@ -3,71 +3,37 @@
 Questions the battle spec (`specifications.md` v0.10) leaves open. The spec references them as **[Q-n]**. Numbers are
 kept from v0.9 so older log entries still point at the right question.
 
-- **Open:** no answer yet; the spec or code uses the value shown until there is one.
-- **Working answer:** built as shown in the spec, but never confirmed by the designer. Confirm or change.
-- **Resolved:** answered; kept for traceability.
+- **Open:** no answer yet; the spec or code uses the behaviour described until there is one.
+- **Resolved:** answered or confirmed by the designer; kept for traceability. (Every former "working answer" was
+  confirmed on 2026-11-08.)
 
 Unconfirmed **Assumptions** from the build log are not repeated here; they are in `AssumptionsReview.md`. Tuning values
 are variables (spec §8) and are not questions.
 
-Last swept: 2026-11-08.
+Last swept: 2026-11-08 (designer's answers and confirmations folded in, SU-136 to SU-141).
 
 ---
 
 ## Open
 
-**Q-2 (P3). Unskilled weapon skill.** A character with no skill in its weapon's class: is the skill 0, 1, or 5?
-> Uses **0** (a listed skill is never 0, so 0 means "not listed"). The soldier gets no WeaponSkill term in Combat Power or
-> the hit chance.
+Raised while building SU-136 to SU-140; each is built as shown until answered.
 
-**Q-24 (P3). When does a Pursue order end?**
-> Ends when the target is destroyed (routed or wiped out) or the player gives a new order. It never ends on arrival or
-> by distance.
+**Q-60 (P3). Who blocks direct fire?** Line of sight is blocked by living soldiers of any third troop, friend or enemy.
+Should friendly troops block (as built), or only enemies?
 
-**Q-40 (P2). Line of fire.** Should projectiles be blocked by terrain, or by troops between the shooter and the target?
-> Not blocked by anything. Only enemy soldiers can be hit; friendly soldiers never are (this is "no friendly fire").
+**Q-61 (P3). The target's own front rank.** The target troop's own soldiers never block, so archers can hit the back
+ranks through the front rank. Should the front rank screen the ranks behind it?
 
-**Q-46 (P3). Partly engaged ranged troops.** When some soldiers of a ranged troop are in melee and others are not,
-should the free ones keep shooting?
-> The troop stops firing while it is engaged (troop-level).
+**Q-62 (P3). Crossbows.** Bows are arced; crossbows (and thrown weapons) are direct fire. Is that right for crossbows?
 
-**Q-58 (P3). Minimum Discipline.** Discipline is 1–20, so every charge can pick at least one follower (each joins with
-50% chance). Should a troop be able to have no followers (minimum 0)?
-> Minimum 1.
+**Q-63 (P3). Water and sight.** Water blocks movement but not sight (`SightBlockingLayers` = Terrain). Confirm.
 
-**Q-59 (P3). Line fill inside terrain** (movement edge case 12, `MovementEdgeCases/12-terrain-choke.svg`). When part
-of a troop's line falls inside impassable terrain, should the line fill skip those places?
-> No: soldiers whose place is inside terrain stop at its edge and crowd the open part of the line.
+**Q-64 (P3). Routing at the edge.** A troop that routs while already at the battlefield edge leaves the field at once.
+Also, where walls or terrain keep the NavMesh away from its bounding rectangle, a routed troop cannot reach the edge on
+that side and falls back to the 60 s despawn. Should reaching a flee goal snapped from the edge count as leaving?
 
----
-
-## Working answers (confirm or change)
-
-| Q | Question | Working answer (spec) |
-|---|---|---|
-| Q-4 | Does a weapon's ChargeBonus count only while charging? | Yes, only in Combat Power while charging (§4.5). |
-| Q-5 | Ranged damage? | Weapon Damage only, no Strength (§4.6). |
-| Q-7 | Spear Support range? | Doubled only when the bearer is the supporter, measured to the clashing soldier (§4.5). |
-| Q-8 | Couched Lance doubling? | Raw damage including Domination, before mitigation, while charging (§4.6). |
-| Q-9 | Charge followers' pool? | Same troop, nearest first (§4.4). |
-| Q-11 | Stretched lines and the troop radius? | Option (a): the soldier clamp widens to reach a stretched line's points (D-36, §2.3). |
-| Q-13 | Hinge angles? | 65° break limit is the inner angle; the 30° retreat threshold is bend (180° − inner) (§3.4). |
-| Q-15 | Are linked pairs exempt from pivot separation? | Not from pivot separation; they are exempt from outline separation (§2.4). |
-| Q-18 | Order of troops in a multi-troop line? | By position along the drag (§6.2). |
-| Q-20 | Do engaged chain neighbours retreat sympathetically? | No; committed neighbours hold by tension (§3.4). |
-| Q-21 | Shared-retreat falloff? | Each hop passes on 70% (§3.4). |
-| Q-26 | Clash rate for contacts that are not charges? | One clash per soldier per 1 s. Rare now that engaged lines stand apart (§4.5). |
-| Q-27 | Does a charger retarget when its target dies? | No; it waits for its next roll (§4.3). |
-| Q-28 | Duel A/B labels? | Charger, else earlier charger, else lower soldier ID (§4.5). |
-| Q-29 | Cooldown after a charge? | None; the rate is the only limit (§4.3). |
-| Q-30 | Neighbour charge contagion? | Removed (§4.3). |
-| Q-31 | How is the attacking face decided? | Defender's pivot to the attacker's nearest footprint point; Front ±45°, Rear beyond 135° (§4.8). |
-| Q-32 | Faces of Blob and Column troops? | Same angle rule, using the current heading (§4.8). |
-| Q-39 | "No shooting into melee"? | Option (a): never target a troop engaged in melee (§4.7). |
-| Q-42 | When is the hit rolled? | When the projectile lands; 20 units/s (§4.7). |
-| Q-44 | Hit skill? | The skill for the weapon's class (§4.7). |
-| Q-56 | The character sheets' "charge bonus"? | The character's Charge stat, not a weapon value. |
-| Q-57 | Weapon value types? | Integers ≥ 0 with no cap; Range is a float. |
+**Q-65 (P3). Skirmisher equipment.** The generic Skirmisher carries an Arming Sword (Sword) but has skills in Axe and
+Javelin, so it fights with Sword skill 0 and warns (SU-140). Give it an axe, or Sword skill?
 
 ---
 
@@ -75,6 +41,35 @@ of a troop's line falls inside impassable terrain, should the line fill skip tho
 
 | Q | Topic | Resolution | Source |
 |---|---|---|---|
+| Q-2 | Unskilled weapon skill | 0; a character carrying a weapon it has no skill in gets a warning (not a blocker). | SU-140 |
+| Q-24 | Pursue end | Not on the target's rout; ends when the pursuer retreats, the target is wiped out or leaves the field, or a new order. | SU-139 |
+| Q-40 | Line of fire | `ArcedShot` on ranged weapons: arced shots ignore obstructions; direct shots need line of sight (no terrain or troops in between). | SU-136 |
+| Q-46 | Partly engaged ranged troops | The troop stops firing while it is engaged (troop level). | Designer, 2026-11-08 |
+| Q-58 | Minimum Discipline | 1. | Designer, 2026-11-08 |
+| Q-59 | Line fill inside terrain | Not skipped: soldiers whose place is inside terrain stop at its edge and crowd the open part. | Designer, 2026-11-08 |
+| Q-4 | Weapon ChargeBonus | Only in Combat Power while charging. | Confirmed 2026-11-08 |
+| Q-5 | Ranged damage | Weapon Damage only, no Strength. | Confirmed 2026-11-08 |
+| Q-7 | Spear Support range | Doubled only when the bearer is the supporter, measured to the clashing soldier. | Confirmed 2026-11-08 |
+| Q-8 | Couched Lance doubling | Raw damage including Domination, before mitigation, while charging. | Confirmed 2026-11-08 |
+| Q-9 | Charge followers' pool | Same troop, nearest first. | Confirmed 2026-11-08 |
+| Q-11 | Stretched lines and the radius | The soldier clamp widens to reach a stretched line's points (D-36). | Confirmed 2026-11-08 |
+| Q-13 | Hinge angles | 65° break limit is the inner angle; the 30° retreat threshold is bend. | Confirmed 2026-11-08 |
+| Q-15 | Linked pairs and separation | Not exempt from pivot separation; exempt from outline separation. | Confirmed 2026-11-08 |
+| Q-18 | Order of troops in a line drag | By position along the drag. | Confirmed 2026-11-08 |
+| Q-20 | Engaged neighbours and shared retreat | Committed neighbours do not retreat; they hold by tension. | Confirmed 2026-11-08 |
+| Q-21 | Shared-retreat falloff | Each hop passes on 70%. | Confirmed 2026-11-08 |
+| Q-26 | Clash rate without a charge | One clash per soldier per 1 s. | Confirmed 2026-11-08 |
+| Q-27 | Charger retargeting | None; it waits for its next roll. | Confirmed 2026-11-08 |
+| Q-28 | Duel A/B labels | Charger, else earlier charger, else lower soldier ID. | Confirmed 2026-11-08 |
+| Q-29 | Cooldown after a charge | None. | Confirmed 2026-11-08 |
+| Q-30 | Neighbour charge contagion | Removed. | Confirmed 2026-11-08 |
+| Q-31 | Attacking face | Defender's pivot to the attacker's nearest footprint point; Front ±45°, Rear beyond 135°. | Confirmed 2026-11-08 |
+| Q-32 | Faces of Blob and Column troops | Same angle rule, using the current heading. | Confirmed 2026-11-08 |
+| Q-39 | No shooting into melee | Never target a troop engaged in melee. | Confirmed 2026-11-08 |
+| Q-42 | Hit timing | Rolled when the projectile lands; 20 units/s. | Confirmed 2026-11-08 |
+| Q-44 | Hit skill | The skill for the weapon's class. | Confirmed 2026-11-08 |
+| Q-56 | Sheet "charge bonus" | The character's Charge stat. | Confirmed 2026-11-08 |
+| Q-57 | Weapon value types | Integers 0–20; Range is a float. | Confirmed with the 20 cap, SU-137 |
 | Q-1 | Speed conversion | `SpeedUnitsPerStatPoint` 0.6, a tunable variable. | SU-135 |
 | Q-3 | Two melee weapons | One required melee and an optional ranged weapon. | D-52 |
 | Q-6, Q-54 | Armour values | Ratios on the armour assets; tunable data. | SU-89, SU-134 |

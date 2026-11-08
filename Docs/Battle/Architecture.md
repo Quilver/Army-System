@@ -114,8 +114,9 @@ in Edit mode at a fixed frame time.
   the obstacle mask (SU-122). Friendly troops never block.
 - Rout (`TroopRout`): final. Breaks every link, cancels orders, raises `Troop.Routed`, `Troop.Defeated` and `BattleEvents.TroopDefeated` once,
   flees at Move speed along a NavMesh path to a goal on the battlefield edge chosen by `RoutFleePlanner` (SU-121;
-  straight away from the nearest enemy without a NavMesh), scatters (`FormationMode.Rout`), despawns after 60 s without
-  raising the event again. Orders are ignored.
+  straight away from the nearest enemy without a NavMesh), scatters (`FormationMode.Rout`). It leaves the field
+  (`Troop.LeaveField`, `HasLeftField`) when its pivot reaches the battlefield edge (`TroopRout.IsAtFieldEdge`, SU-138) or
+  after 60 s, without raising the event again. Orders are ignored.
 
 ### 6.2 Melee (spec §4.2–§4.6)
 
@@ -143,6 +144,8 @@ in Edit mode at a fixed frame time.
   via `MitigationResolver`). A fleeing winner deals no damage (Q-37).
 - `SupportCalculator`: same-team, alive, not fatigued soldiers within 3 units (6 for a Boar Spear), capped by the
   clashing soldier's Support, ×2 Combat Power; 0 against a flanking enemy.
+- `TroopPivotMover.UpdatePursuit`: a Pursue ends when the target is wiped out or has left the field, not when it routs
+  (SU-139); the pursuer's retreat, disorder or rout cancels it through `Troop`.
 - `AssaultState`: a troop with an active Move, Pursue or Line order that becomes engaged gets 10 s of +5 Aggression and
   +5 Charge while charging. Re-engaging during a pursuit refreshes it.
 - `MeleeMetrics`: rolling 30 s counts of charges, followers, clashes, duel wins, damage, shots and hits.
@@ -221,7 +224,9 @@ in Edit mode at a fixed frame time.
   the reachable enemy soldier with the fewest of the troop's projectiles aimed at it, then the nearest. Soldiers whose
   weapon has Volley (SU-105) fire together every `30 / FireRate × (1 ± 0.1)`; the others (the default) each shoot on
   their own clock at the same interval, first shot after a random part of it. Fire & Engage volleys (SU-90) fire on
-  entering an engagement and on a Case B retreat from it.
+  entering an engagement and on a Case B retreat from it. Direct-fire weapons (`ArcedShot` off) need line of sight
+  (`CanSee`: no collider on `SightBlockingLayers` and no third troop's soldier within a soldier radius of the line,
+  `RangedRules.LineBlockedBySoldiers`, SU-136); arced weapons ignore obstructions.
 - `TroopProjectiles`: pooled projectiles at 20 units/s; the hit is rolled on landing with
   `(Accuracy + skill) / (Accuracy + skill + 10)`; damage is the weapon damage through armour, no flank Shock.
 

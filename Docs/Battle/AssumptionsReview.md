@@ -1,6 +1,6 @@
 # Assumptions review
 
-Every unconfirmed Assumption in `SpecificationUpdate.md` (SU-01 to SU-135), grouped by system so they can be confirmed in one sitting: 132 assumptions across 75 SU entries (one already confirmed). Rebuilt 2026-11-08 (SU-135): assumptions that later entries overtook were removed, missing ones were added, and the groups were tidied. The spec (v0.10) tags text that rests on one of these as **[A: SU-n]**.
+Every unconfirmed Assumption in `SpecificationUpdate.md` (SU-01 to SU-141), grouped by system so they can be confirmed in one sitting: 142 assumptions across 79 SU entries. SU-136 to SU-140 were added on 2026-11-08; the SU-74 and SU-121 items about routed troops never leaving the map were removed (SU-138 replaced them). Rebuilt 2026-11-08 (SU-135): assumptions that later entries overtook were removed, missing ones were added, and the groups were tidied. The spec (v0.10) tags text that rests on one of these as **[A: SU-n]**.
 
 ## How to use this
 
@@ -15,11 +15,11 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 
 ## Contents
 
-- [Troops, characters, stats & equipment](#troops-characters-stats--equipment) (19)
+- [Troops, characters, stats & equipment](#troops-characters-stats--equipment) (20)
 - [Soldier simulation & physics](#soldier-simulation--physics) (6)
-- [Formations, movement & geometry](#formations-movement--geometry) (12)
-- [Combat (melee, charges, ranged)](#combat-melee-charges-ranged) (8)
-- [Morale, retreat & rout](#morale-retreat--rout) (11)
+- [Formations, movement & geometry](#formations-movement--geometry) (11)
+- [Combat (melee, charges, ranged)](#combat-melee-charges-ranged) (17)
+- [Morale, retreat & rout](#morale-retreat--rout) (12)
 - [Controls, orders & battle UI](#controls-orders--battle-ui) (23)
 - [Campaign, tent, missions & deployment](#campaign-tent-missions--deployment) (38)
 - [Enemy AI](#enemy-ai) (13)
@@ -29,63 +29,67 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 
 **SU-89** Armour Deflect / Bruise / Bleed is a ratio; weapons gain Piercing X and Bludgeoning X
 
-- [ ] a melee hit uses the winner's **melee weapon**; a projectile uses the **ranged weapon that fired it**. →
-- [ ] no existing weapon has Piercing or Bludgeoning yet; set them per weapon (as special rules since SU-90). →
+- [x] a melee hit uses the winner's **melee weapon**; a projectile uses the **ranged weapon that fired it**. →
+- [x] no existing weapon has Piercing or Bludgeoning yet; set them per weapon (as special rules since SU-90). →
 
 **SU-90** Special rules are a list; Piercing / Bludgeoning become special rules; Fire & Engage; renames
 
-- [ ] "retreat" is the morale **Case B retreat** (§5.5). A rout, a chain sympathetic retreat and an ordered move away from a fight do not trigger the retreat volley. →
-- [ ] a rule on the wrong kind of weapon (Fire & Engage on melee, Spear Support or Couched Lance on ranged) has no effect and logs a warning; repeated Piercing or Bludgeoning entries add up. →
-- [ ] a soldier with **no armour** still has **no TotalDefence cap**: every point rolls against 0 : 3 : 7, so all of it counts as Shock as before. The change is that about 30% now lands as Bruise (heals) instead of Bleed. Seeded scenario tests that use unarmoured characters may need their expectations re-checked. →
-- [ ] these volleys ignore the usual limits (stationary, not engaged, not retreating, target not engaged) and the front arc: a shooter needs only its weapon range to the target soldier. Soldiers that are charging also fire. Hit chance and damage are the normal ranged rules. The volleys count toward `Volleys` (and `FireAndEngageVolleys`), raise the normal volley event, and do not change the normal fire cooldown. Outside these two moments a Fire & Engage weapon fires normally. →
+- [x] "retreat" is the morale **Case B retreat** (§5.5). A rout, a chain sympathetic retreat and an ordered move away from a fight do not trigger the retreat volley. →
+- [x] a rule on the wrong kind of weapon (Fire & Engage on melee, Spear Support or Couched Lance on ranged) has no effect and logs a warning; repeated Piercing or Bludgeoning entries add up. →
+- [x] a soldier with **no armour** still has **no TotalDefence cap**: every point rolls against 0 : 3 : 7, so all of it counts as Shock as before. The change is that about 30% now lands as Bruise (heals) instead of Bleed. Seeded scenario tests that use unarmoured characters may need their expectations re-checked. →
+- [x] these volleys ignore the usual limits (stationary, not engaged, not retreating, target not engaged) and the front arc: a shooter needs only its weapon range to the target soldier. Soldiers that are charging also fire. Hit chance and damage are the normal ranged rules. The volleys count toward `Volleys` (and `FireAndEngageVolleys`), raise the normal volley event, and do not change the normal fire cooldown. Outside these two moments a Fire & Engage weapon fires normally. →
 
 **SU-103** Troop radius becomes troop frontage
 
-- [ ] the troop's size in world units (blob, soldier clamp, pivot spacing, deployment spacing, pathing) is derived: `L_nat / NaturalLineRadiusScale` (1.8), but never smaller than the radius whose blob holds the soldiers packed at line spacing; since SU-131 it is then multiplied by `TroopSizeScale` (1.5). It is not a profile value. →
+- [x] the troop's size in world units (blob, soldier clamp, pivot spacing, deployment spacing, pathing) is derived: `L_nat / NaturalLineRadiusScale` (1.8), but never smaller than the radius whose blob holds the soldiers packed at line spacing; since SU-131 it is then multiplied by `TroopSizeScale` (1.5). It is not a profile value. →
 
 **SU-117** Mandatory characters, frontage from soldier count, composite troops in the tent
 
-- [ ] a mandatory character missing from the roster is added to it at level 1 (logged). →
-- [ ] Julian is free to deploy because he is mandatory: every mandatory character costs 0 (shown as "Free"), not Julian by name; mandatory characters still count towards the 2-5 deploy limits. →
-- [ ] composite pairing UI: both cards of a composite are tinted; dragging a follower off its leader (dropping anywhere but a card) splits the pair; dropping onto a character that serves under someone, or dragging one that already leads, is refused with the reason on the readiness line; a follower dropped on another leader moves to it; undeploying either splits the troop; each character keeps its own cost; the deploy cap counts characters; mouse only for now. →
-- [ ] post-battle records of a composite troop: a casualty goes to the fallen soldier's own character, kills go to the leader, and a rout marks both characters routed. →
+- [x] a mandatory character missing from the roster is added to it at level 1 (logged). →
+- [x] Julian is free to deploy because he is mandatory: every mandatory character costs 0 (shown as "Free"), not Julian by name; mandatory characters still count towards the 2-5 deploy limits. →
+- [x] composite pairing UI: both cards of a composite are tinted; dragging a follower off its leader (dropping anywhere but a card) splits the pair; dropping onto a character that serves under someone, or dragging one that already leads, is refused with the reason on the readiness line; a follower dropped on another leader moves to it; undeploying either splits the troop; each character keeps its own cost; the deploy cap counts characters; mouse only for now. →
+- [ ] post-battle records of a composite troop: a casualty goes to the fallen soldier's own character, ~~kills go to the leader~~, and a rout marks both characters routed. → Kills go to the soldiers character. Otherwise this is correct
 
 **SU-118** Troop Profile removed: troops hold their characters and set their own frontage
 
-- [ ] `Troop.Configure` takes an optional frontage override, used only by the tests and the soldier showcase scene, which need a fixed width; 0 (the default) uses `TroopFrontageRule`. →
-- [ ] scenes, the Troop prefab and the level DataManagers were migrated by replacing each troop asset reference with that asset's characters (same order). →
-- [ ] the deployment zone spawns every troop first and lays them out afterwards, so the row spacing uses each troop's own frontage and size. →
+- [x] `Troop.Configure` takes an optional frontage override, used only by the tests and the soldier showcase scene, which need a fixed width; 0 (the default) uses `TroopFrontageRule`. →
+- [x] scenes, the Troop prefab and the level DataManagers were migrated by replacing each troop asset reference with that asset's characters (same order). →
+- [x] the deployment zone spawns every troop first and lays them out afterwards, so the row spacing uses each troop's own frontage and size. →
 
 **SU-125** The generic spearman is called "Spearmen"
 
-- [ ] the generic spearman character is named "Spearmen" like the other generics (it was "Borgo", so both Mission 1 guard troops showed as Borgo); it keeps Borgo's portrait for now, and the Phase 01 generator's Borgo sheet stays a separate character. →
+- [x] the generic spearman character is named "Spearmen" like the other generics (it was "Borgo", so both Mission 1 guard troops showed as Borgo); it keeps Borgo's portrait for now, and the Phase 01 generator's Borgo sheet stays a separate character. →
 
 **SU-131** Troops are 50% larger
 
-- [ ] one multiplier, Formation Tuning `TroopSizeScale` = 1.5, on the troop radius (blob, soldier clamp, pivot and deployment spacing, paths); frontage, L_nat and line spacing are unchanged, so lines are as wide as before. →
+- [x] one multiplier, Formation Tuning `TroopSizeScale` = 1.5, on the troop radius (blob, soldier clamp, pivot and deployment spacing, paths); frontage, L_nat and line spacing are unchanged, so lines are as wide as before. →
 
 **SU-132** Saving off; level-up gains are used in battle
 
-- [ ] with saving off the campaign lives in memory for the play session; the DataManager's Load Data / Save Data ticks are ignored, Continue goes on with the campaign in memory, and nothing touches `campaign.json`. →
-- [ ] a deployed roster character fights as a runtime copy of its CampaignCharacter with every stat, Numbers and weapon skill gain added (clamped to the stat limits), made when the deployment zone asks for its troops and reused until the gains change. →
-- [ ] the copy points back at its asset (`CharacterProfile.Source`), and achievements, battle records and the post-battle book match characters by the asset; characters with no roster entry (a level's default troops, enemies) are used unchanged. →
+- [x] with saving off the campaign lives in memory for the play session; the DataManager's Load Data / Save Data ticks are ignored, Continue goes on with the campaign in memory, and nothing touches `campaign.json`. →
+- [x] a deployed roster character fights as a runtime copy of its CampaignCharacter with every stat, Numbers and weapon skill gain added (clamped to the stat limits), made when the deployment zone asks for its troops and reused until the gains change. →
+- [x] the copy points back at its asset (`CharacterProfile.Source`), and achievements, battle records and the post-battle book match characters by the asset; characters with no roster entry (a level's default troops, enemies) are used unchanged. →
+
+**SU-140** Unskilled weapons warn
+
+- [ ] a warning, not a blocker: the character can still be deployed and fights with skill 0. Melee and ranged weapons are both checked; the warning is logged on Inspector edits and asset loads, once per character and weapon when a troop spawns, and by **Troops > Check Weapon Skills**. →
 
 ## Soldier simulation & physics
 
 **SU-46** Friends never move an engaged or attacking troop
 
-- [ ] an attacking troop counts as committed before it is engaged. A free troop still linked to an attacker is pulled along until the link snaps at 3.0 x L_nat (the pinned anchor rule). The order planner already breaks an attacker's links to troops outside the selection, so this matters mostly for orders given in code (the AI). →
+- [x] an attacking troop counts as committed before it is engaged. A free troop still linked to an attacker is pulled along until the link snaps at 3.0 x L_nat (the pinned anchor rule). The order planner already breaks an attacker's links to troops outside the selection, so this matters mostly for orders given in code (the AI). →
 
 **SU-94** Friendly troops do not overlap
 
-- [ ] it uses the outline, not the footprint: the footprint grows with straggling soldiers, which would keep pushing a troop whose soldiers lag behind its pivot. →
-- [ ] the troop giving way moves at no more than `FriendlyGiveWaySpeedScale` (0.5) x its own march speed, so its soldiers keep up and a marching troop is slowed while it passes a friend but never blocked for good. So a troop can still pass through a friend that is engaged; it just takes longer. →
-- [ ] troops linked in a chain, or with a pending link from a line order, are exempt (their lines meet at the joints). Routed troops are exempt. Nothing moves while paused or deploying; troops placed on top of each other in deployment move apart once the battle starts. →
-- [ ] who gives way. An engaged or attacking troop (SU-46) has right of way over a marching or retreating troop, which has right of way over a standing one; the troop with right of way is not moved, equals share the move. →
+- [x] it uses the outline, not the footprint: the footprint grows with straggling soldiers, which would keep pushing a troop whose soldiers lag behind its pivot. →
+- [x] the troop giving way moves at no more than `FriendlyGiveWaySpeedScale` (0.5) x its own march speed, so its soldiers keep up and a marching troop is slowed while it passes a friend but never blocked for good. So a troop can still pass through a friend that is engaged; it just takes longer. →
+- [x] troops linked in a chain, or with a pending link from a line order, are exempt (their lines meet at the joints). Routed troops are exempt. Nothing moves while paused or deploying; troops placed on top of each other in deployment move apart once the battle starts. →
+- [x] who gives way. An engaged or attacking troop (SU-46) has right of way over a marching or retreating troop, which has right of way over a standing one; the troop with right of way is not moved, equals share the move. →
 
 **SU-107** Stunned soldiers
 
-- [ ] - "At least half" is Bruise >= Bleed (Bruise >= MaxHP / 2 at 0 HP). Overflow counts as Bleed. - A stunned soldier is alive: it counts toward the troop's soldiers, EffectiveMorale and capture points. Its bruises heal at the usual 1 HP/s from 0 HP, so a fully bruised soldier is down for 5 s. - It neither charges nor follows, and cannot support (as a fatigued soldier). It can still be charged, and it still takes part in a clash it is caught in, though it deals no damage if it wins (SU-111). On 0 HP it has no HP left to take, so a hit then does nothing; once healed above 0 a hit that brings it back to 0 stuns it again or, with Bleed over half, kills it. - It is not snapped back inside the troop radius and walks back to its troop with the field; it does not rush back after a charge. - "Retreats in melee": a Case B retreat (only possible in melee, SU-104). Assumption: a **rout while in melee** also leaves its stunned behind. A disorder or a chain's shared retreat does not. The dead are credited to the enemy troop it was engaged with (`BattleEvents.SoldierKilled`). - Drawn greyed like a corpse, without its glow, until it recovers. →
+- [x] - "At least half" is Bruise >= Bleed (Bruise >= MaxHP / 2 at 0 HP). Overflow counts as Bleed. - A stunned soldier is alive: it counts toward the troop's soldiers, EffectiveMorale and capture points. Its bruises heal at the usual 1 HP/s from 0 HP, so a fully bruised soldier is down for 5 s. - It neither charges nor follows, and cannot support (as a fatigued soldier). It can still be charged, and it still takes part in a clash it is caught in, though it deals no damage if it wins (SU-111). On 0 HP it has no HP left to take, so a hit then does nothing; once healed above 0 a hit that brings it back to 0 stuns it again or, with Bleed over half, kills it. - It is not snapped back inside the troop radius and walks back to its troop with the field; it does not rush back after a charge. - "Retreats in melee": a Case B retreat (only possible in melee, SU-104). Assumption: a **rout while in melee** also leaves its stunned behind. A disorder or a chain's shared retreat does not. The dead are credited to the enemy troop it was engaged with (`BattleEvents.SoldierKilled`). - Drawn greyed like a corpse, without its glow, until it recovers. →
 
 ## Formations, movement & geometry
 
@@ -108,7 +112,6 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 
 **SU-74** Troop pivots stay off terrain and on the map
 
-- [ ] **routed troops do not leave the map**: they run along the edge until they despawn after `RoutDespawnSeconds`, and can be caught there. Previously soldiers were carried across terrain with the pivot. →
 - [ ] a pivot already inside a collider is let out (2D physics queries that start in a collider ignore it). →
 
 **SU-75** A pursuer squares up to the face it attacks
@@ -153,6 +156,21 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 
 - [ ] only charges use it. Ranged fire rate (shots per window) and Shock decay keep `ActionWindowSeconds` (30 s, Soldier Tuning). →
 
+**SU-136** Direct fire needs line of sight; ArcedShot
+
+- [ ] an intervening troop is any living soldier of a third troop, friend or enemy, within one soldier radius of the line; the shooter's own troop and the target's own troop never block; routed troops' soldiers block too. →
+- [ ] sight-blocking terrain is any non-trigger collider on `SightBlockingLayers` (Terrain; water does not block sight). →
+- [ ] the target troop is the nearest unengaged enemy troop some shooter can reach and see (a hidden troop is skipped for 0.25 s); each shooter takes the usual preferred soldier among those it can see and holds if it sees none; a volley nobody can aim waits without spending its cooldown; Fire & Engage volleys need line of sight too. →
+- [ ] line of sight is checked when the shot is fired; projectiles in flight are not blocked. →
+- [ ] bows are arced; crossbows and thrown (Javelin-class) weapons are direct. →
+- [ ] the range mask still shows each shooter's full sector, not its line of sight. →
+
+**SU-139** When a Pursue ends
+
+- [ ] the pursuer's own disorder or rout still ends it; a surrounded break does not; when the target leaves the field the pursuer stands Idle where it is. →
+- [ ] the player cannot give a new attack order on a routed troop (only a running pursuit continues), and a pursuer chasing a routed troop does not square up to it. →
+- [ ] the AI is unchanged: it never targets routed troops, so AI troops re-target on their next tick. →
+
 ## Morale, retreat & rout
 
 **SU-104** Retreats only from melee; out of melee a break disorders the troop
@@ -166,7 +184,6 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 - [ ] with a NavMesh a routed troop runs to a flee goal on the battlefield edge within ±90° of "away from the nearest non-routed enemy" (whole circle if nothing there is reachable), scored by direction, enemy distance, detour and not passing enemies, and follows the NavMesh path to it; re-planned every 1 s and on arrival. →
 - [ ] a routed pivot moving less than 0.5 units in 1 s is stuck: it picks a new goal and avoids that heading (±30°) for 5 s. →
 - [ ] without a NavMesh the rout keeps the straight-line flight. →
-- [ ] routed troops still do not leave the map (SU-74): at the edge they run along it until RoutDespawnSeconds. Despawning on reaching the edge was left out; say if you want it. →
 
 **SU-122** The surround test counts enemy soldiers, not footprints
 
@@ -177,6 +194,11 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 **SU-133** Retreat: rear first and fastest, restored and fixed
 
 - [ ] retreat acceleration headroom is 6x (was 3x) so the rear ranks can keep to their 0.8 s move (the lost SU-15). →
+
+**SU-138** Routed troops leave at the map edge
+
+- [ ] the edge is the NavMesh's bounding rectangle inset by the blob radius, reached within 0.5 units; a troop that routs at the edge leaves at once. →
+- [ ] leaving reuses the despawn path and raises no event again; `RoutDespawnSeconds` (60) stays as the fallback; without a NavMesh nothing changes. →
 
 ## Controls, orders & battle UI
 

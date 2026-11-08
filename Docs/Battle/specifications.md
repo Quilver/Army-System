@@ -1,7 +1,7 @@
 # Leveraged Wars: Battle System Specification (v0.10)
 
-> **Status (2026-11-08):** v0.10 folds every designer **Decision** recorded in `SpecificationUpdate.md` up to SU-135,
-> and the answers to the docs review, into the spec. It replaces v0.9.
+> **Status (2026-11-08):** v0.10 folds every designer **Decision** recorded in `SpecificationUpdate.md` up to SU-141,
+> the answers to the docs review and the answered questions (`Questions.md`) into the spec. It replaces v0.9.
 > - Text that rests on an unconfirmed **Assumption** is tagged **[A: SU-n]**. Those are listed for review in
 >   `AssumptionsReview.md`; once a group is confirmed the tag is removed.
 > - Items tagged **[Q-n]** are open and listed in `Questions.md`.
@@ -53,7 +53,7 @@
 |---|---|---|
 | `Numbers` | integer ≥ 0 | Soldiers the character brings into battle. |
 | `Morale` (BaseMorale) | 1–20 | Morale per soldier (§5.1). |
-| `Discipline` | 1–20 | Nearest same-troop soldiers that may follow a charger (§4.4). Minimum 1 **[Q-58]**. |
+| `Discipline` | 1–20 | Nearest same-troop soldiers that may follow a charger (§4.4). Minimum 1 (Q-58). |
 | `MaxHP` | 10–40 | Combined pool for Bruise and Bleed (§4.6). |
 | `Speed` | 1–20 | Lowest value in a troop sets its `Move`. |
 | `Defence` | 1–20 | Mitigation (§4.6). |
@@ -61,7 +61,7 @@
 | `Support` | 1–20 | Cap on supporting allies in a clash (§4.5). |
 | `Charge` | 1–20 | Added to Combat Power while charging (§4.5). |
 | `Aggression` | 1–20 | Expected charges per `ChargeWindowSeconds` while the soldier may charge (§4.3). |
-| `WeaponSkill[class]` | 1–20 | Up to 2 classes. A class that is not listed is unskilled (0) **[Q-2]**. A listed skill is never 0. |
+| `WeaponSkill[class]` | 1–20 | Up to 2 classes. A class that is not listed is unskilled (0) (Q-2). A listed skill is never 0. A character carrying a weapon of a class it has no skill in gets a warning (§1.6). |
 
 ### 1.5 Levels and Growth (campaign → battle)
 
@@ -110,6 +110,7 @@
 | `Accuracy` | Added to skill in the hit chance (§4.7). |
 | `FireRate` | Shots per `ActionWindowSeconds` (30 s). |
 | `Volley` | Off by default: soldiers shoot on their own timing. On: the soldiers with this weapon shoot together (SU-105). |
+| `ArcedShot` | Off by default: **direct fire**, which needs line of sight (§4.7). On: the shot arcs over troops and terrain (SU-136). Bows are arced; crossbows and thrown weapons are direct **[A: SU-136]**. |
 | `SpecialRules` | A list (SU-90), below. |
 
 **Special rules (SU-90)**
@@ -125,9 +126,13 @@
 A rule on the wrong kind of weapon has no effect and logs a warning; repeated Piercing or Bludgeoning entries add up
 **[A: SU-90]**.
 
-**Data:** weapon and armour values are set on their assets in `Resources/Troop and Character Profiles/`. Values the
-character sheets did not give are placeholders until tuned (Q-54, Q-55). Melee weapon damage was cut by 3 to lengthen
-melee (SU-108).
+**Values:** weapon `Damage`, `ChargeBonus`, `Accuracy` and `FireRate` are integers from **0 to 20** (SU-137, Q-57);
+`Range` is a float in world units. Weapon and armour values are set on their assets in
+`Resources/Troop and Character Profiles/` and tuned there. Melee weapon damage was cut by 3 to lengthen melee (SU-108).
+
+**Unskilled weapons (SU-140, Q-2):** a character carrying a melee or ranged weapon of a class it has no skill in fights
+with skill 0 in it. This is a warning, not an error **[A: SU-140]**: it is logged in the Inspector, when the troop spawns
+in battle (once per character and weapon), and by **Troops > Check Weapon Skills**.
 
 ---
 
@@ -327,7 +332,9 @@ blob radius) and clipped against terrain colliders, sliding along obstacles.
   charging. Troops without an order never gain Assault. A fight that stays inside the engagement hold does not
   retrigger it (SU-45).
 - **Pursuit:** only by an explicit Pursue order. A pursuing troop that re-engages an enemy that retreated refreshes
-  Assault. A Pursue ends when its target is destroyed (routed or wiped out) or the player gives a new order **[Q-24]**.
+  Assault. **A Pursue does not end when its target routs:** the pursuer chases the routed troop and may catch it. It
+  ends when the pursuing troop retreats (a Case B break), when the target is wiped out or leaves the field (§5.4), or
+  when a new order is given (SU-139, Q-24). The pursuer's own disorder or rout also ends it.
   A pursuer whose target is within `S_Distance` takes its heading from that target alone and squares up to the face it
   attacks (SU-75).
 
@@ -433,7 +440,14 @@ adds none.
   (Q-39 a). Troops in melee are never targeted.
 - **Target soldier:** each shot goes to the reachable enemy soldier with the fewest of the troop's projectiles already
   aimed at it, then the nearest.
-- No friendly fire: only enemy soldiers can be hit; projectiles are not blocked by troops or terrain **[Q-40]**.
+- **Line of sight (SU-136, Q-40):** a **direct-fire** shooter (its weapon's `ArcedShot` off) may only target an enemy
+  soldier it can see: the straight line from shooter to target must not cross a collider on `SightBlockingLayers`
+  (Terrain; water does not block sight), nor pass within one soldier radius of a living soldier of any third troop,
+  friend or enemy. The shooter's own troop and the target's own troop never block **[A: SU-136]**. The target troop is
+  the nearest one that some shooter can both reach and see; a shooter with no visible target holds its shot. LOS is
+  checked when the shot is fired; projectiles in flight are not blocked. **Arced** shots ignore obstructions. The range
+  mask does not show line of sight **[A: SU-136]**.
+- No friendly fire: only enemy soldiers can be hit.
 - Unlimited ammunition. No flank bonus for ranged hits.
 
 **Timing**
@@ -508,11 +522,15 @@ $$\text{EffectiveMorale} = \text{BaseMorale} \times \text{CurrentSoldierCount} -
 - **Flight (SU-121):** with a NavMesh it runs to a goal on the battlefield edge within ±90° of "away from the nearest
   non-routed enemy" (the whole circle when nothing there is reachable), re-planned every 1 s; a troop that moves less
   than 0.5 units in 1 s is stuck and avoids that heading for 5 s **[A: SU-121]**. Without a NavMesh it flees in a
-  straight line. It never leaves the map: at the edge it runs along it **[A: SU-74, SU-121]**.
+  straight line.
+- **Leaving the field (SU-138):** a routed troop whose pivot reaches the battlefield edge (the NavMesh's bounding
+  rectangle inset by the blob radius, within 0.5 units) is removed from the battle with its soldiers. A troop that routs
+  at the edge leaves at once **[A: SU-138]**. Without a NavMesh nothing changes.
 - **Attackable:** yes; a fleeing winner deals no damage (§4.5).
 - **Defeated:** the troop is defeated once, at rout (or when its last soldier dies first): `Troop.Routed`,
   `Troop.Defeated` and `BattleEvents.TroopDefeated` are raised then, not at despawn (SU-57).
-- **Despawn:** after `RoutDespawnSeconds` (60), wherever it is.
+- **Despawn:** a routed troop that has not reached the edge is removed after `RoutDespawnSeconds` (60), wherever it is.
+  Leaving at the edge and despawning raise no event again; both count as leaving the field (which ends a Pursue).
 
 ### 5.5 Retreat and Disorder (Case B)
 
@@ -739,6 +757,7 @@ defaults are used when an asset is missing. Values in the rest of this document 
 | `FireRateJitterFraction` | 0.1 | 0–1 | Random variation on the fire interval. |
 | `ProjectileSpeed` | 20 | units/s | Projectile speed. |
 | `RangedFrontArcDeg` | 45 | deg | Shooter's arc either side of the troop's facing. |
+| `SightBlockingLayers` | Terrain (*default*) | layers | Terrain layers that block direct fire (SU-136). Defaults to Terrain, Impassable Terrain and Impassable (the last two do not exist in this project). |
 | `CompositeRankGain` | 0.8 | gain | Strength of composite rank sorting (0 = off). |
 | `CompositeRankDepthFraction` | 0.8 | × half-depth | Target depth of the ranged / melee ranks. |
 

@@ -5,9 +5,81 @@ Running log of changes to the battle system and of assumptions made while buildi
 whether it is a **Decision** (asked for by the designer) or an **Assumption** (filled in to make the change work;
 confirm or replace).
 
-**Spec v0.10 (2026-11-08)** folds in every Decision up to SU-135. Assumptions stay here until the designer confirms
+**Spec v0.10 (2026-11-08)** folds in every Decision up to SU-141. Assumptions stay here until the designer confirms
 them in `AssumptionsReview.md`; the spec tags text that rests on one as **[A: SU-n]**. Section numbers in entries before
 SU-128 refer to v0.9 and may have moved.
+
+---
+
+## 2026-11-08 (2): Answered questions (Q-2, Q-24, Q-40, Q-57) and confirmed working answers
+
+### SU-136 Direct fire needs line of sight; `ArcedShot` on ranged weapons (Decision + Assumptions, answers Q-40, spec §1.6, §4.7)
+- Decision: ranged weapons have an **`ArcedShot`** box. On: the shot ignores obstructions. Off (the default, direct
+  fire): the shot needs line of sight, a direct line with no troops or terrain in between.
+- Assumption: an intervening troop is any living soldier of a third troop, friend or enemy, within one soldier radius
+  (0.3) of the segment between shooter and target. The shooter's own troop and the target's own troop never block, so
+  archers shoot through their own ranks and can hit back ranks through the target's front rank (Q-60, Q-61). Routed
+  troops' soldiers block too.
+- Assumption: sight-blocking terrain is any non-trigger collider on the new Ranged Tuning variable
+  **`SightBlockingLayers`**, default Terrain, Impassable Terrain and Impassable (only Terrain exists in this project).
+  Water does not block sight (Q-63).
+- Assumption: the target troop is the nearest unengaged enemy troop that some shooter can both reach and see; a troop
+  found hidden is skipped for 0.25 s. Each shot keeps the usual preference (fewest shots aimed, then nearest) among the
+  soldiers that shooter can see; a shooter that sees none holds. A volley in which nobody can see the target waits
+  rather than spending its cooldown. Fire & Engage volleys need line of sight too.
+- Assumption: line of sight is checked when the shot is fired; projectiles in flight are not blocked.
+- Assumption: bows are arced; crossbows and thrown (Javelin-class) weapons are direct (Q-62). Short Bow asset set to
+  arced; Javelin stays direct; the Phase 01 generator and the weapon migration follow the same rule.
+- Assumption: the range mask still shows every shooter's full sector; it does not show line of sight (that would need
+  per-shooter visibility polygons).
+- Code: `RangedWeaponProfile.ArcedShot`, `RangedTuning.SightBlockingLayers`, `RangedRules.LineBlockedBySoldiers`,
+  `RangedFireController` (`CanSee`, `FindTarget`, `FireVolley`). Tests: `ChainAndRangedScenarioTests` (direct fire holds
+  behind a troop, arced fire shoots over it, clear line fires, targets the visible troop, terrain blocks direct fire),
+  `LineOfSightRuleTests`.
+
+### SU-137 Weapon values are capped at 20 (Decision, answers Q-57, spec §1.6)
+- Decision: weapon `Damage`, `ChargeBonus`, `Accuracy` and `FireRate` are integers from 0 to 20; `Range` is an uncapped
+  float. Clamped in the Inspector, on load and in the runtime factories. No existing weapon was above 20.
+- Tests: `WeaponValueLimitTests`.
+
+### SU-138 Routed troops leave at the map edge (Decision + Assumptions, amends SU-74, SU-121, spec §5.4)
+- Decision: a routed troop that reaches the edge of the map is removed from the battle, with its soldiers.
+- Assumption: the edge is `BattlefieldBounds` (the NavMesh's bounding rectangle, inset by the blob radius, where pivots
+  are held); reached means within 0.5 units (`RoutFleePlanner.EdgeReachedDistance`). A troop that routs at the edge
+  leaves at once (Q-64).
+- Assumption: leaving reuses the despawn path; the rout and defeat events are not raised again. `RoutDespawnSeconds`
+  (60) stays as the fallback for a troop that never reaches the edge. Without a NavMesh nothing changes.
+- Code: `Troop.LeaveField` / `HasLeftField`, `TroopRout.IsAtFieldEdge`, `BattlefieldBounds.OverrideForTests`. Tests:
+  `RoutFleeTests.RoutedTroop_ReachingTheBattlefieldEdge_LeavesTheBattle`,
+  `WithoutABattlefieldEdge_RoutedTroopStaysUntilItDespawns`.
+
+### SU-139 When a Pursue ends (Decision + Assumptions, answers Q-24, spec §4.2)
+- Decision: a Pursue ends when the pursuing troop retreats, when the target is wiped out, or when it flees off the map
+  (SU-138). A new order ends it as before. It does not end when the target routs: the pursuer chases the routed troop.
+- Found: the code already kept chasing routed targets (only spec v0.9 said a rout ended the order); the change adds
+  "left the field" (edge or despawn) as an end condition.
+- Assumption: the pursuer's own disorder or rout still ends it; a surrounded break does not (it cancels no orders).
+  When the target leaves the field the pursuer stands Idle where it is.
+- Assumption: the player still cannot give a new attack order on a routed troop; only a pursuit already running
+  continues. While chasing a routed troop the pursuer does not square up to it (routed troops are not threats).
+- Assumption: the AI is unchanged: it never treats a routed troop as a valid target, so AI troops re-target on their next
+  tick.
+- Code: `TroopPivotMover.UpdatePursuit`. Tests: `PursuitAndTerrainTests` (keeps chasing after the rout, ends on wipe-out,
+  on the pursuer's retreat, and when the target leaves at the edge).
+
+### SU-140 Unskilled weapons warn (Decision + Assumptions, answers Q-2, spec §1.4, §1.6)
+- Decision: a weapon class the character has no skill in is skill 0, and carrying such a weapon gives a warning.
+- Assumption: a warning, not a blocker: the character can still be deployed and fights with skill 0.
+- Assumption: melee and ranged weapons are both checked. The warning is logged by `CharacterProfile.OnValidate`
+  (Inspector edits and asset loads), once per character and weapon when a troop spawns in battle, and by the new menu
+  **Troops > Check Weapon Skills**. Only the generic Skirmisher warns today (Arming Sword, no Sword skill; Q-65).
+- Code: `CharacterProfile.UnskilledWeapons` / `UnskilledWeaponWarning`, `TroopRoster.UnskilledWeaponWarnings`,
+  `WeaponSkillCheck` (`Editor/SoldierEditors.cs`). Tests: `WeaponSpecialRuleTests` (5 new).
+
+### SU-141 Working answers confirmed (Decision)
+- Decision: every working answer in `Questions.md` is confirmed (Q-4, Q-5, Q-7, Q-8, Q-9, Q-11, Q-13, Q-15, Q-18, Q-20,
+  Q-21, Q-26 to Q-32, Q-39, Q-42, Q-44, Q-56, Q-57 with the 20 cap). Q-46, Q-58 and Q-59 are answered as built. The
+  questions SU-136 to SU-140 raised are Q-60 to Q-65.
 
 ---
 
