@@ -3,8 +3,9 @@ using NUnit.Framework;
 using UnityEngine;
 
 // SU-73 to SU-75: pivots stopped by terrain, kept on the battlefield, and pursuers squaring up to the face they attack.
-// Stepped in Edit mode like TroopScenarioTests, with fixed frame time and seed. There is no NavMesh in the test scene,
-// so paths are straight lines and the terrain clip is what stops the pivot.
+// SU-139: when a Pursue order ends. Stepped in Edit mode like TroopScenarioTests, with fixed frame time and seed. There
+// is no NavMesh in the test scene, so paths are straight lines and the terrain clip is what stops the pivot; tests that
+// need a battlefield edge set one with BattlefieldBounds.OverrideForTests.
 [Category("Scenario")]
 public sealed class PursuitAndTerrainTests
 {
@@ -28,6 +29,7 @@ public sealed class PursuitAndTerrainTests
     [TearDown]
     public void TearDown()
     {
+        BattlefieldBounds.OverrideForTests(null);
         TroopObjects.FlushPending();
         TestScene.Destroy(_created);
         TroopTuning.OverrideForTests(null);
@@ -56,6 +58,25 @@ public sealed class PursuitAndTerrainTests
     {
         int frames = Mathf.CeilToInt(seconds / FrameTime);
         for (int i = 0; i < frames; i++) _world.SimulateFrame(FrameTime);
+    }
+
+    // Kills 7 of 10 soldiers and breaks the troop: too few left to retreat, so it routs (spec §5.4).
+    static void Rout(Troop troop)
+    {
+        int killed = 0;
+        foreach (var soldier in troop.Soldiers)
+            if (killed++ < 7) soldier.ApplyMitigation(new MitigationResult(0, 0, 100, 0));
+        troop.SetShockForTests(1000f);
+        Assert.IsTrue(troop.IsRouted, "Few soldiers left and broken: the troop routs");
+    }
+
+    // Kills every living soldier through the damage path, as melee would.
+    static void WipeOut(Troop troop, Troop attacker)
+    {
+        var soldiers = new List<SoldierAgentState>(troop.Soldiers);
+        foreach (var soldier in soldiers)
+            if (soldier.IsAlive) troop.ApplyDamage(soldier, 1000, attacker.transform.position, false, attacker);
+        Assert.AreEqual(0, troop.LivingSoldierCount);
     }
 
     GameObject Wall(Vector2 center, Vector2 size)
@@ -138,5 +159,94 @@ public sealed class PursuitAndTerrainTests
         if (runner == null) Assert.Pass("Despawned before the check");
         Assert.Greater(runner.transform.position.x, -5.5f, "Never crosses the wall");
         Assert.Greater(runner.transform.position.y, 1f, "Slides along the wall, away from the enemy");
+    }
+
+    // SU-139: a Pursue does not end when the target routs; the pursuer keeps chasing it.
+    [Test]
+    public void Pursuer_KeepsItsPursueOrder_AfterTheTargetRouts()
+    {
+        Troop target = CreateTroop("Target", 1, new Vector2(12f, 0f));
+        Troop pursuer = CreateTroop("Pursuer", 0, Vector2.zero);
+        Simulate(0.1f);
+        pursuer.Pursue(target);
+        Simulate(0.5f);
+        Rout(target);
+        Simulate(2f);
+
+        Assert.IsTrue(target != null, "The routed target is still on the field (no battlefield edge here)");
+        Assert.IsTrue(pursuer.IsPursuing, "Still pursuing the routed target");
+        Assert.AreSame(target, pursuer.PursuitTarget);
+        Assert.AreEqual(TroopOrderKind.Attack, pursuer.CurrentOrder);
+        Assert.Greater(pursuer.PivotVelocity.x, 0f, "Running after it");
+    }
+
+    // SU-139: the order ends when the target is wiped out, routed or not.
+    [Test]
+    public void Pursuit_EndsWhenTheRoutedTargetIsWipedOut()
+    {
+        Troop target = CreateTroop("Target", 1, new Vector2(12f, 0f));
+        Troop pursuer = CreateTroop("Pursuer", 0, Vector2.zero);
+        Simulate(0.1f);
+        pursuer.Pursue(target);
+        Simulate(0.5f);
+        Rout(target);
+        Simulate(1f);
+        Assert.IsTrue(pursuer.IsPursuing);
+
+        WipeOut(target, pursuer);
+        Simulate(0.1f);
+        Assert.IsTrue(target == null, "A wiped-out troop is removed");
+        Assert.IsFalse(pursuer.IsPursuing, "The order ends with the target");
+        Assert.AreEqual(TroopOrderKind.None, pursuer.CurrentOrder);
+        Assert.AreEqual(TroopState.Idle, pursuer.State);
+    }
+
+    // SU-139: the order ends when the pursuer itself breaks into a (Case B) retreat, and does not come back after it.
+    [Test]
+    public void Pursuit_EndsWhenThePursuerBreaksIntoARetreat()
+    {
+        Troop target = CreateTroop("Target", 1, new Vector2(10f, 0f));
+        Troop pursuer = CreateTroop("Pursuer", 0, Vector2.zero);
+        Simulate(0.1f);
+        pursuer.Pursue(target);
+        bool inMelee = false;
+        for (int i = 0; i < Mathf.CeilToInt(15f / FrameTime) && !inMelee; i++)
+        {
+            _world.SimulateFrame(FrameTime);
+            inMelee = pursuer.InMelee;
+        }
+        Assert.IsTrue(inMelee, "The pursuer reaches the target");
+        Assert.IsTrue(pursuer.IsPursuing);
+
+        pursuer.SetShockForTests(1000f);
+        Assert.IsTrue(pursuer.IsRetreating, "At full strength in melee the break is a retreat");
+        Assert.IsFalse(pursuer.IsPursuing, "The retreat ends the Pursue");
+        Simulate(5f);
+        Assert.IsFalse(pursuer.IsPursuing, "It is not taken up again after the retreat");
+    }
+
+    // SU-138, SU-139: a routed target that reaches the battlefield edge leaves the field, and its pursuer's order ends.
+    [Test]
+    public void Pursuit_EndsWhenTheRoutedTargetLeavesTheFieldAtTheEdge()
+    {
+        var field = new Rect(-40f, -40f, 80f, 80f);
+        BattlefieldBounds.OverrideForTests(field);
+        Troop target = CreateTroop("Target", 1, new Vector2(10f, 0f));
+        Troop pursuer = CreateTroop("Pursuer", 0, Vector2.zero);
+        Simulate(0.1f);
+        pursuer.Pursue(target);
+        Rout(target);
+
+        float seconds = 0f;
+        while (target != null && seconds < 30f)
+        {
+            _world.SimulateFrame(FrameTime);
+            seconds += FrameTime;
+        }
+        Assert.IsTrue(target == null, "The routed target left the field at the edge");
+        Assert.Less(seconds, _tuning.RoutDespawnSeconds, "Before the despawn time");
+        _world.SimulateFrame(FrameTime);
+        Assert.IsFalse(pursuer.IsPursuing, "The order ends when the target leaves the field");
+        Assert.AreEqual(TroopState.Idle, pursuer.State);
     }
 }

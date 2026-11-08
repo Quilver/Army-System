@@ -106,11 +106,13 @@ public sealed class TroopPivotMover
         _troop.transform.position = (Vector3)position + (Vector3)(_linePushVelocity * deltaTime);
     }
 
-    // Pursuit ends when the target dies (or routs and despawns) or the player gives a new order (Q-24).
+    // A Pursue ends when the target is wiped out or leaves the field (reaches the edge after routing, or despawns), not
+    // when it routs: the pursuer chases the routed troop and may catch it (SU-139, Q-24). A new order, and the pursuer's
+    // own retreat, disorder or rout, end it too (Troop cancels its orders then).
     void UpdatePursuit()
     {
         if (!_pursuitActive) return;
-        if (_pursuitTarget == null || _pursuitTarget.LivingSoldierCount == 0)
+        if (_pursuitTarget == null || _pursuitTarget.LivingSoldierCount == 0 || _pursuitTarget.HasLeftField)
         {
             _pursuitActive = false;
             _hasDestination = false;

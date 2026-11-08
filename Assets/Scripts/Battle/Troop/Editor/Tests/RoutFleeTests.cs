@@ -3,8 +3,9 @@ using NUnit.Framework;
 using UnityEngine;
 
 // Spec §5.4 / Q-35: routed troops flee around terrain (RoutFleePlanner). The goal choice and the stuck check are tested
-// on the plain planner with faked routes (a NavMesh cannot be baked in Edit mode); the last test checks that without a
-// NavMesh the rout keeps its old straight-line flight away from the nearest enemy.
+// on the plain planner with faked routes (a NavMesh cannot be baked in Edit mode); the scenario tests check that without a
+// NavMesh the rout keeps its old straight-line flight away from the nearest enemy, and (SU-138) that a routed troop
+// leaves the battle at the battlefield edge, set with BattlefieldBounds.OverrideForTests in place of a NavMesh.
 public sealed class RoutFleeTests
 {
     const float FrameTime = 1f / 30f;
@@ -191,6 +192,106 @@ public sealed class RoutFleeTests
             TroopTuning.OverrideForTests(null);
             tuning.DestroySections();
         }
+    }
+
+    // SU-138: a routed troop whose pivot reaches the battlefield edge is removed, long before RoutDespawnSeconds. It was
+    // defeated at rout, so neither Troop.Defeated nor BattleEvents.TroopDefeated is raised again.
+    [Test, Category("Scenario")]
+    public void RoutedTroop_ReachingTheBattlefieldEdge_LeavesTheBattle()
+    {
+        RunScenario((world, created, tuning) =>
+        {
+            var field = new Rect(-30f, -30f, 60f, 60f);
+            BattlefieldBounds.OverrideForTests(field);
+            CreateTroop(created, "Enemy", 1, new Vector2(-6f, 0f));
+            Troop runner = CreateTroop(created, "Runner", 0, Vector2.zero);
+            world.SimulateFrame(FrameTime);
+            float inset = runner.Radius * tuning.BlobRadiusScale;
+            Assert.IsFalse(RoutFleePlanner.IsAtEdge(runner.transform.position, field, inset), "Starts inside the field");
+
+            int defeated = 0, battleDefeated = 0;
+            runner.Defeated += _ => defeated++;
+            void CountBattleDefeated(Troop troop)
+            {
+                if (troop == runner) battleDefeated++;
+            }
+            BattleEvents.TroopDefeated += CountBattleDefeated;
+            try
+            {
+                RoutForTests(runner);
+                Assert.AreEqual(1, defeated, "Defeated once, at rout");
+                Assert.AreEqual(1, battleDefeated);
+
+                float seconds = 0f;
+                bool leftField = false;
+                while (runner != null && seconds < 30f)
+                {
+                    leftField |= runner.HasLeftField;
+                    Assert.IsFalse(leftField, "Still on the field after leaving it");
+                    world.SimulateFrame(FrameTime);
+                    seconds += FrameTime;
+                }
+                Assert.IsTrue(runner == null, "Removed at the edge");
+                Assert.Less(seconds, tuning.RoutDespawnSeconds, "Before the despawn time");
+                Assert.AreEqual(1, defeated, "Not defeated again on leaving");
+                Assert.AreEqual(1, battleDefeated, "No second TroopDefeated");
+                world.SimulateFrame(FrameTime); // the battle carries on without it
+            }
+            finally
+            {
+                BattleEvents.TroopDefeated -= CountBattleDefeated;
+            }
+        });
+    }
+
+    // SU-138: without a battlefield edge (no NavMesh) a routed troop is not removed early; it despawns as before.
+    [Test, Category("Scenario")]
+    public void WithoutABattlefieldEdge_RoutedTroopStaysUntilItDespawns()
+    {
+        RunScenario((world, created, tuning) =>
+        {
+            CreateTroop(created, "Enemy", 1, new Vector2(-6f, 0f));
+            Troop runner = CreateTroop(created, "Runner", 0, Vector2.zero);
+            world.SimulateFrame(FrameTime);
+            RoutForTests(runner);
+            for (int i = 0; i < Mathf.CeilToInt(5f / FrameTime); i++) world.SimulateFrame(FrameTime);
+            Assert.IsTrue(runner != null, "Still on the field");
+            Assert.IsFalse(runner.HasLeftField);
+            Assert.Greater(runner.transform.position.x, 5f, "Running away, unbounded");
+        });
+    }
+
+    static void RunScenario(System.Action<TroopCombatWorld, List<Object>, TroopTuning> body)
+    {
+        var created = new List<Object>();
+        var tuning = TroopTuning.CreateDefaults();
+        TroopTuning.OverrideForTests(tuning);
+        try
+        {
+            var world = new GameObject("Test Combat World").AddComponent<TroopCombatWorld>();
+            world.SetSeed(7);
+            world.Initialize();
+            created.Add(world.gameObject);
+            body(world, created, tuning);
+        }
+        finally
+        {
+            BattlefieldBounds.OverrideForTests(null);
+            TroopObjects.FlushPending();
+            TestScene.Destroy(created);
+            TroopTuning.OverrideForTests(null);
+            tuning.DestroySections();
+        }
+    }
+
+    // Kills 7 of 10 soldiers and breaks the troop: too few left to retreat, so it routs.
+    static void RoutForTests(Troop troop)
+    {
+        int killed = 0;
+        foreach (var soldier in troop.Soldiers)
+            if (killed++ < 7) soldier.ApplyMitigation(new MitigationResult(0, 0, 100, 0));
+        troop.SetShockForTests(1000f);
+        Assert.IsTrue(troop.IsRouted, "Few soldiers left and broken: the troop routs");
     }
 
     static Troop CreateTroop(List<Object> created, string name, int team, Vector2 position)

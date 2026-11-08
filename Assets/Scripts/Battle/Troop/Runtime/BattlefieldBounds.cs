@@ -13,9 +13,15 @@ public static class BattlefieldBounds
     static bool _hasRect;
     static int _sceneHandle = int.MinValue;
     static float _nextAttempt;
+    static Rect? _testRect;
 
     public static bool TryGet(out Rect rect)
     {
+        if (_testRect.HasValue)
+        {
+            rect = _testRect.Value;
+            return true;
+        }
         int scene = SceneManager.GetActiveScene().handle;
         if (scene != _sceneHandle)
         {
@@ -38,6 +44,10 @@ public static class BattlefieldBounds
         _hasRect = false;
         _nextAttempt = 0f;
     }
+
+    // Test hook: a fixed battlefield edge, since a NavMesh cannot be baked in Edit mode (SU-138). null goes back to
+    // measuring the NavMesh.
+    internal static void OverrideForTests(Rect? rect) => _testRect = rect;
 
     // Limits a pivot displacement so the pivot stays at least inset inside the edge. Each axis is limited on its own, so
     // a troop running into the edge slides along it. A pivot already outside may move back in but not further out.

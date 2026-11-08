@@ -78,6 +78,10 @@ public sealed class Troop : MonoBehaviour
     public event Action EnteredMelee, ExitedMelee;
     bool _defeated;
     public bool IsDefeated => _defeated;
+    // A routed troop that has left the battle: it reached the battlefield edge or despawned (SU-138). It is destroyed at
+    // the end of the frame; until then pursuers use this to end their Pursue (SU-139).
+    bool _leftField;
+    public bool HasLeftField => _leftField;
 
     // --- Randomness ---
 
@@ -472,7 +476,7 @@ public sealed class Troop : MonoBehaviour
     internal void Step(float deltaTime)
     {
         EnsureInitialized();
-        if (!_initialized) return;
+        if (!_initialized || _leftField) return;
 
         if (_morale.enabled) _morale.Tick(deltaTime);
         if (_roster.enabled) _roster.TickHealing(deltaTime, Tuning.BruiseHealPerSecond);
@@ -484,11 +488,17 @@ public sealed class Troop : MonoBehaviour
         Vector2 pivotBefore = transform.position;
         _faultSlip.Tick(deltaTime);
         EvaluateBreak();
-        TickRout(deltaTime);
+        if (TickRout(deltaTime)) return;
         // A disordered troop does not march, pursue or get pushed along by line pressure (SU-104).
         if (IsDisordered) _mover.SetLinePushVelocity(Vector2.zero);
         else _mover.Tick(deltaTime);
         KeepPivotOnTheField(pivotBefore);
+        // A routed troop whose pivot reached the battlefield edge leaves the battle (SU-138).
+        if (IsRouted && _rout.IsAtFieldEdge)
+        {
+            LeaveField();
+            return;
+        }
         CompleteOrderAtPathEnd();
         if (_roster.enabled) _steering.Simulate(deltaTime);
         _views.Refresh(deltaTime);
@@ -509,8 +519,8 @@ public sealed class Troop : MonoBehaviour
         if (_views != null) _views.DestroyAll();
     }
 
-    // The troop is gone (all dead, or a rout despawned). Its soldier sprites go with it here as well as in OnDestroy, which
-    // Edit mode (the scenario tests) never calls.
+    // The troop is gone (all dead, or routed and off the field: LeaveField). Its soldier sprites go with it here as well
+    // as in OnDestroy, which Edit mode (the scenario tests) never calls.
     void DestroyTroop()
     {
         _views?.DestroyAll();
@@ -602,7 +612,8 @@ public sealed class Troop : MonoBehaviour
         _views.Refresh(0f);
     }
 
-    // The current Move or Pursue order finished (arrival, or the pursued troop is gone). A line order keeps holding.
+    // The current Move or Pursue order finished (arrival, or the pursued troop is wiped out or off the field, SU-139). A
+    // line order keeps holding.
     internal void OnOrderComplete()
     {
         if (!IsRouted && !IsFaultSlipping) State = TroopState.Idle;
@@ -808,12 +819,24 @@ public sealed class Troop : MonoBehaviour
         RaiseDefeated();
     }
 
-    void TickRout(float deltaTime)
+    // Returns true when the troop despawned this frame (RoutDespawnSeconds passed without reaching the edge).
+    bool TickRout(float deltaTime)
     {
-        if (!IsRouted) return;
+        if (!IsRouted) return false;
         _rout.UpdateFleeDirection(AwayFromNearestEnemy());
         _rout.SteerAlongPath(_mover.PivotSpeed, deltaTime);
-        if (_rout.Tick(deltaTime, Tuning.RoutDespawnSeconds)) DestroyTroop();
+        if (!_rout.Tick(deltaTime, Tuning.RoutDespawnSeconds)) return false;
+        LeaveField();
+        return true;
+    }
+
+    // A routed troop leaves the battle, at the battlefield edge or on despawn (SU-138). It was defeated at rout, so no
+    // event is raised again; it and its soldiers' views are removed as for a troop wiped out.
+    void LeaveField()
+    {
+        if (_leftField) return;
+        _leftField = true;
+        DestroyTroop();
     }
 
     Vector2 AwayFromNearestEnemy()

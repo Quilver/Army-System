@@ -2,11 +2,13 @@ using System.Collections.Generic;
 using UnityEngine;
 
 // A troop's rout (spec §5.4). Final: a routed troop never recovers. It breaks its chain links, scatters into a loose blob
-// and flees away from the nearest enemy (Q-35) at its Move speed. It still takes hits. After RoutDespawnSeconds it is
-// destroyed without raising the destroyed event again (the event is raised once, at rout; Q-36).
+// and flees away from the nearest enemy (Q-35) at its Move speed. It still takes hits. It leaves the battle when its
+// pivot reaches the battlefield edge (IsAtFieldEdge, SU-138), or after RoutDespawnSeconds wherever it is; either way it
+// is destroyed without raising the destroyed event again (the event is raised once, at rout; Q-36).
 // With a NavMesh the flight follows a flee goal chosen by RoutFleePlanner along a NavMesh path (the troop's
-// TroopPathFollower, as a march uses), so the troop runs around woods and rivers instead of into them (SU-121). It
-// still does not leave the map (SU-74): at the edge it runs along it until it despawns.
+// TroopPathFollower, as a march uses), so the troop runs around woods and rivers instead of into them (SU-121). Its
+// goals lie on the battlefield edge, so reaching one takes the troop off the field. Without a NavMesh there is no edge
+// and the troop despawns after RoutDespawnSeconds, as before.
 // The path is followed by steering: MoveDirection points at the path's next waypoint and TroopPivotMover.Flee runs the
 // pivot along it at the troop's speed. Without a NavMesh (or a goal) MoveDirection is the straight flight away from the
 // nearest enemy, as before.
@@ -54,6 +56,11 @@ public sealed class TroopRout
         _elapsed += deltaTime;
         return _elapsed >= despawnSeconds;
     }
+
+    // SU-138: the pivot stands at the battlefield edge (within RoutFleePlanner.EdgeReachedDistance of the edge inset by
+    // the blob radius, where Troop.ConstrainPivotStep holds it). Never without a battlefield edge (no NavMesh).
+    public bool IsAtFieldEdge => IsRouted && BattlefieldBounds.TryGet(out Rect field)
+        && RoutFleePlanner.IsAtEdge(_troop.transform.position, field, EdgeInset);
 
     // Keeps fleeing away from whichever enemy is nearest now, and (with a NavMesh) re-plans the flee goal around terrain.
     public void UpdateFleeDirection(Vector2 awayFromNearestEnemy)

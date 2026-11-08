@@ -27,8 +27,9 @@ public sealed class RoutFleePlanner
     public const float FleeGoalDistance = 20f;
     public const float MinGoalDistance = 2f;
     public const float GoalReachedDistance = 0.5f;
-    // How close to the (inset) battlefield edge counts as being at it (IsAtEdge). Routed troops do not leave the map at
-    // the edge (SU-74); this is for tools and a possible edge despawn the designer has not chosen (SU-121).
+    // How close to the (inset) battlefield edge counts as being at it (IsAtEdge). A routed troop whose pivot gets this
+    // close leaves the battle (SU-138). It matches GoalReachedDistance, so a troop that reaches a flee goal on the edge
+    // counts as at the edge.
     public const float EdgeReachedDistance = 0.5f;
 
     // Scoring weights.
