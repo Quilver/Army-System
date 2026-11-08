@@ -17,6 +17,12 @@ public sealed class RangedTuning : ScriptableObject
     [SerializeField, Range(0f, 180f), Tooltip("A shooter can hit an enemy soldier within its weapon range and within this " +
         "angle of the troop's facing, measured from the shooter (Q-41, Decisions D-54).")]
     float _rangedFrontArcDeg = 45f;
+    [SerializeField, Tooltip("Line of sight (SU-136): colliders on these layers block direct (not arced) shots. Default " +
+        "Terrain, Impassable Terrain and Impassable; water blocks movement, not sight.")]
+    LayerMask _sightBlockingLayers;
+    // Whether _sightBlockingLayers has been given its default. Layer masks cannot be built in a field initialiser, so a
+    // new section (or an asset saved before SU-136) takes the default in OnEnable; "Nothing" set by a designer is kept.
+    [SerializeField, HideInInspector] bool _sightBlockingLayersSet;
 
     [Header("Composite troops (D-55)")]
     [SerializeField, Min(0f), Tooltip("Composite troops: how strongly ranged soldiers steer to the front rank (and melee " +
@@ -30,6 +36,17 @@ public sealed class RangedTuning : ScriptableObject
     public float FireRateJitterFraction => _fireRateJitterFraction;
     public float ProjectileSpeed => _projectileSpeed;
     public float RangedFrontArcDeg => _rangedFrontArcDeg;
+    public LayerMask SightBlockingLayers => _sightBlockingLayers;
     public float CompositeRankGain => _compositeRankGain;
     public float CompositeRankDepthFraction => _compositeRankDepthFraction;
+
+    // Default sight-blocking layers (SU-136). Layers missing from the project are left out.
+    public static LayerMask DefaultSightBlockingLayers() => LayerMask.GetMask("Terrain", "Impassable Terrain", "Impassable");
+
+    void OnEnable()
+    {
+        if (_sightBlockingLayersSet) return;
+        _sightBlockingLayers = DefaultSightBlockingLayers();
+        _sightBlockingLayersSet = true;
+    }
 }

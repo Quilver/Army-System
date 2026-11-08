@@ -19,3 +19,4 @@ MonoBehaviour:
   _range: 15
   _accuracy: 4
   _fireRate: 5
+  _arcedShot: 1

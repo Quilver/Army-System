@@ -1,9 +1,12 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 // Ranged fire (spec §4.7). Pure C#.
 //   P(Hit) = (Accuracy + WeaponSkill) / (Accuracy + WeaponSkill + BaseShotDC)   (Q-44)
 //   Interval = ActionWindowSeconds / FireRate, with +/- FireRateJitterFraction uniform variation (Q-43).
+//   Line of sight (SU-136): a direct (not arced) shot is blocked by a soldier whose centre is within a soldier radius of
+//   the straight line from shooter to target. Terrain is checked by RangedFireController with Physics2D.
 public static class RangedRules
 {
     public static float HitChance(int accuracy, int weaponSkill, int baseShotDC)
@@ -36,5 +39,24 @@ public static class RangedRules
         if (range <= 0f || distanceSquared > range * range) return false;
         if (halfArcDeg >= 180f || distanceSquared < 1e-8f) return true;
         return Vector2.Angle(facing, offset) <= halfArcDeg;
+    }
+
+    // Line of sight (SU-136): whether any of the soldiers (centres) stands in the way of a direct shot, that is within
+    // radius of the segment from 'from' to 'to'. The caller leaves out the shooter's and the target's own troops.
+    public static bool LineBlockedBySoldiers(Vector2 from, Vector2 to, IReadOnlyList<Vector2> soldiers, float radius)
+    {
+        if (soldiers == null || radius <= 0f) return false;
+        float radiusSquared = radius * radius;
+        for (int i = 0; i < soldiers.Count; i++)
+            if (DistanceToSegmentSquared(soldiers[i], from, to) < radiusSquared) return true;
+        return false;
+    }
+
+    public static float DistanceToSegmentSquared(Vector2 point, Vector2 a, Vector2 b)
+    {
+        Vector2 ab = b - a;
+        float lengthSquared = ab.sqrMagnitude;
+        float t = lengthSquared < 1e-8f ? 0f : Mathf.Clamp01(Vector2.Dot(point - a, ab) / lengthSquared);
+        return (a + ab * t - point).sqrMagnitude;
     }
 }

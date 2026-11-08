@@ -11,7 +11,8 @@ using UnityEngine;
 public sealed class MeleeWeaponProfile : WeaponProfile
 {
     [SerializeField] MeleeWeaponClass _weaponClass = MeleeWeaponClass.Sword;
-    [SerializeField, Min(0), Tooltip("Added to Charge while the bearer is charging.")] int _chargeBonus;
+    [SerializeField, Range(0, MaxValue), Tooltip("Added to Charge while the bearer is charging. 0 to 20 (SU-137).")]
+    int _chargeBonus;
 
     // Legacy ranged values from the combined WeaponProfile. Read by WeaponProfileMigration only.
     [SerializeField, HideInInspector] float _range;
@@ -21,11 +22,12 @@ public sealed class MeleeWeaponProfile : WeaponProfile
     public MeleeWeaponClass MeleeClass => _weaponClass;
     public override WeaponClass Class => _weaponClass.ToWeaponClass();
     public override bool IsRanged => false;
-    public int ChargeBonus => _chargeBonus;
+    public int ChargeBonus => ClampValue(_chargeBonus);
 
     protected override void OnValidate()
     {
         base.OnValidate();
+        _chargeBonus = ClampValue(_chargeBonus);
         if (((WeaponClass)_weaponClass).IsRanged() || !System.Enum.IsDefined(typeof(MeleeWeaponClass), _weaponClass))
             Debug.LogWarning($"{name}: weapon class {(WeaponClass)_weaponClass} is not a melee class. Run " +
                              "Troops > Migrate > Split Weapon Profiles to convert it to a ranged weapon.", this);
@@ -41,7 +43,7 @@ public sealed class MeleeWeaponProfile : WeaponProfile
         var profile = CreateInstance<MeleeWeaponProfile>();
         profile.SetBaseValues(displayName, damage);
         profile._weaponClass = weaponClass;
-        profile._chargeBonus = Mathf.Max(0, chargeBonus);
+        profile._chargeBonus = ClampValue(chargeBonus);
         profile.SetSpecialRules(specialRules);
         return profile;
     }

@@ -195,6 +195,8 @@ public sealed class TroopTuning
     public float FireRateJitterFraction => Ranged.FireRateJitterFraction;
     public float ProjectileSpeed => Ranged.ProjectileSpeed;
     public float RangedFrontArcDeg => Ranged.RangedFrontArcDeg;
+    // Layers whose colliders block direct shots' line of sight (SU-136).
+    public LayerMask SightBlockingLayers => Ranged.SightBlockingLayers;
     public float CompositeRankGain => Ranged.CompositeRankGain;
     public float CompositeRankDepthFraction => Ranged.CompositeRankDepthFraction;
 

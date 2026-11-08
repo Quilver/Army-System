@@ -298,6 +298,100 @@ public sealed class ChainAndRangedScenarioTests
         Assert.Greater(archers.RangedFire.Volleys + archers.RangedFire.SingleShots, 0, "The flank archers reach the enemy");
     }
 
+    // --- Line of sight (SU-136) ---
+
+    RangedWeaponProfile SightBow(bool arced)
+    {
+        RangedWeaponProfile bow = RangedWeaponProfile.CreateRuntimeProfile(arced ? "Arced bow" : "Direct bow",
+            RangedWeaponClass.Bow, 1, 20f, 2, 10, arcedShot: arced);
+        _created.Add(bow);
+        return bow;
+    }
+
+    // A troop in one rank (frontage = soldier count), so a single soldier stands on its pivot.
+    Troop RankOf(string name, int team, Vector2 position, Vector2 facing, CharacterProfile character)
+    {
+        var root = new GameObject(name);
+        root.transform.position = position;
+        _created.Add(root);
+        var troop = root.AddComponent<Troop>();
+        troop.Configure(team, new List<CharacterProfile> { character }, character.Numbers);
+        troop.OrderLine(position, facing, troop.NaturalLineLength);
+        return troop;
+    }
+
+    // One archer at the origin facing +x and one enemy soldier 14 units ahead of it.
+    Troop LoneArcher(bool arced) => RankOf("Archer", 0, Vector2.zero, Vector2.right, Squad(1, SightBow(arced)));
+    Troop LoneEnemy(Vector2 position) => RankOf("Enemy", 1, position, Vector2.left, Squad(1, null, 40));
+    // Five friendly soldiers in a row along y = rowY from x = 3.75 to 8.25 (facing up, so the line runs along x).
+    Troop FriendlyRow(float rowY) => RankOf("Row", 0, new Vector2(6f, rowY), Vector2.up, Squad(5, null, 40));
+    static int Shots(Troop troop) => troop.RangedFire.Volleys + troop.RangedFire.SingleShots;
+
+    [Test]
+    public void DirectFireArcher_HoldsWhenAnotherTroopStandsInTheLineOfFire()
+    {
+        Troop archer = LoneArcher(arced: false);
+        LoneEnemy(new Vector2(14f, 0f));
+        FriendlyRow(0f);
+        Simulate(8f);
+        Assert.AreEqual(0, Shots(archer), "The row of friends blocks the only line to the enemy");
+        Assert.IsNull(archer.RangedFire.Target, "A troop the archer cannot see is not a target");
+    }
+
+    [Test]
+    public void ArcedShotArcher_ShootsOverATroopInTheLineOfFire()
+    {
+        Troop archer = LoneArcher(arced: true);
+        Troop enemy = LoneEnemy(new Vector2(14f, 0f));
+        FriendlyRow(0f);
+        Simulate(8f);
+        Assert.Greater(Shots(archer), 0, "Arced shots ignore troops in the way");
+        Assert.AreEqual(enemy, archer.RangedFire.Target);
+    }
+
+    [Test]
+    public void DirectFireArcher_WithAClearLine_Fires()
+    {
+        Troop archer = LoneArcher(arced: false);
+        Troop enemy = LoneEnemy(new Vector2(14f, 0f));
+        FriendlyRow(5f);    // beside the line of fire, not on it
+        Simulate(8f);
+        Assert.Greater(Shots(archer), 0);
+        Assert.AreEqual(enemy, archer.RangedFire.Target);
+    }
+
+    // The nearer enemy is hidden behind the row, so the archer shoots the further one it can see.
+    [Test]
+    public void DirectFireArcher_TargetsTheTroopItCanSee()
+    {
+        Troop archer = LoneArcher(arced: false);
+        LoneEnemy(new Vector2(12f, 0f));
+        Troop visible = LoneEnemy(new Vector2(14f, 7f));
+        FriendlyRow(0f);
+        Simulate(8f);
+        Assert.AreEqual(visible, archer.RangedFire.Target);
+        Assert.Greater(Shots(archer), 0);
+    }
+
+    // Sight-blocking terrain (default layers include "Terrain") blocks direct fire, not arced fire.
+    [Test]
+    public void TerrainInTheLineOfFire_BlocksDirectFire_NotArcedFire()
+    {
+        Assert.AreNotEqual(0, TroopTuning.Active.SightBlockingLayers.value & (1 << LayerMask.NameToLayer("Terrain")));
+        var wall = new GameObject("Sight Wall") { layer = LayerMask.NameToLayer("Terrain") };
+        wall.transform.position = new Vector3(7f, 0f, 0f);
+        wall.AddComponent<BoxCollider2D>().size = new Vector2(0.5f, 3f);
+        _created.Add(wall);
+        Physics2D.SyncTransforms();
+
+        Troop direct = LoneArcher(arced: false);
+        Troop arced = RankOf("Arced Archer", 0, new Vector2(0f, -2f), Vector2.right, Squad(1, SightBow(arced: true)));
+        LoneEnemy(new Vector2(14f, 0f));
+        Simulate(8f);
+        Assert.AreEqual(0, Shots(direct), "The wall blocks the direct line");
+        Assert.Greater(Shots(arced), 0, "Arced shots go over the wall");
+    }
+
     // D-55: in a composite troop the archers take the front rank when not engaged and fall back behind the melee soldiers
     // when engaged.
     // Melee jostles the ranks a lot, so the engaged lead is averaged over eight battle seeds. (A single seed passed only on

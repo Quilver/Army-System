@@ -99,3 +99,110 @@ public sealed class RangedRulesTests
         Assert.IsFalse(RangedRules.CanReach(new Vector2(0f, 5f), Vector2.up, 45f, 0f), "No range, no reach");
     }
 }
+
+// SU-136: line of sight for direct (not arced) shots.
+public sealed class LineOfSightRuleTests
+{
+    [TestCase(5f, 0.2f, true)]     // on the line
+    [TestCase(5f, 0.35f, false)]   // beside it, more than a soldier radius away
+    [TestCase(-0.5f, 0f, false)]   // behind the shooter
+    [TestCase(10.5f, 0f, false)]   // beyond the target
+    public void SoldierWithinARadiusOfTheLine_Blocks(float x, float y, bool blocked)
+    {
+        var soldiers = new System.Collections.Generic.List<Vector2> { new(x, y) };
+        Assert.AreEqual(blocked, RangedRules.LineBlockedBySoldiers(Vector2.zero, new Vector2(10f, 0f), soldiers,
+            TroopConstants.SoldierRadius));
+    }
+
+    [Test]
+    public void SightBlockingLayers_DefaultToTerrain_NotWater()
+    {
+        var ranged = ScriptableObject.CreateInstance<RangedTuning>();
+        try
+        {
+            int mask = ranged.SightBlockingLayers.value;
+            Assert.AreNotEqual(0, mask & (1 << LayerMask.NameToLayer("Terrain")), "Terrain blocks sight");
+            Assert.AreEqual(0, mask & (1 << LayerMask.NameToLayer("Water")), "Water does not");
+            Assert.AreEqual(0, mask & (1 << LayerMask.NameToLayer("Water/flat impassible terrain")), "Water does not");
+        }
+        finally
+        {
+            Object.DestroyImmediate(ranged);
+        }
+    }
+
+    [Test]
+    public void ArcedShot_IsOffByDefault()
+    {
+        var bow = RangedWeaponProfile.CreateRuntimeProfile("Test", RangedWeaponClass.Bow, 1, 10f, 1, 1);
+        var arced = RangedWeaponProfile.CreateRuntimeProfile("Test", RangedWeaponClass.Bow, 1, 10f, 1, 1, arcedShot: true);
+        try
+        {
+            Assert.IsFalse(bow.ArcedShot);
+            Assert.IsTrue(arced.ArcedShot);
+        }
+        finally
+        {
+            Object.DestroyImmediate(bow);
+            Object.DestroyImmediate(arced);
+        }
+    }
+}
+
+// SU-137: weapon Damage, ChargeBonus, Accuracy and FireRate are integers from 0 to 20; Range is not capped.
+public sealed class WeaponValueLimitTests
+{
+    [Test]
+    public void RangedWeaponValues_ClampToZeroToTwenty()
+    {
+        var bow = RangedWeaponProfile.CreateRuntimeProfile("Test", RangedWeaponClass.Bow, 25, 40f, -3, 21);
+        try
+        {
+            Assert.AreEqual(20, bow.Damage);
+            Assert.AreEqual(0, bow.Accuracy);
+            Assert.AreEqual(20, bow.FireRate);
+            Assert.AreEqual(40f, bow.Range, "Range is not capped");
+        }
+        finally
+        {
+            Object.DestroyImmediate(bow);
+        }
+    }
+
+    [Test]
+    public void MeleeWeaponValues_ClampToZeroToTwenty()
+    {
+        var sword = MeleeWeaponProfile.CreateRuntimeProfile("Test", MeleeWeaponClass.Sword, -1, 30, null);
+        try
+        {
+            Assert.AreEqual(0, sword.Damage);
+            Assert.AreEqual(20, sword.ChargeBonus);
+        }
+        finally
+        {
+            Object.DestroyImmediate(sword);
+        }
+    }
+
+    // A value above 20 written straight into the serialized data (an old asset) still reads as 20.
+    [Test]
+    public void SerializedValuesAboveTwenty_ReadAsTwenty()
+    {
+        var bow = RangedWeaponProfile.CreateRuntimeProfile("Test", RangedWeaponClass.Bow, 1, 10f, 1, 1);
+        try
+        {
+            var serialized = new UnityEditor.SerializedObject(bow);
+            serialized.FindProperty("_damage").intValue = 99;
+            serialized.FindProperty("_accuracy").intValue = 50;
+            serialized.FindProperty("_fireRate").intValue = 21;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            Assert.AreEqual(20, bow.Damage);
+            Assert.AreEqual(20, bow.Accuracy);
+            Assert.AreEqual(20, bow.FireRate);
+        }
+        finally
+        {
+            Object.DestroyImmediate(bow);
+        }
+    }
+}

@@ -181,10 +181,12 @@ public static class WeaponProfileMigration
         var so = new SerializedObject(ranged);
         so.FindProperty("_displayName").stringValue = values.DisplayName;
         so.FindProperty("_weaponClass").intValue = values.WeaponClass;
-        so.FindProperty("_damage").intValue = values.Damage;
+        // Weapon values are 0 to 20 (SU-137). Bows shoot arced, the other classes direct (SU-136).
+        so.FindProperty("_damage").intValue = WeaponProfile.ClampValue(values.Damage);
         so.FindProperty("_range").floatValue = values.Range;
-        so.FindProperty("_accuracy").intValue = values.Accuracy;
-        so.FindProperty("_fireRate").intValue = values.FireRate;
+        so.FindProperty("_accuracy").intValue = WeaponProfile.ClampValue(values.Accuracy);
+        so.FindProperty("_fireRate").intValue = WeaponProfile.ClampValue(values.FireRate);
+        so.FindProperty("_arcedShot").boolValue = (WeaponClass)values.WeaponClass == WeaponClass.Bow;
         so.ApplyModifiedPropertiesWithoutUndo();
         EditorUtility.SetDirty(ranged);
     }

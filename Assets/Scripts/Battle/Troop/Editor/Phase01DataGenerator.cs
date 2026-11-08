@@ -243,8 +243,10 @@ public static class Phase01DataGenerator
             string weaponPath = $"{WeaponFolder}/{def.Name}.asset";
             if (def.Class.IsRanged())
             {
+                // Bows shoot arced (SU-136); crossbows and thrown weapons shoot direct and need line of sight.
                 RangedWeaponProfile fresh = RangedWeaponProfile.CreateRuntimeProfile(
-                    def.Name, def.Class.ToRangedClass(), def.Damage, def.Range, def.Accuracy, def.FireRate);
+                    def.Name, def.Class.ToRangedClass(), def.Damage, def.Range, def.Accuracy, def.FireRate,
+                    arcedShot: def.Class == WeaponClass.Bow);
                 weaponAssets[def.Name] = CreateOrUpdate(weaponPath, fresh);
             }
             else

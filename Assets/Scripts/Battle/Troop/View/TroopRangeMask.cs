@@ -8,6 +8,8 @@ using UnityEngine;
 // that can reach a point, the darker and more opaque it is. The shader (Resources/Shaders/TroopRangeMask.shader) does
 // the per-pixel work; this class feeds it the shooters each frame and sizes a quad over their reach.
 // Troops without a soldier that can shoot show nothing. Owned and updated by TroopPlayerOrders.
+// Line of sight (SU-136) is not drawn: a direct-fire weapon's sector still covers ground behind troops and sight-blocking
+// terrain, which it cannot shoot at.
 public sealed class TroopRangeMask
 {
     // Must match MAX_SHOOTERS in the shader. Extra shooters are left out of the mask.
