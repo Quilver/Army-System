@@ -606,7 +606,7 @@ public sealed class Troop : MonoBehaviour
     internal void OnOrderComplete()
     {
         if (!IsRouted && !IsFaultSlipping) State = TroopState.Idle;
-        if (_chainSuppressed) SetChainSuppressed(false);
+        // ChainSuppressed is not cleared here: it ends 3 s after the troop leaves every attach radius (SU-130).
     }
 
     // --- Combat ---

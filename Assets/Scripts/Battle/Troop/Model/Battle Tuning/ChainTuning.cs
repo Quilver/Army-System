@@ -20,7 +20,7 @@ public sealed class ChainTuning : ScriptableObject
     float _autoLinkMaxFacingDeg = 45f;
     [SerializeField, Range(0f, 180f), Tooltip("An automatic link breaks when the two troops' facings drift further apart than this. Links made by a line order do not use it.")]
     float _autoLinkBreakFacingDeg = 60f;
-    [SerializeField, Min(0f), Tooltip("ChainSuppressed ends this long after the troop leaves every attach radius (Q-22).")]
+    [SerializeField, Min(0f), Tooltip("ChainSuppressed ends once the troop has been outside every attach radius this long (SU-130).")]
     float _chainSuppressCooldownSeconds = 3f;
     [SerializeField, Min(1f), Tooltip("Stretch (x L_nat) that makes an unengaged neighbour retreat with its chain.")]
     float _chainRetreatStretchThreshold = 1.4f;

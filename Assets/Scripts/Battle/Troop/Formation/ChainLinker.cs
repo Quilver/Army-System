@@ -399,18 +399,14 @@ public static class ChainLinker
 
     // --- 5. ChainSuppressed (Q-22) ---
 
-    // Suppression ends when the troop's order completes (Troop.OnOrderComplete) or once its line points have been outside
-    // every attach radius for ChainSuppressCooldownSeconds.
+    // Suppression ends only once the troop's line points have been outside every attach radius for
+    // ChainSuppressCooldownSeconds in a row (Q-22 option 2, SU-130). Finishing its order does not end it, so a troop that
+    // stops inside a neighbour's attach radius stays unlinked until it leaves the radius and the time passes.
     static void UpdateSuppression(IReadOnlyList<Troop> troops, float deltaTime)
     {
         foreach (var troop in troops)
         {
             if (troop == null || !troop.ChainSuppressed) continue;
-            if (!troop.IsMoving)
-            {
-                troop.SetChainSuppressed(false);
-                continue;
-            }
             if (InsideAnyAttachRadius(troop, troops))
             {
                 troop.ChainSuppressOutsideTime = 0f;

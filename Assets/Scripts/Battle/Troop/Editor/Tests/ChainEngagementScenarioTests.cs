@@ -432,4 +432,56 @@ public sealed class ChainEngagementScenarioTests
         foreach (var soldier in troop.Soldiers)
             Assert.LessOrEqual(Vector2.Distance(troop.WorldPosition(soldier), Vector2.zero), blob, "back in the blob");
     }
+
+    // Two troops side by side in a line, linked at the joint where A's right end meets B's left end.
+    void LinkedPair(out Troop a, out Troop b)
+    {
+        a = LineTroop("A", Vector2.zero, Vector2.up);
+        float length = a.NaturalLineLength;
+        b = LineTroop("B", new Vector2(length, 0f), Vector2.up);
+        Simulate(0.2f);
+        Assert.IsTrue(ChainLinker.LinkFromOrder(a, TroopConstants.RightEnd, b, TroopConstants.LeftEnd));
+        Simulate(1f);
+        Assert.IsTrue(b.IsLinkActive(TroopConstants.LeftEnd), "the pair is chained");
+    }
+
+    // SU-130 (Q-22 option 2): a detached troop that stays inside a neighbour's attach radius stays unlinked; suppression
+    // ends only after it has been outside every attach radius for ChainSuppressCooldownSeconds.
+    [Test]
+    public void ChainSuppressed_EndsOnlyAfterLeavingTheAttachRadiusForThreeSeconds()
+    {
+        LinkedPair(out Troop a, out Troop b);
+        ChainLinker.BreakLink(b, TroopConstants.LeftEnd, ChainBreakReason.PlayerOrder);
+        b.SetChainSuppressed(true);
+        Simulate(5f);
+        Assert.IsTrue(b.ChainSuppressed, "still suppressed while it stands inside A's attach radius");
+        Assert.IsFalse(b.IsLinkActive(TroopConstants.LeftEnd), "and it has not relinked");
+
+        b.MoveTo(new Vector2(b.transform.position.x + 40f, -30f));
+        Simulate(12f);
+        Assert.IsFalse(b.ChainSuppressed, "suppression ends once it has been outside every attach radius for 3 s");
+    }
+
+    // SU-129: a single click selects just the troop; a double click selects its whole chain.
+    [Test]
+    public void ClickSelectsTheTroop_DoubleClickSelectsItsChain()
+    {
+        LinkedPair(out Troop a, out Troop b);
+        Troop c = LineTroop("C", new Vector2(2f * a.NaturalLineLength, 0f), Vector2.up);
+        Simulate(0.2f);
+        Assert.IsTrue(ChainLinker.LinkFromOrder(b, TroopConstants.RightEnd, c, TroopConstants.LeftEnd));
+        Simulate(1f);
+        Troop loner = CreateTroop("Loner", 0, new Vector2(0f, -30f));
+
+        CollectionAssert.AreEquivalent(new[] { a, b, c }, TroopSelection.ChainMembers(a));
+        CollectionAssert.AreEquivalent(new[] { loner }, TroopSelection.ChainMembers(loner));
+
+        var selection = new TroopSelection { PlayerTeamId = 0 };
+        selection.SelectTroop(b, wholeChain: false, toggle: false);
+        CollectionAssert.AreEquivalent(new[] { b }, selection.Selected, "a single click selects only that troop");
+        selection.SelectTroop(c, wholeChain: true, toggle: false);
+        CollectionAssert.AreEquivalent(new[] { a, b, c }, selection.Selected, "a double click selects the whole chain");
+        selection.SelectTroop(loner, wholeChain: false, toggle: true);
+        Assert.AreEqual(4, selection.Selected.Count, "Shift adds to the selection");
+    }
 }
