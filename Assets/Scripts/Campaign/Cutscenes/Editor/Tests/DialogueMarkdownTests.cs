@@ -1,7 +1,8 @@
 using Cutscene;
 using NUnit.Framework;
 
-// The markdown dialogue format (Cutscene.DialogueMarkdown): speakers, text boxes, sprite swaps, stage sides and typing speed.
+// The markdown dialogue format (Cutscene.DialogueMarkdown): speakers, text boxes, sprite swaps, stage sides and typing speed,
+// and the Obsidian story-vault notes (no subheadings, obsidian:// and [[wiki]] links, properties, %% comments %%).
 [Category("Dialogue")]
 public sealed class DialogueMarkdownTests
 {
@@ -114,5 +115,77 @@ public sealed class DialogueMarkdownTests
         Assert.AreEqual("Assets/Art/a.png", DialogueMarkdown.Combine("Assets/Campaign/Dialogue", "../../Art/a.png"));
         Assert.AreEqual("Assets/Art/a.png", DialogueMarkdown.Combine("Assets/Campaign/Dialogue", "Assets/Art/a.png"));
         Assert.AreEqual("Assets/Campaign/Dialogue/p/a.png", DialogueMarkdown.Combine("Assets/Campaign/Dialogue", "p/a.png"));
+    }
+
+    const string Briefing =
+        "*Introduction to Julian's Backstory*\n" +
+        "# [Bard](obsidian://open?vault=Leveraged%20Wars%20Story&file=Special%20Character%2FPreferred%20Style%2FBard.png)\n" +
+        "10 years and a day it has been.\n" +
+        "# [Jagen](obsidian://open?vault=Leveraged%20Wars%20Story&file=Special%20Character%2FPreferred%20Style%2FJagen.png)\n" +
+        "My prince, armed thugs are coming.\n" +
+        "# [Prince Julian](obsidian://open?vault=Leveraged%20Wars%20Story&file=Special%20Character%2FPreferred%20Style%2FDark%20Prince.png) \n" +
+        "Sound the horn.\n" +
+        "# Prince Julian\n" +
+        "It is time.";
+
+    [Test]
+    public void ObsidianNoteWithoutSubheadingsPlaysTheLinesUnderEachHeading()
+    {
+        var r = DialogueMarkdown.Parse(Briefing);
+        Assert.AreEqual(4, r.Lines.Count);
+        Assert.AreEqual("Bard", r.Lines[0].Speaker);
+        Assert.AreEqual("10 years and a day it has been.", r.Lines[0].Text);
+        Assert.AreEqual("Special Character/Preferred Style/Bard.png", r.Lines[0].LeftImage);
+        Assert.AreEqual("Special Character/Preferred Style/Jagen.png", r.Lines[1].RightImage);
+        Assert.AreEqual("Prince Julian", r.Lines[2].Speaker);
+        Assert.AreEqual("Special Character/Preferred Style/Dark Prince.png", r.Lines[2].LeftImage);
+        Assert.AreEqual(DialogueSide.Left, r.Lines[3].Side);
+        Assert.IsEmpty(r.Warnings);
+    }
+
+    [Test]
+    public void EachParagraphIsOneBoxAndASingleLineBreakStays()
+    {
+        var r = DialogueMarkdown.Parse("# Jagen\nFirst line\nsame box\n\nSecond box\n<wpm=90>\n\nThird box");
+        Assert.AreEqual(3, r.Lines.Count);
+        Assert.AreEqual("First line\nsame box", r.Lines[0].Text);
+        Assert.AreEqual("Second box", r.Lines[1].Text);
+        Assert.AreEqual(90f, r.Lines[2].WordsPerMinute);
+    }
+
+    [Test]
+    public void PropertiesAreReadAndNotShown()
+    {
+        var r = DialogueMarkdown.Parse("---\ndialogue: true\nmission: \"M01\"\n---\n# Jagen\nHello");
+        Assert.IsTrue(DialogueMarkdown.IsTrue(r, "dialogue"));
+        Assert.AreEqual("M01", r.Properties["Mission"]);
+        Assert.AreEqual(1, r.Lines.Count);
+        Assert.AreEqual(6, r.Lines[0].SourceLine);
+        Assert.IsFalse(DialogueMarkdown.IsTrue(DialogueMarkdown.Parse("# A\nHi"), "dialogue"));
+    }
+
+    [Test]
+    public void ObsidianCommentsAreIgnored()
+    {
+        var r = DialogueMarkdown.Parse("# Jagen\nHold %%not this%% fast\n%%\nwhole\nblock\n%%\n\nNext");
+        Assert.AreEqual(2, r.Lines.Count);
+        Assert.AreEqual("Hold  fast", r.Lines[0].Text);
+        Assert.AreEqual("Next", r.Lines[1].Text);
+    }
+
+    [Test]
+    public void WikilinkHeadingsTakeTheAliasOrTheFileName()
+    {
+        var alias = DialogueMarkdown.Parse("# [[Dark Prince.png|Prince Julian]]\nHi").Lines[0];
+        Assert.AreEqual("Prince Julian", alias.Speaker);
+        Assert.AreEqual("Dark Prince.png", alias.LeftImage);
+        Assert.AreEqual("Jagen", DialogueMarkdown.Parse("# ![[Jagen.png]]\nHi").Lines[0].Speaker);
+    }
+
+    [Test]
+    public void LinksInTextKeepOnlyTheirText()
+    {
+        Assert.AreEqual("Ask Jagen about Amsteradan, now.",
+            DialogueMarkdown.Inline("Ask [[Characters/Jagen.md|Jagen]] about [[Amsteradan#History]], [now](https://x.y).![[map.png]]"));
     }
 }

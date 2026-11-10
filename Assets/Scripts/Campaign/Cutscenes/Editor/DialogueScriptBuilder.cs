@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Cutscene;
 using UnityEditor;
 using UnityEngine;
@@ -10,6 +11,8 @@ namespace CutsceneEditor
 {
     // Turns a markdown dialogue scene (format in Cutscene.DialogueMarkdown) into a DialogueScript asset and keeps it in sync:
     // saving the .md file, or changing a portrait image, rebuilds every DialogueScript built from it.
+    // Notes in an Obsidian vault (a folder with .obsidian/ in it, e.g. Assets/Leveraged Wars Story) whose properties say
+    // "dialogue: true" get their DialogueScript made automatically, and their images resolve the way Obsidian resolves them.
     public static class DialogueScriptBuilder
     {
         const string CreateMenu = "Assets/Create/Cutscenes/Dialogue Script from Markdown";
@@ -27,25 +30,60 @@ namespace CutsceneEditor
             {
                 string mdPath = AssetDatabase.GetAssetPath(obj);
                 if (!IsMarkdown(mdPath)) continue;
-                var script = ScriptsBuiltFrom(mdPath).FirstOrDefault();
-                if (script == null)
-                {
-                    script = ScriptableObject.CreateInstance<DialogueScript>();
-                    script.Source = AssetDatabase.LoadAssetAtPath<TextAsset>(mdPath);
-                    string assetPath = AssetDatabase.GenerateUniqueAssetPath(Path.ChangeExtension(mdPath, ".asset"));
-                    AssetDatabase.CreateAsset(script, assetPath);
-                }
-                Rebuild(script);
-                last = script;
+                last = CreateFor(mdPath);
             }
             if (last == null) return;
             Selection.activeObject = last;
             EditorGUIUtility.PingObject(last);
         }
 
+        // The DialogueScript built from this .md file; made next to it (<name>.asset) if there is none yet.
+        public static DialogueScript CreateFor(string mdPath)
+        {
+            var script = ScriptsBuiltFrom(mdPath).FirstOrDefault();
+            if (script == null)
+            {
+                script = ScriptableObject.CreateInstance<DialogueScript>();
+                script.Source = AssetDatabase.LoadAssetAtPath<TextAsset>(mdPath);
+                string assetPath = AssetDatabase.GenerateUniqueAssetPath(Path.ChangeExtension(mdPath, ".asset"));
+                AssetDatabase.CreateAsset(script, assetPath);
+            }
+            Rebuild(script);
+            return script;
+        }
+
+        // Every vault note marked "dialogue: true" that has no DialogueScript yet gets one. Returns the .md paths it made them for.
+        public static List<string> CreateMissingVaultScripts()
+        {
+            var made = new List<string>();
+            foreach (var guid in AssetDatabase.FindAssets("t:TextAsset"))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                if (!IsVaultDialogueNote(path) || ScriptsBuiltFrom(path).Any()) continue;
+                CreateFor(path);
+                made.Add(path);
+            }
+            return made;
+        }
+
+        [MenuItem("Leveraged Wars/Dialogue/Open Story Vault in Obsidian")]
+        static void OpenVault()
+        {
+            const string vault = "Assets/Leveraged Wars Story";
+            if (!Directory.Exists(vault + "/.obsidian"))
+            {
+                Debug.LogWarning($"No Obsidian vault at {vault}.");
+                return;
+            }
+            // Opens the vault if Obsidian knows it; otherwise use Obsidian's "Open folder as vault" on this folder once.
+            Application.OpenURL("obsidian://open?path=" + Uri.EscapeDataString(Path.GetFullPath(vault)));
+        }
+
         [MenuItem("Leveraged Wars/Dialogue/Rebuild All Dialogue Scripts")]
         static void RebuildAll()
         {
+            var made = CreateMissingVaultScripts();
+            if (made.Count > 0) Debug.Log($"Made dialogue scripts for {made.Count} story notes: {string.Join(", ", made)}");
             int count = 0;
             foreach (var script in AllScripts())
             {
@@ -67,6 +105,7 @@ namespace CutsceneEditor
             else
             {
                 string folder = Path.GetDirectoryName(mdPath)?.Replace('\\', '/');
+                string vault = FindVaultRoot(folder);
                 var parsed = DialogueMarkdown.Parse(File.ReadAllText(mdPath));
                 warnings.AddRange(parsed.Warnings);
                 var sprites = new Dictionary<string, Sprite>(StringComparer.OrdinalIgnoreCase);
@@ -80,11 +119,12 @@ namespace CutsceneEditor
                         SpeakerSide = p.Side,
                         LeftName = p.LeftName,
                         RightName = p.RightName,
-                        LeftPortrait = ResolveSprite(folder, p.LeftImage, p.SourceLine, sprites, warnings),
-                        RightPortrait = ResolveSprite(folder, p.RightImage, p.SourceLine, sprites, warnings),
+                        LeftPortrait = ResolveSprite(folder, vault, p.LeftImage, p.SourceLine, sprites, warnings),
+                        RightPortrait = ResolveSprite(folder, vault, p.RightImage, p.SourceLine, sprites, warnings),
                     });
                 }
-                if (lines.Count == 0) warnings.Add("No text boxes found. Each \"## \" subheading is one text box.");
+                if (lines.Count == 0)
+                    warnings.Add("No text boxes found. Start each speaker with a \"# Name\" heading and put their lines under it.");
             }
 
             script.SetLines(lines, warnings);
@@ -95,8 +135,11 @@ namespace CutsceneEditor
         }
 
         // Image paths are relative to the .md file, or start with Assets/. "file.png#SpriteName" picks one sprite of a sheet.
-        // If the path is wrong but exactly one image in the project has that file name, that image is used.
-        static Sprite ResolveSprite(string folder, string image, int line, Dictionary<string, Sprite> cache, List<string> warnings)
+        // In an Obsidian vault a path may also be from the vault's root (obsidian:// links) or just a file name, or the end
+        // of a path, found anywhere in the vault ([[Jagen.png]]), and the extension may be left out.
+        // If the path is still not found but exactly one image in the project has that file name, that image is used.
+        static Sprite ResolveSprite(string folder, string vault, string image, int line, Dictionary<string, Sprite> cache,
+                                    List<string> warnings)
         {
             if (string.IsNullOrEmpty(image)) return null;
             if (cache.TryGetValue(image, out var cached)) return cached;
@@ -110,13 +153,18 @@ namespace CutsceneEditor
             }
 
             string path = DialogueMarkdown.Combine(folder, file);
+            bool ambiguous = false;
+            string found = FindImage(path);
+            if (found == null && vault != null)
+                found = FindImage(DialogueMarkdown.Combine(vault, file)) ?? FindInVault(vault, file, line, warnings, out ambiguous);
+
             Sprite sprite = null;
-            if (AssetDatabase.LoadMainAssetAtPath(path) != null)
+            if (found != null)
             {
-                sprite = LoadSprite(path, spriteName);
-                if (sprite == null) warnings.Add(NoSpriteMessage(line, path, spriteName));
+                sprite = LoadSprite(found, spriteName);
+                if (sprite == null) warnings.Add(NoSpriteMessage(line, found, spriteName));
             }
-            else
+            else if (!ambiguous)
             {
                 string fileName = Path.GetFileName(file);
                 var matches = AssetDatabase.FindAssets("t:Texture2D")
@@ -141,6 +189,69 @@ namespace CutsceneEditor
             return sprite;
         }
 
+        // The path itself, or the path with an image extension added (Obsidian links may leave it out).
+        static string FindImage(string path)
+        {
+            if (string.IsNullOrEmpty(path)) return null;
+            if (AssetDatabase.LoadMainAssetAtPath(path) != null) return path;
+            if (IsImage(path)) return null;
+            foreach (var ext in ImageExtensions)
+                if (AssetDatabase.LoadMainAssetAtPath(path + ext) != null) return path + ext;
+            return null;
+        }
+
+        // Obsidian's own rule: a link that is a file name (or the end of a path) matches that image anywhere in the vault.
+        static string FindInVault(string vault, string file, int line, List<string> warnings, out bool ambiguous)
+        {
+            ambiguous = false;
+            string want = file.Replace('\\', '/').TrimStart('/');
+            if (want.Length == 0 || !Directory.Exists(vault)) return null;
+            bool hasExtension = IsImage(want);
+            var hits = Directory.GetFiles(vault, "*", SearchOption.AllDirectories)
+                .Select(p => p.Replace('\\', '/'))
+                .Where(IsImage)
+                .Where(p =>
+                {
+                    string candidate = hasExtension ? p : p.Substring(0, p.Length - Path.GetExtension(p).Length);
+                    return candidate.EndsWith("/" + want, StringComparison.OrdinalIgnoreCase);
+                })
+                .ToList();
+            if (hits.Count == 1) return hits[0];
+            if (hits.Count > 1)
+            {
+                ambiguous = true;
+                warnings.Add($"Line {line}: {hits.Count} images in the story vault match \"{file}\". Link it with its folder, e.g. \"{hits[0].Substring(vault.Length + 1)}\".");
+            }
+            return null;
+        }
+
+        // The Obsidian vault the folder is in (the nearest folder above it with a .obsidian folder), or null.
+        public static string FindVaultRoot(string folder)
+        {
+            for (string dir = folder; !string.IsNullOrEmpty(dir); dir = Path.GetDirectoryName(dir)?.Replace('\\', '/'))
+                if (Directory.Exists(dir + "/.obsidian")) return dir;
+            return null;
+        }
+
+        // A note in an Obsidian vault, outside its templates folder, with the property "dialogue: true".
+        internal static bool IsVaultDialogueNote(string mdPath)
+        {
+            if (!IsMarkdown(mdPath) || !File.Exists(mdPath)) return false;
+            string vault = FindVaultRoot(Path.GetDirectoryName(mdPath)?.Replace('\\', '/'));
+            if (vault == null) return false;
+            string templates = TemplatesFolder(vault);
+            if (templates != null && mdPath.StartsWith(templates + "/", StringComparison.OrdinalIgnoreCase)) return false;
+            return DialogueMarkdown.IsTrue(DialogueMarkdown.Parse(File.ReadAllText(mdPath)), "dialogue");
+        }
+
+        static string TemplatesFolder(string vault)
+        {
+            string json = vault + "/.obsidian/templates.json";
+            if (!File.Exists(json)) return null;
+            var m = Regex.Match(File.ReadAllText(json), "\"folder\"\\s*:\\s*\"([^\"]*)\"");
+            return m.Success && m.Groups[1].Value.Trim('/').Length > 0 ? vault + "/" + m.Groups[1].Value.Trim('/') : null;
+        }
+
         static Sprite LoadSprite(string path, string spriteName)
         {
             var sprites = AssetDatabase.LoadAllAssetsAtPath(path).OfType<Sprite>().ToList();
@@ -156,7 +267,7 @@ namespace CutsceneEditor
                 .Select(g => AssetDatabase.LoadAssetAtPath<DialogueScript>(AssetDatabase.GUIDToAssetPath(g)))
                 .Where(s => s != null);
 
-        static IEnumerable<DialogueScript> ScriptsBuiltFrom(string mdPath) =>
+        internal static IEnumerable<DialogueScript> ScriptsBuiltFrom(string mdPath) =>
             AllScripts().Where(s => s.Source != null && AssetDatabase.GetAssetPath(s.Source) == mdPath);
 
         internal static bool IsMarkdown(string path) =>
@@ -167,6 +278,7 @@ namespace CutsceneEditor
     }
 
     // Rebuilds dialogue scripts after their .md file is saved, or after a portrait image is added, moved or reimported.
+    // A story-vault note marked "dialogue: true" that has no script yet gets one.
     class DialogueMarkdownPostprocessor : AssetPostprocessor
     {
         static void OnPostprocessAllAssets(string[] imported, string[] deleted, string[] moved, string[] movedFrom)
@@ -177,10 +289,18 @@ namespace CutsceneEditor
 
             EditorApplication.delayCall += () =>
             {
+                var made = new HashSet<string>();
+                foreach (var md in markdown)
+                    if (DialogueScriptBuilder.IsVaultDialogueNote(md) && !DialogueScriptBuilder.ScriptsBuiltFrom(md).Any())
+                    {
+                        DialogueScriptBuilder.CreateFor(md);
+                        made.Add(md);
+                    }
                 foreach (var script in DialogueScriptBuilder.AllScripts().ToList())
                 {
                     string source = script.Source != null ? AssetDatabase.GetAssetPath(script.Source) : null;
                     bool own = source != null && markdown.Contains(source);
+                    if (source != null && made.Contains(source)) continue;   // just built
                     if (own || images) DialogueScriptBuilder.Rebuild(script, logWarnings: own);
                 }
             };

@@ -1,6 +1,6 @@
 # Assumptions review
 
-Every unconfirmed Assumption in `SpecificationUpdate.md` (SU-01 to SU-141), grouped by system so they can be confirmed in one sitting: 142 assumptions across 79 SU entries. SU-136 to SU-140 were added on 2026-11-08; the SU-74 and SU-121 items about routed troops never leaving the map were removed (SU-138 replaced them). Rebuilt 2026-11-08 (SU-135): assumptions that later entries overtook were removed, missing ones were added, and the groups were tidied. The spec (v0.10) tags text that rests on one of these as **[A: SU-n]**.
+Every unconfirmed Assumption in `SpecificationUpdate.md` (SU-01 to SU-145), grouped by system so they can be confirmed in one sitting: 144 assumptions across 80 SU entries. SU-136 to SU-140 were added on 2026-11-08; the SU-74 and SU-121 items about routed troops never leaving the map were removed (SU-138 replaced them). Rebuilt 2026-11-08 (SU-135): assumptions that later entries overtook were removed, missing ones were added, and the groups were tidied. The spec (v0.10) tags text that rests on one of these as **[A: SU-n]**.
 
 ## How to use this
 
@@ -23,7 +23,7 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 - [Controls, orders & battle UI](#controls-orders--battle-ui) (23)
 - [Campaign, tent, missions & deployment](#campaign-tent-missions--deployment) (38)
 - [Enemy AI](#enemy-ai) (13)
-- [Tooling & other](#tooling--other) (2)
+- [Tooling & other](#tooling--other) (4)
 
 ## Troops, characters, stats & equipment
 
@@ -421,3 +421,8 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 **SU-64** Battle sounds from troop events
 
 - [ ] `ModelSoundEffects` (the Model SFX prefab, one per battle) plays the strike sound on a damaging melee hit, the shot sound on each volley, a death grunt per soldier killed, and an optional projectile-hit sound. Assumptions: each sound type is limited to one every 0.08 s; sounds are not positioned. →
+
+**SU-145** Obsidian story vault drives dialogue
+
+- [ ] A single line break inside a paragraph stays a line break in the text box; `%% comments %%`, properties and link targets are not shown →
+- [ ] Notes with the property `dialogue: true` (outside `Templates/`) get a `DialogueScript` automatically; vault images resolve from the note's folder, then the vault root, then by file name anywhere in the vault →

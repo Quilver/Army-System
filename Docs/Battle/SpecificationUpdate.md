@@ -11,6 +11,24 @@ SU-128 refer to v0.9 and may have moved.
 
 ---
 
+## 2026-11-10: Story vault for dialogue
+
+### SU-145 Obsidian story vault inside the project drives dialogue (Decision + Assumptions, campaign cutscenes)
+- Decision: the designer's Obsidian vault lives in the project at `Assets/Leveraged Wars Story/`, and its notes are the
+  source for dialogue scripts (briefings, court talk, cutscenes). The character portraits moved into it, from
+  `Temporary Assets/Characters/Main characters` to `Special Character/Preferred Style` (with their `.meta` files, so
+  character profiles still point at them).
+- Decision: the markdown dialogue format accepts the vault's style: under a `# Name` heading with no `## ` subheadings,
+  each paragraph is one text box; `obsidian://` links (path from the vault root) and `[[wikilinks]]` set portraits.
+- Assumption: a single line break inside a paragraph stays a line break in the text box (Obsidian's default display).
+  `%% comments %%` and the note's YAML properties are not shown; links in a line keep only their text.
+- Assumption: notes with the property `dialogue: true` (outside the vault's `Templates/` folder) get their
+  `DialogueScript` made next to them automatically; other notes (lore, outlines) are left alone. Images in the vault
+  resolve like Obsidian: from the note's folder, from the vault root, then by file name anywhere in the vault.
+- Code: `DialogueMarkdown`, `DialogueScriptBuilder` (menu **Leveraged Wars > Dialogue > Open Story Vault in
+  Obsidian**); tests `DialogueMarkdownTests`. Writer's guide: `How to write dialogue.md` in the vault. The vault's
+  per-user `workspace.json` is git-ignored.
+
 ## 2026-11-08 (2): Answered questions (Q-2, Q-24, Q-40, Q-57) and confirmed working answers
 
 ### SU-136 Direct fire needs line of sight; `ArcedShot` on ranged weapons (Decision + Assumptions, answers Q-40, spec §1.6, §4.7)

@@ -27,6 +27,10 @@
   mission sheet (`MissionDefinition`, code in `Scripts/Campaign/Missions/`) and `PreBattle/`, `Battle/` (scene, navmesh,
   `Map/` layer images) and `Tween/` folders. `Resources/MissionCatalog.asset` lists them in campaign order; make new
   ones with **Leveraged Wars > Missions > New Mission**.
+- Story and dialogue: `Assets/Leveraged Wars Story/` is the designer's Obsidian vault (the `.obsidian/` folder is hidden
+  from Unity). Notes with the property `dialogue: true` become `DialogueScript` assets next to them (format in
+  `Scripts/Campaign/Cutscenes/DialogueMarkdown.cs`, writer's guide `How to write dialogue.md` in the vault); character
+  portraits live in the vault so Obsidian can show them. Edit the notes' text only if asked; they are the writer's.
 - Battle prefabs (capture point, deployment zone, battle canvas) are in `Assets/Prefabs/Battle/`; campaign UI art and
   prefabs stay under `Assets/Campaign/`.
 - `CampaignDataManager` persists across scenes and holds the campaign in memory. **Saving is switched off while the game

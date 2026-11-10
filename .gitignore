@@ -77,3 +77,8 @@ crashlytics-build.properties
 # OS and agent clutter
 .DS_Store
 /Claude outputs/
+
+# Obsidian story vault: per-user window layout and caches
+/[Aa]ssets/Leveraged Wars Story/.obsidian/workspace*.json
+/[Aa]ssets/Leveraged Wars Story/.obsidian/cache
+/[Aa]ssets/Leveraged Wars Story/.trash/
