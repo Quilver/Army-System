@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f3a1c2e9b7d4e5a8c1f0b2d3e4a5b6c, type: 3}
+  m_Name: Game Icons
+  m_EditorClassIdentifier: 
+  _numbers: {fileID: 21300000, guid: 4339d5dfa838435aa27c1dcb68c1963e, type: 3}
+  _speed: {fileID: 21300000, guid: 9da6535e7fb542268178e2a66d6d18eb, type: 3}
+  _defence: {fileID: 21300000, guid: c7b15e7f658d46709838846078a4cb5b, type: 3}
+  _strength: {fileID: 21300000, guid: d25db76b27144fe9bd7ad246c8f83646, type: 3}
+  _support: {fileID: 21300000, guid: f8423ca125bb4439af13d73954873c3c, type: 3}
+  _charge: {fileID: 21300000, guid: 13911e3f9234462091c55992ff6b8da6, type: 3}
+  _aggression: {fileID: 21300000, guid: c2d6579e0a2b4363b7653c021bd63b5f, type: 3}
+  _maxHealth: {fileID: 21300000, guid: fe07e8494aaa4b9eb2dbff879541abb6, type: 3}
+  _morale: {fileID: 21300000, guid: 4d8535daa0e04e29bc190f3290145b8e, type: 3}
+  _discipline: {fileID: 21300000, guid: a16d405988a7400e8c35a994f41b0cbd, type: 3}
+  _armour: {fileID: 21300000, guid: b4782298cb944b489bddb3681bcab0aa, type: 3}
+  _deflect: {fileID: 21300000, guid: 6ca1c88c433d40fdb83435013e7629c3, type: 3}
+  _bruise: {fileID: 21300000, guid: 9fe39a6bf3f0470a8baff872d2c7afe2, type: 3}
+  _bleed: {fileID: 21300000, guid: 66909ff6a1ca405583c5808f7ad42edf, type: 3}
+  _spear: {fileID: 21300000, guid: 470d56efd42b4b8cb02b293dc9ddbf11, type: 3}
+  _sword: {fileID: 21300000, guid: 9a90a02b6ac14635bd88f9d36ce70d09, type: 3}
+  _axe: {fileID: 21300000, guid: 56cccf50f48e4b42856646c4baaf1d6e, type: 3}
+  _bow: {fileID: 21300000, guid: a42eaa5d1e3441c399f9997f12ecb5a0, type: 3}
+  _javelin: {fileID: 21300000, guid: 0976455de6ec4ccbb491afdb22b3d028, type: 3}
+  _mace: {fileID: 0}
+  _crossbow: {fileID: 0}

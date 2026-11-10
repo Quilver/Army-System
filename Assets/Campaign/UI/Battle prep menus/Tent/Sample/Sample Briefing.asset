@@ -1,0 +1,104 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-7708585579118057891
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4560aa54c9018fa4b8fceb099170b6e0, type: 3}
+  m_Name: 05 Prince Julian
+  m_EditorClassIdentifier: 
+  leftOrRight: 1
+  Portrait: {fileID: 21300000, guid: c91b921366b8697479105d1fc90faef5, type: 3}
+  CharacterName: Prince Julian
+  dialogue: 'Then we strike quickly. Ready the war table: no more than five companies,
+    and we march at dawn.'
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa7d600c298ae464897b151c2c35d01a, type: 3}
+  m_Name: Sample Briefing
+  m_EditorClassIdentifier: 
+  dialogue:
+  - {fileID: 8117033036854096091}
+  - {fileID: 8682785688415784261}
+  - {fileID: 6819094934247612318}
+  - {fileID: 843368847471888027}
+  - {fileID: -7708585579118057891}
+--- !u!114 &843368847471888027
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4560aa54c9018fa4b8fceb099170b6e0, type: 3}
+  m_Name: 04 Lyra
+  m_EditorClassIdentifier: 
+  leftOrRight: 0
+  Portrait: {fileID: 21300000, guid: 4379dc5e67c725f4e8556d9caab25c7b, type: 3}
+  CharacterName: Lyra
+  dialogue: Mind the coffers, Highness. Borrow if you must, but every crown owed
+    is prestige spent.
+--- !u!114 &6819094934247612318
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4560aa54c9018fa4b8fceb099170b6e0, type: 3}
+  m_Name: 03 Jagen
+  m_EditorClassIdentifier: 
+  leftOrRight: 0
+  Portrait: {fileID: 21300000, guid: 6358ec34be7e5e149b95f25afd6fe2a3, type: 3}
+  CharacterName: Jagen
+  dialogue: Three bands of foot, a few archers in the reeds and riders on the far
+    bank. Break their line and the rest will run.
+--- !u!114 &8117033036854096091
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4560aa54c9018fa4b8fceb099170b6e0, type: 3}
+  m_Name: 01 Jagen
+  m_EditorClassIdentifier: 
+  leftOrRight: 0
+  Portrait: {fileID: 21300000, guid: 6358ec34be7e5e149b95f25afd6fe2a3, type: 3}
+  CharacterName: Jagen
+  dialogue: My prince, the scouts are back. A bandit warband has dug in at the river
+    ford, right across the merchant road.
+--- !u!114 &8682785688415784261
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4560aa54c9018fa4b8fceb099170b6e0, type: 3}
+  m_Name: 02 Prince Julian
+  m_EditorClassIdentifier: 
+  leftOrRight: 1
+  Portrait: {fileID: 21300000, guid: c91b921366b8697479105d1fc90faef5, type: 3}
+  CharacterName: Prince Julian
+  dialogue: The road that carries our grain, and our creditors' patience. How many?

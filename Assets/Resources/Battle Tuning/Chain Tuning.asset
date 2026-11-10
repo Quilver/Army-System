@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2eea9ffaaa8a43e5a47cfb873f55879c, type: 3}
+  m_Name: Chain Tuning
+  m_EditorClassIdentifier: 
+  _chainMinStretchScale: 0.7
+  _chainMaxStretchScale: 3
+  _chainMinInnerAngleDeg: 65
+  _attachScale: 0.25
+  _autoLinkMaxFacingDeg: 45
+  _autoLinkBreakFacingDeg: 60
+  _chainSuppressCooldownSeconds: 3
+  _chainRetreatStretchThreshold: 1.4
+  _chainRetreatHingeBendDeg: 30
+  _chainRetreatFalloff: 0.3
+  _chainEndpointRelaxSpeed: 2
+  _linkSlack: 0.1
+  _linkStiffness: 5
+  _linkMaxForce: 10.4

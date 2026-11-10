@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" width="640" height="360" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#222"/></marker><marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3b6fd8"/></marker><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d6453a"/></marker><marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2e9d4a"/></marker></defs>
+<rect width="640" height="360" fill="#fbfaf6"/>
+<text x="16" y="26" font-size="16" font-weight="bold" fill="#222">05 New order while engaged</text>
+<text x="16" y="44" font-size="12" fill="#555">Orders are obeyed; the barrier only resists moving into the enemy</text>
+<rect x="190.0" y="97.0" width="260.0" height="26.0" rx="0" fill="#d6453a" stroke="#d6453a" stroke-width="1.2" opacity="0.08"/>
+<rect x="190.0" y="97.0" width="260.0" height="26.0" rx="0" fill="none" stroke="#d6453a" stroke-width="1.2" opacity="1"/>
+<line x1="190.0" y1="123.0" x2="450.0" y2="123.0" stroke="#d6453a" stroke-width="3"/>
+<rect x="202.8" y="101.1" width="7.0" height="7.0" rx="0" fill="#d6453a" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="202.8" y="111.9" width="7.0" height="7.0" rx="0" fill="#d6453a" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="235.2" y="101.1" width="7.0" height="7.0" rx="0" fill="#d6453a" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="235.2" y="111.9" width="7.0" height="7.0" rx="0" fill="#d6453a" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="267.8" y="101.1" width="7.0" height="7.0" rx="0" fill="#d6453a" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="267.8" y="111.9" width="7.0" height="7.0" rx="0" fill="#d6453a" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="300.2" y="101.1" width="7.0" height="7.0" rx="0" fill="#d6453a" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="300.2" y="111.9" width="7.0" height="7.0" rx="0" fill="#d6453a" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="332.8" y="101.1" width="7.0" height="7.0" rx="0" fill="#d6453a" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="332.8" y="111.9" width="7.0" height="7.0" rx="0" fill="#d6453a" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="365.2" y="101.1" width="7.0" height="7.0" rx="0" fill="#d6453a" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="365.2" y="111.9" width="7.0" height="7.0" rx="0" fill="#d6453a" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="397.8" y="101.1" width="7.0" height="7.0" rx="0" fill="#d6453a" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="397.8" y="111.9" width="7.0" height="7.0" rx="0" fill="#d6453a" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="430.2" y="101.1" width="7.0" height="7.0" rx="0" fill="#d6453a" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="430.2" y="111.9" width="7.0" height="7.0" rx="0" fill="#d6453a" stroke="none" stroke-width="0" opacity="1"/>
+<text x="320.0" y="89.0" font-size="11" text-anchor="middle" font-weight="normal" fill="#d6453a">enemy</text>
+<rect x="190.0" y="187.0" width="260.0" height="26.0" rx="0" fill="#3b6fd8" stroke="#3b6fd8" stroke-width="1.2" opacity="0.08"/>
+<rect x="190.0" y="187.0" width="260.0" height="26.0" rx="0" fill="none" stroke="#3b6fd8" stroke-width="1.2" opacity="1"/>
+<line x1="190.0" y1="187.0" x2="450.0" y2="187.0" stroke="#3b6fd8" stroke-width="3"/>
+<rect x="202.8" y="191.1" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="202.8" y="201.9" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="235.2" y="191.1" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="235.2" y="201.9" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="267.8" y="191.1" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="267.8" y="201.9" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="300.2" y="191.1" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="300.2" y="201.9" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="332.8" y="191.1" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="332.8" y="201.9" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="365.2" y="191.1" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="365.2" y="201.9" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="397.8" y="191.1" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="397.8" y="201.9" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="430.2" y="191.1" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="430.2" y="201.9" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<line x1="320.0" y1="184.0" x2="320.0" y2="140.0" stroke="#d6453a" stroke-width="2" stroke-dasharray="5 3" marker-end="url(#ar)"/>
+<text x="328.0" y="160.0" font-size="11" text-anchor="start" font-weight="normal" fill="#d6453a">forward: barrier holds the 2.0 gap</text>
+<line x1="450.0" y1="200.0" x2="560.0" y2="200.0" stroke="#2e9d4a" stroke-width="2" marker-end="url(#ag)"/>
+<text x="505.0" y="192.0" font-size="11" text-anchor="middle" font-weight="normal" fill="#2e9d4a">sideways: moves</text>
+<line x1="250.0" y1="216.0" x2="250.0" y2="276.0" stroke="#2e9d4a" stroke-width="2" marker-end="url(#ag)"/>
+<text x="258.0" y="262.0" font-size="11" text-anchor="start" font-weight="normal" fill="#2e9d4a">back: moves; engagement ends once gap &gt; 5.2</text>
+<text x="16.0" y="331.0" font-size="11.5" text-anchor="start" font-weight="normal" fill="#555">Facing stays locked while still engaged (the line slides; it does not rotate).</text>
+<text x="16.0" y="346.0" font-size="11.5" text-anchor="start" font-weight="normal" fill="#555">Engagement has no exit hysteresis (Q-16). Moving back into contact under an order starts a new Assault.</text>
+</svg>

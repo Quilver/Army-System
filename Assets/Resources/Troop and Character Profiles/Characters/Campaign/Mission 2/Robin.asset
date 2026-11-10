@@ -1,0 +1,54 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f46f5c3855144d945b8444dff9681c7d, type: 3}
+  m_Name: Robin
+  m_EditorClassIdentifier: 
+  _characterName: Robin
+  _class: {fileID: 11400000, guid: b4069752d9de85f43a7f5ef5fc533a61, type: 2}
+  _className: 
+  _portrait: {fileID: 3475298383841109393, guid: 8d3bfb5153a3e0748b8f737f05435f1c,
+    type: 3}
+  _soldierSprite: {fileID: 21300000, guid: c540b65e023733244bac2ec10e5a466b, type: 3}
+  _numbers: 10
+  _morale: 4
+  _discipline: 4
+  _equipment:
+    _meleeWeapon: {fileID: 11400000, guid: f320bf5cddcad33469f924885d4ea880, type: 2}
+    _rangedWeapon: {fileID: 11400000, guid: 16adfddc4e2dd364f8e2a1ca10c99fb8, type: 2}
+    _armour: {fileID: 11400000, guid: 0b3e6c3eeea26934393ac7f846680920, type: 2}
+    _weapons: []
+  _soldierStats:
+    _speed: 5
+    _defence: 5
+    _strength: 6
+    _support: 4
+    _charge: 3
+    _aggression: 3
+    _maxHealth: 16
+    _weaponSkills:
+    - Class: 3
+      Level: 6
+    - Class: 1
+      Level: 4
+  _growths:
+    _numbers: 20
+    _speed: 20
+    _defence: 20
+    _strength: 20
+    _support: 20
+    _charge: 20
+    _aggression: 20
+    _maxHealth: 20
+    _morale: 20
+    _discipline: 20
+    _weaponSkill: 20
+  _achievements: []

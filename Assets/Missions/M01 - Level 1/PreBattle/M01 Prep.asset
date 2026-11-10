@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cdbcd89adde538c4083e157c445381c9, type: 3}
+  m_Name: M01 Prep
+  m_EditorClassIdentifier: 
+  briefing: 'When the vile warlord Hartkan seized power, young Prince Julian was
+    forced to flee for his life at the tender age of four. Accompanied by his loyal
+    knight, they escaped Candera and sought refuge in the free city of Majula.
+
+    Having
+    lost his family, Julian was groomed to reclaim the throne. He learned the ways
+    of the sword, the art of war, politics, manners, and charm. Most importantly,
+    he delved into the world of banking, recognizing the power that debt could wield
+    in achieving seemingly impossible goals...
+
+    With Hartkan''s forces away from
+    Majula, Julian sees a prime opportunity to reclaim his homeland. Gathering his
+    exiled supporters, all he needs is a seed loan to initiate the liberation of
+    Majula.'
+  image: {fileID: 21300000, guid: 35e95846b77050d4bb57d56cd07bb402, type: 3}
+  buyOrders:
+  - orderInfo: Seed Loan, easy
+    PrestigeRequired: 12
+    interestRate: 100
+    gold: 500
+    timeLeft: 7
+    orderDetails: So much money comes with a price
+  - orderInfo: Seed Loan, hard
+    PrestigeRequired: 5
+    interestRate: 50
+    gold: 70
+    timeLeft: 2
+    orderDetails: Can you make do with so little.
+  briefingFlow: {fileID: 0}
+  briefingSpeaker: Briefing
+  court:
+  - name: 
+    portrait: {fileID: 0}
+    dialogue: {fileID: 0}
+    defaultLine: 
+  - name: 
+    portrait: {fileID: 0}
+    dialogue: {fileID: 0}
+    defaultLine: 
+  - name: 
+    portrait: {fileID: 0}
+    dialogue: {fileID: 0}
+    defaultLine: 
+  questAvailable: 0
+  mandatoryCharacters:
+  - {fileID: 11400000, guid: fc6c4d66d563885409ecd9f40468f856, type: 2}

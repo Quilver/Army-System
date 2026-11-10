@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 09b2cfbb937b44bfb5940293be286607, type: 3}
+  m_Name: Post Battle Tuning
+  m_EditorClassIdentifier: 
+  _pageIntroSeconds: 0.35
+  _rowIntervalSeconds: 0.15
+  _countUpSeconds: 0.9
+  _countUpStepsLimit: 12
+  _stampIntervalSeconds: 0.45
+  _stampDropSeconds: 0.28
+  _stampStartScale: 2.4
+  _stampMaxTilt: 7
+  _stampGlowSeconds: 0.9
+  _stampGlowColor: {r: 1, g: 0.82, b: 0.35, a: 1}
+  _notchFillSeconds: 0.16
+  _notchFullColor: {r: 1, g: 0.76, b: 0.22, a: 1}
+  _notchGlowColor: {r: 1, g: 0.9, b: 0.5, a: 0.85}
+  _notchEmptyColor: {r: 0.05, g: 0.04, b: 0.03, a: 1}
+  _levelUpPulses: 3
+  _levelUpPulseSeconds: 0.3
+  _levelUpPulseScale: 1.4
+  _statGlowSeconds: 0.22
+  _statResultSeconds: 0.18
+  _statGlowColor: {r: 1, g: 0.78, b: 0.25, a: 1}
+  _statGainColor: {r: 0.25, g: 0.55, b: 0.1, a: 1}
+  _tickSound: {fileID: 8300000, guid: deef9081c37c2a84d9a2ee68c1b59486, type: 3}
+  _stampSound: {fileID: 8300000, guid: cd6e84271a8c25b44ad1f914c0c0addd, type: 3}
+  _levelUpSound: {fileID: 8300000, guid: 7e1365591b4328b4381438dced34173b, type: 3}
+  _statGainSound: {fileID: 8300000, guid: 620ef10c7bb5b3c41b87520e13d0b75e, type: 3}

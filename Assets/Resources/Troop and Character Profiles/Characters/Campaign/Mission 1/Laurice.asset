@@ -1,0 +1,52 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f46f5c3855144d945b8444dff9681c7d, type: 3}
+  m_Name: Laurice
+  m_EditorClassIdentifier: 
+  _characterName: Laurice
+  _class: {fileID: 11400000, guid: 8e985c9562a1a214980bc3fc8bcb3363, type: 2}
+  _className: 
+  _portrait: {fileID: -63271321026836129, guid: f7a53317099e01c43907c82d05adc8a5,
+    type: 3}
+  _soldierSprite: {fileID: 21300000, guid: 951f258d64f1f59459909fc56ea1d100, type: 3}
+  _numbers: 12
+  _morale: 5
+  _discipline: 5
+  _equipment:
+    _meleeWeapon: {fileID: 11400000, guid: e786d36e7379c784ba11268eb883cbd3, type: 2}
+    _rangedWeapon: {fileID: 0}
+    _armour: {fileID: 11400000, guid: 5a8704daaac3c6c41962da04b681f8c5, type: 2}
+    _weapons: []
+  _soldierStats:
+    _speed: 5
+    _defence: 5
+    _strength: 7
+    _support: 3
+    _charge: 6
+    _aggression: 9
+    _maxHealth: 18
+    _weaponSkills:
+    - Class: 2
+      Level: 5
+  _growths:
+    _numbers: 20
+    _speed: 20
+    _defence: 20
+    _strength: 20
+    _support: 20
+    _charge: 20
+    _aggression: 20
+    _maxHealth: 20
+    _morale: 20
+    _discipline: 20
+    _weaponSkill: 20
+  _achievements: []

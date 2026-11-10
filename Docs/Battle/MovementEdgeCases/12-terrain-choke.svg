@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" width="640" height="360" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#222"/></marker><marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3b6fd8"/></marker><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d6453a"/></marker><marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2e9d4a"/></marker></defs>
+<rect width="640" height="360" fill="#fbfaf6"/>
+<text x="16" y="26" font-size="16" font-weight="bold" fill="#222">12 Terrain and choke points</text>
+<text x="16" y="44" font-size="12" fill="#555">Soldiers circle-cast against impassable terrain; the field shape does not</text>
+<rect x="220.0" y="60.0" width="200.0" height="90.0" rx="0" fill="#8a8a8a" stroke="none" stroke-width="1.5" opacity="0.45"/>
+<rect x="220.0" y="200.0" width="200.0" height="90.0" rx="0" fill="#8a8a8a" stroke="none" stroke-width="1.5" opacity="0.45"/>
+<text x="320.0" y="110.0" font-size="11" text-anchor="middle" font-weight="normal" fill="white">impassable</text>
+<rect x="116.5" y="159.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="116.5" y="171.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="116.5" y="183.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="148.5" y="159.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="148.5" y="171.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="148.5" y="183.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="180.5" y="159.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="180.5" y="171.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="180.5" y="183.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="212.5" y="165.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="212.5" y="177.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="244.5" y="165.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="244.5" y="177.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="276.5" y="165.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="276.5" y="177.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="308.5" y="165.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="308.5" y="177.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="340.5" y="165.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="340.5" y="177.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="372.5" y="165.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="372.5" y="177.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="404.5" y="165.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<rect x="404.5" y="177.5" width="7.0" height="7.0" rx="0" fill="#3b6fd8" stroke="none" stroke-width="0" opacity="1"/>
+<line x1="470.0" y1="175.0" x2="560.0" y2="175.0" stroke="#3b6fd8" stroke-width="2" marker-end="url(#ab)"/>
+<text x="320.0" y="240.0" font-size="11" text-anchor="middle" font-weight="normal" fill="white">lanes compress in the gap</text>
+<text x="40.0" y="220.0" font-size="11" text-anchor="start" font-weight="normal" fill="#555">trailing soldiers with high</text>
+<text x="40.0" y="234.0" font-size="11" text-anchor="start" font-weight="normal" fill="#555">drive push forward</text>
+<text x="16.0" y="331.0" font-size="11.5" text-anchor="start" font-weight="normal" fill="#555">Lines in a choke: soldiers whose place in the line is inside terrain stop at the edge and crowd the open part.</text>
+<text x="16.0" y="346.0" font-size="11.5" text-anchor="start" font-weight="normal" fill="#555">Not handled yet: line fill does not skip places that fall inside terrain (possible follow-up).</text>
+</svg>
