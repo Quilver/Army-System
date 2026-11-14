@@ -726,7 +726,8 @@ defaults are used when an asset is missing. Values in the rest of this document 
 | `ClashCooldownSeconds` | 1 | s | Per-soldier clash rate limit for contacts that are not charges. |
 | `SupportRadius` | 3 | units | Support range. |
 | `SpearSupportRangeMultiplier` | 2 | × | Spear Support range. |
-| `SupportBonusPerAlly` | 2 | int | Combat Power per supporter. |
+| `SupportBonusPerSupportPoint` | 0.25 (*default*) | CP per Support point | Each supporter gives its Support × this (SU-149). |
+| `MaxSupporters` | 8 (*default*) | int | Most supporters counted, those with the highest Support (SU-149). |
 | `DominationDivisor` | 10 | float | Divisor in the Domination formula. |
 | `AssaultDurationSeconds` | 10 | s | Assault length. |
 | `AssaultAggressionBonus` | 5 | int | Aggression during Assault. |

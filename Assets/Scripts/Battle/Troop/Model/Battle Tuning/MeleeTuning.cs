@@ -37,8 +37,12 @@ public sealed class MeleeTuning : ScriptableObject
     [SerializeField, Min(1f), Tooltip("Support range multiplier for a Spear Support supporter (Q-7, SU-90).")]
     [FormerlySerializedAs("_boarSpearSupportRangeMultiplier")]
     float _spearSupportRangeMultiplier = 2f;
-    [SerializeField, Min(0), Tooltip("Combat Power per supporting ally.")]
-    int _supportBonusPerAlly = 2;
+    [SerializeField, Min(0f), Tooltip("Support gives (SU-149): each supporter adds its own Support stat x this to the " +
+        "clashing soldier's Combat Power (Support 8 at 0.25 adds 2). The total is rounded half up.")]
+    float _supportBonusPerSupportPoint = 0.25f;
+    [SerializeField, Min(0), Tooltip("Most supporters counted in one clash (SU-149): the eligible supporters with the " +
+        "highest Support.")]
+    int _maxSupporters = 8;
     [SerializeField, Min(0.1f), Tooltip("Divisor of the Domination formula.")]
     float _dominationDivisor = 10f;
 
@@ -61,7 +65,8 @@ public sealed class MeleeTuning : ScriptableObject
 
     public float SupportRadius => _supportRadius;
     public float SpearSupportRangeMultiplier => _spearSupportRangeMultiplier;
-    public int SupportBonusPerAlly => _supportBonusPerAlly;
+    public float SupportBonusPerSupportPoint => _supportBonusPerSupportPoint;
+    public int MaxSupporters => _maxSupporters;
     public float DominationDivisor => _dominationDivisor;
 
     public float AssaultDurationSeconds => _assaultDurationSeconds;

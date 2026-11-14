@@ -166,7 +166,8 @@ public sealed class TroopTuning
     public float ClashCooldownSeconds => Melee.ClashCooldownSeconds;
     public float SupportRadius => Melee.SupportRadius;
     public float SpearSupportRangeMultiplier => Melee.SpearSupportRangeMultiplier;
-    public int SupportBonusPerAlly => Melee.SupportBonusPerAlly;
+    public float SupportBonusPerSupportPoint => Melee.SupportBonusPerSupportPoint;
+    public int MaxSupporters => Melee.MaxSupporters;
     public float DominationDivisor => Melee.DominationDivisor;
     public float AssaultDurationSeconds => Melee.AssaultDurationSeconds;
     public int AssaultAggressionBonus => Melee.AssaultAggressionBonus;

@@ -175,6 +175,12 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 
 - [ ] the bearer must still be charging (charging and Assault); a troop that falls back and attacks again gets a fresh Assault, so its next charges double again. →
 
+**SU-149** Support is given by the supporters
+
+- [ ] each supporter gives its Support × 0.25, at most 8 supporters (eight Support 8 spearmen still give +16). →
+- [ ] with more than 8 eligible, the 8 with the highest Support count, not the nearest. →
+- [ ] the sum is rounded half up once, after multiplying. →
+
 ## Morale, retreat & rout
 
 **SU-104** Retreats only from melee; out of melee a break disorders the troop

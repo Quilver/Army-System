@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using NUnit.Framework;
 
 // Spec §4.3-§4.6: duel, Domination, support, Combat Power, damage and the charge rate.
@@ -47,16 +48,34 @@ public sealed class DuelRulesTests
 
 public sealed class SupportRulesTests
 {
+    // SU-149: each supporter gives its own Support x 0.25; eight Support 8 spearmen give +16.
     [Test]
-    public void SixEligible_SupportFive_CountsFive_BonusTen()
+    public void EightSpearmen_GiveSixteen()
     {
-        Assert.AreEqual(10, SupportRules.SupportBonus(6, 5, 2, false));
+        Assert.AreEqual(16, SupportRules.SupportBonus(new List<int> { 8, 8, 8, 8, 8, 8, 8, 8 }, 8, 0.25f, false));
+    }
+
+    // Only the MaxSupporters with the highest Support count; the clashing soldier's own Support plays no part.
+    [Test]
+    public void OnlyTheHighestSupportersCount()
+    {
+        var supporters = new List<int> { 3, 3, 3, 8, 8, 8, 8, 8, 8, 8, 8, 3 };
+        Assert.AreEqual(16, SupportRules.SupportBonus(supporters, 8, 0.25f, false));
+        Assert.AreEqual(6, SupportRules.SupportBonus(new List<int> { 3, 3, 3, 3, 3, 3, 3, 3, 3, 3 }, 8, 0.25f, false));
+    }
+
+    [Test]
+    public void Support_RoundsHalfUp()
+    {
+        Assert.AreEqual(1, SupportRules.SupportBonus(new List<int> { 1, 1 }, 8, 0.25f, false));    // 0.5
+        Assert.AreEqual(0, SupportRules.SupportBonus(new List<int> { 1 }, 8, 0.25f, false));       // 0.25
+        Assert.AreEqual(0, SupportRules.SupportBonus(new List<int>(), 8, 0.25f, false));
     }
 
     [Test]
     public void Flanked_GetsNoSupport()
     {
-        Assert.AreEqual(0, SupportRules.SupportBonus(6, 5, 2, true));
+        Assert.AreEqual(0, SupportRules.SupportBonus(new List<int> { 8, 8, 8 }, 8, 0.25f, true));
     }
 
     [Test]

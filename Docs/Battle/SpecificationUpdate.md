@@ -25,6 +25,17 @@ SU-128 refer to v0.9 and may have moved.
 - Code: `DamageRules.LanceDoubles`, `DuelResolver`. Tests: `DamageRulesTests`, and `ClassMatchupTests` (explicit
   measurements, run by name: whole generic troops fight head-on and print who won, how long it took and who is left).
 
+### SU-149 Support is given by the supporters (Decision + Assumptions, spec §4.5)
+- Decision: Support becomes a stat that gives. Each eligible supporter adds its own Support × `SupportBonusPerSupportPoint`
+  to the clashing soldier's Combat Power. The clashing soldier's own Support no longer caps anything.
+- Assumption: `SupportBonusPerSupportPoint` 0.25 and `MaxSupporters` 8, so eight Support 8 spearmen still give +16 (as
+  before); Huscarls backed by spearmen get up to +16 instead of +6; Huscarls among Huscarls (Support 3) still get +6.
+- Assumption: when more than `MaxSupporters` are eligible, the ones with the highest Support count, not the nearest.
+- Assumption: the sum is rounded half up once, after multiplying (two Support 1 supporters give 0.5, so 1).
+- Eligibility (same army, not fatigued or stunned, within `SupportRadius`, ×2 for Spear Support) and the flank rule
+  (0 support) are unchanged. `SupportBonusPerAlly` is removed.
+- Code: `SupportRules`, `SupportCalculator`, Melee Tuning. Tests: `SupportRulesTests`.
+
 
 ## 2026-11-14: Dialogue and loans only from story notes
 
