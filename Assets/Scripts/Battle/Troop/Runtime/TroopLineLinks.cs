@@ -13,6 +13,8 @@ public sealed class TroopLineLinks
     public bool HasFreeEnd => _links[0] == null || _links[1] == null;
     public bool HasAnyLink => _links[0] != null || _links[1] != null;
     public bool HasActiveLink => IsActive(0) || IsActive(1);
+    // Active links (0, 1 or 2); pending order links do not count.
+    public int ActiveLinkCount => (IsActive(0) ? 1 : 0) + (IsActive(1) ? 1 : 0);
 
     public TroopEndpointLink Get(int end) => _links[Mathf.Clamp(end, 0, 1)];
 

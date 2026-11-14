@@ -17,6 +17,7 @@ public static class BattleTuningAssets
         Ensure<ChainTuning>(ChainTuning.AssetName);
         Ensure<RangedTuning>(RangedTuning.AssetName);
         Ensure<InputTuning>(InputTuning.AssetName);
+        Ensure<ChainBonusTuning>(ChainBonusTuning.AssetName);
         AssetDatabase.SaveAssets();
     }
 

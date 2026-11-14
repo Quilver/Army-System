@@ -755,6 +755,14 @@ defaults are used when an asset is missing. Values in the rest of this document 
 | `ChainEndpointRelaxSpeed` | 2 | units/s | Relax rate of a broken, stretched line point. |
 | `LinkSlack` / `LinkStiffness` / `LinkMaxForce` | 0.1 / 5 / 10.4 | units / gain / force | Link tension spring. |
 
+**Chain Bonus Tuning** (its own asset, SU-152)
+
+| Variable | Value | Unit | Description |
+|---|---|---|---|
+| `ChainBonus` | on | bool | A chained troop gets the bonuses below per active link. |
+| `DefencePerLink` | 1 | int | Added to every soldier's TotalDefence per active link. |
+| `MoralePerLink` | 1 | int | Added to BaseMorale in EffectiveMorale per active link (not to the initial value). |
+
 **Ranged Tuning**
 
 | Variable | Value | Unit | Description |

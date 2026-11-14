@@ -25,9 +25,14 @@ public sealed class TroopMorale : MonoBehaviour
     public int SurroundedBreakCount => _surroundedBreakCount;
     public float Shock => _shock;
 
-    // EffectiveMorale = BaseMorale x living soldiers minus the break penalties (spec §5.1).
+    // BaseMorale plus the chain's Morale bonus while chained (SU-152). Used for EffectiveMorale (and so Shock decay), not
+    // for the initial EffectiveMorale that sets the rout threshold.
+    public int ChainedBaseMorale => BaseMorale + (_troop != null ? _troop.ChainMoraleBonus : 0);
+
+    // EffectiveMorale = BaseMorale x living soldiers minus the break penalties (spec §5.1); BaseMorale includes the chain
+    // bonus (SU-152).
     public float EffectiveMorale => MoraleRules.EffectiveMorale(
-        BaseMorale,
+        ChainedBaseMorale,
         _troop != null ? _troop.LivingSoldierCount : 0,
         _retreatCount,
         _surroundedBreakCount,

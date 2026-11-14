@@ -70,6 +70,24 @@ SU-128 refer to v0.9 and may have moved.
   `RangedFireController`, `TroopAIAdapter.HasAmmo`, `TroopCardHud`. Tests: `AmmunitionTests`,
   `ChainAndRangedScenarioTests.Archers_StopShooting_WhenOutOfAmmunition`.
 
+### SU-152 Chain bonus: Defence and Morale per link (Decision + Assumptions, spec §3.4, §4.6, §5.1)
+- Decision: a chained troop gets a Defence and a Morale bonus, set on a separate tuning asset, **Chain Bonus Tuning**
+  (`Assets/Resources/Battle Tuning/Chain Bonus Tuning.asset`), with an on/off toggle (`ChainBonus`).
+- Assumption: the bonus is per active link (pending order links do not count): a chain end gets one link's worth, a troop
+  in the middle two. Defaults: `DefencePerLink` 1, `MoralePerLink` 1, on.
+- Assumption: Defence is added to every soldier's TotalDefence (so more points are rolled against the armour ratio and
+  fewer overflow). A soldier with no armour at all rolls every point anyway, so it gains nothing.
+- Assumption: Morale is added to the troop's BaseMorale in EffectiveMorale (so per soldier, and Shock decays faster), not
+  to the initial EffectiveMorale, so the rout threshold does not rise. The troop card can show EffectiveMorale above its
+  initial value while chained.
+- Assumption: a lost link loses its bonus at once. A troop whose Shock is above its new, lower EffectiveMorale breaks,
+  so a mid-chain rout (which severs its neighbours' links) can set off breaks next to it.
+- Code: `ChainBonusTuning` (the eighth Battle Tuning section), `Troop.ActiveLinkCount`, `ChainDefenceBonus`,
+  `ChainMoraleBonus`, `TroopMorale.ChainedBaseMorale`. Tests: `ChainBonusTuningTests`,
+  `ChainAndRangedScenarioTests.ChainedTroops_GetTheChainBonus_PerLink`. `SharedRetreat_FallsOffSeventyPercentPerHop`
+  and `MidChainRout_SplitsTheChain_AndBrokenEndsRelax` switch the bonus off, since their Shock values are set against
+  morale without it.
+
 
 ## 2026-11-14: Dialogue and loans only from story notes
 

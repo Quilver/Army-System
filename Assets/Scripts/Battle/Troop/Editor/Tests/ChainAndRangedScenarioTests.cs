@@ -109,6 +109,28 @@ public sealed class ChainAndRangedScenarioTests
         Assert.Fail($"No Battle Tuning section has the field {property}");
     }
 
+    // SU-152: each active link adds the Chain Bonus Tuning's Defence and Morale; switched off, nothing.
+    [Test]
+    public void ChainedTroops_GetTheChainBonus_PerLink()
+    {
+        Troop a = LineTroop("A", new Vector2(0f, 0f), Vector2.right);
+        Troop b = LineTroop("B", new Vector2(0f, 9f), Vector2.right);
+        Troop c = LineTroop("C", new Vector2(0f, 18f), Vector2.right);
+        Simulate(0.3f);
+        Assert.AreEqual(1, a.ActiveLinkCount, "chain end");
+        Assert.AreEqual(2, b.ActiveLinkCount, "middle of the chain");
+        Assert.AreEqual(1, a.ChainDefenceBonus);
+        Assert.AreEqual(2, b.ChainDefenceBonus);
+        Assert.AreEqual((5 + 1) * a.LivingSoldierCount, a.MoraleState.EffectiveMorale, 1e-4f);
+        Assert.AreEqual((5 + 2) * b.LivingSoldierCount, b.MoraleState.EffectiveMorale, 1e-4f);
+        Assert.AreEqual(5 * b.LivingSoldierCount, b.MoraleState.InitialEffectiveMorale, 1e-4f, "rout threshold unchanged");
+
+        UseTuning("_chainBonus", false);
+        Assert.AreEqual(0, b.ChainDefenceBonus);
+        Assert.AreEqual(5 * b.LivingSoldierCount, b.MoraleState.EffectiveMorale, 1e-4f);
+        Assert.IsNotNull(c);
+    }
+
     // SU-150: a troop in Line (an enemy within S_Distance) marches at 0.8 of its speed toward the enemy and 0.6 moving
     // back; with both toggles off it marches at full speed. Move 5 x 0.6 = 3 units/s.
     [TestCase(true, true, 3f * 0.8f)]
@@ -201,6 +223,7 @@ public sealed class ChainAndRangedScenarioTests
     public void SharedRetreat_FallsOffSeventyPercentPerHop()
     {
         UseTuning("_retreatDistance", 10f);      // troop 1 retreats 10 units
+        UseTuning("_chainBonus", false);         // the morale below is without the chain bonus (SU-152)
         var chain = new List<Troop>();
         for (int i = 0; i < 3; i++) chain.Add(LineTroop("Chain " + (i + 1), new Vector2(0f, i * 9f), Vector2.right));
         Simulate(0.2f);

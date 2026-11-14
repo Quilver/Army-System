@@ -351,6 +351,12 @@ public sealed class Troop : MonoBehaviour
     public IReadOnlyList<TroopEndpointLink> LineLinks => _lineLinks.All;
     public bool HasFreeLineEnd => _lineLinks.HasFreeEnd;
     public bool IsChained => _lineLinks.HasActiveLink;
+    // Active links of this troop's chain (0-2). Each gives the Chain Bonus Tuning's Defence and Morale (SU-152).
+    public int ActiveLinkCount => _lineLinks != null ? _lineLinks.ActiveLinkCount : 0;
+    // SU-152: added to every soldier's TotalDefence while chained.
+    public int ChainDefenceBonus => Tuning.ChainDefenceBonus(ActiveLinkCount);
+    // SU-152: added to BaseMorale in EffectiveMorale while chained.
+    public int ChainMoraleBonus => Tuning.ChainMoraleBonus(ActiveLinkCount);
     public TroopEndpointLink GetLineLink(int end) => _lineLinks.Get(end);
     public bool IsLinkActive(int end) => _lineLinks.IsActive(end);
 
@@ -647,15 +653,16 @@ public sealed class Troop : MonoBehaviour
         return applied;
     }
 
-    // Armour rolls use this troop's stream, since the troop being hit is the one that owns the target soldier.
+    // Armour rolls use this troop's stream, since the troop being hit is the one that owns the target soldier. A chained
+    // troop's soldiers add the chain's Defence bonus to their TotalDefence (SU-152).
     MitigationResult Mitigate(SoldierAgentState target, int rawDamage, WeaponProfile weapon)
     {
         ArmourProfile armour = target.Character != null ? target.Character.Armour : null;
         int piercing = weapon != null ? weapon.Piercing : 0;
         int bludgeoning = weapon != null ? weapon.Bludgeoning : 0;
         if (armour == null) return MitigationResolver.Unarmoured(rawDamage, TroopRandom, piercing, bludgeoning);
-        return MitigationResolver.Resolve(rawDamage, target.TotalDefence, armour.Deflect, armour.Bruise, armour.Bleed,
-            TroopRandom, piercing, bludgeoning);
+        return MitigationResolver.Resolve(rawDamage, target.TotalDefence + ChainDefenceBonus, armour.Deflect, armour.Bruise,
+            armour.Bleed, TroopRandom, piercing, bludgeoning);
     }
 
     // Charges per troop and Assault bonuses (spec §4.2, §4.3).

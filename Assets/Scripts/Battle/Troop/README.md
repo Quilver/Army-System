@@ -85,6 +85,7 @@ constant in `TroopConstants` when it never changes:
 | Chain Tuning | Chains, link spring |
 | Ranged Tuning | Ranged (limited ammunition, SU-151), composite troops |
 | Input Tuning | Input thresholds (pixels) |
+| Chain Bonus Tuning | Defence and Morale per chain link (SU-152) |
 
 Code reads them through `TroopTuning.Active` (property names unchanged). A missing asset falls back to the code
 defaults; **Troops > Battle Tuning > Create Missing Assets** recreates it. Characters, troops, classes and equipment are

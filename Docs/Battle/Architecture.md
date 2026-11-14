@@ -238,7 +238,7 @@ in Edit mode at a fixed frame time.
 | `CharacterProfile` | Name, class (`CharacterClass`: stat caps), portrait, soldier sprite, Numbers, Morale, Discipline, `SoldierStats` (integer stats, `MaxHealth`, up to 2 weapon skills) and `CharacterEquipment` (one required melee weapon, an optional ranged weapon, armour). Derived: `MeleeWeaponSkill`, `MeleeWeaponDamage`, `MeleeWeaponChargeBonus`, `HasSpearSupport`, `HasCouchedLance`, `MaxSpeed`. `CampaignCharacter` (Tween) adds growths. `CreateWithGains` makes the runtime copy a roster character fights as (level-up gains added, `Source` = the asset, SU-132). |
 | `MeleeWeaponProfile`, `RangedWeaponProfile` | Separate ScriptableObjects on an abstract `WeaponProfile` (D-52): Damage and a list of special rules; melee adds class and ChargeBonus, ranged adds class, Range, Accuracy, FireRate and Volley. No Provisional flag (SU-134). |
 | `ArmourProfile` | Deflect : Bruise : Bleed ratio and DefenceBonus (SU-89). |
-| `TroopTuning` | Loads the seven Battle Tuning sections (Soldier, Formation, Morale, Melee, Chain, Ranged, Input) and exposes every value of spec §8 under its old property name. |
+| `TroopTuning` | Loads the eight Battle Tuning sections (Soldier, Formation, Morale, Melee, Chain, Ranged, Input, Chain Bonus) and exposes every value of spec §8 under its old property name. |
 | `SoldierAgentState` | Life, `SoldierHealth`, motion, `SoldierChargeState` (role, target or leader, timeout, start time), clash cooldown, fault motion, pulse, separation. |
 
 ## 8. Tests
@@ -270,7 +270,7 @@ run (Troop and Tween tests) is about 350 tests; the main files:
 | Place | Values |
 |---|---|
 | `TroopConstants` | `NeighborRadius 2.5`, `SoldierRadius 0.3`, `SeparationRadius 0.9`, `LineSpacing 0.9`, `SpreadRadius 1.2`, `PressureMassPerDrive 3`, `ContactDistance 0.85`, `MaxChainLinks 2`, wing indices. |
-| `TroopTuning` | Every tunable variable of spec §8, from the seven Battle Tuning assets (code defaults when a field has not been saved yet). |
+| `TroopTuning` | Every tunable variable of spec §8, from the eight Battle Tuning assets (code defaults when a field has not been saved yet). |
 | Private constants that are not spec values | `FaultSlipMotion` settle time and pivot slip time, `SoldierSteering` retreat headroom (speed 1.5×, acceleration 6×, SU-133) and gains, `TroopFormationState.HeadingSmoothingTime`, `TroopSegmentPressureRules` barrier gains, knock-back 0.3 units. |
 
 ## 10. Scenes

@@ -94,6 +94,22 @@ public sealed class TroopScenarioTests
         TroopTuning.OverrideForTests(_tuning);
     }
 
+    void UseTuning(string property, bool value)
+    {
+        _tuning ??= TroopTuning.CreateDefaults();
+        foreach (var section in _tuning.Sections)
+        {
+            var serialized = new SerializedObject(section);
+            SerializedProperty found = serialized.FindProperty(property);
+            if (found == null) continue;
+            found.boolValue = value;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            TroopTuning.OverrideForTests(_tuning);
+            return;
+        }
+        Assert.Fail($"No Battle Tuning section has the field {property}");
+    }
+
     static void Kill(Troop troop, int count)
     {
         int killed = 0;
@@ -391,6 +407,7 @@ public sealed class TroopScenarioTests
     [Test]
     public void MidChainRout_SplitsTheChain_AndBrokenEndsRelax()
     {
+        UseTuning("_chainBonus", false);   // the rout below is set up on morale without the chain bonus (SU-152)
         var troops = new List<Troop>();
         for (int i = 0; i < 5; i++)
         {

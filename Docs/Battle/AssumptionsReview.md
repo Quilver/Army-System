@@ -225,6 +225,13 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 - [ ] the edge is the NavMesh's bounding rectangle inset by the blob radius, reached within 0.5 units; a troop that routs at the edge leaves at once. →
 - [ ] leaving reuses the despawn path and raises no event again; `RoutDespawnSeconds` (60) stays as the fallback; without a NavMesh nothing changes. →
 
+**SU-152** Chain bonus: Defence and Morale per link
+
+- [ ] the bonus is per active link (a chain end gets one, the middle of a chain two; pending order links do not count); +1 Defence and +1 Morale per link, on. →
+- [ ] Defence is added to TotalDefence; a soldier with no armour at all rolls every point anyway and gains nothing. →
+- [ ] Morale is added to BaseMorale in EffectiveMorale only, not to the initial EffectiveMorale, so the rout threshold does not rise (the troop card can show more than the initial value). →
+- [ ] a lost link loses its bonus at once, which can break a troop whose Shock is above the lower EffectiveMorale (a mid-chain rout can set off breaks beside it). →
+
 ## Controls, orders & battle UI
 
 **SU-18** Help panel and status panel removed

@@ -10,6 +10,7 @@ using UnityEngine;
 //   Chain Tuning       chains and link springs                      (ChainTuning)
 //   Ranged Tuning      ranged fire and composite ranks              (RangedTuning)
 //   Input Tuning       player input thresholds                      (InputTuning)
+//   Chain Bonus Tuning Defence and Morale per chain link (SU-152)   (ChainBonusTuning)
 // This class gathers the sections so code reads every value from one place (TroopTuning.Active.X). It holds only values
 // that are not combat stats: combat stat limits are in CombatStatLimits, and values that never change (soldier radius,
 // line spacing, contact distance) are constants in TroopConstants.
@@ -29,9 +30,10 @@ public sealed class TroopTuning
     public ChainTuning Chain { get; }
     public RangedTuning Ranged { get; }
     public InputTuning Input { get; }
+    public ChainBonusTuning ChainBonus { get; }
 
     TroopTuning(SoldierTuning soldier, FormationTuning formation, MoraleTuning morale, MeleeTuning melee, ChainTuning chain,
-        RangedTuning ranged, InputTuning input)
+        RangedTuning ranged, InputTuning input, ChainBonusTuning chainBonus)
     {
         Soldier = soldier;
         Formation = formation;
@@ -40,11 +42,12 @@ public sealed class TroopTuning
         Chain = chain;
         Ranged = ranged;
         Input = input;
+        ChainBonus = chainBonus;
     }
 
     // Every section, in Inspector order. Tests use it to find the section that owns a serialized field.
     public IReadOnlyList<ScriptableObject> Sections => new ScriptableObject[]
-        { Soldier, Formation, Morale, Melee, Chain, Ranged, Input };
+        { Soldier, Formation, Morale, Melee, Chain, Ranged, Input, ChainBonus };
 
     public static TroopTuning Active
     {
@@ -59,7 +62,7 @@ public sealed class TroopTuning
     // Destroy it with DestroySections when done.
     public static TroopTuning CreateDefaults() => new(
         Fresh<SoldierTuning>(), Fresh<FormationTuning>(), Fresh<MoraleTuning>(), Fresh<MeleeTuning>(),
-        Fresh<ChainTuning>(), Fresh<RangedTuning>(), Fresh<InputTuning>());
+        Fresh<ChainTuning>(), Fresh<RangedTuning>(), Fresh<InputTuning>(), Fresh<ChainBonusTuning>());
 
     // Tests swap in their own instance. Pass null to go back to the assets.
     public static void OverrideForTests(TroopTuning tuning) => _active = tuning;
@@ -79,7 +82,7 @@ public sealed class TroopTuning
         Load<SoldierTuning>(SoldierTuning.AssetName), Load<FormationTuning>(FormationTuning.AssetName),
         Load<MoraleTuning>(MoraleTuning.AssetName), Load<MeleeTuning>(MeleeTuning.AssetName),
         Load<ChainTuning>(ChainTuning.AssetName), Load<RangedTuning>(RangedTuning.AssetName),
-        Load<InputTuning>(InputTuning.AssetName));
+        Load<InputTuning>(InputTuning.AssetName), Load<ChainBonusTuning>(ChainBonusTuning.AssetName));
 
     static T Load<T>(string assetName) where T : ScriptableObject
     {
@@ -96,7 +99,7 @@ public sealed class TroopTuning
 
     // A section destroyed under us (a test tearing down, or an asset deleted) makes the cached tuning stale.
     bool IsAlive => Soldier != null && Formation != null && Morale != null && Melee != null && Chain != null
-        && Ranged != null && Input != null;
+        && Ranged != null && Input != null && ChainBonus != null;
 
     // --- Soldier Tuning ---
 
@@ -194,6 +197,12 @@ public sealed class TroopTuning
     public float LinkSlack => Chain.LinkSlack;
     public float LinkStiffness => Chain.LinkStiffness;
     public float LinkMaxForce => Chain.LinkMaxForce;
+
+    // --- Chain Bonus Tuning (SU-152) ---
+
+    // TotalDefence and BaseMorale bonuses for a troop with this many active chain links (0 while the bonus is off).
+    public int ChainDefenceBonus(int activeLinks) => ChainBonus.DefenceBonus(activeLinks);
+    public int ChainMoraleBonus(int activeLinks) => ChainBonus.MoraleBonus(activeLinks);
 
     // --- Ranged Tuning ---
 
