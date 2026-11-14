@@ -49,7 +49,7 @@ public struct CombatLogDamage
     public int Strength;         // melee only
     public int WeaponDamage;
     public int Domination;       // melee only
-    public bool LanceDoubled;    // Couched Lance while charging
+    public bool LanceDoubled;    // Couched Lance while charging during Assault (SU-148)
     public int Raw;
     public int Deflected, Bruised, Bled, Overflow;
     public int AppliedHp;        // after the HP clamp

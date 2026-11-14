@@ -109,9 +109,19 @@ public sealed class DamageRulesTests
     }
 
     [Test]
-    public void CouchedLance_DoublesTotalDamage_OnlyWhileCharging()
+    public void CouchedLance_DoublesTotalDamage()
     {
         Assert.AreEqual(20, DamageRules.RawDamage(5, 3, 2, true));
+    }
+
+    // SU-148: only a charge during the bearer's troop's Assault doubles.
+    [Test]
+    public void CouchedLance_DoublesOnlyOnAChargeDuringAssault()
+    {
+        Assert.IsTrue(DamageRules.LanceDoubles(true, true, true));
+        Assert.IsFalse(DamageRules.LanceDoubles(true, true, false));
+        Assert.IsFalse(DamageRules.LanceDoubles(true, false, true));
+        Assert.IsFalse(DamageRules.LanceDoubles(false, true, true));
     }
 }
 

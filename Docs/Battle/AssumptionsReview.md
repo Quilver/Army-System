@@ -171,6 +171,10 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 - [ ] the player cannot give a new attack order on a routed troop (only a running pursuit continues), and a pursuer chasing a routed troop does not square up to it. →
 - [ ] the AI is unchanged: it never targets routed troops, so AI troops re-target on their next tick. →
 
+**SU-148** Couched Lance doubles only during Assault
+
+- [ ] the bearer must still be charging (charging and Assault); a troop that falls back and attacks again gets a fresh Assault, so its next charges double again. →
+
 ## Morale, retreat & rout
 
 **SU-104** Retreats only from melee; out of melee a break disorders the troop

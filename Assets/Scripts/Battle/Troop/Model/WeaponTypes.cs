@@ -41,7 +41,8 @@ public enum WeaponSpecialRule
     None = 0,
     // Melee. Doubles the bearer's support range when the bearer supports an ally (spec §1.6; was Boar Spear Support).
     [InspectorName("Spear Support")] SpearSupport = 1,
-    // Melee. Doubles total melee damage while the bearer is charging (spec §1.6; was Lance Charge Double).
+    // Melee. Doubles total melee damage while the bearer charges during its troop's Assault (spec §1.6, SU-148; was Lance
+    // Charge Double).
     [InspectorName("Couched Lance")] CouchedLance = 2,
     // Melee or ranged. Piercing X: adds X to the Bleed part of the target's armour ratio when this weapon's damage is
     // rolled (SU-89).

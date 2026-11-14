@@ -3,7 +3,8 @@ using UnityEngine;
 // Resolves one clash between two opposing soldiers in contact (spec §4.5, §4.6):
 //   knock-back on both, then a duel on Combat Power: P_A = CP_A / (CP_A + CP_B), roll R in [0, 100], A wins when
 //   R <= P_A x 100. The winner deals Strength + weapon damage + Domination, Domination = round(|R - P_A%| / 10),
-//   doubled for a charging Couched Lance bearer. The damage goes through the target's armour (MitigationResolver).
+//   doubled for a Couched Lance bearer charging during its troop's Assault (SU-148). The damage goes through the
+//   target's armour (MitigationResolver).
 //   A is the charger; if both charge, the earlier charge; if neither, the lower soldier id (Q-28).
 //   A soldier fighting an enemy on its troop's flank or rear gets no support, and the Shock it takes is x3 (spec §4.8).
 //   A clash ends any charge of either soldier, and both soldiers start their clash cooldown.
@@ -116,7 +117,8 @@ public sealed class DuelResolver
         if (profile == null) { log.NoDamageReason = "no character"; return log; }
         if (winner.Troop.State == TroopState.Fleeing) { log.NoDamageReason = "winner fleeing"; return log; }
         if (winner.Soldier.IsStunned) { log.NoDamageReason = "winner stunned"; return log; }
-        bool lanceDouble = profile.HasCouchedLance && winner.Soldier.IsCharging;
+        bool lanceDouble = DamageRules.LanceDoubles(profile.HasCouchedLance, winner.Soldier.IsCharging,
+            winner.Troop.IsAssaulting);
         int raw = DamageRules.RawDamage(profile.Strength, profile.MeleeWeaponDamage, domination, lanceDouble);
         log.Strength = profile.Strength;
         log.WeaponDamage = profile.MeleeWeaponDamage;

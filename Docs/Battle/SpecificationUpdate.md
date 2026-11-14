@@ -11,6 +11,21 @@ SU-128 refer to v0.9 and may have moved.
 
 ---
 
+## 2026-11-14: Class design rules
+
+### SU-148 Couched Lance doubles only during Assault (Decision + Assumption, spec §1.6, §4.6)
+- Decision: Couched Lance doubles total melee damage only on a charge made during the bearer's troop's Assault (§4.2,
+  the 10 s after an ordered troop engages), not on every charge of a long melee.
+- Assumption: the bearer must still be charging (charging **and** Assault). A troop that falls back and is ordered to
+  attack again gets a fresh Assault (§4.2), so charging again doubles again.
+- Found (class matchup measurement, 8 seeds): 6 generic Cavalry beat 16 generic Spearmen head-on in 8 of 8 fights before
+  and after this change, losing no rider; the melee went from 65 s to 132 s on average. A spearman's hit (Strength 5 +
+  Boar Spear 1 + Domination) against a rider's TotalDefence 13 (Defence 6 + Chainmail 7, 6 : 3 : 1) is mostly deflected
+  or bruised, and bruises heal at 1 HP/s, so the riders win on Shock without losing anyone.
+- Code: `DamageRules.LanceDoubles`, `DuelResolver`. Tests: `DamageRulesTests`, and `ClassMatchupTests` (explicit
+  measurements, run by name: whole generic troops fight head-on and print who won, how long it took and who is left).
+
+
 ## 2026-11-14: Dialogue and loans only from story notes
 
 ### SU-146 Every dialogue is a Dialogue Script made from a story note (Decision + Assumptions, campaign cutscenes, TentHub §4.3, §4.5, §6)
