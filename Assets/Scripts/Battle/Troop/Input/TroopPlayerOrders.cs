@@ -8,7 +8,8 @@ using UnityEngine.InputSystem;
 //   LMB drag from a troop press on one of the player's troops, keep the button down and drag: on release the selection
 //                         (that troop, or its chain after a double click) moves to the release point (SU-129)
 //   RMB click / drag      Pursue (on an enemy), Move (on ground); a drag from OrderDragMinPixels is a battle line for
-//                         two or more troops and a Move for one troop (a single troop is never given a facing)
+//                         one troop or several, its front set by the drag's direction: left to right faces up (SU-156)
+//   Ctrl + RMB click      Face: the selection turns in place to face the point (SU-156)
 //   Alt                   force unlink of chained troops / keep reserves from linking (spec §6.3)
 //   P / gamepad Start     pause and resume (GamePause), keeping the game speed
 // Speed bar (BattleSpeedHud, top-right): Pause, ½ speed, Play and 2× speed (GamePause.Speed). It is hidden while
@@ -152,8 +153,8 @@ public sealed class TroopPlayerOrders : MonoBehaviour
             _orderStart = _mousePosition;
         if (mouse.rightButton.wasReleasedThisFrame && _orderStart.HasValue)
         {
-            if (Placement != null) _planner.FinishPlacement(_orderStart.Value, _mousePosition, _camera, Placement);
-            else _planner.FinishOrder(_orderStart.Value, _mousePosition, _camera, IsAltHeld());
+            if (Placement != null) _planner.FinishPlacement(_orderStart.Value, _mousePosition, _camera, Placement, IsCtrlHeld());
+            else _planner.FinishOrder(_orderStart.Value, _mousePosition, _camera, IsAltHeld(), IsCtrlHeld());
             _orderStart = null;
         }
     }
@@ -299,6 +300,13 @@ public sealed class TroopPlayerOrders : MonoBehaviour
         return keyboard != null && (keyboard.leftAltKey.isPressed || keyboard.rightAltKey.isPressed);
     }
 
+    // Ctrl + right click: Face (SU-156).
+    static bool IsCtrlHeld()
+    {
+        var keyboard = Keyboard.current;
+        return keyboard != null && (keyboard.leftCtrlKey.isPressed || keyboard.rightCtrlKey.isPressed);
+    }
+
     void OnGUI()
     {
         if (_camera != null) DrawOrderPaths();
@@ -351,13 +359,14 @@ public sealed class TroopPlayerOrders : MonoBehaviour
                 TroopScreenSpace.WorldToGui(_camera, tether.To), tether.StaysLinked && !alt);
     }
 
-    // Ghost preview while the right button is held: each troop's projected footprint (or a marker for a point order), the
-    // shared joints of a multi-troop line, and the tether to any chain neighbour outside the order. No facing arrow:
-    // troops set their facing themselves (toward the threat, or from the chain line).
+    // Ghost preview while the right button is held: each troop's projected footprint with an arrow on its front (or a
+    // marker for a point order, and an arrow for a Face), the shared joints of a multi-troop line, and the tether to any
+    // chain neighbour outside the order. The player sets the front (SU-156), so the arrow is back (it was removed in
+    // SU-33 while troops chose their own front).
     void DrawOrderPreview(Vector2 screenStart, Vector2 screenEnd)
     {
         bool alt = IsAltHeld();
-        OrderKind kind = _planner.Preview(screenStart, screenEnd, _camera, alt);
+        OrderKind kind = _planner.Preview(screenStart, screenEnd, _camera, alt, IsCtrlHeld());
         if (kind == OrderKind.Line)
             TroopOrderOverlay.DrawPlainLine(TroopScreenSpace.ToGui(screenStart), TroopScreenSpace.ToGui(screenEnd));
 
@@ -374,11 +383,16 @@ public sealed class TroopPlayerOrders : MonoBehaviour
                     TroopOrderPlanner.PlannedLinePoint(placement, TroopConstants.RightEnd),
                     TroopOrderPlanner.PlannedLinePoint(placement, TroopConstants.LeftEnd), placement.Facing, halfWidth);
                 TroopOrderOverlay.DrawFootprint(_camera, ghost, placement.Troop.ArmyColor);
+                TroopOrderOverlay.DrawFacingArrow(_camera, placement.Center, placement.Facing, placement.Troop.ArmyColor);
                 if (i + 1 < placements.Count)
                 {
                     TroopOrderPlanner.AdjacentEnds(placement, drag, out int end, out _);
                     TroopOrderOverlay.DrawJoint(TroopScreenSpace.WorldToGui(_camera, TroopOrderPlanner.PlannedLinePoint(placement, end)));
                 }
+            }
+            else if (kind == OrderKind.Face)
+            {
+                TroopOrderOverlay.DrawFacingArrow(_camera, placement.Center, placement.Facing, placement.Troop.ArmyColor);
             }
             else
             {

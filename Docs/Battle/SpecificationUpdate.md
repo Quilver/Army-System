@@ -54,6 +54,23 @@ SU-128 refer to v0.9 and may have moved.
   `LineOrder_KeepsItsFront_SidewaysIsAsSlowAsMovingBack`, `FaceOrder_TurnsAtOnce_OrWheelsWhenAlreadyInLine`.
   `LineMarch_IsSlower_AndSlowerStillMovingBack` now switches the turning slowdown with the other two toggles.
 
+### SU-156 The player sets the front: drag direction, one-troop lines and a Face order (Decision + Assumptions, spec §6.2)
+- Decision: the player sets where troops face. Replaces Q-17 and the SU-129 rule that a lone troop is never given a
+  facing.
+- Assumption: a right-drag's direction sets the front of the line it orders, for one troop or several: the front is the
+  drag turned a quarter anticlockwise, so dragging left to right faces up the screen and right to left faces down it (as
+  in Total War). The nearest enemy no longer picks the front.
+- Assumption: a right-drag with one troop selected is a battle line for that troop (the whole span, clamped to
+  0.7–3.0 × L_nat), not a Move. A left-drag from the troop is still a Move (SU-129).
+- Assumption: **Ctrl + right click** is a Face order: every selected troop turns in place to face the point and holds
+  its line there (a line order at its own position and current line length). All of them face the same way, from the
+  selection's centre toward the point, so a selected chain stays straight. Ctrl + click on an enemy faces it rather than
+  attacking it. While deploying it places the troops facing that way, in line.
+- Assumption: the ghost preview draws an arrow on each planned line's front again (SU-33 removed it while troops chose
+  their own front), and an arrow on each troop for a Face.
+- Code: `OrderClassifier` (`OrderKind.Face`, `LineFacing`, `FaceToward`), `TroopOrderPlanner` (`PlanFace`),
+  `TroopPlayerOrders`, `TroopOrderOverlay.DrawFacingArrow`. Tests: `OrderClassifierTests`.
+
 ---
 
 ## 2026-11-14: Class design rules

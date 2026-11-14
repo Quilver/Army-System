@@ -46,6 +46,31 @@ public static class TroopOrderOverlay
 
     public static void DrawJoint(Vector2 gui) => DrawDot(gui, JointColor);
 
+    // The front a planned line or Face order will have (SU-156): an arrow from the troop's planned centre along its facing.
+    public static void DrawFacingArrow(Camera camera, Vector2 worldCenter, Vector2 worldFacing, Color army)
+    {
+        const float LengthPixels = 34f;
+        const float HeadPixels = 11f;
+        const float HeadAngleDeg = 30f;
+        if (worldFacing.sqrMagnitude < 1e-8f) return;
+        Vector2 from = TroopScreenSpace.WorldToGui(camera, worldCenter);
+        Vector2 direction = TroopScreenSpace.WorldToGui(camera, worldCenter + worldFacing.normalized) - from;
+        if (direction.sqrMagnitude < 1e-6f) return;
+        direction.Normalize();
+        Vector2 tip = from + direction * LengthPixels;
+        Color shadow = new(0f, 0f, 0f, 0.6f);
+        Color colour = new(army.r, army.g, army.b, 1f);
+        for (int pass = 0; pass < 2; pass++)
+        {
+            Color c = pass == 0 ? shadow : colour;
+            float thickness = pass == 0 ? 5f : 3f;
+            DrawGuiLine(from, tip, c, thickness);
+            Vector2 back = -direction * HeadPixels;
+            DrawGuiLine(tip, tip + (Vector2)(Quaternion.AngleAxis(HeadAngleDeg, Vector3.forward) * back), c, thickness);
+            DrawGuiLine(tip, tip + (Vector2)(Quaternion.AngleAxis(-HeadAngleDeg, Vector3.forward) * back), c, thickness);
+        }
+    }
+
     public static void DrawMarker(Vector2 gui, Color color) => DrawDot(gui, color);
 
     // Solid green while the link stays (inside the envelope), dashed red when it will break (outside, or Alt).

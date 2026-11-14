@@ -77,7 +77,7 @@ Javelin, so it fights with Sword skill 0 and warns (SU-140). Give it an axe, or 
 | Q-12 | Natural line length | `L_nat = Frontage × LineSpacing`; frontage is calculated from the soldier count. | SU-103, SU-117 |
 | Q-14 | Move arrival | The troop arrives Idle. | Spec §6.2, SU-101 |
 | Q-16 | Engagement hysteresis | Exit hold `EngagementHoldMargin`; S_Distance exit margin. | SU-24, SU-45 |
-| Q-17 | Line facing | The player cannot choose a front, and a lone troop gets no facing; in a chain it can be shaped by placing neighbours. | SU-129 |
+| Q-17 | Line facing | The player sets the front: a right-drag's direction sets it (one troop or several), and Ctrl + right click faces the point (on the `troop-facing-controls` branch). Replaces "the player cannot choose a front". | SU-156 (was SU-129) |
 | Q-19 | Links from a line drag | Created explicitly as pending links. | D-39 |
 | Q-22 | ChainSuppressed end | 3 s after leaving every attach radius (option 2). | SU-130 |
 | Q-23 | Alt suppression on reserves | Ends the same way as Q-22. | SU-130 |

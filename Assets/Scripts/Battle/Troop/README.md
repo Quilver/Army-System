@@ -56,9 +56,10 @@ report, sounds) follows a battle; Troop code never references the campaign.
   button is released, keeping offsets (SU-129).
 - **P** (or gamepad Start), or the speed bar (top right): pause and resume. Selection and orders still work while paused.
 - **RMB** on an enemy: pursue (Assault on contact). **RMB** on ground: move, keeping offsets; troops arrive Idle.
-- **RMB drag** (8 px): with two or more troops, a battle line: the troops split the line in order along the drag and are
-  linked into a chain; the front faces the nearest enemy, or the right-hand side of the drag. With one troop, a move
-  (a lone troop is never given a facing).
+- **RMB drag** (8 px): a battle line, for one troop or several: the troops split the line in order along the drag and are
+  linked into a chain. The drag's direction sets the front: left to right faces up the screen, right to left faces
+  down (SU-156). The ghost shows an arrow on each line's front.
+- **Ctrl + RMB click**: Face. The selection turns in place toward the point and holds its line (SU-156).
 - Troops face where they march, or where they were ordered to face, and keep that facing when they stop (SU-154). A
   troop in line wheels to turn (60°/s), and marches as slowly as moving back while more than 45° off its front (SU-155).
 - Moving one chained troop: inside the envelope (3.0 x L_nat stretch, 65 degree hinge) it stays linked; outside it the

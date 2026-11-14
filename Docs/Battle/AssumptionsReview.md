@@ -1,6 +1,6 @@
 # Assumptions review
 
-Every unconfirmed Assumption in `SpecificationUpdate.md` (SU-01 to SU-155), grouped by system so they can be confirmed in one sitting: 181 assumptions across 92 SU entries. SU-154 and SU-155 (troop facing, on the `troop-facing-controls` branch) and SU-148 to SU-153 (class design rules) were added on 2026-11-14. SU-136 to SU-140 were added on 2026-11-08; the SU-74 and SU-121 items about routed troops never leaving the map were removed (SU-138 replaced them). Rebuilt 2026-11-08 (SU-135): assumptions that later entries overtook were removed, missing ones were added, and the groups were tidied. The spec (v0.10) tags text that rests on one of these as **[A: SU-n]**.
+Every unconfirmed Assumption in `SpecificationUpdate.md` (SU-01 to SU-156), grouped by system so they can be confirmed in one sitting: 185 assumptions across 93 SU entries. SU-154 to SU-156 (troop facing controls, on the `troop-facing-controls` branch) and SU-148 to SU-153 (class design rules) were added on 2026-11-14. SU-136 to SU-140 were added on 2026-11-08; the SU-74 and SU-121 items about routed troops never leaving the map were removed (SU-138 replaced them). Rebuilt 2026-11-08 (SU-135): assumptions that later entries overtook were removed, missing ones were added, and the groups were tidied. The spec (v0.10) tags text that rests on one of these as **[A: SU-n]**.
 
 ## How to use this
 
@@ -20,7 +20,7 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 - [Formations, movement & geometry](#formations-movement--geometry) (23)
 - [Combat (melee, charges, ranged)](#combat-melee-charges-ranged) (28)
 - [Morale, retreat & rout](#morale-retreat--rout) (16)
-- [Controls, orders & battle UI](#controls-orders--battle-ui) (26)
+- [Controls, orders & battle UI](#controls-orders--battle-ui) (30)
 - [Campaign, tent, missions & deployment](#campaign-tent-missions--deployment) (45)
 - [Enemy AI](#enemy-ai) (13)
 - [Tooling & other](#tooling--other) (4)
@@ -344,6 +344,13 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 
 - [ ] full length (64 px at 1080 p, not scaled with zoom) is the initial Effective Morale; Shock fills red on the same scale, reaching the right end at the break point; the rest is morale blue, the border army colour; 6 px above the outline →
 - [ ] shown for every team's troops, during deployment too; hidden once routed, off the field or wiped out →
+
+**SU-156** The player sets the front
+
+- [ ] a right-drag's direction sets the line's front for one troop or several: dragging left to right faces up the screen, right to left faces down (Total War). The nearest enemy no longer picks it. →
+- [ ] a right-drag with one troop is a line for that troop (not a Move); a left-drag from the troop is still a Move. →
+- [ ] Ctrl + right click is Face: the selection turns in place toward the point (all the same way, from the selection's centre) and holds its line; on an enemy it faces rather than attacks; while deploying it places them facing that way. →
+- [ ] the ghost preview draws a facing arrow on each planned line, and on each troop for a Face. →
 
 ## Campaign, tent, missions & deployment
 

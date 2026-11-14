@@ -211,13 +211,13 @@ in Edit mode at a fixed frame time.
   `ChainMembers`) (SU-129).
 - `TroopPlayerOrders`: a left press on one of the player's troops selects it at once; dragging from it and releasing
   moves the selection (`TroopOrderPlanner.FinishMove`, or `FinishPlacementMove` while deploying) (SU-129).
-- `OrderClassifier`: right button: Pursue / Move / Line (a drag with one troop is a Move), and the line facing (nearest
-  enemy side, else the drag's right-hand normal).
+- `OrderClassifier`: right button: Pursue / Move / Line (a drag, one troop or several) / Face (Ctrl + click), and the
+  line facing: the drag's left-hand normal, so left to right faces up (SU-156).
 - `TroopOrderPlanner`: plans placements (shared by the ghost preview), applies chain rules (`ChainOrderRules`
   envelope; outside or Alt → unlink + ChainSuppressed; Alt on reserves → ChainSuppressed), issues orders, and creates
   pending links between adjacent troops of a multi-troop line.
-- `TroopOrderOverlay`: selection box, ghost footprints and move markers, joints, ghost tether (no help panel, SU-18;
-  no facing arrow, SU-33).
+- `TroopOrderOverlay`: selection box, ghost footprints with a facing arrow (SU-156) and move markers, joints, ghost
+  tether (no help panel, SU-18).
 
 ### 6.7 Ranged (spec §4.7)
 

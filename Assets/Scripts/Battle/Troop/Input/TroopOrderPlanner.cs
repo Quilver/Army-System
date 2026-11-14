@@ -3,11 +3,14 @@ using UnityEngine;
 
 // Turns a right-button release into orders for the selected troops (spec §6.2, §6.3):
 //   Pursue  click on an enemy troop: every selected troop pursues it (Assault applies on engagement).
-//   Move    click on ground, or a right-drag with a single troop selected: the troops keep their relative offsets and
-//           translate to the release point; they arrive Idle. A single troop is never given a facing (SU-129).
+//   Move    click on ground: the troops keep their relative offsets and translate to the release point; they arrive
+//           Idle, facing the way they marched (SU-154).
 //           A left-drag that starts on one of the player's troops is also a Move of the selection (FinishMove, SU-129).
-//   Line    drag with several troops: a battle line along the drag. The troops split the span in order along the drag,
-//           adjacent line points meet at joints, and the order creates their links explicitly (Q-19).
+//   Line    drag with one or more troops: a battle line along the drag, its front set by the drag's direction (SU-156).
+//           The troops split the span in order along the drag, adjacent line points meet at joints, and the order
+//           creates their links explicitly (Q-19).
+//   Face    Ctrl + click: every selected troop turns in place to face the point (from the selection's centre), and holds
+//           its line there (a line order at its own position, SU-156).
 // Chain rules for a troop linked to a troop that is not part of the order: inside the envelope (stretch <= 3.0 x L_nat,
 // inner angle >= 65 degrees) the link stays; outside it, or with Alt held, the link is severed when the order is issued
 // and the troop is ChainSuppressed. Alt on an unlinked troop suppresses auto-linking the same way: until it has been outside every attach radius for
@@ -46,7 +49,7 @@ public sealed class TroopOrderPlanner
 
     // --- Issuing ---
 
-    public void FinishOrder(Vector2 pressScreen, Vector2 releaseScreen, Camera camera, bool altHeld)
+    public void FinishOrder(Vector2 pressScreen, Vector2 releaseScreen, Camera camera, bool altHeld, bool faceHeld = false)
     {
         var selected = LiveSelection();
         if (selected.Count == 0) return;
@@ -55,8 +58,7 @@ public sealed class TroopOrderPlanner
         float pickRadius = TroopScreenSpace.PixelsToWorld(camera, releaseScreen, Tuning.ClickPickRadiusPixels);
         Troop enemy = _selection.TroopAtPoint(worldEnd, pickRadius, _selection.PlayerTeamId, sameTeam: false);
 
-        switch (OrderClassifier.Classify(pressScreen, releaseScreen, Tuning.OrderDragMinPixels, enemy != null,
-            selected.Count))
+        switch (OrderClassifier.Classify(pressScreen, releaseScreen, Tuning.OrderDragMinPixels, enemy != null, faceHeld))
         {
             case OrderKind.Pursue:
                 foreach (Troop troop in selected)
@@ -82,6 +84,14 @@ public sealed class TroopOrderPlanner
                     placement.Troop.OrderLine(placement.Center, placement.Facing, placement.Length);
                 }
                 LinkAdjacent(worldEnd - worldStart);
+                break;
+            case OrderKind.Face:
+                PlanFace(selected, worldEnd);
+                foreach (var placement in _placements)
+                {
+                    ApplyChainRules(placement.Troop, placement, selected, altHeld, forceUnlinkOutside: false);
+                    placement.Troop.OrderLine(placement.Center, placement.Facing, placement.Length);
+                }
                 break;
         }
     }
@@ -123,32 +133,35 @@ public sealed class TroopOrderPlanner
 
     // Deployment: the same Move and Line plans as FinishOrder, but each troop is put straight at its planned spot.
     // Attack orders do nothing while deploying.
-    public void FinishPlacement(Vector2 pressScreen, Vector2 releaseScreen, Camera camera, ITroopPlacement placement)
+    public void FinishPlacement(Vector2 pressScreen, Vector2 releaseScreen, Camera camera, ITroopPlacement placement,
+        bool faceHeld = false)
     {
         var selected = LiveSelection();
         if (selected.Count == 0 || placement == null) return;
         Vector2 worldStart = TroopScreenSpace.ScreenToWorld(camera, pressScreen);
         Vector2 worldEnd = TroopScreenSpace.ScreenToWorld(camera, releaseScreen);
-        OrderKind kind = OrderClassifier.Classify(pressScreen, releaseScreen, Tuning.OrderDragMinPixels, false, selected.Count);
+        OrderKind kind = OrderClassifier.Classify(pressScreen, releaseScreen, Tuning.OrderDragMinPixels, false, faceHeld);
         if (kind == OrderKind.Line) PlanLine(selected, worldStart, worldEnd);
+        else if (kind == OrderKind.Face) PlanFace(selected, worldEnd);
         else PlanMove(selected, worldEnd);
         BreakLinksWithin(selected);
-        // A line stands in its line; a move (one troop's right-drag included, SU-129) stands Idle, as it arrives in battle.
-        bool holdLine = kind == OrderKind.Line;
+        // A line (one troop's right-drag included, SU-156) or a Face stands in its line; a move stands Idle, as it arrives
+        // in battle.
+        bool holdLine = kind == OrderKind.Line || kind == OrderKind.Face;
         foreach (var planned in _placements)
             placement.Place(planned.Troop, planned.Center, planned.Facing, planned.Length, holdLine);
     }
 
     // --- Planning (shared with the ghost preview) ---
 
-    public OrderKind Preview(Vector2 pressScreen, Vector2 currentScreen, Camera camera, bool altHeld)
+    public OrderKind Preview(Vector2 pressScreen, Vector2 currentScreen, Camera camera, bool altHeld, bool faceHeld = false)
     {
         var selected = LiveSelection();
         Vector2 worldStart = TroopScreenSpace.ScreenToWorld(camera, pressScreen);
         Vector2 worldEnd = TroopScreenSpace.ScreenToWorld(camera, currentScreen);
-        OrderKind kind = OrderClassifier.Classify(pressScreen, currentScreen, Tuning.OrderDragMinPixels, false,
-            selected.Count);
+        OrderKind kind = OrderClassifier.Classify(pressScreen, currentScreen, Tuning.OrderDragMinPixels, false, faceHeld);
         if (kind == OrderKind.Line) PlanLine(selected, worldStart, worldEnd);
+        else if (kind == OrderKind.Face) PlanFace(selected, worldEnd);
         else PlanMove(selected, worldEnd);
 
         _tethers.Clear();
@@ -179,8 +192,8 @@ public sealed class TroopOrderPlanner
         }
     }
 
-    // Several troops split the span in order along the drag (Q-18); each length is its share, clamped to
-    // [0.7, 3.0] x L_nat. The player never orders a single troop into a line (SU-129: a single-troop drag is a Move).
+    // The troops split the span in order along the drag (Q-18); each length is its share, clamped to [0.7, 3.0] x L_nat.
+    // One troop takes the whole span (SU-156). The drag's direction sets the front (OrderClassifier.LineFacing).
     public void PlanLine(List<Troop> selected, Vector2 start, Vector2 end)
     {
         _placements.Clear();
@@ -188,7 +201,7 @@ public sealed class TroopOrderPlanner
         Vector2 drag = end - start;
         float span = drag.magnitude;
         Vector2 tangent = span > 1e-4f ? drag / span : Vector2.up;
-        Vector2 facing = OrderClassifier.LineFacing(start, end, NearestEnemyPosition((start + end) * 0.5f));
+        Vector2 facing = OrderClassifier.LineFacing(start, end);
 
         selected.Sort((a, b) =>
         {
@@ -208,6 +221,29 @@ public sealed class TroopOrderPlanner
                 Center = start + tangent * (share * (i + 0.5f)),
                 Facing = facing,
                 Length = Mathf.Clamp(share, troop.MinimumLineLength, troop.MaximumLineLength)
+            });
+        }
+    }
+
+    // Face (SU-156): each troop stays where it is and turns to face the point, all of them the same way (from the
+    // selection's centre), so a selected chain stays straight. Each keeps its current line length.
+    public void PlanFace(List<Troop> selected, Vector2 point)
+    {
+        _placements.Clear();
+        if (selected.Count == 0) return;
+        Vector2 centroid = Vector2.zero;
+        foreach (var troop in selected) centroid += (Vector2)troop.transform.position;
+        centroid /= selected.Count;
+        Vector2? toward = OrderClassifier.FaceToward(centroid, point);
+        foreach (var troop in selected)
+        {
+            Vector2 facing = toward ?? troop.Facing;
+            _placements.Add(new Placement
+            {
+                Troop = troop,
+                Center = troop.transform.position,
+                Facing = facing,
+                Length = troop.LineLength
             });
         }
     }
@@ -309,20 +345,5 @@ public sealed class TroopOrderPlanner
         var selected = _selection.Selected;
         selected.RemoveAll(troop => troop == null || troop.IsRouted);
         return selected;
-    }
-
-    Vector2? NearestEnemyPosition(Vector2 from)
-    {
-        Vector2? nearest = null;
-        float nearestDistance = float.PositiveInfinity;
-        foreach (var troop in _selection.Troops)
-        {
-            if (troop == null || troop.TeamId == _selection.PlayerTeamId || troop.IsRouted) continue;
-            float distance = Vector2.SqrMagnitude((Vector2)troop.transform.position - from);
-            if (distance >= nearestDistance) continue;
-            nearestDistance = distance;
-            nearest = troop.transform.position;
-        }
-        return nearest;
     }
 }

@@ -5,19 +5,25 @@ using UnityEngine;
 public sealed class OrderClassifierTests
 {
     [Test] public void SevenPixelsOnEnemy_IsPursue() =>
-        Assert.AreEqual(OrderKind.Pursue, OrderClassifier.Classify(Vector2.zero, new Vector2(7f, 0f), 8f, true, 1));
+        Assert.AreEqual(OrderKind.Pursue, OrderClassifier.Classify(Vector2.zero, new Vector2(7f, 0f), 8f, true));
 
     [Test] public void SevenPixelsOnGround_IsMove() =>
-        Assert.AreEqual(OrderKind.Move, OrderClassifier.Classify(Vector2.zero, new Vector2(7f, 0f), 8f, false, 1));
+        Assert.AreEqual(OrderKind.Move, OrderClassifier.Classify(Vector2.zero, new Vector2(7f, 0f), 8f, false));
 
-    [Test] public void NinePixels_SeveralTroops_IsLine() =>
-        Assert.AreEqual(OrderKind.Line, OrderClassifier.Classify(Vector2.zero, new Vector2(9f, 0f), 8f, true, 2));
-
-    // SU-16/17: a single troop is never given a facing, so its drag is a Move (even when released on an enemy).
-    [Test] public void NinePixels_SingleTroop_IsMove()
+    // SU-156: a drag is a battle line for one troop or several (it used to be a Move for one troop, SU-129), so the player
+    // can give a lone troop a front.
+    [Test] public void NinePixels_IsLine_ForOneTroopOrSeveral()
     {
-        Assert.AreEqual(OrderKind.Move, OrderClassifier.Classify(Vector2.zero, new Vector2(9f, 0f), 8f, false, 1));
-        Assert.AreEqual(OrderKind.Move, OrderClassifier.Classify(Vector2.zero, new Vector2(9f, 0f), 8f, true, 1));
+        Assert.AreEqual(OrderKind.Line, OrderClassifier.Classify(Vector2.zero, new Vector2(9f, 0f), 8f, true));
+        Assert.AreEqual(OrderKind.Line, OrderClassifier.Classify(Vector2.zero, new Vector2(9f, 0f), 8f, false));
+    }
+
+    // SU-156: Ctrl + click turns the selection in place, on the ground or on an enemy; a Ctrl drag is still a line.
+    [Test] public void CtrlClick_IsFace()
+    {
+        Assert.AreEqual(OrderKind.Face, OrderClassifier.Classify(Vector2.zero, new Vector2(7f, 0f), 8f, false, true));
+        Assert.AreEqual(OrderKind.Face, OrderClassifier.Classify(Vector2.zero, new Vector2(7f, 0f), 8f, true, true));
+        Assert.AreEqual(OrderKind.Line, OrderClassifier.Classify(Vector2.zero, new Vector2(9f, 0f), 8f, false, true));
     }
 
     [Test] public void BoxSelect_StartsAtEightPixels()
@@ -26,18 +32,26 @@ public sealed class OrderClassifierTests
         Assert.IsTrue(OrderClassifier.IsBoxSelect(Vector2.zero, new Vector2(8f, 0f), 8f));
     }
 
+    // SU-156: the drag's direction sets the front: left to right faces up, right to left faces down.
     [Test]
-    public void LineFacing_NoEnemy_IsRightHandNormal()
+    public void LineFacing_IsTheDragsLeftHandNormal()
     {
-        Vector2 facing = OrderClassifier.LineFacing(Vector2.zero, new Vector2(0f, 10f), null);
-        Assert.AreEqual(Vector2.right, facing);
+        AssertVector(Vector2.up, OrderClassifier.LineFacing(Vector2.zero, new Vector2(10f, 0f)));
+        AssertVector(Vector2.down, OrderClassifier.LineFacing(new Vector2(10f, 0f), Vector2.zero));
+        AssertVector(Vector2.left, OrderClassifier.LineFacing(Vector2.zero, new Vector2(0f, 10f)));
     }
 
     [Test]
-    public void LineFacing_TurnsToTheEnemySide()
+    public void FaceToward_IsFromTheSelectionCentre_OrNoneOnIt()
     {
-        Vector2 facing = OrderClassifier.LineFacing(Vector2.zero, new Vector2(0f, 10f), new Vector2(-20f, 5f));
-        Assert.AreEqual(Vector2.left, facing);
+        AssertVector(Vector2.right, OrderClassifier.FaceToward(Vector2.zero, new Vector2(5f, 0f)).Value);
+        Assert.IsNull(OrderClassifier.FaceToward(new Vector2(2f, 2f), new Vector2(2f, 2f)));
+    }
+
+    static void AssertVector(Vector2 expected, Vector2 actual)
+    {
+        Assert.AreEqual(expected.x, actual.x, 1e-5f);
+        Assert.AreEqual(expected.y, actual.y, 1e-5f);
     }
 }
 
