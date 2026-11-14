@@ -16,14 +16,14 @@ namespace CutsceneEditor
             var script = (DialogueScript)target;
             serializedObject.Update();
             EditorGUI.BeginChangeCheck();
-            EditorGUILayout.PropertyField(serializedObject.FindProperty("_source"), new GUIContent("Markdown File"));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("_source"), new GUIContent("Markdown File", "The note this scene is built from. Edit the note, not this asset."));
             bool sourceChanged = EditorGUI.EndChangeCheck();
             serializedObject.ApplyModifiedProperties();
-            if (sourceChanged) DialogueScriptBuilder.Rebuild(script);
+            if (sourceChanged) StoryAssets.Rebuild(script);
 
             using (new EditorGUILayout.HorizontalScope())
             {
-                if (GUILayout.Button("Rebuild from Markdown")) DialogueScriptBuilder.Rebuild(script);
+                if (GUILayout.Button("Rebuild from Markdown")) StoryAssets.Rebuild(script);
                 using (new EditorGUI.DisabledScope(script.Source == null))
                     if (GUILayout.Button("Open Markdown")) AssetDatabase.OpenAsset(script.Source);
             }

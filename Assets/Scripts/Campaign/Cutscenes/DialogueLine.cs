@@ -3,7 +3,8 @@ using UnityEngine;
 
 namespace Cutscene
 {
-    // One text box, with who is on stage while it shows. Both dialogue players (CutScene, the tent's DialogueBox) play these.
+    // One text box of a DialogueScript, with who is on stage while it shows. Both dialogue players (CutScene, the tent's
+    // DialogueBox) play these.
     // The speaker's portrait is shown at full colour; the other portrait on stage is dimmed.
     [Serializable]
     public class DialogueLine
@@ -17,7 +18,7 @@ namespace Cutscene
         public string LeftName, RightName;
         public Sprite LeftPortrait, RightPortrait;
 
-        // A line from the old one-portrait Dialogue asset: only the speaker is on stage.
+        // A single line with only its speaker on stage (the tent's built-in fallback lines).
         public static DialogueLine Single(string speaker, string text, Sprite portrait, bool right)
         {
             var line = new DialogueLine { Speaker = speaker, Text = text };

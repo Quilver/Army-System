@@ -59,8 +59,9 @@ When hotspots overlap, the front-most one gets the hover (e.g. Debts desk over M
 All panels: UGUI overlay, title, close button, tent dimmed behind. Existing views are re-hosted, not rewritten.
 
 ### 4.1 Debts (Wired; book of taped cards, SU-53)
-- Page **Take a Loan**: the mission's loan offers (`PreparationData.buyOrders` -> `SellView`). Needs enough prestige;
-  gives gold, costs prestige, adds a repayment order. Can be undone while in the tent.
+- Page **Take a Loan**: the mission's loan offers (`PreparationData.loans`: `LoanOffer` assets made from notes in the
+  story vault's `3. Loans`, SU-146). Needs enough prestige; gives the loan's gold, costs its prestige, adds a repayment
+  order for its Cost. Can be undone while in the tent.
 - Page **Repay**: open repayment orders (`CampaignData.BuyOrders` -> `BuyView`). Costs the order's gold. Can be undone
   while in the tent.
 
@@ -69,7 +70,8 @@ All panels: UGUI overlay, title, close button, tent dimmed behind. Existing view
   shows today). No selecting here; deployment lives on the Map.
 
 ### 4.3 Map (Wired; pairing SU-117; roster on CampaignCharacter, gold remaining / spent, SU-52, SU-55)
-- Page **Mission**: briefing text and image (`PreparationData.briefing`, `.image`), mission/level name, "Replay briefing".
+- Page **Mission**: the briefing scene as text (`PreparationData.briefingFlow`, SU-146) and image (`.image`),
+  mission/level name, "Replay briefing".
 - Page **Deployment**: roster list with cost; click to deploy / undeploy (today's `UnitSelectionView.Select` rules,
   gold deducted and refunded). Deployed characters show as troop cards.
 - **Mandatory characters (SU-117):** `PreparationData.mandatoryCharacters` start deployed, free and locked (Julian in
@@ -82,8 +84,8 @@ All panels: UGUI overlay, title, close button, tent dimmed behind. Existing view
 - Placeholder panel: title, flavour line, close button.
 
 ### 4.5 Court dialogue (Stub)
-- Clicking a court member plays their `DialogueFlow` for this mission in the briefing dialogue box, if one is assigned;
-  otherwise a single default line. Relationships and quests are not built.
+- Clicking a court member plays their `DialogueScript` for this mission in the briefing dialogue box, if one is
+  assigned; otherwise a built-in placeholder line (SU-146). Relationships and quests are not built.
 
 ## 5. Rules carried over unchanged
 
@@ -97,8 +99,9 @@ All panels: UGUI overlay, title, close button, tent dimmed behind. Existing view
 
 ## 6. Data Changes
 
-- `PreparationData` (per mission) gains: `DialogueFlow briefingFlow`; optional `DialogueFlow` per court member;
-  `bool questAvailable` (drives the dispatch glow). `briefing` and `image` stay for the Map's mission page.
+- `PreparationData` (per mission): `DialogueScript briefingFlow`; `List<LoanOffer> loans`; a `DialogueScript` per
+  court member; `bool questAvailable` (drives the dispatch glow); `image` for the Map's mission page. All words come from
+  story-vault notes (SU-146): the briefing text, briefing speaker, court default lines and inline loan list are gone.
 - The dialogue box is pulled out of `Cutscene.CutScene` into a reusable component. `CutScene` today freezes
   `Time.timeScale` and needs the battle `CameraControls`; the tent has neither **[Assumption]**.
 
@@ -121,10 +124,8 @@ All panels: UGUI overlay, title, close button, tent dimmed behind. Existing view
 **PB-Q1. Gold Chest click.** Does clicking the chest do anything (e.g. open Debts, or a finance summary)?
 Assumption: hover only.
 
-**PB-Q2. Loan repayment formula (existing bug).** `SellOrders.Buy()` computes `(int) percent * gold`: the rate is
-truncated to an integer before multiplying, so a 50 % loan repays 0 and a 150 % loan repays 1 x gold. Should repayment be
-`gold x rate` (rate 150 % -> repay 1.5 x) or `gold x (1 + rate)` (interest on top)? `PrestigeReward` is also never set
-by `Buy()` and the prestige refund on repaying is commented out in `BuyView`. Assumption: leave untouched until answered.
+**PB-Q2. Loan repayment formula.** Answered by SU-146: a loan note states its repayment (**Cost**) outright; the card
+shows the interest worked out from Gold and Cost. `PrestigeReward` is still never set and repaying gives no prestige back.
 
 **PB-Q3. Briefing skip and replay.** Assumption: Esc skips; "Replay briefing" on the Map's mission page.
 

@@ -48,7 +48,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8c75710181a3b7a4686f3d2f21cd9062, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  dialogue: {fileID: 11400000, guid: 1cbbe06539bf59d48a79dfa7478cd9e3, type: 2}
+  dialogue: {fileID: 0}
   dialogueText: {fileID: 9192724593923617302}
   speakerName: {fileID: 6961295042914827464}
   leftPortrait: {fileID: 6605223469602647912}

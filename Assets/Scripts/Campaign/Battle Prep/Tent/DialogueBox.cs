@@ -8,8 +8,8 @@ using UnityEngine.UI;
 namespace BattlePrep.Tent
 {
     // Fire Emblem-style dialogue box for the tent: speaker name plate, text, a portrait on the left and right
-    // (spec TentHub.md §1 Briefing, §4.5 Court). Plays a Cutscene.DialogueFlow (including a DialogueScript written in
-    // markdown) or a single line. The talking portrait is shown at full colour, the other one dimmed.
+    // (spec TentHub.md §1 Briefing, §4.5 Court). Plays a Cutscene.DialogueScript (a scene written as a markdown note) or
+    // a single built-in line. The talking portrait is shown at full colour, the other one dimmed.
     // Click / Space / Enter / gamepad South: finish the current line, then advance. Esc / right click / East: skip all.
     // Unlike Cutscene.CutScene it does not touch Time.timeScale or the battle camera.
     public class DialogueBox : MonoBehaviour
@@ -40,11 +40,11 @@ namespace BattlePrep.Tent
             if (!IsPlaying) _root.SetActive(false);
         }
 
-        public void Play(DialogueFlow flow, Action onComplete)
+        public void Play(DialogueScript script, Action onComplete)
         {
             _lines.Clear();
-            if (flow != null)
-                foreach (var line in flow.GetLines())
+            if (script != null)
+                foreach (var line in script.GetLines())
                     if (line != null) _lines.Add(line);
             Begin(onComplete);
         }

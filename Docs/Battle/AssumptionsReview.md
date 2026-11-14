@@ -1,6 +1,6 @@
 # Assumptions review
 
-Every unconfirmed Assumption in `SpecificationUpdate.md` (SU-01 to SU-145), grouped by system so they can be confirmed in one sitting: 144 assumptions across 80 SU entries. SU-136 to SU-140 were added on 2026-11-08; the SU-74 and SU-121 items about routed troops never leaving the map were removed (SU-138 replaced them). Rebuilt 2026-11-08 (SU-135): assumptions that later entries overtook were removed, missing ones were added, and the groups were tidied. The spec (v0.10) tags text that rests on one of these as **[A: SU-n]**.
+Every unconfirmed Assumption in `SpecificationUpdate.md` (SU-01 to SU-147), grouped by system so they can be confirmed in one sitting: 151 assumptions across 82 SU entries. SU-136 to SU-140 were added on 2026-11-08; the SU-74 and SU-121 items about routed troops never leaving the map were removed (SU-138 replaced them). Rebuilt 2026-11-08 (SU-135): assumptions that later entries overtook were removed, missing ones were added, and the groups were tidied. The spec (v0.10) tags text that rests on one of these as **[A: SU-n]**.
 
 ## How to use this
 
@@ -21,7 +21,7 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 - [Combat (melee, charges, ranged)](#combat-melee-charges-ranged) (17)
 - [Morale, retreat & rout](#morale-retreat--rout) (12)
 - [Controls, orders & battle UI](#controls-orders--battle-ui) (23)
-- [Campaign, tent, missions & deployment](#campaign-tent-missions--deployment) (38)
+- [Campaign, tent, missions & deployment](#campaign-tent-missions--deployment) (45)
 - [Enemy AI](#enemy-ai) (13)
 - [Tooling & other](#tooling--other) (4)
 
@@ -381,6 +381,19 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 - [ ] the Start Battle button is 180 x 48 (was 280 x 72) on the 960 x 540 reference, at the bottom centre 16 units up, between the troop cards in the bottom corners; its label shrinks to fit (set at runtime by DeploymentPanel). →
 - [ ] the deployment hint no longer wraps; it shrinks down to 14 pt instead. →
 - [ ] when deployment starts the camera centres on the player's deployment zone, 0.15 x its orthographic size below the zone's centre, kept inside the camera bounds. →
+
+**SU-146** Every dialogue is a Dialogue Script made from a story note
+
+- [ ] The Map's Mission page shows the briefing scene as text, one paragraph per text box →
+- [ ] A court member with no scene speaks the built-in placeholder line for their seat →
+- [ ] The old flows became notes under their old asset IDs (M1 Battle Tutorial, M2 Battle Cutscene, samples); M02's briefing text is the M2 Briefing note; Level.asset's text is kept as a plain note →
+- [ ] A note moved outside Unity is found again by its file name and its asset moves next to it →
+
+**SU-147** Loan offers are notes in the story vault
+
+- [ ] A note is a loan when it has a Gold property; the title is the file name unless a Title property is set →
+- [ ] Old loans were converted with Cost = Gold × (1 + interest rate): Seed Loan, hard repays 105, Promissory note 121 →
+- [ ] M01 offers the designer's Loan, easy note instead of the old Seed Loan, easy →
 
 ## Enemy AI
 

@@ -45,7 +45,8 @@ namespace BattlePrep.Tent
             // "Mission 2: <title>" from the mission sheet (SU-119), else the number alone.
             var mission = Campaign.Missions.MissionCatalog.ByNumber(Campaign.CampaignDataManager.Data.CurrentLevel);
             _missionTitle.text = mission != null ? mission.DisplayName : $"Mission {Campaign.CampaignDataManager.Data.CurrentLevel}";
-            _briefingText.text = data != null ? data.briefing : "";
+            // The briefing scene as text, so it can be read again after it has played.
+            _briefingText.text = data != null && data.briefingFlow != null ? data.briefingFlow.AsText() : "";
             _missionImage.sprite = data != null ? data.image : null;
             _missionImage.enabled = _missionImage.sprite != null;
 

@@ -10,7 +10,7 @@ Assets/Missions/
     M03 Mission.asset          the mission sheet (MissionDefinition)
     PreBattle/
       M03 Prep.asset           PreparationData: briefing, loans, court, deployment, new characters
-      ...                      dialogue flows for the briefing and the court
+                               (its words are notes in Assets/Leveraged Wars Story/2. Missions and 3. Loans)
     Battle/
       M03 Battle.unity         the battle scene
       M03 Battle/              its baked navmesh (NavMeshPlus writes here)
@@ -28,7 +28,7 @@ data, no scene, scene not in Build Settings, more mandatory characters than the 
 
 | Tab | What you set | Used by |
 |---|---|---|
-| **Pre-battle** | Briefing text or briefing flow, image, loans (*Buy Orders*), court (0 Tactician, 1 Captain, 2 Dispatch-bearer: name, portrait, dialogue or default line), quest cue, **Mandatory Characters**, **Max Deployed**, **New Characters**. Shop: not built yet. | The tent (`TentHubController`) |
+| **Pre-battle** | Briefing (a Dialogue Script), image, loans (Loan Offers), court (0 Tactician, 1 Captain, 2 Dispatch-bearer: name, portrait, Dialogue Script), quest cue, **Mandatory Characters**, **Max Deployed**, **New Characters**. Shop: not built yet. | The tent (`TentHubController`) |
 | **Tween** | Global and character achievements for this mission only; **Next Mission**. | `AchievementController`, the post-battle Continue |
 | **Battle** | The battle scene; open it; sync Build Settings. | The tent's March Out |
 

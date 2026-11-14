@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5cde61dcf2764f9b91bfd5924fd25c9b, type: 3}
+  m_Name: "Loan, easy"
+  m_EditorClassIdentifier: 
+  _source: {fileID: 4900000, guid: dd79db9808b89fa458d840f21e108896, type: 3}
+  _sourcePath: "Assets/Leveraged Wars Story/3. Loans/Loan, easy.md"
+  _warnings: []
+  _title: "Loan, easy"
+  _gold: 500
+  _cost: 2000
+  _months: 10
+  _prestigeCost: 12
+  _details: "His majesty of Moricia has great hopes in you.\n<i>Easy money always comes with a hook</i>"

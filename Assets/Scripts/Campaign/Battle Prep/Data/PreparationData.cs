@@ -4,22 +4,22 @@ using System.Collections.Generic;
 using UnityEngine;
 namespace BattlePrep
 {
+    // A mission's pre-battle sheet. Its words come from story-vault notes: the briefing and court talk are Dialogue
+    // Scripts, the loans are Loan Offers, each built from a markdown note (Assets/Leveraged Wars Story).
     [CreateAssetMenu(menuName = "Preparations/data")]
     public class PreparationData : ScriptableObject
     {
-        [SerializeField, TextArea(5, 15)]
-        public string briefing;
-        [SerializeField]
+        [Tooltip("Picture on the war map.")]
         public Sprite image;
-        [SerializeField]
-        public List<SellOrders> buyOrders;
 
         // --- Tent hub (Docs/PreBattle/TentHub.md §6) ---
         [Header("Tent hub")]
-        [Tooltip("Briefing played as dialogue when the tent opens. Empty: the briefing text above is shown as one line.")]
-        public Cutscene.DialogueFlow briefingFlow;
-        [Tooltip("Speaker for the briefing text when there is no briefing flow.")]
-        public string briefingSpeaker = "Briefing";
+        [Tooltip("Briefing played as dialogue when the tent opens, and shown as text on the war map. A Dialogue Script " +
+                 "made from a story note. Empty: no briefing.")]
+        public Cutscene.DialogueScript briefingFlow;
+        [Tooltip("Loan offers pinned up in War Debts, in this order. Loan Offers are made from notes in the story " +
+                 "vault's 3. Loans folder.")]
+        public List<LoanOffer> loans = new();
         [Tooltip("The three court members: 0 Tactician (at the war table), 1 Captain (by the pole), 2 Dispatch-bearer (on the stool).")]
         public CourtMember[] court = new CourtMember[3];
         [Tooltip("Shows the glowing sealed dispatch on the dispatch-bearer.")]
@@ -53,9 +53,8 @@ namespace BattlePrep
     {
         public string name;
         public Sprite portrait;
-        [Tooltip("Played when the player talks to this member. Empty: the default line is used.")]
-        public Cutscene.DialogueFlow dialogue;
-        [TextArea(1, 4)]
-        public string defaultLine;
+        [Tooltip("Played when the player talks to this member: a Dialogue Script made from a story note. Empty: a " +
+                 "built-in placeholder line.")]
+        public Cutscene.DialogueScript dialogue;
     }
 }

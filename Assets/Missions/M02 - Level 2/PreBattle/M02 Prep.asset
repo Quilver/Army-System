@@ -12,37 +12,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cdbcd89adde538c4083e157c445381c9, type: 3}
   m_Name: M02 Prep
   m_EditorClassIdentifier: 
-  briefing: 'AMBUSH!!
-
-    As you travel along the Danube greet a troop of merry
-    men. A man named Robin comes up to you and offers his services to you as the
-    one true king.
-
-    However, they weren''t the only man '
   image: {fileID: 21300000, guid: d2646b6dfa960104c801d7e3186a0fe8, type: 3}
-  buyOrders:
-  - orderInfo: '''Promisory note'''
-    PrestigeRequired: 7
-    interestRate: 10
-    gold: 110
-    timeLeft: 3
-    orderDetails: After defeating the bandits you are able to offer promisory notes
-      for capital
-  briefingFlow: {fileID: 0}
-  briefingSpeaker: Briefing
+  briefingFlow: {fileID: 11400000, guid: 1993b2a27e874c8891ccbc800f11f218, type: 2}
+  loans:
+  - {fileID: 11400000, guid: 7c07f7b661d04b1ea19ff722ab1a5656, type: 2}
   court:
   - name: 
     portrait: {fileID: 0}
     dialogue: {fileID: 0}
-    defaultLine: 
   - name: 
     portrait: {fileID: 0}
     dialogue: {fileID: 0}
-    defaultLine: 
   - name: 
     portrait: {fileID: 0}
     dialogue: {fileID: 0}
-    defaultLine: 
   questAvailable: 0
   mandatoryCharacters:
   - {fileID: 11400000, guid: fc6c4d66d563885409ecd9f40468f856, type: 2}

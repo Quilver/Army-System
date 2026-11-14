@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 09d9dd0205bab0640872e2256248d999, type: 3}
+  m_Name: "M2 Battle Cutscene"
+  m_EditorClassIdentifier: 
+  _source: {fileID: 4900000, guid: 8c4aea8c1db54f478c9ebe75da0a12a2, type: 3}
+  _sourcePath: "Assets/Leveraged Wars Story/2. Missions/M2-Reclaim the Village/M2 Battle Cutscene.md"
+  _warnings: []
+  _lines: []

@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5cde61dcf2764f9b91bfd5924fd25c9b, type: 3}
+  m_Name: "Promissory note"
+  m_EditorClassIdentifier: 
+  _source: {fileID: 4900000, guid: 73889e3f1b7b4652b5750533d9435563, type: 3}
+  _sourcePath: "Assets/Leveraged Wars Story/3. Loans/Promissory note.md"
+  _warnings: []
+  _title: "Promissory note"
+  _gold: 110
+  _cost: 121
+  _months: 3
+  _prestigeCost: 7
+  _details: "After defeating the bandits you are able to offer promissory notes for capital"

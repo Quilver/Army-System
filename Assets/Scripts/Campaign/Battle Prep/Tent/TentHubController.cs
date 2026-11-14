@@ -209,7 +209,6 @@ namespace BattlePrep.Tent
             Current = State.Briefing;
             SetHubInput(false);
             if (Data != null && Data.briefingFlow != null) _dialogue.Play(Data.briefingFlow, EnterHub);
-            else if (Data != null) _dialogue.PlayLine(Data.briefingSpeaker, Data.briefing, null, false, EnterHub);
             else EnterHub();
         }
 
@@ -292,8 +291,8 @@ namespace BattlePrep.Tent
             if (member != null && member.dialogue != null) _dialogue.Play(member.dialogue, EnterHub);
             else
             {
-                string line = member != null && !string.IsNullOrEmpty(member.defaultLine) ? member.defaultLine
-                    : index >= 0 && index < DefaultCourtLines.Length ? DefaultCourtLines[index] : "...";
+                // No scene for this member on this mission: a built-in placeholder line.
+                string line = index >= 0 && index < DefaultCourtLines.Length ? DefaultCourtLines[index] : "...";
                 _dialogue.PlayLine(name, line, member?.portrait, index == 2, EnterHub);
             }
         }

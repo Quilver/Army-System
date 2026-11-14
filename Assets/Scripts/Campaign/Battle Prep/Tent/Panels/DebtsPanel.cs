@@ -7,7 +7,7 @@ namespace BattlePrep.Tent
 {
     // War Debts as a book (spec TentHub.md §4.1, SU-53): loan offers pinned to the left page, debts owed pinned to the
     // right page.
-    //  - Loan offers: this mission's PreparationData.buyOrders.
+    //  - Loan offers: this mission's PreparationData.loans (LoanOffers made from story-vault notes).
     //  - Debts owed: repayment orders open when the tent opened (CampaignData.BuyOrders). As in the old Buy tab, loans
     //    taken in this tent are not listed for repayment until the next mission.
     public class DebtsPanel : TentPanel
@@ -25,14 +25,15 @@ namespace BattlePrep.Tent
             _loanTemplate.gameObject.SetActive(false);
             _repaymentTemplate.gameObject.SetActive(false);
 
-            var offers = TentHubController.Data != null ? TentHubController.Data.buyOrders : null;
+            var offers = TentHubController.Data != null ? TentHubController.Data.loans : null;
             if (offers != null)
-                for (int i = 0; i < offers.Count; i++)
+                foreach (var offer in offers)
                 {
+                    if (offer == null) continue;
                     var card = Instantiate(_loanTemplate, _loanList);
                     card.gameObject.SetActive(true);
-                    card.transform.localRotation = Quaternion.Euler(0, 0, Tilt(i));
-                    card.Set(offers[i]);
+                    card.transform.localRotation = Quaternion.Euler(0, 0, Tilt(_loans.Count));
+                    card.Set(offer);
                     _loans.Add(card);
                 }
             _loanEmpty.gameObject.SetActive(_loans.Count == 0);

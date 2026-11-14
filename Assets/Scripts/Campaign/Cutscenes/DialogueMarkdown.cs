@@ -184,7 +184,7 @@ namespace Cutscene
         }
 
         // YAML properties at the very top ("---" lines around "key: value" pairs). Returns the first line after them.
-        static int ReadFrontmatter(string[] lines, Dictionary<string, string> properties)
+        public static int ReadFrontmatter(string[] lines, Dictionary<string, string> properties)
         {
             if (lines.Length == 0 || lines[0].Trim() != "---") return 0;
             for (int i = 1; i < lines.Length; i++)
@@ -325,7 +325,7 @@ namespace Cutscene
             return WpmRx.Replace(line, "");
         }
 
-        static string StripComments(string line, string open, string close, ref bool inComment)
+        public static string StripComments(string line, string open, string close, ref bool inComment)
         {
             if (!inComment && line.IndexOf(open, StringComparison.Ordinal) < 0) return line;
             var sb = new StringBuilder();

@@ -7,12 +7,12 @@ using UnityEngine.UI;
 
 namespace Cutscene
 {
-    // Plays a DialogueFlow (or a DialogueScript written in markdown) over a paused battle.
+    // Plays a DialogueScript (a scene written as a markdown note) over a paused battle.
     // Any key finishes typing the current line, then advances.
     public class CutScene : MonoBehaviour
     {
-        [SerializeField]
-        DialogueFlow dialogue;
+        [SerializeField, Tooltip("The scene to play: a Dialogue Script made from a story note.")]
+        DialogueScript dialogue;
         [SerializeField]
         TextMeshProUGUI dialogueText, speakerName;
         [SerializeField]

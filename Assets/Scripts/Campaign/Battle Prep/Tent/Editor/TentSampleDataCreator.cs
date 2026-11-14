@@ -1,4 +1,9 @@
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+using Cutscene;
+using CutsceneEditor;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -6,8 +11,9 @@ using UnityEngine;
 namespace BattlePrep.Tent.EditorTools
 {
     // Creates the tent's sample data (mock campaign + mission) in Tent/Sample and assigns it to the Tent Hub:
-    //  - briefing: a 5-line dialogue flow; court members with names, portraits and lines; the quest cue on;
-    //  - loans: 3 loan offers, and 2 open repayments in the campaign;
+    //  - briefing and court talk: markdown notes (Sample Briefing.md, ...) and the Dialogue Scripts built from them;
+    //    court members with names and portraits; the quest cue on;
+    //  - loans: 3 loan notes in Sample/Loans and the Loan Offers built from them, and 2 open repayments in the campaign;
     //  - roster: every CampaignCharacter in Characters/Campaign (8 today, so the 5-troop deploy cap can be tested),
     //    with mock level, XP and cost to field.
     // Used only when Battle Preparation is played without a CampaignDataManager. Running it again recreates the assets.
@@ -16,8 +22,7 @@ namespace BattlePrep.Tent.EditorTools
         public const string Folder = "Assets/Campaign/UI/Battle prep menus/Tent/Sample";
         public const string SamplePath = Folder + "/Tent Sample Data.asset";
         const string MissionPath = Folder + "/Sample Mission.asset";
-        const string BriefingPath = Folder + "/Sample Briefing.asset";
-        const string TacticianPath = Folder + "/Sample Tactician Talk.asset";
+        const string LoanFolder = Folder + "/Loans";
         const string CharacterFolder = "Assets/Resources/Troop and Character Profiles/Characters/Campaign";
         const string MissionImagePath = "Assets/Campaign/UI/Battle prep menus/00009-869237218.png";
 
@@ -26,8 +31,14 @@ namespace BattlePrep.Tent.EditorTools
         {
             if (!AssetDatabase.IsValidFolder(Folder))
                 AssetDatabase.CreateFolder("Assets/Campaign/UI/Battle prep menus/Tent", "Sample");
-            foreach (var path in new[] { SamplePath, MissionPath, BriefingPath, TacticianPath })
+            foreach (var path in new[] { SamplePath, MissionPath })
                 AssetDatabase.DeleteAsset(path);
+            AssetDatabase.DeleteAsset(LoanFolder);
+            foreach (var name in new[] { "Sample Briefing", "Sample Tactician Talk", "Sample Captain Talk", "Sample Dispatch Talk" })
+            {
+                AssetDatabase.DeleteAsset($"{Folder}/{name}.asset");
+                AssetDatabase.DeleteAsset($"{Folder}/{name}.md");
+            }
 
             var characters = new List<CampaignCharacter>();
             foreach (var guid in AssetDatabase.FindAssets("t:CampaignCharacter", new[] { CharacterFolder }))
@@ -56,42 +67,45 @@ namespace BattlePrep.Tent.EditorTools
             string lyraName = NameOf("Lyra", "Lyra");
             string robinName = NameOf("Robin", "Robin");
 
-            // --- Briefing (mock) ---
-            var briefing = Flow(BriefingPath, new[]
+            // --- Briefing and court talk (mock), written as notes like the story vault's ---
+            var briefing = Scene("Sample Briefing", new[]
             {
-                Line(jagenName, jagen, false, "My prince, the scouts are back. A bandit warband has dug in at the river ford, right across the merchant road."),
-                Line(julianName, julian, true, "The road that carries our grain, and our creditors' patience. How many?"),
-                Line(jagenName, jagen, false, "Three bands of foot, a few archers in the reeds and riders on the far bank. Break their line and the rest will run."),
-                Line(lyraName, lyra, false, "Mind the coffers, Highness. Borrow if you must, but every crown owed is prestige spent."),
-                Line(julianName, julian, true, "Then we strike quickly. Ready the war table: no more than five companies, and we march at dawn."),
+                (jagenName, jagen, "My prince, the scouts are back. A bandit warband has dug in at the river ford, right across the merchant road."),
+                (julianName, julian, "The road that carries our grain, and our creditors' patience. How many?"),
+                (jagenName, jagen, "Three bands of foot, a few archers in the reeds and riders on the far bank. Break their line and the rest will run."),
+                (lyraName, lyra, "Mind the coffers, Highness. Borrow if you must, but every crown owed is prestige spent."),
+                (julianName, julian, "Then we strike quickly. Ready the war table: no more than five companies, and we march at dawn."),
             });
-            var tactician = Flow(TacticianPath, new[]
+            var tactician = Scene("Sample Tactician Talk", new[]
             {
-                Line(lyraName, lyra, false, "The ford is narrow. Pin them on the bank and their riders cannot help."),
-                Line(lyraName, lyra, false, "Archers on our left flank would cover the crossing nicely."),
+                (lyraName, lyra, "The ford is narrow. Pin them on the bank and their riders cannot help."),
+                (lyraName, lyra, "Archers on our left flank would cover the crossing nicely."),
+            });
+            var captain = Scene("Sample Captain Talk", new[]
+            {
+                (jagenName, jagen, "The men are fed and the horses shod. Give the word and we march."),
+            });
+            var dispatch = Scene("Sample Dispatch Talk", new[]
+            {
+                (robinName, robin, "A rider brought this sealed dispatch at dawn. It bears the Santo bank's seal."),
             });
 
             // --- Mission (mock) ---
             var mission = ScriptableObject.CreateInstance<PreparationData>();
-            mission.briefing = "Sample mission: a bandit warband holds the river ford on the merchant road. Break their line " +
-                               "before their riders cross. Deploy between 2 and 5 troops.";
             mission.image = AssetDatabase.LoadAssetAtPath<Sprite>(MissionImagePath);
             mission.briefingFlow = briefing;
-            mission.briefingSpeaker = jagenName;
             mission.questAvailable = true;
             mission.court = new[]
             {
                 new CourtMember { name = lyraName, portrait = lyra, dialogue = tactician },
-                new CourtMember { name = jagenName, portrait = jagen,
-                    defaultLine = "The men are fed and the horses shod. Give the word and we march." },
-                new CourtMember { name = robinName, portrait = robin,
-                    defaultLine = "A rider brought this sealed dispatch at dawn. It bears the Santo bank's seal." },
+                new CourtMember { name = jagenName, portrait = jagen, dialogue = captain },
+                new CourtMember { name = robinName, portrait = robin, dialogue = dispatch },
             };
-            mission.buyOrders = new List<SellOrders>
+            mission.loans = new List<LoanOffer>
             {
-                Loan("Santo family loan", 5, 120, 150, 2, "A quick loan from the Santo bank. Small, fast, repaid within two months."),
-                Loan("Merchant guild bond", 10, 150, 300, 4, "The guild will fund the campaign if the road reopens. Steep interest."),
-                Loan("Crown war levy", 25, 110, 500, 6, "The crown lends to commanders of standing. Needs a lot of prestige."),
+                Loan("Santo family loan", 5, 150, 330, 2, "A quick loan from the Santo bank. Small, fast, repaid within two months."),
+                Loan("Merchant guild bond", 10, 300, 750, 4, "The guild will fund the campaign if the road reopens. *Steep interest.*"),
+                Loan("Crown war levy", 25, 500, 1050, 6, "The crown lends to commanders of standing. Needs a lot of prestige."),
             };
             AssetDatabase.CreateAsset(mission, MissionPath);
 
@@ -130,7 +144,7 @@ namespace BattlePrep.Tent.EditorTools
             AssignToOpenTent(sample);
             Selection.activeObject = sample;
             Debug.Log($"Tent sample: created {SamplePath} with {campaign.Roster.Count} roster characters, " +
-                      $"{mission.buyOrders.Count} loan offers and {campaign.BuyOrders.Count} open repayments.");
+                      $"{mission.loans.Count} loan offers and {campaign.BuyOrders.Count} open repayments.");
         }
 
         static void AssignToOpenTent(TentSampleData sample)
@@ -146,38 +160,40 @@ namespace BattlePrep.Tent.EditorTools
             }
         }
 
-        static Cutscene.Dialogue Line(string speaker, Sprite portrait, bool right, string text)
+        // Writes a dialogue note (one text box per line) and builds its Dialogue Script.
+        static DialogueScript Scene(string name, (string speaker, Sprite portrait, string text)[] lines)
         {
-            var d = ScriptableObject.CreateInstance<Cutscene.Dialogue>();
-            d.CharacterName = speaker;
-            d.Portrait = portrait;
-            d.leftOrRight = right;
-            d.dialogue = text;
-            return d;
+            var md = new StringBuilder();
+            md.Append("---\ndialogue: true\n---\n");
+            md.Append("%% Made by Leveraged Wars > Pre-Battle > Create Tent Sample Data; running it again rewrites this note. %%\n");
+            foreach (var (speaker, portrait, text) in lines)
+                md.Append('\n').Append(Heading(speaker, portrait)).Append('\n').Append(text).Append('\n');
+            return (DialogueScript)StoryAssets.CreateFor(WriteNote($"{Folder}/{name}.md", md.ToString()), typeof(DialogueScript));
         }
 
-        // A DialogueFlow asset with its lines stored inside it.
-        static Cutscene.DialogueFlow Flow(string path, Cutscene.Dialogue[] lines)
+        // "# ![Name](<Assets/.../Portrait.png#Sprite>)": a portrait outside the vault is linked by its project path.
+        static string Heading(string speaker, Sprite portrait)
         {
-            var flow = ScriptableObject.CreateInstance<Cutscene.DialogueFlow>();
-            AssetDatabase.CreateAsset(flow, path);
-            var so = new SerializedObject(flow);
-            var list = so.FindProperty("dialogue");
-            list.arraySize = lines.Length;
-            for (int i = 0; i < lines.Length; i++)
-            {
-                lines[i].name = $"{i + 1:00} {lines[i].CharacterName}";
-                AssetDatabase.AddObjectToAsset(lines[i], flow);
-                list.GetArrayElementAtIndex(i).objectReferenceValue = lines[i];
-            }
-            so.ApplyModifiedPropertiesWithoutUndo();
-            return flow;
+            if (portrait == null) return "# " + speaker;
+            string path = AssetDatabase.GetAssetPath(portrait);
+            bool sheet = AssetDatabase.LoadAllAssetsAtPath(path).OfType<Sprite>().Count() > 1;
+            return $"# ![{speaker}](<{path}{(sheet ? "#" + portrait.name : "")}>)";
         }
 
-        static SellOrders Loan(string info, int prestige, int interest, int gold, int months, string details) => new()
+        // Writes a loan note (named after the loan) and builds its Loan Offer.
+        static LoanOffer Loan(string title, int prestigeCost, int gold, int cost, int months, string details)
         {
-            orderInfo = info, PrestigeRequired = prestige, interestRate = interest, gold = gold, timeLeft = months, orderDetails = details,
-        };
+            if (!AssetDatabase.IsValidFolder(LoanFolder)) AssetDatabase.CreateFolder(Folder, "Loans");
+            string md = $"---\nGold: {gold}\nCost: {cost}\nTime left: {months}\nPrestige Cost: {prestigeCost}\n---\n{details}\n";
+            return (LoanOffer)StoryAssets.CreateFor(WriteNote($"{LoanFolder}/{title}.md", md), typeof(LoanOffer));
+        }
+
+        static string WriteNote(string path, string text)
+        {
+            File.WriteAllText(path, text);
+            AssetDatabase.ImportAsset(path);
+            return path;
+        }
 
         static BuyOrders Repayment(string info, int cost, int prestige, int months, string details) => new()
         {

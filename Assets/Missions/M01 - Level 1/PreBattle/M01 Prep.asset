@@ -12,49 +12,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cdbcd89adde538c4083e157c445381c9, type: 3}
   m_Name: M01 Prep
   m_EditorClassIdentifier: 
-  briefing: 'When the vile warlord Hartkan seized power, young Prince Julian was
-    forced to flee for his life at the tender age of four. Accompanied by his loyal
-    knight, they escaped Candera and sought refuge in the free city of Majula.
-
-    Having
-    lost his family, Julian was groomed to reclaim the throne. He learned the ways
-    of the sword, the art of war, politics, manners, and charm. Most importantly,
-    he delved into the world of banking, recognizing the power that debt could wield
-    in achieving seemingly impossible goals...
-
-    With Hartkan''s forces away from
-    Majula, Julian sees a prime opportunity to reclaim his homeland. Gathering his
-    exiled supporters, all he needs is a seed loan to initiate the liberation of
-    Majula.'
   image: {fileID: 21300000, guid: 35e95846b77050d4bb57d56cd07bb402, type: 3}
-  buyOrders:
-  - orderInfo: Seed Loan, easy
-    PrestigeRequired: 12
-    interestRate: 100
-    gold: 500
-    timeLeft: 7
-    orderDetails: So much money comes with a price
-  - orderInfo: Seed Loan, hard
-    PrestigeRequired: 5
-    interestRate: 50
-    gold: 70
-    timeLeft: 2
-    orderDetails: Can you make do with so little.
-  briefingFlow: {fileID: 0}
-  briefingSpeaker: Briefing
+  briefingFlow: {fileID: 11400000, guid: a4e712209ad83c94eb75a30a89340cae, type: 2}
+  loans:
+  - {fileID: 11400000, guid: c1dafc8f5ae74d5a971d2a0948e68e64, type: 2}
+  - {fileID: 11400000, guid: 147f11edc1504f18abb15057257712aa, type: 2}
   court:
   - name: 
-    portrait: {fileID: 0}
-    dialogue: {fileID: 0}
-    defaultLine: 
+    portrait: {fileID: -3154334995067897491, guid: 08ed030703cd4f04ca27434672621d8b,
+      type: 3}
+    dialogue: {fileID: 11400000, guid: d33e5f8a6f7975646b7cc1fb92209c60, type: 2}
   - name: 
     portrait: {fileID: 0}
     dialogue: {fileID: 0}
-    defaultLine: 
   - name: 
     portrait: {fileID: 0}
     dialogue: {fileID: 0}
-    defaultLine: 
   questAvailable: 0
   mandatoryCharacters:
   - {fileID: 11400000, guid: fc6c4d66d563885409ecd9f40468f856, type: 2}
+  maxDeployed: 5
+  newCharacters: []

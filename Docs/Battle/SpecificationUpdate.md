@@ -11,6 +11,36 @@ SU-128 refer to v0.9 and may have moved.
 
 ---
 
+## 2026-11-14: Dialogue and loans only from story notes
+
+### SU-146 Every dialogue is a Dialogue Script made from a story note (Decision + Assumptions, campaign cutscenes, TentHub §4.3, §4.5, §6)
+- Decision: the old dialogue types are removed (`Cutscene.Dialogue`, `Cutscene.DialogueFlow`). Every dialogue slot (mission
+  briefing, court members, the battle `CutScene`) takes a `DialogueScript`, built from a markdown note. `PreparationData`
+  loses its briefing text, briefing speaker and the court members' default lines.
+- Assumption: the Map's Mission page shows the briefing scene as text, one paragraph per text box ("Speaker: text").
+- Assumption: a court member with no scene speaks the built-in placeholder line for their seat.
+- Assumption: the existing flows became notes under their old asset IDs, so the scenes keep them: Tutorial (M01, M03
+  battles) is `M1 Battle Tutorial`, Level 2 cutscene (M02 battle) is `M2 Battle Cutscene`, the tent samples are notes
+  in `Tent/Sample`. M02's briefing text became the `M2 Briefing` note (narration by "Briefing"). The unused `Level.asset`
+  briefing text is kept as the plain note `Earlier backstory draft`. The test flow and its speakers were deleted.
+- Assumption: a note moved outside Unity (Obsidian moves the .md without its .meta) is found again by its file name and
+  its asset moves next to it, keeping every reference; a note moved in Unity takes its asset with it.
+- Code: `MarkdownAsset` (base of `DialogueScript` and `LoanOffer`), `StoryAssets` (builds, relinks; menu
+  **Leveraged Wars > Story**), `DialogueScriptBuilder`, `TentSampleDataCreator` (writes its samples as notes).
+
+### SU-147 Loan offers are notes in the story vault (Decision + Assumptions, TentHub §4.1, answers PB-Q2)
+- Decision: each loan offer is a markdown note (properties Gold, Cost, Time left, Prestige Cost; the text below is the
+  card text) built into a `LoanOffer`; missions list them in `PreparationData.loans`. Taking one gives Gold and spends
+  Prestige Cost; the repayment owed is Cost, due in Time left months. `SellOrders` is removed.
+- Assumption: a note is a loan when it has a Gold property; the card's title is the note's file name unless it has a
+  Title property. The card shows the interest worked out from Gold and Cost.
+- Assumption: the old inline loans became notes with Cost = Gold × (1 + interest rate), since the old formula repaid
+  wrong amounts: Seed Loan, hard (70 → 105), Promissory note (110 → 121), and the three tent samples.
+- Assumption: M01 offers the designer's `Loan, easy` note in place of the old Seed Loan, easy (both 500 gold and 12
+  prestige; the note repays 2000 in 10 months).
+- Code: `LoanMarkdown`, `LoanOffer`, `LoanOfferBuilder`, `LoanCard`, `DebtsPanel`; tests `LoanMarkdownTests`. Writer's
+  guides: the story vault's `0. How to use` (Start here, How to write dialogue, How to write loans, Using notes in Unity).
+
 ## 2026-11-10: Story vault for dialogue
 
 ### SU-145 Obsidian story vault inside the project drives dialogue (Decision + Assumptions, campaign cutscenes)
