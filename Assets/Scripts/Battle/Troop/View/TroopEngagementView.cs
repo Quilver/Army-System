@@ -9,9 +9,9 @@ public enum EngagementViewMode
 }
 
 // For every pair of engaged troops, a red heat map across the gap between their lines (EngagementHeatStrip): a smooth
-// gradient, most intense in the middle of the line gap and fading to nothing at each troop's line and toward the ends
-// of the engagement. It covers only the stretch of front where the two troops are within A_Distance of each other
-// (SU-96). The number of soldiers fighting does not change it. Built each frame as one vertex-coloured
+// gradient over the whole gap between the two footprints, most intense in its middle, fading to nothing at each troop's
+// line and toward the ends of the engagement. It covers the full width of both fronts, but only where the two troops
+// are within A_Distance of each other (SU-96). The number of soldiers fighting does not change it. Built each frame as one vertex-coloured
 // mesh (Resources/Shaders/TroopOverlayColor.shader) on the Terrain sorting layer, above the range mask and below the
 // soldiers. Owned and updated by TroopPlayerOrders.
 public sealed class TroopEngagementView

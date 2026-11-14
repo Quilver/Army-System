@@ -10,9 +10,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 09d9dd0205bab0640872e2256248d999, type: 3}
-  m_Name: "M2 Battle Cutscene"
+  m_Name: M2 Battle Cutscene
   m_EditorClassIdentifier: 
   _source: {fileID: 4900000, guid: 8c4aea8c1db54f478c9ebe75da0a12a2, type: 3}
-  _sourcePath: "Assets/Leveraged Wars Story/2. Missions/M2-Reclaim the Village/M2 Battle Cutscene.md"
+  _sourcePath: Assets/Leveraged Wars Story/2. Missions/M2-Reclaim the Village/M2
+    Battle Cutscene.md
   _warnings: []
-  _lines: []
+  _lines:
+  - Speaker: Mangus
+    Text: Capture the point in the village to win this battle
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Mangus
+    RightName: 
+    LeftPortrait: {fileID: 21300000, guid: 29b904b0e473bc34c851f0eabeefc44b, type: 3}
+    RightPortrait: {fileID: 0}

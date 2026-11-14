@@ -12,8 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 09d9dd0205bab0640872e2256248d999, type: 3}
   m_Name: Laurice's Court Scene
   m_EditorClassIdentifier: 
-  dialogue: []
   _source: {fileID: 4900000, guid: 452abb290e07527479cb82a8890c04ec, type: 3}
+  _sourcePath: Assets/Leveraged Wars Story/2. Missions/M1-Tutorial/Laurice's Court
+    Scene.md
+  _warnings: []
   _lines:
   - Speaker: Laurice
     Text: Do you think this is Claudius' work Julian?
@@ -21,7 +23,7 @@ MonoBehaviour:
     SpeakerSide: 1
     LeftName: Laurice
     RightName: 
-    LeftPortrait: {fileID: -3154334995067897491, guid: ffa9ecac345bc29489d842a6a35acfa3,
+    LeftPortrait: {fileID: -3154334995067897491, guid: 08ed030703cd4f04ca27434672621d8b,
       type: 3}
     RightPortrait: {fileID: 0}
   - Speaker: Prince Julian
@@ -30,9 +32,9 @@ MonoBehaviour:
     SpeakerSide: 2
     LeftName: Laurice
     RightName: Prince Julian
-    LeftPortrait: {fileID: -3154334995067897491, guid: ffa9ecac345bc29489d842a6a35acfa3,
+    LeftPortrait: {fileID: -3154334995067897491, guid: 08ed030703cd4f04ca27434672621d8b,
       type: 3}
-    RightPortrait: {fileID: -2861679652154964632, guid: eb776ccddca018d4e9951a87c124e825,
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
       type: 3}
   - Speaker: Prince Julian
     Text: A wary heart would only make others more wary and we have not the strength
@@ -41,16 +43,7 @@ MonoBehaviour:
     SpeakerSide: 2
     LeftName: Laurice
     RightName: Prince Julian
-    LeftPortrait: {fileID: -3154334995067897491, guid: ffa9ecac345bc29489d842a6a35acfa3,
+    LeftPortrait: {fileID: -3154334995067897491, guid: 08ed030703cd4f04ca27434672621d8b,
       type: 3}
-    RightPortrait: {fileID: -2861679652154964632, guid: eb776ccddca018d4e9951a87c124e825,
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
       type: 3}
-  _warnings:
-  - 'Line 5: "Special Character/Preferred Style/Laurice.png" is not at Assets/Leveraged
-    Wars Story/2. Missions/M1-Tutorial/Special Character/Preferred Style/Laurice.png;
-    using Assets/Leveraged Wars Story/1. Characters/Temp sprite/Laurice.png. Fix
-    the path to silence this.'
-  - 'Line 7: "Special Character/Preferred Style/Dark Prince.png" is not at Assets/Leveraged
-    Wars Story/2. Missions/M1-Tutorial/Special Character/Preferred Style/Dark Prince.png;
-    using Assets/Leveraged Wars Story/1. Characters/Temp sprite/Dark Prince.png.
-    Fix the path to silence this.'

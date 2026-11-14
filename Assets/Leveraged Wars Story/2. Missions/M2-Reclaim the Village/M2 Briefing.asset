@@ -10,9 +10,24 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 09d9dd0205bab0640872e2256248d999, type: 3}
-  m_Name: "M2 Briefing"
+  m_Name: M2 Briefing
   m_EditorClassIdentifier: 
   _source: {fileID: 4900000, guid: 66f9abd96e734c09a0c77e3ed3a72bfa, type: 3}
-  _sourcePath: "Assets/Leveraged Wars Story/2. Missions/M2-Reclaim the Village/M2 Briefing.md"
+  _sourcePath: Assets/Leveraged Wars Story/2. Missions/M2-Reclaim the Village/M2
+    Briefing.md
   _warnings: []
-  _lines: []
+  _lines:
+  - Speaker: Briefing
+    Text: 'AMBUSH!!
+
+      As you travel along the Danube greet a troop of merry
+      men. A man named Robin comes up to you and offers his services to you as the
+      one true king.
+
+      However, they weren''t the only man'
+    WordsPerMinute: 0
+    SpeakerSide: 0
+    LeftName: 
+    RightName: 
+    LeftPortrait: {fileID: 0}
+    RightPortrait: {fileID: 0}

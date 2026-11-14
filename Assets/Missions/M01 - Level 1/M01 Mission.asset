@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   title: Level 1
   preparation: {fileID: 11400000, guid: 475d975043899bd49b4d83baf06445dd, type: 2}
-  achievements: []
+  achievements:
+  - {fileID: 11400000, guid: acd8fc35a35449a8b7015c59fce7aa7a, type: 2}
   characterAchievements: []
   nextMission: {fileID: 11400000, guid: 1036083a06c36ae44a0199903950e148, type: 2}
   battleSceneGuid: 19614a577bf39504c9259b7fb3c68976

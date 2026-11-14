@@ -1,0 +1,52 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f46f5c3855144d945b8444dff9681c7d, type: 3}
+  m_Name: Amy
+  m_EditorClassIdentifier: 
+  _characterName: Amy
+  _class: {fileID: 11400000, guid: 4381aca2d879b6343a959b19cc3df1f3, type: 2}
+  _className: 
+  _portrait: {fileID: -4163231657680843600, guid: 87690eb5da8df9e489c902623c3e22d5,
+    type: 3}
+  _soldierSprite: {fileID: 21300000, guid: 8d324a23907a419418b6a441ebd8a762, type: 3}
+  _numbers: 18
+  _morale: 5
+  _discipline: 5
+  _equipment:
+    _meleeWeapon: {fileID: 11400000, guid: d68ad38633b0ede4ab9f09ea7f45a1ff, type: 2}
+    _rangedWeapon: {fileID: 0}
+    _armour: {fileID: 11400000, guid: 5805b56bcf0e0814489b6a9baabde2b2, type: 2}
+    _weapons: []
+  _soldierStats:
+    _speed: 5
+    _defence: 5
+    _strength: 5
+    _support: 6
+    _charge: 2
+    _aggression: 2
+    _maxHealth: 19
+    _weaponSkills:
+    - Class: 0
+      Level: 4
+  _growths:
+    _numbers: 20
+    _speed: 20
+    _defence: 20
+    _strength: 20
+    _support: 20
+    _charge: 20
+    _aggression: 20
+    _maxHealth: 20
+    _morale: 20
+    _discipline: 20
+    _weaponSkill: 20
+  _achievements: []

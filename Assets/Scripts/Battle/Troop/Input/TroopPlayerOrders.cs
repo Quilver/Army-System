@@ -17,7 +17,8 @@ using UnityEngine.InputSystem;
 // During the deployment phase (Placement set) a Move or Line puts the troops straight there instead of marching them,
 // inside the deployment zone; attack orders are ignored. Clicks on UI (the Start Battle button) are not orders.
 // The first selected troop and the troop under the cursor are shown on troop cards (TroopCardHud), and the soldier under
-// the cursor gets a small HP bar over its head (SoldierHealthBar). A hovered troop with ranged weapons shows a
+// the cursor gets a small HP bar over its head (SoldierHealthBar). Every troop on the field has a floating Effective
+// Morale bar over it, filled with Shock from the left (TroopMoraleBar). A hovered troop with ranged weapons shows a
 // transparent mask of where it can shoot (TroopRangeMask). Every selected troop, and the troop under the cursor, with a
 // Move, Line or Attack order shows the path it is taking with arrows to its waypoint (TroopOrderPathView).
 // Engaged troops show a red heat map across the gap between their lines (TroopEngagementView): most intense in the
@@ -59,6 +60,7 @@ public sealed class TroopPlayerOrders : MonoBehaviour
     readonly BattleSpeedHud _speedHud = new();
     readonly CombatLogHud _combatLog = new();
     readonly SoldierHealthBar _healthBar = new();
+    readonly TroopMoraleBar _moraleBars = new();
     readonly TroopRangeMask _rangeMask = new();
     readonly TroopOrderPathView _orderPath = new();
     readonly TroopEngagementView _engagementViewMesh = new();
@@ -300,6 +302,7 @@ public sealed class TroopPlayerOrders : MonoBehaviour
     void OnGUI()
     {
         if (_camera != null) DrawOrderPaths();
+        if (_camera != null) _moraleBars.Draw(_camera, _selection.Troops);
         if (_camera != null) _healthBar.Draw(_camera);
         _cards.Draw();
         _combatLog.Draw();

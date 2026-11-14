@@ -10,9 +10,37 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 09d9dd0205bab0640872e2256248d999, type: 3}
-  m_Name: "M1 Battle Tutorial"
+  m_Name: M1 Battle Tutorial
   m_EditorClassIdentifier: 
   _source: {fileID: 4900000, guid: 26ad04f5a55c475f99f53bf0e85830aa, type: 3}
-  _sourcePath: "Assets/Leveraged Wars Story/2. Missions/M1-Tutorial/M1 Battle Tutorial.md"
+  _sourcePath: Assets/Leveraged Wars Story/2. Missions/M1-Tutorial/M1 Battle Tutorial.md
   _warnings: []
-  _lines: []
+  _lines:
+  - Speaker: Mentor
+    Text: You can move the camera using the right stick or WASD. You can zoom in
+      and out with the triggers or the QE keys
+    WordsPerMinute: 0
+    SpeakerSide: 2
+    LeftName: 
+    RightName: Mentor
+    LeftPortrait: {fileID: 0}
+    RightPortrait: {fileID: 21300000, guid: 6358ec34be7e5e149b95f25afd6fe2a3, type: 3}
+  - Speaker: Mentor
+    Text: To select a unit you can toggle with the bumpers or left click on the unit
+      you want to select.
+    WordsPerMinute: 0
+    SpeakerSide: 2
+    LeftName: 
+    RightName: Mentor
+    LeftPortrait: {fileID: 0}
+    RightPortrait: {fileID: 21300000, guid: 6358ec34be7e5e149b95f25afd6fe2a3, type: 3}
+  - Speaker: Mentor
+    Text: To move the unit you have selected move the cursor to location you want
+      it to move to and hit the A button the gamepad or right click. If you have
+      the cursor on enemy unit then you will be ordering your unit to attack it.
+    WordsPerMinute: 0
+    SpeakerSide: 2
+    LeftName: 
+    RightName: Mentor
+    LeftPortrait: {fileID: 0}
+    RightPortrait: {fileID: 21300000, guid: 6358ec34be7e5e149b95f25afd6fe2a3, type: 3}

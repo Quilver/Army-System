@@ -10,9 +10,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 09d9dd0205bab0640872e2256248d999, type: 3}
-  m_Name: "Sample Captain Talk"
+  m_Name: Sample Captain Talk
   m_EditorClassIdentifier: 
   _source: {fileID: 4900000, guid: 728b447d796045a8839b4a86c5070edd, type: 3}
-  _sourcePath: "Assets/Campaign/UI/Battle prep menus/Tent/Sample/Sample Captain Talk.md"
+  _sourcePath: Assets/Campaign/UI/Battle prep menus/Tent/Sample/Sample Captain Talk.md
   _warnings: []
-  _lines: []
+  _lines:
+  - Speaker: Jagen
+    Text: The men are fed and the horses shod. Give the word and we march.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: 
+    LeftPortrait: {fileID: 21300000, guid: 6358ec34be7e5e149b95f25afd6fe2a3, type: 3}
+    RightPortrait: {fileID: 0}

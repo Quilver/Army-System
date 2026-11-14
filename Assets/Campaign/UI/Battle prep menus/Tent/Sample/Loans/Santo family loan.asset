@@ -10,14 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5cde61dcf2764f9b91bfd5924fd25c9b, type: 3}
-  m_Name: "Santo family loan"
+  m_Name: Santo family loan
   m_EditorClassIdentifier: 
   _source: {fileID: 4900000, guid: a05ea491b93a4c209ad92908740b25cb, type: 3}
-  _sourcePath: "Assets/Campaign/UI/Battle prep menus/Tent/Sample/Loans/Santo family loan.md"
+  _sourcePath: Assets/Campaign/UI/Battle prep menus/Tent/Sample/Loans/Santo family
+    loan.md
   _warnings: []
-  _title: "Santo family loan"
+  _title: Santo family loan
   _gold: 150
   _cost: 330
   _months: 2
   _prestigeCost: 5
-  _details: "A quick loan from the Santo bank. Small, fast, repaid within two months."
+  _details: A quick loan from the Santo bank. Small, fast, repaid within two months.

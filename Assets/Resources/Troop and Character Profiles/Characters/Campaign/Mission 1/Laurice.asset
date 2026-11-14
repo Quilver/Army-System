@@ -15,7 +15,7 @@ MonoBehaviour:
   _characterName: Laurice
   _class: {fileID: 11400000, guid: 8e985c9562a1a214980bc3fc8bcb3363, type: 2}
   _className: 
-  _portrait: {fileID: -63271321026836129, guid: f7a53317099e01c43907c82d05adc8a5,
+  _portrait: {fileID: -3154334995067897491, guid: 08ed030703cd4f04ca27434672621d8b,
     type: 3}
   _soldierSprite: {fileID: 21300000, guid: 951f258d64f1f59459909fc56ea1d100, type: 3}
   _numbers: 12

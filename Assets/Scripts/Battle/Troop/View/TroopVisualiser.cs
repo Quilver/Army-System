@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// Shows a troop's formation outline (Troop.Outline, see TroopOutline) and its pivot: a faint fill
-// inside a stroked outline, in the army colour. Both are invisible until the troop is hovered or selected. The outline is
+// Shows a troop's formation outline (Troop.Outline, see TroopOutline) and its pivot: a faint fill in the army colour,
+// with no stroke along its border (SU-143). The fill is invisible until the troop is hovered or selected. The outline is
 // the same shape the player can click inside to select the troop (TroopSelection).
 public sealed class TroopVisualiser : MonoBehaviour
 {
@@ -10,13 +10,6 @@ public sealed class TroopVisualiser : MonoBehaviour
     const float DefaultFillAlpha = 0f;
     const float HoverFillAlpha = 15f / 255f;
     const float SelectedFillAlpha = 40f / 255f;
-    const float DefaultStrokeAlpha = 0f;
-    const float HoverStrokeAlpha = 110f / 255f;
-    const float SelectedStrokeAlpha = 230f / 255f;
-    // Stroke width in screen pixels, so it reads the same at any zoom.
-    const float StrokePixels = 2f;
-    const float SelectedStrokePixels = 3f;
-    const float FallbackStrokeWidth = 0.2f;
     // Below the range mask (12) and engagement view (13); above the terrain.
     const int OutlineSortingOrder = 10;
     const string SortingLayer = "Terrain";
@@ -42,7 +35,6 @@ public sealed class TroopVisualiser : MonoBehaviour
     Mesh _mesh;
     Material _material;
     MeshRenderer _outlineRenderer;
-    Camera _camera;
 
     public void Initialize(Troop troop)
     {
@@ -118,7 +110,6 @@ public sealed class TroopVisualiser : MonoBehaviour
 
         Color armyColor = _troop.ArmyColor;
         float fillAlpha = _selected ? SelectedFillAlpha : _hovered ? HoverFillAlpha : DefaultFillAlpha;
-        float strokeAlpha = _selected ? SelectedStrokeAlpha : _hovered ? HoverStrokeAlpha : DefaultStrokeAlpha;
 
         if (_radiusRenderer != null)
         {
@@ -131,17 +122,17 @@ public sealed class TroopVisualiser : MonoBehaviour
             }
         }
 
-        UpdateOutline(armyColor, fillAlpha, strokeAlpha);
+        UpdateOutline(armyColor, fillAlpha);
 
         _pivotRenderer.color = _selected ? Color.Lerp(armyColor, Color.white, 0.55f) : armyColor;
         _pivotRenderer.transform.localPosition = Vector3.zero;
         _pivotRenderer.transform.localScale = Vector3.one * PivotSize;
     }
 
-    void UpdateOutline(Color armyColor, float fillAlpha, float strokeAlpha)
+    void UpdateOutline(Color armyColor, float fillAlpha)
     {
         if (_outlineRenderer == null) return;
-        bool visible = fillAlpha > 0f || strokeAlpha > 0f;
+        bool visible = fillAlpha > 0f;
         if (_outlineRenderer.enabled != visible) _outlineRenderer.enabled = visible;
         if (!visible) return;
 
@@ -153,9 +144,7 @@ public sealed class TroopVisualiser : MonoBehaviour
             return;
         }
 
-        float strokeWidth = StrokeWidth(_selected ? SelectedStrokePixels : StrokePixels);
         Color fill = new(armyColor.r, armyColor.g, armyColor.b, fillAlpha);
-        Color stroke = new(armyColor.r, armyColor.g, armyColor.b, strokeAlpha);
         _vertices.Clear();
         _colors.Clear();
         _triangles.Clear();
@@ -176,37 +165,6 @@ public sealed class TroopVisualiser : MonoBehaviour
             _triangles.Add(1 + (i + 1) % count);
         }
 
-        // Stroke: a band just inside the edge, mitred at the corners.
-        int strokeStart = _vertices.Count;
-        for (int i = 0; i < count; i++)
-        {
-            Vector2 point = _polygon[i];
-            Vector2 previous = _polygon[(i + count - 1) % count];
-            Vector2 next = _polygon[(i + 1) % count];
-            Vector2 n0 = OutwardNormal(point - previous);
-            Vector2 n1 = OutwardNormal(next - point);
-            Vector2 miter = n0 + n1;
-            miter = miter.sqrMagnitude > 1e-8f ? miter.normalized : n0;
-            float scale = 1f / Mathf.Max(0.35f, Vector2.Dot(miter, n0));
-            _vertices.Add(Local(point));
-            _vertices.Add(Local(point - miter * (strokeWidth * scale)));
-            _colors.Add(stroke);
-            _colors.Add(stroke);
-        }
-        for (int i = 0; i < count; i++)
-        {
-            int outerA = strokeStart + i * 2;
-            int innerA = outerA + 1;
-            int outerB = strokeStart + (i + 1) % count * 2;
-            int innerB = outerB + 1;
-            _triangles.Add(outerA);
-            _triangles.Add(outerB);
-            _triangles.Add(innerB);
-            _triangles.Add(outerA);
-            _triangles.Add(innerB);
-            _triangles.Add(innerA);
-        }
-
         _mesh.Clear();
         _mesh.SetVertices(_vertices);
         _mesh.SetColors(_colors);
@@ -214,22 +172,7 @@ public sealed class TroopVisualiser : MonoBehaviour
         _mesh.RecalculateBounds();
     }
 
-    // The polygon runs anticlockwise, so the outside of an edge is to its right.
-    static Vector2 OutwardNormal(Vector2 edge)
-    {
-        Vector2 direction = edge.sqrMagnitude > 1e-12f ? edge.normalized : Vector2.right;
-        return new Vector2(direction.y, -direction.x);
-    }
-
     Vector3 Local(Vector2 world) => transform.InverseTransformPoint(world);
-
-    float StrokeWidth(float pixels)
-    {
-        if (_camera == null) _camera = Camera.main;
-        if (_camera == null || !_camera.orthographic) return FallbackStrokeWidth;
-        Vector2 screen = _camera.WorldToScreenPoint(_troop.transform.position);
-        return TroopScreenSpace.PixelsToWorld(_camera, screen, pixels);
-    }
 
     static void DestroyObject(Object target)
     {

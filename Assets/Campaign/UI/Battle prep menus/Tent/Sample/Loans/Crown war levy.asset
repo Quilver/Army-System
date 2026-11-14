@@ -10,14 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5cde61dcf2764f9b91bfd5924fd25c9b, type: 3}
-  m_Name: "Crown war levy"
+  m_Name: Crown war levy
   m_EditorClassIdentifier: 
   _source: {fileID: 4900000, guid: 41c231ba96604b22a2d541d3d136ec72, type: 3}
-  _sourcePath: "Assets/Campaign/UI/Battle prep menus/Tent/Sample/Loans/Crown war levy.md"
+  _sourcePath: Assets/Campaign/UI/Battle prep menus/Tent/Sample/Loans/Crown war levy.md
   _warnings: []
-  _title: "Crown war levy"
+  _title: Crown war levy
   _gold: 500
   _cost: 1050
   _months: 6
   _prestigeCost: 25
-  _details: "The crown lends to commanders of standing. Needs a lot of prestige."
+  _details: The crown lends to commanders of standing. Needs a lot of prestige.

@@ -15,7 +15,8 @@ MonoBehaviour:
   _characterName: Lyra
   _class: {fileID: 11400000, guid: 4fa2f34eb40a9af4ea4150dbc9de6825, type: 2}
   _className: 
-  _portrait: {fileID: 21300000, guid: 5347e9bab61d38d468625228f5c03133, type: 3}
+  _portrait: {fileID: 1070808964735896586, guid: 60494bb5f8478e045a5165e8ec4e3500,
+    type: 3}
   _soldierSprite: {fileID: 21300000, guid: a24e6ca849b124f4faca864433d78665, type: 3}
   _numbers: 10
   _morale: 4

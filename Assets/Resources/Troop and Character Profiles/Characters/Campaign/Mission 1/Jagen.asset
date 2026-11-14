@@ -15,7 +15,8 @@ MonoBehaviour:
   _characterName: Jagen
   _class: {fileID: 11400000, guid: 4381aca2d879b6343a959b19cc3df1f3, type: 2}
   _className: 
-  _portrait: {fileID: 21300000, guid: 6358ec34be7e5e149b95f25afd6fe2a3, type: 3}
+  _portrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+    type: 3}
   _soldierSprite: {fileID: 21300000, guid: 8d324a23907a419418b6a441ebd8a762, type: 3}
   _numbers: 20
   _morale: 6

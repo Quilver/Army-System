@@ -14,8 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   title: Level 2
   preparation: {fileID: 11400000, guid: ba01108514e71c843bde80ffe9d28469, type: 2}
-  achievements: []
+  achievements:
+  - {fileID: 11400000, guid: acd8fc35a35449a8b7015c59fce7aa7a, type: 2}
   characterAchievements: []
-  nextMission: {fileID: 0}
+  nextMission: {fileID: 11400000, guid: ffe5d30eaf49ca445ae893fc783f0ac1, type: 2}
   battleSceneGuid: a9f9c7c4e8daa3a4b8eaa6617b684394
   battleScenePath: Assets/Missions/M02 - Level 2/Battle/M02 Battle.unity

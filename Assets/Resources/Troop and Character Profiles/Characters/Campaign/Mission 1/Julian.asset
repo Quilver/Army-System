@@ -15,7 +15,8 @@ MonoBehaviour:
   _characterName: Prince Julian
   _class: {fileID: 11400000, guid: 4d2006aef15417141a57b0ccc91ca75d, type: 2}
   _className: 
-  _portrait: {fileID: 21300000, guid: c91b921366b8697479105d1fc90faef5, type: 3}
+  _portrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+    type: 3}
   _soldierSprite: {fileID: 21300000, guid: ce5740be1db96a24495e8aad94d48630, type: 3}
   _numbers: 6
   _morale: 6

@@ -12,8 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 09d9dd0205bab0640872e2256248d999, type: 3}
   m_Name: M1 Briefing
   m_EditorClassIdentifier: 
-  dialogue: []
   _source: {fileID: 4900000, guid: 171d88a25e7cf0b45a17609cc53b0bf0, type: 3}
+  _sourcePath: Assets/Leveraged Wars Story/2. Missions/M1-Tutorial/M1 Briefing.md
+  _warnings: []
   _lines:
   - Speaker: Bard
     Text: 'When the vile warlord Hartkan seized power, young Prince Julian was forced
@@ -34,7 +35,7 @@ MonoBehaviour:
     SpeakerSide: 1
     LeftName: Bard
     RightName: 
-    LeftPortrait: {fileID: 7468356559241021412, guid: 048b23c5b385af544abc2bc369b69b1f,
+    LeftPortrait: {fileID: 7468356559241021412, guid: b23a63486994642469fcc255da0779d2,
       type: 3}
     RightPortrait: {fileID: 0}
   - Speaker: Jagen
@@ -44,9 +45,9 @@ MonoBehaviour:
     SpeakerSide: 2
     LeftName: Bard
     RightName: Jagen
-    LeftPortrait: {fileID: 7468356559241021412, guid: 048b23c5b385af544abc2bc369b69b1f,
+    LeftPortrait: {fileID: 7468356559241021412, guid: b23a63486994642469fcc255da0779d2,
       type: 3}
-    RightPortrait: {fileID: 4202274659027958708, guid: 67aadd38677358848be0637c45ffa90d,
+    RightPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
       type: 3}
   - Speaker: Prince Julian
     Text: Sound the horn. It is time that I earn my spurs.
@@ -54,20 +55,7 @@ MonoBehaviour:
     SpeakerSide: 1
     LeftName: Prince Julian
     RightName: Jagen
-    LeftPortrait: {fileID: -2861679652154964632, guid: eb776ccddca018d4e9951a87c124e825,
+    LeftPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
       type: 3}
-    RightPortrait: {fileID: 4202274659027958708, guid: 67aadd38677358848be0637c45ffa90d,
+    RightPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
       type: 3}
-  _warnings:
-  - 'Line 6: "Special Character/Preferred Style/Bard.png" is not at Assets/Leveraged
-    Wars Story/2. Missions/M1-Tutorial/Special Character/Preferred Style/Bard.png;
-    using Assets/Leveraged Wars Story/1. Characters/Temp sprite/Bard.png. Fix the
-    path to silence this.'
-  - 'Line 10: "Special Character/Preferred Style/Jagen.png" is not at Assets/Leveraged
-    Wars Story/2. Missions/M1-Tutorial/Special Character/Preferred Style/Jagen.png;
-    using Assets/Leveraged Wars Story/1. Characters/Temp sprite/Jagen.png. Fix the
-    path to silence this.'
-  - 'Line 12: "Special Character/Preferred Style/Dark Prince.png" is not at Assets/Leveraged
-    Wars Story/2. Missions/M1-Tutorial/Special Character/Preferred Style/Dark Prince.png;
-    using Assets/Leveraged Wars Story/1. Characters/Temp sprite/Dark Prince.png.
-    Fix the path to silence this.'

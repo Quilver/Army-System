@@ -221,7 +221,8 @@ public sealed class BattleViewTests
             first = Mathf.Min(first, column.Along);
             last = Mathf.Max(last, column.Along);
         }
-        Assert.AreEqual(FrontLength, last - first, 1e-3f, "Band covers the lines' overlap");
+        Assert.AreEqual(FrontLength + HeatSettings().EndFade, last - first, 1e-3f,
+            "Band covers the lines and runs on half the end fade past each end");
     }
 
     [Test]
@@ -241,6 +242,36 @@ public sealed class BattleViewTests
             float step = Mathf.Abs(columns[i].Weight - columns[i - 1].Weight);
             Assert.LessOrEqual(step, 0.25f, "A smooth gradient along the front");
         }
+    }
+
+    [Test]
+    public void HeatStrip_FillsTheGapBetweenTheFootprints_AndCoversTheWiderLine()
+    {
+        // The second troop is a third as wide as the first and sits over its middle.
+        var settings = HeatSettings();
+        settings.HalfWidthA = 0.5f;
+        settings.HalfWidthB = 0.5f;
+        var columns = new List<EngagementHeatStrip.Column>();
+        Assert.IsTrue(EngagementHeatStrip.Build(Vector2.zero, new Vector2(FrontLength, 0f),
+            new Vector2(FrontLength * 2f / 3f, Gap), new Vector2(FrontLength / 3f, Gap), new List<EngagementFrontage.Link>(),
+            settings, columns, out _, out _, out _));
+        float first = float.PositiveInfinity, last = float.NegativeInfinity;
+        foreach (var column in columns)
+        {
+            first = Mathf.Min(first, column.Along);
+            last = Mathf.Max(last, column.Along);
+        }
+        Assert.AreEqual(FrontLength + settings.EndFade, last - first, 1e-3f, "The wider troop's whole front");
+
+        EngagementHeatStrip.Column middle = Middle(columns);
+        float edgeA = 0.5f / Gap, edgeB = 1f - 0.5f / Gap;
+        Assert.AreEqual(EngagementHeatStrip.Plateau, EngagementHeatStrip.Intensity(middle, edgeA), 1e-4f,
+            "Plateau at the first footprint's edge");
+        Assert.AreEqual(EngagementHeatStrip.Plateau, EngagementHeatStrip.Intensity(middle, edgeB), 1e-4f,
+            "Plateau at the second footprint's edge");
+        for (float v = edgeA; v <= edgeB; v += 0.05f)
+            Assert.GreaterOrEqual(EngagementHeatStrip.Intensity(middle, v), EngagementHeatStrip.Plateau - 1e-4f,
+                "The whole gap between the footprints is hot");
     }
 
     [Test]

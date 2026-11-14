@@ -10,9 +10,53 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 09d9dd0205bab0640872e2256248d999, type: 3}
-  m_Name: "Sample Briefing"
+  m_Name: Sample Briefing
   m_EditorClassIdentifier: 
   _source: {fileID: 4900000, guid: c76f32fa65064a4eb23d7fa7ae1c9f68, type: 3}
-  _sourcePath: "Assets/Campaign/UI/Battle prep menus/Tent/Sample/Sample Briefing.md"
+  _sourcePath: Assets/Campaign/UI/Battle prep menus/Tent/Sample/Sample Briefing.md
   _warnings: []
-  _lines: []
+  _lines:
+  - Speaker: Jagen
+    Text: My prince, the scouts are back. A bandit warband has dug in at the river
+      ford, right across the merchant road.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: 
+    LeftPortrait: {fileID: 21300000, guid: 6358ec34be7e5e149b95f25afd6fe2a3, type: 3}
+    RightPortrait: {fileID: 0}
+  - Speaker: Prince Julian
+    Text: The road that carries our grain, and our creditors' patience. How many?
+    WordsPerMinute: 0
+    SpeakerSide: 2
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 21300000, guid: 6358ec34be7e5e149b95f25afd6fe2a3, type: 3}
+    RightPortrait: {fileID: 21300000, guid: c91b921366b8697479105d1fc90faef5, type: 3}
+  - Speaker: Jagen
+    Text: Three bands of foot, a few archers in the reeds and riders on the far bank.
+      Break their line and the rest will run.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 21300000, guid: 6358ec34be7e5e149b95f25afd6fe2a3, type: 3}
+    RightPortrait: {fileID: 21300000, guid: c91b921366b8697479105d1fc90faef5, type: 3}
+  - Speaker: Lyra
+    Text: Mind the coffers, Highness. Borrow if you must, but every crown owed is
+      prestige spent.
+    WordsPerMinute: 0
+    SpeakerSide: 2
+    LeftName: Jagen
+    RightName: Lyra
+    LeftPortrait: {fileID: 21300000, guid: 6358ec34be7e5e149b95f25afd6fe2a3, type: 3}
+    RightPortrait: {fileID: 21300000, guid: 4379dc5e67c725f4e8556d9caab25c7b, type: 3}
+  - Speaker: Prince Julian
+    Text: 'Then we strike quickly. Ready the war table: no more than five companies,
+      and we march at dawn.'
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Prince Julian
+    RightName: Lyra
+    LeftPortrait: {fileID: 21300000, guid: c91b921366b8697479105d1fc90faef5, type: 3}
+    RightPortrait: {fileID: 21300000, guid: 4379dc5e67c725f4e8556d9caab25c7b, type: 3}

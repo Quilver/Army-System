@@ -4,13 +4,16 @@ using UnityEngine;
 // The heat map of one engaged pair (TroopEngagementView), built from the two troops' lines. Pure maths.
 //   Frame   Along runs with the two lines (their mean direction), Across from the first troop's line toward the
 //           second's, Origin midway between the line centres.
-//   Extent  where the two lines overlap along Along and, with LimitToReach, where the two footprints are within MaxGap
-//           (A_Distance) of each other across the gap (SU-96): only the stretch of front that is within reach of the
-//           enemy. Lines at an angle are closer at one end, so the band stops where they draw further apart than that.
+//   Extent  the full width of both lines along Along (the union of the two, so the wider troop's whole front shows
+//           heat) and, with LimitToReach, where the two footprints are within MaxGap (A_Distance) of each other across
+//           the gap (SU-96): only the stretch of front that is within reach of the enemy. Lines at an angle are closer
+//           at one end, so the band stops where they draw further apart than that. Ends that are not cut by reach run
+//           on for half of EndFade past the lines, so the fade sits mostly outside the fighting front.
 //   Band    at each point along, from the first troop's line (SideA) to the second's (SideB), across the line gap.
-//   Heat    Weight x AcrossProfile: 0 on each troop's line, 1 in the middle of the gap (4v(1 - v), v = 0 on the first
-//           line, 1 on the second). Weight fades from 1 to 0 over EndFade toward both ends of the engagement. The heat
-//           is a smooth gradient from the geometry alone: the number of soldiers fighting does not change it.
+//   Heat    Weight x AcrossProfile: 0 on each troop's line, rising over the rim (the line to its footprint's edge)
+//           to Plateau, which covers the whole gap between the two footprints, and to 1 in the middle of that gap.
+//           Weight fades from 1 to 0 over EndFade toward both ends of the engagement. The heat is a smooth gradient
+//           from the geometry alone: the number of soldiers fighting does not change it.
 // When the lines are not roughly parallel (a flank or rear attack) or do not overlap, the frame, extent and band come
 // from the engaged soldiers' links instead (EngagementFrontage): a straight band from the first troop's engaged
 // soldiers (their mean position across) to the second's, along their extent.
@@ -20,6 +23,11 @@ public static class EngagementHeatStrip
     public const int Rows = 16;
     // Lines within 45 degrees of each other are treated as facing each other.
     const float ParallelCos = 0.7071f;
+    // Heat across the gap between the two footprints, away from its hot middle (which is 1).
+    public const float Plateau = 0.55f;
+    // Shortest rim (line to full heat) and narrowest core (the gap at Plateau or more), as fractions of the band.
+    const float MinRim = 0.15f;
+    const float MinCore = 0.4f;
 
     public struct Settings
     {
@@ -37,16 +45,35 @@ public static class EngagementHeatStrip
         public float SideA;     // first troop's line, along Across from Origin
         public float SideB;     // second troop's line, along Across from Origin
         public float Weight;    // 0-1: the end fade
+        public float CoreA;     // 0-1 across the band: the first troop's footprint edge, where the rim meets the core
+        public float CoreB;     // 0-1 across the band: the second troop's footprint edge
     }
 
-    // 0 on each troop's line, 1 in the middle of the gap.
-    public static float AcrossProfile(float v)
+    // v = 0 on the first troop's line, 1 on the second's. 0 on each line, rising smoothly over the rim to Plateau at
+    // the footprint edges (coreA, coreB) and to 1 in the middle of the gap between them.
+    public static float AcrossProfile(float v, float coreA, float coreB)
     {
         v = Mathf.Clamp01(v);
-        return 4f * v * (1f - v);
+        if (v < coreA) return Plateau * Mathf.SmoothStep(0f, 1f, v / coreA);
+        if (v > coreB) return Plateau * Mathf.SmoothStep(0f, 1f, (1f - v) / (1f - coreB));
+        float u = (v - coreA) / Mathf.Max(1e-4f, coreB - coreA);
+        return Mathf.Lerp(Plateau, 1f, 4f * u * (1f - u));
     }
 
-    public static float Intensity(in Column column, float v) => Mathf.Clamp01(column.Weight * AcrossProfile(v));
+    public static float Intensity(in Column column, float v) =>
+        Mathf.Clamp01(column.Weight * AcrossProfile(v, column.CoreA, column.CoreB));
+
+    // Where the footprint edges fall across a band from sideA to sideB, kept to at least MinRim from each line and a
+    // core of at least MinCore, so touching or overlapping footprints still show a broad band.
+    public static void CoreEdges(float sideA, float sideB, float halfWidthA, float halfWidthB, out float coreA,
+        out float coreB)
+    {
+        float span = sideB - sideA;
+        float edgeA = span > 1e-4f ? Mathf.Max(0f, halfWidthA) / span : 0f;
+        float edgeB = span > 1e-4f ? 1f - Mathf.Max(0f, halfWidthB) / span : 1f;
+        coreA = Mathf.Clamp(edgeA, MinRim, 0.5f - MinCore * 0.5f);
+        coreB = Mathf.Clamp(edgeB, 0.5f + MinCore * 0.5f, 1f - MinRim);
+    }
 
     // a0-a1 and b0-b1 are the two troops' lines (a point for a troop with no line). Returns false when there is nothing
     // to draw (no overlap and no link).
@@ -57,19 +84,27 @@ public static class EngagementHeatStrip
         float cell = Mathf.Max(0.01f, settings.CellWidth);
         float linkSideA = 0f, linkSideB = 0f;
         bool fromLines = TryLineFrame(a0, a1, b0, b1, cell, out origin, out along, out across, out float start, out float end);
+        bool startCut = false, endCut = false;
         if (fromLines && settings.LimitToReach)
         {
+            float fullStart = start, fullEnd = end;
             // Facing lines that overlap: keep the stretch within reach, and draw nothing when none of it is.
             float footprints = Mathf.Max(0f, settings.HalfWidthA) + Mathf.Max(0f, settings.HalfWidthB);
             float maxCentreGap = Mathf.Max(0f, settings.MaxGap) + footprints;
             float gapAtStart = SideAt(b0, b1, start, origin, along, across) - SideAt(a0, a1, start, origin, along, across);
             float gapAtEnd = SideAt(b0, b1, end, origin, along, across) - SideAt(a0, a1, end, origin, along, across);
             if (!WithinReach(gapAtStart, gapAtEnd, maxCentreGap, ref start, ref end) || end - start < cell) return false;
+            startCut = start > fullStart + 1e-4f;
+            endCut = end < fullEnd - 1e-4f;
         }
         else if (!fromLines && !TryLinkFrame(links, cell, out origin, out along, out across, out start, out end,
                 out linkSideA, out linkSideB))
             return false;
 
+        // Ends not cut by reach run on past the lines for half the fade, so the fighting front keeps most of its heat.
+        float overrun = Mathf.Max(0f, settings.EndFade) * 0.5f;
+        if (!startCut) start -= overrun;
+        if (!endCut) end += overrun;
         float fade = Mathf.Min(Mathf.Max(0f, settings.EndFade), (end - start) * 0.5f);
 
         // A column at each end (faded to 0) and one in the middle of every cell between them.
@@ -81,12 +116,19 @@ public static class EngagementHeatStrip
             float endFade = fade <= 0f
                 ? 1f
                 : Mathf.SmoothStep(0f, 1f, (t - start) / fade) * Mathf.SmoothStep(0f, 1f, (end - t) / fade);
+            float sideA = fromLines ? SideAt(a0, a1, t, origin, along, across) : linkSideA;
+            float sideB = fromLines ? SideAt(b0, b1, t, origin, along, across) : linkSideB;
+            // The link frame's band already runs between the engaged soldiers, so it gets the shortest rim.
+            CoreEdges(sideA, sideB, fromLines ? settings.HalfWidthA : 0f, fromLines ? settings.HalfWidthB : 0f,
+                out float coreA, out float coreB);
             columns.Add(new Column
             {
                 Along = t,
-                SideA = fromLines ? SideAt(a0, a1, t, origin, along, across) : linkSideA,
-                SideB = fromLines ? SideAt(b0, b1, t, origin, along, across) : linkSideB,
-                Weight = Mathf.Clamp01(endFade)
+                SideA = sideA,
+                SideB = sideB,
+                Weight = Mathf.Clamp01(endFade),
+                CoreA = coreA,
+                CoreB = coreB
             });
         }
         return true;
@@ -131,9 +173,11 @@ public static class EngagementHeatStrip
 
         Project(a0, a1, origin, along, out float minA, out float maxA);
         Project(b0, b1, origin, along, out float minB, out float maxB);
-        start = Mathf.Max(minA, minB);
-        end = Mathf.Min(maxA, maxB);
-        return end - start >= cell;
+        // Facing only when the lines overlap; the band then covers both of them.
+        if (Mathf.Min(maxA, maxB) - Mathf.Max(minA, minB) < cell) return false;
+        start = Mathf.Min(minA, minB);
+        end = Mathf.Max(maxA, maxB);
+        return true;
     }
 
     static void Project(Vector2 p0, Vector2 p1, Vector2 origin, Vector2 axis, out float min, out float max)

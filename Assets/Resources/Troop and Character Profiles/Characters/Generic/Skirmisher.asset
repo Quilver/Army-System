@@ -34,7 +34,7 @@ MonoBehaviour:
     _aggression: 8
     _maxHealth: 17
     _weaponSkills:
-    - Class: 2
+    - Class: 1
       Level: 6
     - Class: 4
       Level: 4

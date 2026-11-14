@@ -1,6 +1,6 @@
 # Assumptions review
 
-Every unconfirmed Assumption in `SpecificationUpdate.md` (SU-01 to SU-147), grouped by system so they can be confirmed in one sitting: 151 assumptions across 82 SU entries. SU-136 to SU-140 were added on 2026-11-08; the SU-74 and SU-121 items about routed troops never leaving the map were removed (SU-138 replaced them). Rebuilt 2026-11-08 (SU-135): assumptions that later entries overtook were removed, missing ones were added, and the groups were tidied. The spec (v0.10) tags text that rests on one of these as **[A: SU-n]**.
+Every unconfirmed Assumption in `SpecificationUpdate.md` (SU-01 to SU-147), grouped by system so they can be confirmed in one sitting: 154 assumptions across 84 SU entries. SU-136 to SU-140 were added on 2026-11-08; the SU-74 and SU-121 items about routed troops never leaving the map were removed (SU-138 replaced them). Rebuilt 2026-11-08 (SU-135): assumptions that later entries overtook were removed, missing ones were added, and the groups were tidied. The spec (v0.10) tags text that rests on one of these as **[A: SU-n]**.
 
 ## How to use this
 
@@ -20,7 +20,7 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 - [Formations, movement & geometry](#formations-movement--geometry) (11)
 - [Combat (melee, charges, ranged)](#combat-melee-charges-ranged) (17)
 - [Morale, retreat & rout](#morale-retreat--rout) (12)
-- [Controls, orders & battle UI](#controls-orders--battle-ui) (23)
+- [Controls, orders & battle UI](#controls-orders--battle-ui) (26)
 - [Campaign, tent, missions & deployment](#campaign-tent-missions--deployment) (45)
 - [Enemy AI](#enemy-ai) (13)
 - [Tooling & other](#tooling--other) (4)
@@ -284,6 +284,15 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 **SU-130** ChainSuppressed ends 3 s after leaving every attach radius
 
 - [ ] Alt suppression on an unlinked reserve ends the same way (answers Q-23). →
+
+**SU-142** Bigger missiles with army-coloured trails
+
+- [ ] the trail runs back from the missile's tail, up to 1.6 units long, fading from 70% opacity to clear and tapering to a quarter of the missile's width →
+
+**SU-144** Floating Effective Morale bar over every troop
+
+- [ ] full length (64 px at 1080 p, not scaled with zoom) is the initial Effective Morale; Shock fills red on the same scale, reaching the right end at the break point; the rest is morale blue, the border army colour; 6 px above the outline →
+- [ ] shown for every team's troops, during deployment too; hidden once routed, off the field or wiped out →
 
 ## Campaign, tent, missions & deployment
 

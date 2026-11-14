@@ -59,6 +59,34 @@ SU-128 refer to v0.9 and may have moved.
   Obsidian**); tests `DialogueMarkdownTests`. Writer's guide: `How to write dialogue.md` in the vault. The vault's
   per-user `workspace.json` is git-ignored.
 
+## 2026-11-10: Floating morale bars
+
+### SU-144 Floating Effective Morale bar over every troop (Decision + Assumptions, spec §5, §6.4)
+- Decision: every troop on the field has a bar floating above it. Its length is the troop's Effective Morale and
+  shrinks as Effective Morale falls; Shock fills it in red from left to right.
+- Assumption: full length (64 px at a 1080 px screen, scaled with screen height, not camera zoom) is the troop's
+  initial Effective Morale. Shock is on the same scale, so the red reaches the right end when Shock passes Effective
+  Morale and the troop breaks (§5.3). The unshocked part is the troop card's morale blue; the 1 px border is the army
+  colour. The bar sits 6 px above the top of the troop's outline, centred on it.
+- Assumption: all teams' troops show it, during deployment too; routed troops, troops that have left the field and
+  troops with no living soldiers do not. Drawn under the soldier HP bar and the HUD. View constants, not Battle Tuning.
+- Code: `TroopMoraleBar` (IMGUI, drawn by `TroopPlayerOrders`); tests `TroopMoraleBarTests`.
+
+## 2026-11-09: Missile and outline visuals
+
+### SU-142 Bigger missiles with army-coloured trails (Decision + Assumption, spec §4.7)
+- Decision: projectiles in flight are drawn 50% larger (0.9 × 0.09 units, was 0.6 × 0.06) and leave a trail in the
+  shooter's army colour.
+- Assumption: the trail runs back from the missile's tail along its flight line, up to 1.6 units long (shorter just
+  after the shot), fading from 70% opacity at the missile to clear and tapering to a quarter of the missile's width.
+  It is drawn just under the missiles. These are view constants, not Battle Tuning variables.
+- Code: `ProjectileView` (one shared vertex-coloured trail mesh using `Shaders/TroopOverlayColor`).
+
+### SU-143 No stroke on the troop outline (Decision, spec §3.3)
+- Decision: the stroked border around a hovered or selected troop's outline is removed. The faint army-colour fill
+  (hover 15/255, selected 40/255) and the pivot stay; the clickable shape is unchanged.
+- Code: `TroopVisualiser`.
+
 ## 2026-11-08 (2): Answered questions (Q-2, Q-24, Q-40, Q-57) and confirmed working answers
 
 ### SU-136 Direct fire needs line of sight; `ArcedShot` on ranged weapons (Decision + Assumptions, answers Q-40, spec §1.6, §4.7)
