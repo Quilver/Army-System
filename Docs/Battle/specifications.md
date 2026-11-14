@@ -759,6 +759,8 @@ defaults are used when an asset is missing. Values in the rest of this document 
 | `ChainRetreatHingeBendDeg` | 30 | deg | Bend (180° − inner) that triggers a sympathetic retreat. |
 | `ChainRetreatFalloff` | 0.3 | 0–1 | Retreat distance lost per hop. |
 | `ChainEndpointRelaxSpeed` | 2 | units/s | Relax rate of a broken, stretched line point. |
+| `LineOrderMinSpacingScale` | 0.5 | × max line length | Closest centre spacing of adjacent troops in a multi-troop line order (pair average of 3.0 × L_nat) **[A: SU-157]**. |
+| `LineOrderMaxSpacingScale` | 2.0 | × max line length | Widest centre spacing of adjacent troops in a multi-troop line order **[A: SU-157]**. |
 | `LinkSlack` / `LinkStiffness` / `LinkMaxForce` | 0.1 / 5 / 10.4 | units / gain / force | Link tension spring. |
 
 **Chain Bonus Tuning** (its own asset, SU-152)

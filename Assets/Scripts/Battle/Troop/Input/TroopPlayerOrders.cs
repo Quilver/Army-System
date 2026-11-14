@@ -360,7 +360,7 @@ public sealed class TroopPlayerOrders : MonoBehaviour
     }
 
     // Ghost preview while the right button is held: each troop's projected footprint with an arrow on its front (or a
-    // marker for a point order, and an arrow for a Face), the shared joints of a multi-troop line, and the tether to any
+    // marker for a point order, and an arrow for a Face), the joints a multi-troop line will link (SU-157), and the tether to any
     // chain neighbour outside the order. The player sets the front (SU-156), so the arrow is back (it was removed in
     // SU-33 while troops chose their own front).
     void DrawOrderPreview(Vector2 screenStart, Vector2 screenEnd)
@@ -384,7 +384,7 @@ public sealed class TroopPlayerOrders : MonoBehaviour
                     TroopOrderPlanner.PlannedLinePoint(placement, TroopConstants.LeftEnd), placement.Facing, halfWidth);
                 TroopOrderOverlay.DrawFootprint(_camera, ghost, placement.Troop.ArmyColor);
                 TroopOrderOverlay.DrawFacingArrow(_camera, placement.Center, placement.Facing, placement.Troop.ArmyColor);
-                if (i + 1 < placements.Count)
+                if (i + 1 < placements.Count && _planner.JoinsNext(i))
                 {
                     TroopOrderPlanner.AdjacentEnds(placement, drag, out int end, out _);
                     TroopOrderOverlay.DrawJoint(TroopScreenSpace.WorldToGui(_camera, TroopOrderPlanner.PlannedLinePoint(placement, end)));

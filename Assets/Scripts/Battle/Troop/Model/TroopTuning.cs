@@ -193,6 +193,8 @@ public sealed class TroopTuning
     public float ChainMaxStretchScale => Chain.ChainMaxStretchScale;
     public float ChainMinInnerAngleDeg => Chain.ChainMinInnerAngleDeg;
     public float AttachScale => Chain.AttachScale;
+    public float LineOrderMinSpacingScale => Chain.LineOrderMinSpacingScale;
+    public float LineOrderMaxSpacingScale => Chain.LineOrderMaxSpacingScale;
     public float AutoLinkMaxFacingDeg => Chain.AutoLinkMaxFacingDeg;
     public float AutoLinkBreakFacingDeg => Chain.AutoLinkBreakFacingDeg;
     public float ChainSuppressCooldownSeconds => Chain.ChainSuppressCooldownSeconds;

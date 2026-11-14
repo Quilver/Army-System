@@ -11,6 +11,27 @@ SU-128 refer to v0.9 and may have moved.
 
 ---
 
+## 2026-11-14: Line order spacing (branch troop-facing-controls)
+
+### SU-157 Troops in a multi-troop line keep their distance (Decision + Assumptions, spec §6.2, §3.4)
+- Decision: in a right-drag line of two or more troops, the centre-to-centre distance between adjacent troops is at
+  least half and at most double their maximum line length (`LineOrderMinSpacingScale` 0.5, `LineOrderMaxSpacingScale`
+  2.0, Chain Tuning).
+- Decision: "max frontage" is the troop's maximum line length, `ChainMaxStretchScale × L_nat` (3.0 × L_nat); between
+  two different troops it is the average of the two.
+- Decision: adjacent troops with a gap between them are not linked by the order. Troops whose planned line points meet
+  (within the attach distance, `AttachScale × L_nat`, as for automatic links) are still linked with pending order
+  links (Q-19).
+- Assumption: the spacing is each troop's share of the drag (span ÷ troops, as before), clamped to that range, and each
+  line's length is still its share clamped to 0.7–3.0 × L_nat. So inside the range the troops sit end to end and chain
+  as before; a short drag spreads them out past the release point with gaps, and a long drag stops short of it.
+- Assumption: the line starts at the press point (the first troop's centre is half its spacing from it) and grows
+  along the drag; it is not centred on the drag.
+- Assumption: one troop's line is unchanged (the whole span, SU-156). Deployment placement uses the same spacing.
+- Assumption: the ghost preview draws a joint only where the order will link.
+- Code: `TroopOrderPlanner` (`PlanLine`, `AdjacentCentreSpacing`, `JoinsNext`, `LinkAdjacent`), `TroopPlayerOrders`
+  preview, `ChainTuning` / `TroopTuning`. Tests: `OrderClassifierTests.LineSpacing_*`.
+
 ## 2026-11-14: Troop facing controls (branch troop-facing-controls)
 
 ### SU-154 Troops no longer face the nearest enemy by themselves (Decision + Assumptions, spec §3.3, §6.2)

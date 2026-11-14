@@ -1,6 +1,6 @@
 # Assumptions review
 
-Every unconfirmed Assumption in `SpecificationUpdate.md` (SU-01 to SU-156), grouped by system so they can be confirmed in one sitting: 185 assumptions across 93 SU entries. SU-154 to SU-156 (troop facing controls, on the `troop-facing-controls` branch) and SU-148 to SU-153 (class design rules) were added on 2026-11-14. SU-136 to SU-140 were added on 2026-11-08; the SU-74 and SU-121 items about routed troops never leaving the map were removed (SU-138 replaced them). Rebuilt 2026-11-08 (SU-135): assumptions that later entries overtook were removed, missing ones were added, and the groups were tidied. The spec (v0.10) tags text that rests on one of these as **[A: SU-n]**.
+Every unconfirmed Assumption in `SpecificationUpdate.md` (SU-01 to SU-157), grouped by system so they can be confirmed in one sitting: 189 assumptions across 94 SU entries. SU-154 to SU-157 (troop facing controls and line spacing, on the `troop-facing-controls` branch) and SU-148 to SU-153 (class design rules) were added on 2026-11-14. SU-136 to SU-140 were added on 2026-11-08; the SU-74 and SU-121 items about routed troops never leaving the map were removed (SU-138 replaced them). Rebuilt 2026-11-08 (SU-135): assumptions that later entries overtook were removed, missing ones were added, and the groups were tidied. The spec (v0.10) tags text that rests on one of these as **[A: SU-n]**.
 
 ## How to use this
 
@@ -20,7 +20,7 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 - [Formations, movement & geometry](#formations-movement--geometry) (23)
 - [Combat (melee, charges, ranged)](#combat-melee-charges-ranged) (28)
 - [Morale, retreat & rout](#morale-retreat--rout) (16)
-- [Controls, orders & battle UI](#controls-orders--battle-ui) (30)
+- [Controls, orders & battle UI](#controls-orders--battle-ui) (34)
 - [Campaign, tent, missions & deployment](#campaign-tent-missions--deployment) (45)
 - [Enemy AI](#enemy-ai) (13)
 - [Tooling & other](#tooling--other) (4)
@@ -351,6 +351,13 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 - [ ] a right-drag with one troop is a line for that troop (not a Move); a left-drag from the troop is still a Move. →
 - [ ] Ctrl + right click is Face: the selection turns in place toward the point (all the same way, from the selection's centre) and holds its line; on an enemy it faces rather than attacks; while deploying it places them facing that way. →
 - [ ] the ghost preview draws a facing arrow on each planned line, and on each troop for a Face. →
+
+**SU-157** Troops in a multi-troop line keep their distance
+
+- [ ] the spacing is each troop's share of the drag clamped to 0.5–2 × the pair's average maximum line length; line lengths are still the share clamped to 0.7–3.0 × L_nat, so mid-length drags still sit end to end and chain. →
+- [ ] the line starts at the press point and grows along the drag (a short drag runs past the release point; a long one stops short). →
+- [ ] one troop's line is unchanged; deployment placement uses the same spacing. →
+- [ ] the ghost preview draws a joint only where the order will link. →
 
 ## Campaign, tent, missions & deployment
 

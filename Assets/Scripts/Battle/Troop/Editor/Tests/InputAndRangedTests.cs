@@ -26,6 +26,23 @@ public sealed class OrderClassifierTests
         Assert.AreEqual(OrderKind.Line, OrderClassifier.Classify(Vector2.zero, new Vector2(9f, 0f), 8f, false, true));
     }
 
+    // SU-157: adjacent troops in a multi-troop line stay 0.5 to 2 x the average of their maximum line lengths apart.
+    [Test] public void LineSpacing_FollowsTheShare_InsideTheRange() =>
+        Assert.AreEqual(5f, TroopOrderPlanner.AdjacentCentreSpacing(5f, 3f, 3f, 0.5f, 2f), 1e-5f);
+
+    [Test] public void LineSpacing_IsAtLeastHalfTheMaximumLength() =>
+        Assert.AreEqual(1.5f, TroopOrderPlanner.AdjacentCentreSpacing(0.2f, 3f, 3f, 0.5f, 2f), 1e-5f);
+
+    [Test] public void LineSpacing_IsAtMostDoubleTheMaximumLength() =>
+        Assert.AreEqual(6f, TroopOrderPlanner.AdjacentCentreSpacing(40f, 3f, 3f, 0.5f, 2f), 1e-5f);
+
+    [Test] public void LineSpacing_UsesTheAverageOfTheTwoTroops()
+    {
+        // Maximum lengths 2 and 6 average 4: the spacing lies in [2, 8].
+        Assert.AreEqual(2f, TroopOrderPlanner.AdjacentCentreSpacing(0.5f, 2f, 6f, 0.5f, 2f), 1e-5f);
+        Assert.AreEqual(8f, TroopOrderPlanner.AdjacentCentreSpacing(20f, 2f, 6f, 0.5f, 2f), 1e-5f);
+    }
+
     [Test] public void BoxSelect_StartsAtEightPixels()
     {
         Assert.IsFalse(OrderClassifier.IsBoxSelect(Vector2.zero, new Vector2(7.9f, 0f), 8f));

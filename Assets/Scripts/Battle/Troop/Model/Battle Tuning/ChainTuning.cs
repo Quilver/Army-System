@@ -31,6 +31,12 @@ public sealed class ChainTuning : ScriptableObject
     [SerializeField, Min(0.01f), Tooltip("Speed at which a stretched endpoint relaxes to L_nat after its link breaks.")]
     float _chainEndpointRelaxSpeed = 2f;
 
+    [Header("Multi-troop line orders (spec §6.2, SU-157)")]
+    [SerializeField, Min(0f), Tooltip("Closest centre-to-centre spacing of two adjacent troops in a multi-troop line order, x the average of their maximum line lengths (ChainMaxStretchScale x L_nat).")]
+    float _lineOrderMinSpacingScale = 0.5f;
+    [SerializeField, Min(0f), Tooltip("Widest centre-to-centre spacing of two adjacent troops in a multi-troop line order, x the average of their maximum line lengths.")]
+    float _lineOrderMaxSpacingScale = 2f;
+
     [Header("Link spring")]
     [SerializeField, Min(0f), Tooltip("Link spring: gap allowed before the spring pulls.")]
     float _linkSlack = 0.1f;
@@ -50,6 +56,8 @@ public sealed class ChainTuning : ScriptableObject
     public float ChainRetreatHingeBendDeg => _chainRetreatHingeBendDeg;
     public float ChainRetreatFalloff => _chainRetreatFalloff;
     public float ChainEndpointRelaxSpeed => _chainEndpointRelaxSpeed;
+    public float LineOrderMinSpacingScale => _lineOrderMinSpacingScale;
+    public float LineOrderMaxSpacingScale => _lineOrderMaxSpacingScale;
     public float LinkSlack => _linkSlack;
     public float LinkStiffness => _linkStiffness;
     public float LinkMaxForce => _linkMaxForce;

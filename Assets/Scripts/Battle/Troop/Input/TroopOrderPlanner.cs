@@ -7,8 +7,9 @@ using UnityEngine;
 //           Idle, facing the way they marched (SU-154).
 //           A left-drag that starts on one of the player's troops is also a Move of the selection (FinishMove, SU-129).
 //   Line    drag with one or more troops: a battle line along the drag, its front set by the drag's direction (SU-156).
-//           The troops split the span in order along the drag, adjacent line points meet at joints, and the order
-//           creates their links explicitly (Q-19).
+//           The troops split the span in order along the drag; adjacent troops' centres stay between 0.5 and 2 x the
+//           average of their maximum line lengths apart (SU-157). Adjacent troops whose line points meet (within the
+//           attach distance) are linked by the order (Q-19); troops with a gap between them are not.
 //   Face    Ctrl + click: every selected troop turns in place to face the point (from the selection's centre), and holds
 //           its line there (a line order at its own position, SU-156).
 // Chain rules for a troop linked to a troop that is not part of the order: inside the envelope (stretch <= 3.0 x L_nat,
@@ -36,6 +37,7 @@ public sealed class TroopOrderPlanner
     readonly TroopSelection _selection;
     readonly List<Placement> _placements = new();
     readonly List<Tether> _tethers = new();
+    readonly List<bool> _joinsNext = new();
 
     public TroopOrderPlanner(TroopSelection selection)
     {
@@ -44,6 +46,9 @@ public sealed class TroopOrderPlanner
 
     public IReadOnlyList<Placement> Placements => _placements;
     public IReadOnlyList<Tether> Tethers => _tethers;
+
+    // Whether placement i of the last planned line meets placement i + 1 at a joint, so the order links them (SU-157).
+    public bool JoinsNext(int index) => index >= 0 && index < _joinsNext.Count && _joinsNext[index];
 
     static TroopTuning Tuning => TroopTuning.Active;
 
@@ -194,9 +199,13 @@ public sealed class TroopOrderPlanner
 
     // The troops split the span in order along the drag (Q-18); each length is its share, clamped to [0.7, 3.0] x L_nat.
     // One troop takes the whole span (SU-156). The drag's direction sets the front (OrderClassifier.LineFacing).
+    // Several troops (SU-157): adjacent centres are the share apart, clamped to [LineOrderMinSpacingScale,
+    // LineOrderMaxSpacingScale] (0.5, 2) x the average of the two troops' maximum line lengths, so a short drag spreads
+    // the line out past the release point and a long one stops short of it. The line starts at the press point.
     public void PlanLine(List<Troop> selected, Vector2 start, Vector2 end)
     {
         _placements.Clear();
+        _joinsNext.Clear();
         if (selected.Count == 0) return;
         Vector2 drag = end - start;
         float span = drag.magnitude;
@@ -212,17 +221,45 @@ public sealed class TroopOrderPlanner
         });
 
         float share = span / selected.Count;
+        float along = selected.Count > 1 ? 0.5f * PairSpacing(share, selected[0], selected[1]) : 0.5f * share;
         for (int i = 0; i < selected.Count; i++)
         {
             Troop troop = selected[i];
+            if (i > 0) along += PairSpacing(share, selected[i - 1], troop);
             _placements.Add(new Placement
             {
                 Troop = troop,
-                Center = start + tangent * (share * (i + 0.5f)),
+                Center = start + tangent * along,
                 Facing = facing,
                 Length = Mathf.Clamp(share, troop.MinimumLineLength, troop.MaximumLineLength)
             });
         }
+
+        for (int i = 0; i + 1 < _placements.Count; i++)
+            _joinsNext.Add(PlacementsMeet(_placements[i], _placements[i + 1], tangent));
+    }
+
+    static float PairSpacing(float share, Troop a, Troop b) =>
+        AdjacentCentreSpacing(share, a.MaximumLineLength, b.MaximumLineLength,
+            Tuning.LineOrderMinSpacingScale, Tuning.LineOrderMaxSpacingScale);
+
+    // Centre-to-centre spacing of two adjacent troops in a multi-troop line (SU-157): their share of the drag, clamped to
+    // [minScale, maxScale] x the average of their maximum line lengths.
+    public static float AdjacentCentreSpacing(float share, float maxLengthA, float maxLengthB, float minScale, float maxScale)
+    {
+        float reference = (maxLengthA + maxLengthB) * 0.5f;
+        float min = reference * minScale;
+        return Mathf.Clamp(share, min, Mathf.Max(min, reference * maxScale));
+    }
+
+    // Two adjacent planned lines meet when their facing line points are within the attach distance (spec §3.4).
+    static bool PlacementsMeet(Placement a, Placement b, Vector2 dragDirection)
+    {
+        AdjacentEnds(a, dragDirection, out int endA, out _);
+        AdjacentEnds(b, dragDirection, out _, out int endB);
+        float gap = Vector2.Distance(PlannedLinePoint(a, endA), PlannedLinePoint(b, endB));
+        float attach = ChainLinkRules.AttachDistance(a.Troop.NaturalLineLength, b.Troop.NaturalLineLength, Tuning.AttachScale);
+        return gap <= attach + 1e-3f;
     }
 
     // Face (SU-156): each troop stays where it is and turns to face the point, all of them the same way (from the
@@ -270,13 +307,15 @@ public sealed class TroopOrderPlanner
     {
         for (int i = 0; i + 1 < _placements.Count; i++)
         {
+            if (!JoinsNext(i)) continue;
             AdjacentEnds(_placements[i], dragDirection, out int endA, out _);
             AdjacentEnds(_placements[i + 1], dragDirection, out _, out int endB);
             ChainLinker.LinkFromOrder(_placements[i].Troop, endA, _placements[i + 1].Troop, endB);
         }
     }
 
-    // A multi-troop line order rebuilds the chain among the selected troops from scratch.
+    // A multi-troop line order rebuilds the chain among the selected troops from scratch; only troops whose planned lines
+    // meet are linked again (SU-157).
     static void BreakLinksWithin(List<Troop> selected)
     {
         foreach (var troop in selected)
