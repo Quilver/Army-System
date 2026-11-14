@@ -83,7 +83,7 @@ constant in `TroopConstants` when it never changes:
 | Morale Tuning | Morale and retreat, faces |
 | Melee Tuning | Charges and clashes, support and duel, Assault |
 | Chain Tuning | Chains, link spring |
-| Ranged Tuning | Ranged, composite troops |
+| Ranged Tuning | Ranged (limited ammunition, SU-151), composite troops |
 | Input Tuning | Input thresholds (pixels) |
 
 Code reads them through `TroopTuning.Active` (property names unchanged). A missing asset falls back to the code

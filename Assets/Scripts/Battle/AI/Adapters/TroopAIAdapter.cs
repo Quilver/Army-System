@@ -126,8 +126,24 @@ namespace LeveragedWars.Battle.AI
             }
         }
 
-        // There is no ammunition in the battle mechanics yet: a ranged troop can always shoot.
-        public bool HasAmmo => IsRanged;
+        // A ranged troop with a living bow or crossbow soldier that still has ammunition (SU-151; always, while
+        // ammunition is unlimited). Out of ammunition, the ranged formations treat it as a melee troop.
+        public bool HasAmmo
+        {
+            get
+            {
+                Troop t = Troop;
+                if (t == null) return false;
+                IReadOnlyList<SoldierAgentState> soldiers = t.Soldiers;
+                for (int i = 0; i < soldiers.Count; i++)
+                {
+                    SoldierAgentState soldier = soldiers[i];
+                    if (soldier.IsAlive && IsMissileWeapon(soldier.Character?.RangedWeapon) && soldier.HasAmmunition)
+                        return true;
+                }
+                return false;
+            }
+        }
 
         public bool IsInMelee => Troop != null && (Troop.IsEngaged || Troop.InMelee);
 

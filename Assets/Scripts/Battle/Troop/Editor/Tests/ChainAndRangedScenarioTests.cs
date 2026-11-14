@@ -134,6 +134,33 @@ public sealed class ChainAndRangedScenarioTests
         Assert.AreEqual(expectedSpeed, speed, 0.15f);
     }
 
+    // SU-151: with limited ammunition a soldier shoots its weapon's Ammunition and stops; unlimited, it keeps shooting.
+    [TestCase(true)]
+    [TestCase(false)]
+    public void Archers_StopShooting_WhenOutOfAmmunition(bool limited)
+    {
+        UseTuning("_limitedAmmunition", limited);
+        RangedWeaponProfile bow = RangedWeaponProfile.CreateRuntimeProfile("Long bow", RangedWeaponClass.Bow, 1, 20f, 2, 10,
+            ammunition: 3);
+        _created.Add(bow);
+        CharacterProfile archer = Character(5, 15, ranged: bow,
+            skills: new List<WeaponSkill> { new(WeaponClass.Bow, 8), new(WeaponClass.Sword, 3) });
+        Troop archers = LineTroop("Archers", Vector2.zero, Vector2.right, character: archer);
+        LineTroop("Target", new Vector2(16f, 0f), Vector2.left, team: 1, character: Character(20, 40));
+
+        Simulate(30f);
+        if (limited)
+        {
+            Assert.AreEqual(12 * 3, archers.RangedFire.SingleShots, "12 archers, 3 shots each");
+            foreach (var soldier in archers.Soldiers) Assert.AreEqual(0, soldier.AmmunitionLeft);
+            Assert.AreEqual(0f, archers.RangedFire.MaxWeaponRange(), "no shooter left");
+        }
+        else
+        {
+            Assert.That(archers.RangedFire.SingleShots, Is.InRange(100, 132), "12 archers, one shot every 3 s each");
+        }
+    }
+
     [Test]
     public void LinkedLinePoint_IsNeverStolen()
     {

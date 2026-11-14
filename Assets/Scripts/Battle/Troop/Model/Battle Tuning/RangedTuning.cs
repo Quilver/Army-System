@@ -23,6 +23,9 @@ public sealed class RangedTuning : ScriptableObject
     // Whether _sightBlockingLayers has been given its default. Layer masks cannot be built in a field initialiser, so a
     // new section (or an asset saved before SU-136) takes the default in OnEnable; "Nothing" set by a designer is kept.
     [SerializeField, HideInInspector] bool _sightBlockingLayersSet;
+    [SerializeField, Tooltip("Limited ammunition (SU-151): on, each soldier has its ranged weapon's Ammunition (shots, " +
+        "default 24) for the battle, Fire & Engage volleys included, and stops shooting when it runs out. Off: unlimited.")]
+    bool _limitedAmmunition = true;
 
     [Header("Composite troops (D-55)")]
     [SerializeField, Min(0f), Tooltip("Composite troops: how strongly ranged soldiers steer to the front rank (and melee " +
@@ -37,6 +40,7 @@ public sealed class RangedTuning : ScriptableObject
     public float ProjectileSpeed => _projectileSpeed;
     public float RangedFrontArcDeg => _rangedFrontArcDeg;
     public LayerMask SightBlockingLayers => _sightBlockingLayers;
+    public bool LimitedAmmunition => _limitedAmmunition;
     public float CompositeRankGain => _compositeRankGain;
     public float CompositeRankDepthFraction => _compositeRankDepthFraction;
 

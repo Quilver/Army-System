@@ -53,6 +53,23 @@ SU-128 refer to v0.9 and may have moved.
   `ChainAndRangedScenarioTests.LineMarch_IsSlower_AndSlowerStillMovingBack`. `LinkedAttacker_IsNotHeldBackByTension`
   now expects the line march speed for a chained pursuer.
 
+### SU-151 Ammunition (Decision + Assumptions, spec §1.6, §4.7)
+- Decision: ranged weapons have an `Ammunition` field, default 24. Ranged Tuning toggle `LimitedAmmunition` (on); off
+  gives unlimited ammunition as before.
+- Assumption: ammunition is per soldier: each soldier carries its weapon's Ammunition into the battle, and every shot
+  spends one. A soldier with none left does not shoot; a troop with none left stops firing and its range mask goes.
+- Assumption: Fire & Engage volleys spend ammunition too, and a soldier with none left does not throw them, so a
+  skirmisher that throws at range has fewer javelins for the charge.
+- Assumption: ammunition is never resupplied during a battle. The existing weapons (Short Bow, Javelin) take the default
+  24 until it is set on their assets.
+- Assumption: the AI's `HasAmmo` is now real: a bow or crossbow troop with no ammunition left is handled as a melee troop
+  by the ranged formations (it withdraws to its fallback point, as they already did for "out of ammunition").
+- UI: the troop card's side panel shows `[left/full]` after the ranged weapon's name (the character's living soldiers in
+  that troop) while ammunition is limited.
+- Code: `RangedWeaponProfile.Ammunition`, `SoldierAgentState` (`ShotsFired`, `AmmunitionLeft`, `HasAmmunition`),
+  `RangedFireController`, `TroopAIAdapter.HasAmmo`, `TroopCardHud`. Tests: `AmmunitionTests`,
+  `ChainAndRangedScenarioTests.Archers_StopShooting_WhenOutOfAmmunition`.
+
 
 ## 2026-11-14: Dialogue and loans only from story notes
 

@@ -22,6 +22,8 @@ using UnityEngine;
 // target's). A direct shooter with no visible soldier in reach holds its shot. The target troop is the nearest one the
 // troop can see; a troop no shooter can see is skipped. Sight is checked when a shot is fired, not in flight. Arced
 // weapons ignore all of this. Applies to every shot, Fire & Engage volleys included.
+// Ammunition (SU-151): while Ranged Tuning's Limited Ammunition is on, every shot spends one of the shooter's ammunition
+// (its weapon's Ammunition, default 24), Fire & Engage volleys included, and a soldier with none left does not shoot.
 public sealed class RangedFireController
 {
     // A troop no shooter could see is not tried again as the target for this long (SU-136), to keep sight checks cheap.
@@ -229,6 +231,7 @@ public sealed class RangedFireController
             if (!soldier.IsAlive || soldier.Character == null) continue;
             RangedWeaponProfile weapon = soldier.Character.RangedWeapon;
             if (weapon == null || weapon.Range <= 0f || !weapon.HasRule(WeaponSpecialRule.FireAndEngage)) continue;
+            if (!soldier.HasAmmunition) continue;
             _shooters.Add(soldier);
             _shooterPositions.Add(_troop.WorldPosition(soldier));
         }
@@ -262,13 +265,13 @@ public sealed class RangedFireController
         }
     }
 
-    // A living, uncommitted soldier with a ranged weapon that has a range and a fire rate.
+    // A living, uncommitted soldier with a ranged weapon that has a range, a fire rate and ammunition left (SU-151).
     static bool IsShooter(SoldierAgentState soldier, out RangedWeaponProfile weapon)
     {
         weapon = null;
         if (!soldier.IsAlive || soldier.IsCommitted || soldier.Character == null) return false;
         weapon = soldier.Character.RangedWeapon;
-        return weapon != null && weapon.FireRate > 0 && weapon.Range > 0f;
+        return weapon != null && weapon.FireRate > 0 && weapon.Range > 0f && soldier.HasAmmunition;
     }
 
     bool CanFire() =>
@@ -501,6 +504,7 @@ public sealed class RangedFireController
             float hitChance = RangedRules.HitChance(weapon.Accuracy, shooter.Character.SkillFor(weapon.Class), tuning.BaseShotDC);
             projectiles.Launch(_troop, from, targetTroop, target, RangedRules.RawDamage(weapon.Damage), hitChance,
                 tuning.ProjectileSpeed, weapon, shooter);
+            shooter.SpendShot();
             onFired?.Invoke(shooter);
             fired++;
         }

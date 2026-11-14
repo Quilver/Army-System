@@ -203,6 +203,8 @@ public sealed class TroopTuning
     public float RangedFrontArcDeg => Ranged.RangedFrontArcDeg;
     // Layers whose colliders block direct shots' line of sight (SU-136).
     public LayerMask SightBlockingLayers => Ranged.SightBlockingLayers;
+    // SU-151: each soldier has its weapon's Ammunition for the battle.
+    public bool LimitedAmmunition => Ranged.LimitedAmmunition;
     public float CompositeRankGain => Ranged.CompositeRankGain;
     public float CompositeRankDepthFraction => Ranged.CompositeRankDepthFraction;
 

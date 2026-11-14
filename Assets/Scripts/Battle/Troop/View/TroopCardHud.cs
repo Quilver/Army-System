@@ -313,7 +313,8 @@ public sealed class TroopCardHud
         WeaponRow(x, ref y, inner, line, character, melee, DamageRules.RawDamage(character.Strength, melee.Damage, 0, false));
         RangedWeaponProfile ranged = character.RangedWeapon;
         if (ranged != null)
-            WeaponRow(x, ref y, inner, line, character, ranged, RangedRules.RawDamage(ranged.Damage));
+            WeaponRow(x, ref y, inner, line, character, ranged, RangedRules.RawDamage(ranged.Damage),
+                AmmunitionText(troop, character, ranged));
         GUI.Label(new Rect(x, y, inner, line), armour != null ? armour.DisplayName : "No armour", _caption);
     }
 
@@ -321,8 +322,9 @@ public sealed class TroopCardHud
     // name, then its damage. Without an icon: "Name (skill)". Damage shown is, for melee, Strength + weapon damage
     // (spec §4.6, before Domination); for ranged, the weapon's damage only (Q-5).
     void WeaponRow(float x, ref float y, float width, float height, CharacterProfile character, WeaponProfile weapon,
-        int damage)
+        int damage, string suffix = null)
     {
+        string name = suffix == null ? weapon.DisplayName : weapon.DisplayName + " " + suffix;
         var row = new Rect(x, y, width, height);
         int skill = character.SkillFor(weapon.Class);
         Sprite icon = GameIcons.For(weapon.Class);
@@ -331,14 +333,28 @@ public sealed class TroopCardHud
             Rect iconRect = IconRect(x, y, height);
             Icon(iconRect, icon, GameIcons.NameOf(weapon.Class));
             float textX = iconRect.xMax + IconTextGap * _scale;
-            GUI.Label(new Rect(textX, y, Mathf.Max(0f, width - (textX - x)), height), skill + "   " + weapon.DisplayName, _body);
+            GUI.Label(new Rect(textX, y, Mathf.Max(0f, width - (textX - x)), height), skill + "   " + name, _body);
         }
         else
         {
-            GUI.Label(row, weapon.DisplayName + " (" + skill + ")", _body);
+            GUI.Label(row, name + " (" + skill + ")", _body);
         }
         GUI.Label(row, damage + " dmg", _bodyValue);
         y += height;
+    }
+
+    // SU-151: "[left/full]" ammunition of the character's living soldiers in this troop, or null while it is unlimited.
+    static string AmmunitionText(Troop troop, CharacterProfile character, RangedWeaponProfile weapon)
+    {
+        if (!TroopTuning.Active.LimitedAmmunition || troop == null) return null;
+        int left = 0, full = 0;
+        foreach (var soldier in troop.Soldiers)
+        {
+            if (!soldier.IsAlive || soldier.Character != character) continue;
+            left += soldier.AmmunitionLeft;
+            full += weapon.Ammunition;
+        }
+        return "[" + left + "/" + full + "]";
     }
 
     // The stat's icon (its name when there is no icon) on the left, the value on the right.

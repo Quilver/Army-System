@@ -5,6 +5,8 @@ using UnityEngine;
 // character may carry one ranged weapon in addition to its melee weapon.
 // ArcedShot (SU-136): an arced weapon shoots over troops and terrain; a direct one (the default) needs a clear line of
 // sight to the soldier it shoots at (RangedFireController).
+// Ammunition (SU-151): shots each soldier carries into battle (default 24). Counted only while Ranged Tuning's Limited
+// Ammunition is on; a soldier with none left stops shooting, Fire & Engage volleys included.
 [CreateAssetMenu(menuName = "Troops/Ranged Weapon")]
 public sealed class RangedWeaponProfile : WeaponProfile
 {
@@ -19,6 +21,10 @@ public sealed class RangedWeaponProfile : WeaponProfile
     [SerializeField, Tooltip("Arced shot (SU-136): on, the weapon shoots over troops and terrain. Off (direct fire), a " +
         "shot needs a straight line to its target with no other troop's soldier and no sight-blocking terrain " +
         "(Ranged Tuning, Sight Blocking Layers) in the way.")] bool _arcedShot;
+    [SerializeField, Min(0), Tooltip("Ammunition (SU-151): shots each soldier carries into battle, Fire & Engage volleys " +
+        "included. Used only while Ranged Tuning's Limited Ammunition is on.")] int _ammunition = DefaultAmmunition;
+
+    public const int DefaultAmmunition = 24;
 
     public RangedWeaponClass RangedClass => _weaponClass;
     public override WeaponClass Class => _weaponClass.ToWeaponClass();
@@ -30,6 +36,8 @@ public sealed class RangedWeaponProfile : WeaponProfile
     public bool Volley => _volley;
     // Arced shot (SU-136): ignores obstructions. Direct fire (false) needs a clear line of sight.
     public bool ArcedShot => _arcedShot;
+    // Shots each soldier carries (SU-151), used while Ranged Tuning's Limited Ammunition is on.
+    public int Ammunition => Mathf.Max(0, _ammunition);
 
     protected override void OnValidate()
     {
@@ -47,7 +55,8 @@ public sealed class RangedWeaponProfile : WeaponProfile
         int fireRate,
         IEnumerable<WeaponSpecialRuleEntry> specialRules = null,
         bool volley = false,
-        bool arcedShot = false)
+        bool arcedShot = false,
+        int ammunition = DefaultAmmunition)
     {
         var profile = CreateInstance<RangedWeaponProfile>();
         profile.SetBaseValues(displayName, damage);
@@ -57,6 +66,7 @@ public sealed class RangedWeaponProfile : WeaponProfile
         profile._fireRate = ClampValue(fireRate);
         profile._volley = volley;
         profile._arcedShot = arcedShot;
+        profile._ammunition = Mathf.Max(0, ammunition);
         profile.SetSpecialRules(specialRules);
         return profile;
     }

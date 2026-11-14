@@ -763,6 +763,7 @@ defaults are used when an asset is missing. Values in the rest of this document 
 | `FireRateJitterFraction` | 0.1 | 0–1 | Random variation on the fire interval. |
 | `ProjectileSpeed` | 20 | units/s | Projectile speed. |
 | `RangedFrontArcDeg` | 45 | deg | Shooter's arc either side of the troop's facing. |
+| `LimitedAmmunition` | on (*default*) | bool | Each soldier has its ranged weapon's `Ammunition` (default 24) for the battle (SU-151). Off: unlimited. |
 | `SightBlockingLayers` | Terrain (*default*) | layers | Terrain layers that block direct fire (SU-136). Defaults to Terrain, Impassable Terrain and Impassable (the last two do not exist in this project). |
 | `CompositeRankGain` | 0.8 | gain | Strength of composite rank sorting (0 = off). |
 | `CompositeRankDepthFraction` | 0.8 | × half-depth | Target depth of the ranged / melee ranks. |

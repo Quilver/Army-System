@@ -189,6 +189,13 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 - [ ] with more than 8 eligible, the 8 with the highest Support count, not the nearest. →
 - [ ] the sum is rounded half up once, after multiplying. →
 
+**SU-151** Ammunition
+
+- [ ] ammunition is per soldier and never resupplied in a battle; a soldier with none left does not shoot, and a troop with none left stops firing. →
+- [ ] Fire & Engage volleys spend ammunition too, and a soldier with none left does not throw them. →
+- [ ] the existing weapons (Short Bow, Javelin) use the default 24 until it is set on their assets. →
+- [ ] a bow or crossbow troop out of ammunition is handled by the AI's ranged formations as a melee troop (it withdraws to its fallback point). →
+
 ## Morale, retreat & rout
 
 **SU-104** Retreats only from melee; out of melee a break disorders the troop

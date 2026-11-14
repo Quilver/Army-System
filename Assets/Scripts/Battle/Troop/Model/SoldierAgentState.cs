@@ -28,6 +28,7 @@ public sealed class SoldierAgentState
     [SerializeField] SoldierClashPulseState _clashPulse = new();
     [SerializeField] SoldierSeparationState _separation = new();
     [SerializeField] float _clashCooldownRemaining;
+    [SerializeField] int _shotsFired;
 
     public int Id => _id;
     // The character this soldier belongs to: its soldier stats and equipment.
@@ -42,6 +43,22 @@ public sealed class SoldierAgentState
     public bool CanSupport => _lifeState == SoldierLifeState.Active;
     // Down at low HP from bruises (SU-107): alive, but cannot charge, follow or support.
     public bool IsStunned => _lifeState == SoldierLifeState.Stunned;
+
+    // Ammunition (SU-151): shots this soldier has fired with its ranged weapon, Fire & Engage volleys included.
+    public int ShotsFired => _shotsFired;
+    // Shots left of its ranged weapon's Ammunition (0 without a ranged weapon). Counted whether or not ammunition is
+    // limited, so switching Limited Ammunition on mid-battle uses what was already fired.
+    public int AmmunitionLeft
+    {
+        get
+        {
+            RangedWeaponProfile weapon = _character != null ? _character.RangedWeapon : null;
+            return weapon == null ? 0 : Mathf.Max(0, weapon.Ammunition - _shotsFired);
+        }
+    }
+    // Whether the soldier may shoot: always while ammunition is unlimited (Ranged Tuning), otherwise while it has any left.
+    public bool HasAmmunition => !TroopTuning.Active.LimitedAmmunition || AmmunitionLeft > 0;
+    internal void SpendShot() => _shotsFired++;
 
     // Defence plus the armour bonus. Without a character or armour, only the soldier's Defence (or 0) counts.
     public int TotalDefence => _character == null ? 0 : _character.Defence + (_character.Armour != null ? _character.Armour.DefenceBonus : 0);
