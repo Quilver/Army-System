@@ -95,6 +95,45 @@ public sealed class ChainAndRangedScenarioTests
         TroopTuning.OverrideForTests(_tuning);
     }
 
+    void UseTuning(string property, bool value)
+    {
+        foreach (var section in _tuning.Sections)
+        {
+            var serialized = new SerializedObject(section);
+            SerializedProperty found = serialized.FindProperty(property);
+            if (found == null) continue;
+            found.boolValue = value;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            return;
+        }
+        Assert.Fail($"No Battle Tuning section has the field {property}");
+    }
+
+    // SU-150: a troop in Line (an enemy within S_Distance) marches at 0.8 of its speed toward the enemy and 0.6 moving
+    // back; with both toggles off it marches at full speed. Move 5 x 0.6 = 3 units/s.
+    [TestCase(true, true, 3f * 0.8f)]
+    [TestCase(false, true, 3f * 0.6f)]
+    [TestCase(true, false, 3f)]
+    [TestCase(false, false, 3f)]
+    public void LineMarch_IsSlower_AndSlowerStillMovingBack(bool forward, bool slowdown, float expectedSpeed)
+    {
+        UseTuning("_lineMarchSlowdown", slowdown);
+        UseTuning("_lineBackwardSlowdown", slowdown);
+        Troop troop = CreateTroop("Marcher", 0, Vector2.zero);
+        CreateTroop("Enemy", 1, new Vector2(24f, 0f));
+        Simulate(0.5f);
+        Assert.AreEqual(FormationMode.Line, troop.FormationMode, "the enemy within S_Distance puts it in Line");
+        Assert.Greater(Vector2.Dot(troop.Facing, Vector2.right), 0.9f, "facing the enemy");
+
+        troop.MoveTo(new Vector2(forward ? 8f : -8f, 0f));
+        Simulate(0.2f);
+        Vector2 start = troop.transform.position;
+        Simulate(1f);
+        float speed = Vector2.Distance(start, troop.transform.position);
+        Assert.AreEqual(FormationMode.Line, troop.FormationMode);
+        Assert.AreEqual(expectedSpeed, speed, 0.15f);
+    }
+
     [Test]
     public void LinkedLinePoint_IsNeverStolen()
     {

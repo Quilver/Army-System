@@ -79,7 +79,7 @@ constant in `TroopConstants` when it never changes:
 | Asset | Sections |
 |---|---|
 | Soldier Tuning | Stats and actions, soldier steering |
-| Formation Tuning | Distances (S_Distance, A_Distance, EngagementGap), formation and movement, troop size, friendly gap |
+| Formation Tuning | Distances (S_Distance, A_Distance, EngagementGap), formation and movement, troop size, friendly gap, marching in line (SU-150) |
 | Morale Tuning | Morale and retreat, faces |
 | Melee Tuning | Charges and clashes, support and duel, Assault |
 | Chain Tuning | Chains, link spring |

@@ -252,7 +252,9 @@ public sealed class ChainEngagementScenarioTests
         float start = a.transform.position.x;
         Simulate(2f);
         Assert.IsFalse(a.IsEngaged);
-        Assert.GreaterOrEqual(a.transform.position.x - start, 0.9f * a.PivotSpeed * 2f, "Full pursuit speed");
+        // Full speed for a chained troop is its line march speed (SU-150).
+        Assert.GreaterOrEqual(a.transform.position.x - start, 0.9f * a.PivotSpeed * TroopTuning.Active.LineMarchSpeedScale * 2f,
+            "Full pursuit speed");
     }
 
     // SU-46: pivot separation moves the free friend, not the attacker.

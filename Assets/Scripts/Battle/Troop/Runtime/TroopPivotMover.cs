@@ -3,6 +3,8 @@ using UnityEngine;
 // Moves the troop pivot: marching to a destination (Move, or the centre of a line order), pursuing an enemy troop,
 // fleeing after a rout, and the line-push drift from line pressure and link tension.
 // Pivot speed is the troop's Move x SpeedUnitsPerStatPoint (spec §1.3, §3.2); Move is the slowest soldier's Speed.
+// In Line or Chain the march is slowed, more when moving back (LineMarchRules, SU-150). Charges are soldier motion and keep
+// their own speed.
 public sealed class TroopPivotMover
 {
     const float ArrivalDistanceSquared = 0.0004f;
@@ -98,6 +100,7 @@ public sealed class TroopPivotMover
             else if (deltaTime > 0f && offset.sqrMagnitude > 0.000001f)
             {
                 Vector2 step = _path.Step(position, _destination, PivotSpeed, deltaTime);
+                step *= LineMarchScale(step);
                 _pivotVelocity = step / deltaTime;
                 position += step;
             }
@@ -124,6 +127,15 @@ public sealed class TroopPivotMover
         _destination = _pursuitTarget.transform.position;
         _hasDestination = true;
         _path.RequestRebuildIfTargetMoved(_destination);
+    }
+
+    // SU-150: the march scale for a step in this direction (1 outside Line and Chain).
+    float LineMarchScale(Vector2 direction)
+    {
+        TroopTuning tuning = TroopTuning.Active;
+        return LineMarchRules.SpeedScale(LineMarchRules.IsInLine(_troop.FormationMode), direction, _troop.Facing,
+            tuning.LineMarchSlowdown, tuning.LineMarchSpeedScale, tuning.LineBackwardSlowdown,
+            tuning.LineBackwardSpeedScale, tuning.LineBackwardAngleDeg);
     }
 
     void Arrive()

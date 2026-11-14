@@ -132,6 +132,11 @@ public sealed class TroopTuning
     public float JointClearance => Formation.JointClearance;
     public float JointClearanceFraction => Formation.JointClearanceFraction;
     public float RoutScatterRadiusScale => Formation.RoutScatterRadiusScale;
+    public bool LineMarchSlowdown => Formation.LineMarchSlowdown;
+    public float LineMarchSpeedScale => Formation.LineMarchSpeedScale;
+    public bool LineBackwardSlowdown => Formation.LineBackwardSlowdown;
+    public float LineBackwardSpeedScale => Formation.LineBackwardSpeedScale;
+    public float LineBackwardAngleDeg => Formation.LineBackwardAngleDeg;
 
     // --- Morale Tuning ---
 

@@ -128,6 +128,14 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 
 - [ ] a Line / Chain footprint reaches, ahead of and behind the line separately, the furthest soldier on that side + SoldierRadius, and at least the rank field (RankHalfWidth - 2 x RankThickness); no longer one half-width mirrored to both sides. Line points stay on the formation line; a formed-up line is unchanged. →
 
+**SU-150** Marching in line is slower, and slower still moving back
+
+- [ ] Chain counts as Line for the march slowdown. →
+- [ ] only the pivot's march is slowed (Move, Pursue, line orders); charges, followers, rushing back, retreats, routs, Disorder, line pressure, chain tension and giving way are unchanged. →
+- [ ] "moving back" is a march more than 90° (`LineBackwardAngleDeg`) from the line's facing; the backward scale replaces the line scale (0.6, not 0.48). →
+- [ ] a pursuer in Line is slowed too, so a troop of the same Speed that routs gets away (rout flight is not slowed). →
+- [ ] the AI still plans with the unslowed pivot speed. →
+
 ## Combat (melee, charges, ranged)
 
 **SU-43** Charges are completed through a retreat, then the soldier rushes back

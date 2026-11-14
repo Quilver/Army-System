@@ -693,6 +693,11 @@ defaults are used when an asset is missing. Values in the rest of this document 
 | `PathRebuildIntervalSeconds` | 0.5 | s | Path rebuild interval. |
 | `JointClearance` / `JointClearanceFraction` | 0.45 / 0.15 | units / × length | Pull-in at a linked end: min(of the two). |
 | `RoutScatterRadiusScale` | 1.6 | × radius | Routed troop scatter disc. |
+| `LineMarchSlowdown` | on (*default*) | bool | A troop in Line or Chain marches at `LineMarchSpeedScale` (SU-150). Charges are not slowed. |
+| `LineMarchSpeedScale` | 0.8 (*default*) | × march speed | March speed in Line or Chain (20% slower). |
+| `LineBackwardSlowdown` | on (*default*) | bool | Moving back in Line or Chain marches at `LineBackwardSpeedScale` instead (SU-150). |
+| `LineBackwardSpeedScale` | 0.6 (*default*) | × march speed | March speed moving back in Line or Chain (40% slower). |
+| `LineBackwardAngleDeg` | 90 (*default*) | deg | A march more than this from the line's facing is moving back. |
 
 **Morale Tuning**
 

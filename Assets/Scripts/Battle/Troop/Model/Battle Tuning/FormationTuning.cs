@@ -45,6 +45,22 @@ public sealed class FormationTuning : ScriptableObject
     [SerializeField, Min(0.5f), Tooltip("A routed troop's soldiers scatter in a disc this many times its radius.")]
     float _routScatterRadiusScale = 1.6f;
 
+    [Header("Marching in line (SU-150)")]
+    [SerializeField, Tooltip("On: a troop in Line or Chain marches at Line March Speed Scale of its speed. Charges are not " +
+        "slowed.")]
+    bool _lineMarchSlowdown = true;
+    [SerializeField, Range(0f, 1f), Tooltip("Pivot speed in Line or Chain, x the troop's march speed (0.8 = 20% slower).")]
+    float _lineMarchSpeedScale = 0.8f;
+    [SerializeField, Tooltip("On: a troop in Line or Chain moving back (more than Line Backward Angle from its facing) marches " +
+        "at Line Backward Speed Scale, in place of the line scale. Charges are not slowed.")]
+    bool _lineBackwardSlowdown = true;
+    [SerializeField, Range(0f, 1f), Tooltip("Pivot speed moving back in Line or Chain, x the troop's march speed (0.6 = 40% " +
+        "slower).")]
+    float _lineBackwardSpeedScale = 0.6f;
+    [SerializeField, Range(0f, 180f), Tooltip("A march more than this many degrees from the line's facing counts as moving " +
+        "back.")]
+    float _lineBackwardAngleDeg = 90f;
+
     public float SDistance => _sDistance;
     public float SDistanceExitHysteresis => _sDistanceExitHysteresis;
     public float ADistance => _aDistance;
@@ -61,4 +77,10 @@ public sealed class FormationTuning : ScriptableObject
     public float JointClearance => _jointClearance;
     public float JointClearanceFraction => _jointClearanceFraction;
     public float RoutScatterRadiusScale => _routScatterRadiusScale;
+
+    public bool LineMarchSlowdown => _lineMarchSlowdown;
+    public float LineMarchSpeedScale => _lineMarchSpeedScale;
+    public bool LineBackwardSlowdown => _lineBackwardSlowdown;
+    public float LineBackwardSpeedScale => _lineBackwardSpeedScale;
+    public float LineBackwardAngleDeg => _lineBackwardAngleDeg;
 }

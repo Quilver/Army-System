@@ -36,6 +36,23 @@ SU-128 refer to v0.9 and may have moved.
   (0 support) are unchanged. `SupportBonusPerAlly` is removed.
 - Code: `SupportRules`, `SupportCalculator`, Melee Tuning. Tests: `SupportRulesTests`.
 
+### SU-150 Marching in line is slower, and slower still moving back (Decision + Assumptions, spec §3.1, §3.2)
+- Decision: two Formation Tuning toggles. `LineMarchSlowdown` (on): a troop in Line marches at `LineMarchSpeedScale`
+  (0.8, 20% slower). `LineBackwardSlowdown` (on): moving back it marches at `LineBackwardSpeedScale` (0.6, 40% slower).
+  Charges are not slowed.
+- Assumption: Chain counts as Line (a chain is linked lines).
+- Assumption: only the pivot's march is slowed (Move, Pursue and line orders). Charges, followers and soldiers rushing
+  back keep their own speed; retreats, routs, Disorder, line pressure, chain tension and giving way to friends are not
+  marches and are unchanged.
+- Assumption: "moving back" is a march more than `LineBackwardAngleDeg` (90°) from the line's facing; sideways is not
+  back. The backward scale replaces the line scale (0.6, not 0.8 × 0.6).
+- Assumption: a pursuer is in Line once its target is within S_Distance, so it is slowed too: a troop of the same Speed
+  that routs gets away, since rout flight is not slowed. Cavalry (Speed 10 → 4.8 units/s) still catch Speed 5–7 infantry.
+- Assumption: the AI still plans with the unslowed `PivotSpeed` (`RunSpeed`).
+- Code: `LineMarchRules`, `TroopPivotMover`, Formation Tuning. Tests: `LineMarchRulesTests`,
+  `ChainAndRangedScenarioTests.LineMarch_IsSlower_AndSlowerStillMovingBack`. `LinkedAttacker_IsNotHeldBackByTension`
+  now expects the line march speed for a chained pursuer.
+
 
 ## 2026-11-14: Dialogue and loans only from story notes
 
