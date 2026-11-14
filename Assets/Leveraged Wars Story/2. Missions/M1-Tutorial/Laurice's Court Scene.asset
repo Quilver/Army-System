@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 09d9dd0205bab0640872e2256248d999, type: 3}
+  m_Name: Laurice's Court Scene
+  m_EditorClassIdentifier: 
+  dialogue: []
+  _source: {fileID: 4900000, guid: 452abb290e07527479cb82a8890c04ec, type: 3}
+  _lines:
+  - Speaker: Laurice
+    Text: Do you think this is Claudius' work Julian?
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Laurice
+    RightName: 
+    LeftPortrait: {fileID: -3154334995067897491, guid: ffa9ecac345bc29489d842a6a35acfa3,
+      type: 3}
+    RightPortrait: {fileID: 0}
+  - Speaker: Prince Julian
+    Text: Perhaps, but it would be best to keep that to ourselves...
+    WordsPerMinute: 0
+    SpeakerSide: 2
+    LeftName: Laurice
+    RightName: Prince Julian
+    LeftPortrait: {fileID: -3154334995067897491, guid: ffa9ecac345bc29489d842a6a35acfa3,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: eb776ccddca018d4e9951a87c124e825,
+      type: 3}
+  - Speaker: Prince Julian
+    Text: A wary heart would only make others more wary and we have not the strength
+      to match them yet...
+    WordsPerMinute: 0
+    SpeakerSide: 2
+    LeftName: Laurice
+    RightName: Prince Julian
+    LeftPortrait: {fileID: -3154334995067897491, guid: ffa9ecac345bc29489d842a6a35acfa3,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: eb776ccddca018d4e9951a87c124e825,
+      type: 3}
+  _warnings:
+  - 'Line 5: "Special Character/Preferred Style/Laurice.png" is not at Assets/Leveraged
+    Wars Story/2. Missions/M1-Tutorial/Special Character/Preferred Style/Laurice.png;
+    using Assets/Leveraged Wars Story/1. Characters/Temp sprite/Laurice.png. Fix
+    the path to silence this.'
+  - 'Line 7: "Special Character/Preferred Style/Dark Prince.png" is not at Assets/Leveraged
+    Wars Story/2. Missions/M1-Tutorial/Special Character/Preferred Style/Dark Prince.png;
+    using Assets/Leveraged Wars Story/1. Characters/Temp sprite/Dark Prince.png.
+    Fix the path to silence this.'

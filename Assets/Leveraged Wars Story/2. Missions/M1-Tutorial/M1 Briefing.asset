@@ -1,0 +1,73 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 09d9dd0205bab0640872e2256248d999, type: 3}
+  m_Name: M1 Briefing
+  m_EditorClassIdentifier: 
+  dialogue: []
+  _source: {fileID: 4900000, guid: 171d88a25e7cf0b45a17609cc53b0bf0, type: 3}
+  _lines:
+  - Speaker: Bard
+    Text: 'When the vile warlord Hartkan seized power, young Prince Julian was forced
+      to flee for his life at the tender age of four. Accompanied by his loyal knight,
+      they escaped Candera and sought refuge in the free city of Majula.
+
+      Having
+      lost his family, Julian was groomed to reclaim the throne. He learned the ways
+      of the sword, the art of war, politics, manners, and charm. Most importantly,
+      he delved into the world of banking, recognizing the power that debt could
+      wield in achieving seemingly impossible goals...
+
+      With Hartkan''s forces
+      away from Majula, Julian sees a prime opportunity to reclaim his homeland.
+      Gathering his exiled supporters, all he needs is a seed loan to initiate the
+      liberation of Majula.'
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Bard
+    RightName: 
+    LeftPortrait: {fileID: 7468356559241021412, guid: 048b23c5b385af544abc2bc369b69b1f,
+      type: 3}
+    RightPortrait: {fileID: 0}
+  - Speaker: Jagen
+    Text: My prince, I spotted several armed thugs coming towards us. We must take
+      up arms and prepare for battle.
+    WordsPerMinute: 0
+    SpeakerSide: 2
+    LeftName: Bard
+    RightName: Jagen
+    LeftPortrait: {fileID: 7468356559241021412, guid: 048b23c5b385af544abc2bc369b69b1f,
+      type: 3}
+    RightPortrait: {fileID: 4202274659027958708, guid: 67aadd38677358848be0637c45ffa90d,
+      type: 3}
+  - Speaker: Prince Julian
+    Text: Sound the horn. It is time that I earn my spurs.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Prince Julian
+    RightName: Jagen
+    LeftPortrait: {fileID: -2861679652154964632, guid: eb776ccddca018d4e9951a87c124e825,
+      type: 3}
+    RightPortrait: {fileID: 4202274659027958708, guid: 67aadd38677358848be0637c45ffa90d,
+      type: 3}
+  _warnings:
+  - 'Line 6: "Special Character/Preferred Style/Bard.png" is not at Assets/Leveraged
+    Wars Story/2. Missions/M1-Tutorial/Special Character/Preferred Style/Bard.png;
+    using Assets/Leveraged Wars Story/1. Characters/Temp sprite/Bard.png. Fix the
+    path to silence this.'
+  - 'Line 10: "Special Character/Preferred Style/Jagen.png" is not at Assets/Leveraged
+    Wars Story/2. Missions/M1-Tutorial/Special Character/Preferred Style/Jagen.png;
+    using Assets/Leveraged Wars Story/1. Characters/Temp sprite/Jagen.png. Fix the
+    path to silence this.'
+  - 'Line 12: "Special Character/Preferred Style/Dark Prince.png" is not at Assets/Leveraged
+    Wars Story/2. Missions/M1-Tutorial/Special Character/Preferred Style/Dark Prince.png;
+    using Assets/Leveraged Wars Story/1. Characters/Temp sprite/Dark Prince.png.
+    Fix the path to silence this.'
