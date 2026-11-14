@@ -45,6 +45,12 @@ public sealed class MeleeTuning : ScriptableObject
     int _maxSupporters = 8;
     [SerializeField, Min(0.1f), Tooltip("Divisor of the Domination formula.")]
     float _dominationDivisor = 10f;
+    [SerializeField, Tooltip("Elo duel (SU-153): on, the charger's chance is 1 / (1 + 10^((CP_B - CP_A) / Elo Scale)), from " +
+        "the Combat Power difference. Off: CP_A / (CP_A + CP_B).")]
+    bool _eloDuel;
+    [SerializeField, Min(1f), Tooltip("Elo duel: a Combat Power lead of this many points wins 10 to 1 (91%). Half of it wins " +
+        "about 3 to 1 (76%).")]
+    float _eloScale = 30f;
 
     [Header("Assault (spec §4.2)")]
     [SerializeField, Min(0f), Tooltip("Assault length after an ordered troop engages.")]
@@ -68,6 +74,8 @@ public sealed class MeleeTuning : ScriptableObject
     public float SupportBonusPerSupportPoint => _supportBonusPerSupportPoint;
     public int MaxSupporters => _maxSupporters;
     public float DominationDivisor => _dominationDivisor;
+    public bool EloDuel => _eloDuel;
+    public float EloScale => _eloScale;
 
     public float AssaultDurationSeconds => _assaultDurationSeconds;
     public int AssaultAggressionBonus => _assaultAggressionBonus;

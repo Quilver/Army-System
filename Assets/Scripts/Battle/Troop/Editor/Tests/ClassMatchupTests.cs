@@ -171,4 +171,12 @@ public sealed class ClassMatchupTests
     [TestCase("Skirmisher", "Archer")]
     public void HeadOn(string attacker, string defender) => Measure(attacker, defender, 8);
 
+    [Explicit("Measurement: run by name")]
+    [TestCase("Cav", "Spearman")]
+    [TestCase("Huskarl", "Spearman")]
+    public void HeadOn_Elo(string attacker, string defender)
+    {
+        SetBool("_eloDuel", true);
+        Measure(attacker, defender, 8);
+    }
 }

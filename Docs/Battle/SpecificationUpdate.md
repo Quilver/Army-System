@@ -88,6 +88,14 @@ SU-128 refer to v0.9 and may have moved.
   and `MidChainRout_SplitsTheChain_AndBrokenEndsRelax` switch the bonus off, since their Shock values are set against
   morale without it.
 
+### SU-153 Elo duel option (Decision + Assumptions, spec §4.5)
+- Decision: Melee Tuning toggle `EloDuel`. On, the charger's chance is P_A = 1 / (1 + 10^((CP_B − CP_A) / EloScale)),
+  from the Combat Power difference, so a lead gives the same odds at any level. Off, P_A = CP_A / (CP_A + CP_B) as before.
+- Assumption: off by default, so the duel is unchanged until it is switched on.
+- Assumption: `EloScale` 30: 30 Combat Power ahead wins 10 to 1. It keeps today's odds for a flanked spearman against a
+  charging rider (5 vs 28: 15%).
+- Assumption: Domination is unchanged: round(|R − 100 P_A| / DominationDivisor). The combat log shows the chance in use.
+- Code: `DuelRules.EloWinPercent`, `DuelRules.WinPercent`, `DuelResolver`, Melee Tuning. Tests: `EloDuelRulesTests`.
 
 ## 2026-11-14: Dialogue and loans only from story notes
 

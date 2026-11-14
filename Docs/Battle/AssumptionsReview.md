@@ -1,6 +1,6 @@
 # Assumptions review
 
-Every unconfirmed Assumption in `SpecificationUpdate.md` (SU-01 to SU-147), grouped by system so they can be confirmed in one sitting: 154 assumptions across 84 SU entries. SU-136 to SU-140 were added on 2026-11-08; the SU-74 and SU-121 items about routed troops never leaving the map were removed (SU-138 replaced them). Rebuilt 2026-11-08 (SU-135): assumptions that later entries overtook were removed, missing ones were added, and the groups were tidied. The spec (v0.10) tags text that rests on one of these as **[A: SU-n]**.
+Every unconfirmed Assumption in `SpecificationUpdate.md` (SU-01 to SU-153), grouped by system so they can be confirmed in one sitting: 174 assumptions across 90 SU entries. SU-148 to SU-153 (class design rules) were added on 2026-11-14. SU-136 to SU-140 were added on 2026-11-08; the SU-74 and SU-121 items about routed troops never leaving the map were removed (SU-138 replaced them). Rebuilt 2026-11-08 (SU-135): assumptions that later entries overtook were removed, missing ones were added, and the groups were tidied. The spec (v0.10) tags text that rests on one of these as **[A: SU-n]**.
 
 ## How to use this
 
@@ -17,9 +17,9 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 
 - [Troops, characters, stats & equipment](#troops-characters-stats--equipment) (20)
 - [Soldier simulation & physics](#soldier-simulation--physics) (6)
-- [Formations, movement & geometry](#formations-movement--geometry) (11)
-- [Combat (melee, charges, ranged)](#combat-melee-charges-ranged) (17)
-- [Morale, retreat & rout](#morale-retreat--rout) (12)
+- [Formations, movement & geometry](#formations-movement--geometry) (16)
+- [Combat (melee, charges, ranged)](#combat-melee-charges-ranged) (28)
+- [Morale, retreat & rout](#morale-retreat--rout) (16)
 - [Controls, orders & battle UI](#controls-orders--battle-ui) (26)
 - [Campaign, tent, missions & deployment](#campaign-tent-missions--deployment) (45)
 - [Enemy AI](#enemy-ai) (13)
@@ -195,6 +195,12 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 - [ ] Fire & Engage volleys spend ammunition too, and a soldier with none left does not throw them. →
 - [ ] the existing weapons (Short Bow, Javelin) use the default 24 until it is set on their assets. →
 - [ ] a bow or crossbow troop out of ammunition is handled by the AI's ranged formations as a melee troop (it withdraws to its fallback point). →
+
+**SU-153** Elo duel option
+
+- [ ] off by default. →
+- [ ] `EloScale` 30: 30 Combat Power ahead wins 10 to 1 (keeps today's 15% for a flanked spearman against a charging rider). →
+- [ ] Domination is unchanged: round(|R − 100 P_A| / 10). →
 
 ## Morale, retreat & rout
 

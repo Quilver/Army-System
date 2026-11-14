@@ -734,6 +734,8 @@ defaults are used when an asset is missing. Values in the rest of this document 
 | `SupportBonusPerSupportPoint` | 0.25 (*default*) | CP per Support point | Each supporter gives its Support × this (SU-149). |
 | `MaxSupporters` | 8 (*default*) | int | Most supporters counted, those with the highest Support (SU-149). |
 | `DominationDivisor` | 10 | float | Divisor in the Domination formula. |
+| `EloDuel` | off (*default*) | bool | On: P_A = 1 / (1 + 10^((CP_B − CP_A) / EloScale)) (SU-153). |
+| `EloScale` | 30 (*default*) | CP | Elo duel: this lead wins 10 to 1. |
 | `AssaultDurationSeconds` | 10 | s | Assault length. |
 | `AssaultAggressionBonus` | 5 | int | Aggression during Assault. |
 | `AssaultChargeBonus` | 5 | int | Charge during Assault, while charging. |

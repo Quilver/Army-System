@@ -15,6 +15,8 @@ public readonly struct DuelOutcome
 
 // The duel between two soldiers at contact (spec §4.5). Pure C#.
 //   P_A = CP_A / (CP_A + CP_B). Roll R in [0, 100]. A wins if R <= P_A x 100.
+//   Elo duel (SU-153, Melee Tuning toggle): P_A = 1 / (1 + 10^((CP_B - CP_A) / EloScale)), so a Combat Power difference
+//   gives the same odds at any level (EloScale 30: 30 points ahead wins 10 to 1).
 //   Domination = round(|R - P_A x 100| / DominationDivisor), rounded half up (1.5 gives 2, 2.5 gives 3).
 //   The winner adds Domination to its raw damage, whichever side wins.
 public static class DuelRules
@@ -34,9 +36,22 @@ public static class DuelRules
         return Math.Round(percent, 6);
     }
 
-    public static DuelOutcome Resolve(float powerA, float powerB, float roll, float dominationDivisor)
+    // Elo duel (SU-153): P_A from the Combat Power difference, as a percentage rounded to 1e-6.
+    public static double EloWinPercent(float powerA, float powerB, float eloScale)
     {
-        double percentA = ChargerWinPercent(powerA, powerB);
+        double scale = eloScale > 0f ? eloScale : 30.0;
+        double percent = 100.0 / (1.0 + Math.Pow(10.0, (powerB - (double)powerA) / scale));
+        return Math.Round(percent, 6);
+    }
+
+    // P_A in percent by the active rule: Elo when elo is on, the ratio otherwise.
+    public static double WinPercent(float powerA, float powerB, bool elo, float eloScale) =>
+        elo ? EloWinPercent(powerA, powerB, eloScale) : ChargerWinPercent(powerA, powerB);
+
+    public static DuelOutcome Resolve(float powerA, float powerB, float roll, float dominationDivisor, bool elo = false,
+        float eloScale = 30f)
+    {
+        double percentA = WinPercent(powerA, powerB, elo, eloScale);
         double r = Math.Round((double)roll, 6);
         bool aWins = r <= percentA;
         double divisor = dominationDivisor > 0f ? dominationDivisor : 10.0;

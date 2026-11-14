@@ -1,7 +1,8 @@
 using UnityEngine;
 
 // Resolves one clash between two opposing soldiers in contact (spec §4.5, §4.6):
-//   knock-back on both, then a duel on Combat Power: P_A = CP_A / (CP_A + CP_B), roll R in [0, 100], A wins when
+//   knock-back on both, then a duel on Combat Power: P_A = CP_A / (CP_A + CP_B) (or the Elo duel, SU-153), roll R in
+//   [0, 100], A wins when
 //   R <= P_A x 100. The winner deals Strength + weapon damage + Domination, Domination = round(|R - P_A%| / 10),
 //   doubled for a Couched Lance bearer charging during its troop's Assault (SU-148). The damage goes through the
 //   target's armour (MitigationResolver).
@@ -42,7 +43,8 @@ public sealed class DuelResolver
         int powerA = partsA.Total;
         int powerB = partsB.Total;
         float roll = a.Troop.TroopRandom.Range(0f, 100f);
-        DuelOutcome outcome = DuelRules.Resolve(powerA, powerB, roll, tuning.DominationDivisor);
+        DuelOutcome outcome = DuelRules.Resolve(powerA, powerB, roll, tuning.DominationDivisor, tuning.EloDuel,
+            tuning.EloScale);
 
         SoldierContact winner = outcome.AWins ? a : b;
         SoldierContact loser = outcome.AWins ? b : a;
@@ -56,7 +58,7 @@ public sealed class DuelResolver
             Defender = CombatLogSoldier.Of(b.Troop, b.Soldier),
             AttackerPower = partsA,
             DefenderPower = partsB,
-            ChanceA = powerA + powerB > 0 ? powerA / (float)(powerA + powerB) : 0.5f,
+            ChanceA = (float)(DuelRules.WinPercent(powerA, powerB, tuning.EloDuel, tuning.EloScale) / 100.0),
             Roll = roll,
             AttackerWins = outcome.AWins,
         };

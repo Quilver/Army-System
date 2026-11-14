@@ -81,7 +81,7 @@ constant in `TroopConstants` when it never changes:
 | Soldier Tuning | Stats and actions, soldier steering |
 | Formation Tuning | Distances (S_Distance, A_Distance, EngagementGap), formation and movement, troop size, friendly gap, marching in line (SU-150) |
 | Morale Tuning | Morale and retreat, faces |
-| Melee Tuning | Charges and clashes, support and duel, Assault |
+| Melee Tuning | Charges and clashes, support and duel (Elo option, SU-153), Assault |
 | Chain Tuning | Chains, link spring |
 | Ranged Tuning | Ranged (limited ammunition, SU-151), composite troops |
 | Input Tuning | Input thresholds (pixels) |

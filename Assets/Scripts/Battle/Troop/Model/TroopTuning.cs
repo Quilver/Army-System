@@ -177,6 +177,8 @@ public sealed class TroopTuning
     public float SupportBonusPerSupportPoint => Melee.SupportBonusPerSupportPoint;
     public int MaxSupporters => Melee.MaxSupporters;
     public float DominationDivisor => Melee.DominationDivisor;
+    public bool EloDuel => Melee.EloDuel;
+    public float EloScale => Melee.EloScale;
     public float AssaultDurationSeconds => Melee.AssaultDurationSeconds;
     public int AssaultAggressionBonus => Melee.AssaultAggressionBonus;
     public int AssaultChargeBonus => Melee.AssaultChargeBonus;
