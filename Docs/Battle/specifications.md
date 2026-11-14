@@ -698,6 +698,10 @@ defaults are used when an asset is missing. Values in the rest of this document 
 | `LineBackwardSlowdown` | on (*default*) | bool | Moving back in Line or Chain marches at `LineBackwardSpeedScale` instead (SU-150). |
 | `LineBackwardSpeedScale` | 0.6 (*default*) | × march speed | March speed moving back in Line or Chain (40% slower). |
 | `LineBackwardAngleDeg` | 90 (*default*) | deg | A march more than this from the line's facing is moving back. |
+| `LineWheel` | on (*default*) | bool | A troop already in Line or Chain wheels to a new facing at `LineWheelRateDeg` instead of turning at once (SU-155). |
+| `LineWheelRateDeg` | 60 (*default*) | deg/s | How fast a line wheels. |
+| `LineTurnSlowdown` | on (*default*) | bool | A troop in Line or Chain marching more than `LineTurnAngleDeg` from its facing marches at `LineBackwardSpeedScale` (SU-155). |
+| `LineTurnAngleDeg` | 45 (*default*) | deg | A march more than this from the line's facing counts as turning. |
 
 **Morale Tuning**
 

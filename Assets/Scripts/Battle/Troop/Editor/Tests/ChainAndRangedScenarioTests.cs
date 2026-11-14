@@ -77,6 +77,13 @@ public sealed class ChainAndRangedScenarioTests
         for (int i = 0; i < frames; i++) _world.SimulateFrame(FrameTime);
     }
 
+    // Steps exactly frames frames; returns the time stepped.
+    float SimulateFrames(int frames)
+    {
+        for (int i = 0; i < frames; i++) _world.SimulateFrame(FrameTime);
+        return frames * FrameTime;
+    }
+
     void UseTuning(string property, float value)
     {
         _tuning ??= TroopTuning.CreateDefaults();
@@ -132,7 +139,8 @@ public sealed class ChainAndRangedScenarioTests
     }
 
     // SU-150: a troop in Line (an enemy within S_Distance) marches at 0.8 of its speed toward the enemy and 0.6 moving
-    // back; with both toggles off it marches at full speed. Move 5 x 0.6 = 3 units/s.
+    // back; with the toggles off it marches at full speed. Move 5 x 0.6 = 3 units/s. Moving back it wheels to its march
+    // (SU-155) and is still more than 45° off its front after 1.2 s, so the turn slowdown counts as one of the toggles.
     [TestCase(true, true, 3f * 0.8f)]
     [TestCase(false, true, 3f * 0.6f)]
     [TestCase(true, false, 3f)]
@@ -141,6 +149,7 @@ public sealed class ChainAndRangedScenarioTests
     {
         UseTuning("_lineMarchSlowdown", slowdown);
         UseTuning("_lineBackwardSlowdown", slowdown);
+        UseTuning("_lineTurnSlowdown", slowdown);
         Troop troop = CreateTroop("Marcher", 0, Vector2.zero);
         CreateTroop("Enemy", 1, new Vector2(24f, 0f));
         Simulate(0.5f);
@@ -154,6 +163,107 @@ public sealed class ChainAndRangedScenarioTests
         float speed = Vector2.Distance(start, troop.transform.position);
         Assert.AreEqual(FormationMode.Line, troop.FormationMode);
         Assert.AreEqual(expectedSpeed, speed, 0.15f);
+    }
+
+    // SU-154: a troop no longer turns toward an enemy by itself. An enemy within S_Distance on its flank puts it in Line,
+    // but it keeps its own front (a new troop faces its transform's right, +x).
+    [Test]
+    public void Troop_DoesNotTurnToAnEnemyOnItsFlank()
+    {
+        Troop troop = CreateTroop("Watcher", 0, Vector2.zero);
+        CreateTroop("Flanker", 1, new Vector2(0f, 20f));
+        Simulate(2f);
+        Assert.AreEqual(FormationMode.Line, troop.FormationMode, "the enemy within S_Distance puts it in Line");
+        Assert.Greater(Vector2.Dot(troop.Facing, Vector2.right), 0.99f, "still facing its own front, not the enemy");
+        Assert.AreEqual(1, troop.Engagements.Count);
+        Assert.AreEqual(TroopFace.LeftFlank, troop.Engagements[0].Face, "the enemy is on its left flank");
+    }
+
+    // SU-154: a troop faces where it marches, and keeps that facing when it stops.
+    [Test]
+    public void Troop_FacesWhereItMarched_AndKeepsItWhenItStops()
+    {
+        Troop troop = CreateTroop("Marcher", 0, Vector2.zero);
+        troop.MoveTo(new Vector2(0f, -6f));
+        Simulate(1f);
+        Assert.Greater(Vector2.Dot(troop.Facing, Vector2.down), 0.99f, "facing its march");
+        Simulate(5f);
+        Assert.IsFalse(troop.IsMoving, "arrived");
+        Assert.AreEqual(FormationMode.Idle, troop.FormationMode);
+        Assert.Greater(Vector2.Dot(troop.Facing, Vector2.down), 0.99f, "still facing the way it marched");
+    }
+
+    // SU-155: a troop in Line wheels to a new march at Line Wheel Rate (60°/s), marching as slowly as moving back (0.6)
+    // while its march is more than Line Turn Angle (45°) off its front. With Line Wheel off it turns at once and marches
+    // at the line speed (0.8). Move 5 x 0.6 = 3 units/s.
+    [TestCase(true)]
+    [TestCase(false)]
+    public void LineTroop_WheelsToItsMarch(bool wheel)
+    {
+        UseTuning("_lineWheel", wheel);
+        Troop troop = CreateTroop("Wheeler", 0, Vector2.zero);
+        CreateTroop("Enemy", 1, new Vector2(24f, 0f));
+        Simulate(0.5f);
+        Assert.AreEqual(FormationMode.Line, troop.FormationMode);
+        Assert.Greater(Vector2.Dot(troop.Facing, Vector2.right), 0.99f);
+
+        troop.MoveTo(new Vector2(0f, 12f));
+        Simulate(0.5f);
+        float turned = Vector2.Angle(Vector2.right, troop.Facing);
+        Vector2 start = troop.transform.position;
+        float elapsed = SimulateFrames(6);
+        float speed = Vector2.Distance(start, troop.transform.position) / elapsed;
+        if (wheel)
+        {
+            Assert.That(turned, Is.InRange(15f, 35f), "wheeling at 60°/s");
+            Assert.AreEqual(3f * 0.6f, speed, 0.15f, "more than 45° off its front: as slow as moving back");
+        }
+        else
+        {
+            Assert.Greater(turned, 85f, "turned at once");
+            Assert.AreEqual(3f * 0.8f, speed, 0.15f, "marching forward in line");
+        }
+
+        Simulate(1.5f);
+        Assert.AreEqual(FormationMode.Line, troop.FormationMode);
+        Assert.Greater(Vector2.Dot(troop.Facing, Vector2.up), 0.99f, "facing its march");
+    }
+
+    // SU-155: in Line under a line order the troop keeps its ordered front, so marching sideways is as slow as moving back.
+    [Test]
+    public void LineOrder_KeepsItsFront_SidewaysIsAsSlowAsMovingBack()
+    {
+        Troop troop = CreateTroop("Sidestepper", 0, Vector2.zero);
+        CreateTroop("Enemy", 1, new Vector2(24f, 0f));
+        Simulate(0.5f);
+        troop.OrderLine(new Vector2(0f, 8f), Vector2.right, troop.NaturalLineLength);
+        Simulate(0.2f);
+        Vector2 start = troop.transform.position;
+        float elapsed = SimulateFrames(30);
+        float speed = Vector2.Distance(start, troop.transform.position) / elapsed;
+        Assert.Greater(Vector2.Dot(troop.Facing, Vector2.right), 0.99f, "keeps its ordered front");
+        Assert.AreEqual(3f * 0.6f, speed, 0.15f);
+    }
+
+    // SU-156: a Face order (a line order at the troop's own place) turns a troop that is not in line at once; a troop
+    // already in line wheels to it (SU-155).
+    [Test]
+    public void FaceOrder_TurnsAtOnce_OrWheelsWhenAlreadyInLine()
+    {
+        Troop idle = CreateTroop("Idle", 0, Vector2.zero);
+        idle.OrderLine(Vector2.zero, Vector2.up, idle.NaturalLineLength);
+        Troop lined = CreateTroop("Lined", 0, new Vector2(0f, -60f));
+        CreateTroop("Enemy", 1, new Vector2(24f, -60f));
+        Simulate(0.5f);
+        Assert.Greater(Vector2.Dot(idle.Facing, Vector2.up), 0.99f, "not in line: turned at once");
+        Assert.AreEqual(FormationMode.Line, idle.FormationMode, "holds its line");
+        Assert.AreEqual(FormationMode.Line, lined.FormationMode);
+
+        lined.OrderLine(lined.transform.position, Vector2.up, lined.NaturalLineLength);
+        Simulate(0.5f);
+        Assert.That(Vector2.Angle(Vector2.right, lined.Facing), Is.InRange(15f, 35f), "in line: wheeling at 60°/s");
+        Simulate(1.5f);
+        Assert.Greater(Vector2.Dot(lined.Facing, Vector2.up), 0.99f, "wheeled to its ordered front");
     }
 
     // SU-151: with limited ammunition a soldier shoots its weapon's Ammunition and stops; unlimited, it keeps shooting.

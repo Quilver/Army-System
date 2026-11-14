@@ -11,6 +11,51 @@ SU-128 refer to v0.9 and may have moved.
 
 ---
 
+## 2026-11-14: Troop facing controls (branch troop-facing-controls)
+
+### SU-154 Troops no longer face the nearest enemy by themselves (Decision + Assumptions, spec §3.3, §6.2)
+- Decision: a troop faces where it is moving, or where it was ordered to face. It no longer turns toward enemies within
+  S_Distance. An enemy within S_Distance still turns it into a battle line (Line / Chain), but the line keeps the
+  troop's own front, so an enemy that comes at its side meets a flank.
+- Assumption: the troop's own facing (its heading) is, in order: locked while engaged (as before); a pursuer whose
+  target is within S_Distance squares up to the face it attacks (SU-75, unchanged); in line under a line order, the
+  ordered facing; marching (Move, Pursue, or the march to a line order's place), the march direction; otherwise
+  unchanged, so a troop that stops keeps facing the way it last marched or was ordered. A new troop faces its
+  transform's right; deployment and placement set the facing they give.
+- Assumption: an Idle troop's circle footprint, its faces and its ranged arc use that kept facing, and its soldiers turn
+  to it once they stand still. Soldiers in any line (an ordered line too, not only a line facing a threat) face the
+  line's front.
+- Assumption: ranged troops no longer turn toward targets either; they shoot only what is in their front arc (±45°), so
+  archers must be faced at what they should shoot. The enemy AI already gives its Holds and its ranged troops a facing
+  (`TroopAIAdapter`), so it is unchanged.
+- Removed: the threat heading (the weighted direction of enemies within S_Distance) and its smoothing.
+- Code: `TroopFormationState` (`UpdateNatural`, `UpdateHeading`, `SetHeading`), `TroopEngagementSystem`,
+  `Troop.UpdateNaturalFormation` / `PlaceAt` / `MarchVelocity`, `SoldierFacingAnimator`. Tests:
+  `ChainAndRangedScenarioTests.Troop_DoesNotTurnToAnEnemyOnItsFlank`, `Troop_FacesWhereItMarched_AndKeepsItWhenItStops`.
+
+### SU-155 A line wheels to turn, and turning is as slow as moving back (Decision + Assumptions, spec §3.1, §3.2)
+- Decision: a troop in Line or Chain that has to turn to where it is moving wheels, or marches with the same penalty as
+  moving back (`LineBackwardSpeedScale`, 0.6).
+- Assumption: both happen, each with its own Formation Tuning toggle. `LineWheel` (on): a troop already in line turns
+  its facing toward its march, or to a new ordered front, at `LineWheelRateDeg` (60°/s; a quarter turn takes 1.5 s)
+  instead of at once. `LineTurnSlowdown` (on): a troop in line marching more than `LineTurnAngleDeg` (45°) from its
+  facing, because it is still wheeling or keeps an ordered front, marches at `LineBackwardSpeedScale`. So a line
+  wheeling to a new march starts slow and speeds up to the line speed (0.8) once it is within 45° of it, and a line
+  under a line order keeps its ordered front and sidesteps or backs up at 0.6.
+- Assumption: the wheel turns the line about its pivot (its centre), not about one end, so the troop does not drift
+  sideways while it turns.
+- Assumption: a troop that is not yet in line (marching in column, or Idle) turns at once, and a line that forms takes
+  its facing at once: the wheel applies only to a line that already stood. A pursuer squaring up to its target keeps
+  its own easing (SU-75) rather than the wheel rate.
+- Assumption: the turning slowdown does not need `LineBackwardSlowdown`; with both on, moving back is covered by the
+  turning slowdown as well (same speed).
+- Code: `LineMarchRules` (`SpeedScale` with the turn slowdown, `Wheel`), `TroopFormationState`, `TroopPivotMover`,
+  Formation Tuning. Tests: `LineMarchRulesTests`, `ChainAndRangedScenarioTests.LineTroop_WheelsToItsMarch`,
+  `LineOrder_KeepsItsFront_SidewaysIsAsSlowAsMovingBack`, `FaceOrder_TurnsAtOnce_OrWheelsWhenAlreadyInLine`.
+  `LineMarch_IsSlower_AndSlowerStillMovingBack` now switches the turning slowdown with the other two toggles.
+
+---
+
 ## 2026-11-14: Class design rules
 
 ### SU-148 Couched Lance doubles only during Assault (Decision + Assumption, spec §1.6, §4.6)

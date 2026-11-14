@@ -16,8 +16,9 @@ report, sounds) follows a battle; Troop code never references the campaign.
 `TroopCombatWorld` (one per battle) runs the battle-wide systems; each `Troop` runs its own modules.
 
 1. **Engagement** (`TroopEngagementSystem`): builds every troop's footprint and measures every opposing pair with the
-   footprint gap. Enemies within `S_Distance` (30) turn the troop into a battle line; within `A_Distance` (5.2) the
-   troops are engaged, facing is locked, and the face each opponent attacks (Front, flanks, Rear) is recorded.
+   footprint gap. Enemies within `S_Distance` (30) turn the troop into a battle line, which keeps the troop's own
+   facing: where it marched or was ordered to face, never toward the enemy by itself (SU-154). Within `A_Distance` (5.2)
+   the troops are engaged, facing is locked, and the face each opponent attacks (Front, flanks, Rear) is recorded.
 2. **Chains** (`ChainLinker`): joins allied line points into chains, solves the shared joints, breaks over-stretched,
    over-bent or obstructed links, and resolves each troop's formation state (Idle, Column, Line, Chain, Rout).
 3. **Pressure**: line-vs-line barrier and push, friendly pivot and outline separation (SU-94), link tension (never
@@ -58,6 +59,8 @@ report, sounds) follows a battle; Troop code never references the campaign.
 - **RMB drag** (8 px): with two or more troops, a battle line: the troops split the line in order along the drag and are
   linked into a chain; the front faces the nearest enemy, or the right-hand side of the drag. With one troop, a move
   (a lone troop is never given a facing).
+- Troops face where they march, or where they were ordered to face, and keep that facing when they stop (SU-154). A
+  troop in line wheels to turn (60°/s), and marches as slowly as moving back while more than 45° off its front (SU-155).
 - Moving one chained troop: inside the envelope (3.0 x L_nat stretch, 65 degree hinge) it stays linked; outside it the
   link breaks on release. The ghost tether shows which (green = stays, dashed red = breaks).
 - **Alt** + order: unlink a chained troop, or keep an unlinked reserve from snapping onto a line.
@@ -79,7 +82,7 @@ constant in `TroopConstants` when it never changes:
 | Asset | Sections |
 |---|---|
 | Soldier Tuning | Stats and actions, soldier steering |
-| Formation Tuning | Distances (S_Distance, A_Distance, EngagementGap), formation and movement, troop size, friendly gap, marching in line (SU-150) |
+| Formation Tuning | Distances (S_Distance, A_Distance, EngagementGap), formation and movement, troop size, friendly gap, marching in line (SU-150), turning in line (SU-155) |
 | Morale Tuning | Morale and retreat, faces |
 | Melee Tuning | Charges and clashes, support and duel (Elo option, SU-153), Assault |
 | Chain Tuning | Chains, link spring |

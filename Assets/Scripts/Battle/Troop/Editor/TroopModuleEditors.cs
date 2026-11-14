@@ -73,8 +73,7 @@ public sealed class TroopFormationStateEditor : TroopModuleEditor
             EditorGUILayout.Vector2Field("End (left)", formation.End);
             EditorGUILayout.Vector2Field("Facing", formation.Facing);
         }
-        EditorGUILayout.Vector2Field("Threat Heading", state.Heading);
-        EditorGUILayout.FloatField("Threat Distance", state.ThreatDistance);
+        EditorGUILayout.Vector2Field("Heading (own facing)", state.Heading);
     }
 }
 

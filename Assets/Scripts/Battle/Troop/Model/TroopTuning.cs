@@ -140,6 +140,10 @@ public sealed class TroopTuning
     public bool LineBackwardSlowdown => Formation.LineBackwardSlowdown;
     public float LineBackwardSpeedScale => Formation.LineBackwardSpeedScale;
     public float LineBackwardAngleDeg => Formation.LineBackwardAngleDeg;
+    public bool LineWheel => Formation.LineWheel;
+    public float LineWheelRateDeg => Formation.LineWheelRateDeg;
+    public bool LineTurnSlowdown => Formation.LineTurnSlowdown;
+    public float LineTurnAngleDeg => Formation.LineTurnAngleDeg;
 
     // --- Morale Tuning ---
 

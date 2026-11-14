@@ -1,6 +1,7 @@
 using UnityEngine;
 
-// Turns a soldier's facing toward where it is heading (or toward the enemy line when engaged) at a limited turn rate.
+// Turns a soldier's facing at a limited turn rate: in a line, toward the line's front (a little toward where it walks);
+// otherwise toward where it walks, and when standing, toward the troop's facing (SU-154).
 public static class SoldierFacingAnimator
 {
     const float FacingSpeedThreshold = 0.2f;
@@ -13,7 +14,7 @@ public static class SoldierFacingAnimator
         Vector2 velocity = troop.WorldVelocity(soldier);
         bool moving = velocity.magnitude > FacingSpeedThreshold;
         Vector2 desiredFacing = soldier.Facing;
-        if (troop.HasThreatFacingFormation)
+        if (troop.HasActiveLine && !troop.IsRouted)
         {
             desiredFacing = troop.Formation.Facing.normalized;
             if (moving)
@@ -26,6 +27,10 @@ public static class SoldierFacingAnimator
         else if (moving)
         {
             desiredFacing = velocity.normalized;
+        }
+        else if (!troop.IsRouted)
+        {
+            desiredFacing = troop.Facing;
         }
 
         Vector2 currentFacing = soldier.Facing.sqrMagnitude > 0.0001f ? soldier.Facing.normalized : (Vector2)troop.transform.right;

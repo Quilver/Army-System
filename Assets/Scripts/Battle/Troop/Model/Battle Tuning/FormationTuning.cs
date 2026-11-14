@@ -61,6 +61,18 @@ public sealed class FormationTuning : ScriptableObject
         "back.")]
     float _lineBackwardAngleDeg = 90f;
 
+    [Header("Turning in line (SU-155)")]
+    [SerializeField, Tooltip("On: a troop in Line or Chain wheels its facing toward where it is marching (or to a new ordered " +
+        "front) at Line Wheel Rate, instead of turning at once. A troop that is not yet in line turns at once.")]
+    bool _lineWheel = true;
+    [SerializeField, Min(1f), Tooltip("How fast a line wheels, in degrees per second (60 = a quarter turn in 1.5 s).")]
+    float _lineWheelRateDeg = 60f;
+    [SerializeField, Tooltip("On: a troop in Line or Chain marching more than Line Turn Angle from its facing (still wheeling " +
+        "to its march, or keeping an ordered front) marches at Line Backward Speed Scale, as if moving back.")]
+    bool _lineTurnSlowdown = true;
+    [SerializeField, Range(0f, 180f), Tooltip("A march more than this many degrees from the line's facing counts as turning.")]
+    float _lineTurnAngleDeg = 45f;
+
     public float SDistance => _sDistance;
     public float SDistanceExitHysteresis => _sDistanceExitHysteresis;
     public float ADistance => _aDistance;
@@ -83,4 +95,8 @@ public sealed class FormationTuning : ScriptableObject
     public bool LineBackwardSlowdown => _lineBackwardSlowdown;
     public float LineBackwardSpeedScale => _lineBackwardSpeedScale;
     public float LineBackwardAngleDeg => _lineBackwardAngleDeg;
+    public bool LineWheel => _lineWheel;
+    public float LineWheelRateDeg => _lineWheelRateDeg;
+    public bool LineTurnSlowdown => _lineTurnSlowdown;
+    public float LineTurnAngleDeg => _lineTurnAngleDeg;
 }

@@ -4,9 +4,10 @@ using UnityEngine;
 // Measures every pair of opposing troops once per frame with the footprint gap (spec §4.1, Q-16), so S_Distance,
 // A_Distance and faces all use the same metric:
 //   - engagement records (gap, attacking face, engaged) for each troop, which also start Assault;
-//   - the threat heading from enemies within S_Distance, which turns the troop's line toward them. A troop pursuing an
-//     enemy within S_Distance takes its heading from that target alone and squares up to the face it attacks, and keeps
-//     turning to it while engaged with it (SU-75).
+//   - whether an enemy is within S_Distance, which turns the troop into a battle line. The line faces the troop's own
+//     heading (where it marches or was ordered to face): troops no longer turn toward enemies by themselves (SU-154).
+//     A troop pursuing an enemy within S_Distance takes its heading from that target and squares up to the face it
+//     attacks, and keeps turning to it while engaged with it (SU-75).
 // Engagement starts at A_Distance and has an exit hold (SU-45, Q-16): two troops that were engaged last frame stay engaged
 // until their gap passes A_Distance + EngagementHoldMargin. Engaged lines are held at EngagementGap by the barrier, which can
 // equal A_Distance, so without the hold a fight would flick in and out of 'engaged' (charges, facing lock, chain pinning).
@@ -15,16 +16,7 @@ using UnityEngine;
 // every few frames.
 public sealed class TroopEngagementSystem
 {
-    struct Threat
-    {
-        public Vector2 Direction;
-        public float PivotDistance;
-        public float Gap;
-        public float Facing;
-    }
-
     readonly List<EngagementRecord> _records = new();
-    readonly List<Threat> _threats = new();
 
     public void Update(IReadOnlyList<Troop> troops, float deltaTime)
     {
@@ -40,17 +32,14 @@ public sealed class TroopEngagementSystem
         {
             if (troop == null) continue;
             _records.Clear();
-            _threats.Clear();
             TroopFootprint own = troop.Footprint;
             Vector2 pivot = troop.transform.position;
-            Vector2 heading = troop.PivotVelocity.sqrMagnitude > 0.0025f ? troop.PivotVelocity.normalized : troop.Facing;
             bool threatened = troop.HasThreatWithinSDistance;
-            float nearestPivot = float.PositiveInfinity;
+            bool hasThreat = false;
             float holdRange = tuning.ADistance + tuning.EngagementHoldMargin;
             Troop pursuitTarget = troop.PursuitTarget;
             bool hasPursuitHeading = false;
             Vector2 pursuitHeading = Vector2.zero;
-            float pursuitDistance = 0f;
 
             foreach (var other in troops)
             {
@@ -65,24 +54,12 @@ public sealed class TroopEngagementSystem
                 TroopFace face = FaceClassifier.Classify(own, pivot, theirs, tuning.FrontFaceHalfAngleDeg, tuning.RearFaceAngleDeg);
                 _records.Add(new EngagementRecord(other, gap, face, gap <= tuning.ADistance || held));
                 if (other.IsRouted) continue;
-
-                Vector2 offset = (Vector2)other.transform.position - pivot;
-                float pivotDistance = offset.magnitude;
-                Vector2 direction = pivotDistance > 1e-4f ? offset / pivotDistance : heading;
-                _threats.Add(new Threat
-                {
-                    Direction = direction,
-                    PivotDistance = pivotDistance,
-                    Gap = gap,
-                    Facing = Vector2.Dot(direction, heading)
-                });
-                nearestPivot = Mathf.Min(nearestPivot, pivotDistance);
+                hasThreat = true;
 
                 if (other == pursuitTarget)
                 {
                     pursuitHeading = PursuitHeading(theirs, other.transform.position, own, pivot, gap, tuning.SDistance,
                         tuning.ADistance, tuning.FrontFaceHalfAngleDeg, tuning.RearFaceAngleDeg);
-                    pursuitDistance = pivotDistance;
                     hasPursuitHeading = true;
                 }
             }
@@ -90,9 +67,9 @@ public sealed class TroopEngagementSystem
             troop.SetEngagements(_records);
             troop.SetMeleeState(troop.IsEngaged);
 
-            if (_threats.Count == 0 || troop.IsRouted)
+            if (!hasThreat || troop.IsRouted)
             {
-                troop.UpdateNaturalFormation(null, 0f, deltaTime);
+                troop.UpdateNaturalFormation(false, null, deltaTime);
                 continue;
             }
 
@@ -100,25 +77,11 @@ public sealed class TroopEngagementSystem
             {
                 // The facing lock still holds while the pursuer is engaged only with other enemies.
                 bool engagedElsewhere = troop.IsEngaged && !troop.WasEngagedWith(pursuitTarget);
-                troop.UpdateNaturalFormation(pursuitHeading, pursuitDistance, deltaTime, turnWhileEngaged: !engagedElsewhere);
+                troop.UpdateNaturalFormation(true, pursuitHeading, deltaTime, turnWhileEngaged: !engagedElsewhere);
                 continue;
             }
 
-            Vector2 weightedDirection = Vector2.zero;
-            float totalWeight = 0f;
-            float weightedDistance = 0f;
-            foreach (var threat in _threats)
-            {
-                float weight = ThreatWeight(threat, nearestPivot, tuning.SDistance);
-                totalWeight += weight;
-                weightedDirection += threat.Direction * weight;
-                weightedDistance += threat.PivotDistance * weight;
-            }
-
-            if (weightedDirection.sqrMagnitude < 1e-6f || totalWeight <= 0f)
-                troop.UpdateNaturalFormation(_threats[0].Direction, _threats[0].PivotDistance, deltaTime);
-            else
-                troop.UpdateNaturalFormation(weightedDirection.normalized, weightedDistance / totalWeight, deltaTime);
+            troop.UpdateNaturalFormation(true, null, deltaTime);
         }
     }
 
@@ -146,15 +109,5 @@ public sealed class TroopEngagementSystem
     {
         float shapeChange = tuning.BlobRadiusScale * (troop.Radius + other.Radius);
         return Mathf.Max(tuning.SDistanceExitHysteresis, shapeChange);
-    }
-
-    // Nearer enemies, and enemies ahead of the march, weigh more.
-    static float ThreatWeight(Threat threat, float nearestPivotDistance, float sDistance)
-    {
-        float proximity = sDistance <= 0f
-            ? (threat.Gap <= 0f ? 1f : 0f)
-            : 1f / Mathf.Pow(1f + Mathf.Max(0f, threat.Gap) / sDistance, 2f);
-        float nearestBias = threat.PivotDistance <= nearestPivotDistance + 0.0001f ? 4f : 0.35f;
-        return proximity * (1f + 0.5f * threat.Facing) * nearestBias;
     }
 }

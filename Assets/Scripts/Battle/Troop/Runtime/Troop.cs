@@ -259,13 +259,19 @@ public sealed class Troop : MonoBehaviour
     public bool HasThreatFacingFormation => Formation != null && Formation.IsThreatFacing;
     public bool HasThreatWithinSDistance => _formationState != null && _formationState.HasThreat;
     public Vector2 SegmentEndpoint(int end) => _formationState.SegmentEndpoint(end);
+    // threatWithinSDistance: an enemy is within S_Distance, so the troop forms a line (facing its own heading, SU-154).
+    // pursuitHeading: the heading of a pursuer whose target is within S_Distance (SU-75), else null.
     // turnWhileEngaged lifts the engaged facing lock for this update: a pursuer keeps squaring up to the face of its
     // target that it attacks (SU-75). The engaged flag only drives that lock in TroopFormationState.
-    internal void UpdateNaturalFormation(Vector2? threatHeading, float threatDistance, float deltaTime,
+    internal void UpdateNaturalFormation(bool threatWithinSDistance, Vector2? pursuitHeading, float deltaTime,
         bool turnWhileEngaged = false) =>
-        _formationState.UpdateNatural(threatHeading, threatDistance, _engaged && !turnWhileEngaged, deltaTime);
+        _formationState.UpdateNatural(threatWithinSDistance, pursuitHeading, _engaged && !turnWhileEngaged, deltaTime);
 
-    // Facing used for faces and ranged arcs: the line's facing, or the march heading, or the transform's right.
+    // The pivot's own march this frame (Move, Pursue, line order), without line pressure.
+    internal Vector2 MarchVelocity => _mover != null ? _mover.MarchVelocity : Vector2.zero;
+
+    // Facing used for faces and ranged arcs: the line's facing, or the march heading, or the troop's own heading (where it
+    // last marched or was ordered to face, SU-154), or the transform's right.
     public Vector2 Facing
     {
         get
@@ -592,6 +598,8 @@ public sealed class Troop : MonoBehaviour
         _lineOrder.Cancel();
         transform.SetPositionAndRotation(new Vector3(center.x, center.y, transform.position.z),
             Quaternion.Euler(0f, 0f, Mathf.Atan2(facing.y, facing.x) * Mathf.Rad2Deg));
+        // It stands facing the given way until it marches or is ordered to face elsewhere (SU-154).
+        if (_formationState != null) _formationState.SetHeading(facing);
         bool formationOn = _formationState != null && _formationState.enabled;
         if (holdLine)
         {

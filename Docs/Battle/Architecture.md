@@ -158,12 +158,15 @@ in Edit mode at a fixed frame time.
 - `TroopEngagementSystem` stores an `EngagementRecord` per opponent within S_Distance: gap, `FaceClassifier` face
   (defender pivot → attacker's nearest footprint point; ±45° Front, beyond 135° Rear), engaged (gap ≤ 5.2).
   `Troop.FaceAttackedBy` / `IsFlankedBy` answer clashes and support.
-- Facing lock: while engaged, `TroopFormationState` does not change the heading.
+- Facing lock: while engaged, `TroopFormationState` does not change the heading. Enemies within S_Distance only put the
+  troop in line; they no longer turn it (SU-154).
 
 ### 6.4 Formation state and lines (spec §3.1–§3.3)
 
-- `TroopFormationState.UpdateNatural` builds the natural line through the pivot: the ordered facing and length while a
-  line order is active (and the troop holds it, or an enemy is within S), otherwise the smoothed threat heading at
+- `TroopFormationState.UpdateNatural` keeps the troop's own heading (SU-154): the ordered facing in line under a line
+  order, else the march direction, else unchanged; a pursuer near its target squares up to it (SU-75). A line that
+  already stood wheels to a new heading at `LineWheelRateDeg` (SU-155). It builds the natural line through the pivot
+  on that heading while a line order is held or an enemy is within S: the ordered length, or
   L_nat = Frontage × LineSpacing (SU-103). `ChainLinker` publishes the final line (`Formation`). The troop's size in units
   (`Troop.Radius`: blob, soldier clamp, pivot spacing) is derived: L_nat / 1.8, or more when its soldiers need room,
   times `TroopSizeScale` (1.5, SU-131). Frontage comes from the soldier count (`TroopFrontageRule`, SU-117).

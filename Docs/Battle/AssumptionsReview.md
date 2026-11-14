@@ -1,6 +1,6 @@
 # Assumptions review
 
-Every unconfirmed Assumption in `SpecificationUpdate.md` (SU-01 to SU-153), grouped by system so they can be confirmed in one sitting: 174 assumptions across 90 SU entries. SU-148 to SU-153 (class design rules) were added on 2026-11-14. SU-136 to SU-140 were added on 2026-11-08; the SU-74 and SU-121 items about routed troops never leaving the map were removed (SU-138 replaced them). Rebuilt 2026-11-08 (SU-135): assumptions that later entries overtook were removed, missing ones were added, and the groups were tidied. The spec (v0.10) tags text that rests on one of these as **[A: SU-n]**.
+Every unconfirmed Assumption in `SpecificationUpdate.md` (SU-01 to SU-155), grouped by system so they can be confirmed in one sitting: 181 assumptions across 92 SU entries. SU-154 and SU-155 (troop facing, on the `troop-facing-controls` branch) and SU-148 to SU-153 (class design rules) were added on 2026-11-14. SU-136 to SU-140 were added on 2026-11-08; the SU-74 and SU-121 items about routed troops never leaving the map were removed (SU-138 replaced them). Rebuilt 2026-11-08 (SU-135): assumptions that later entries overtook were removed, missing ones were added, and the groups were tidied. The spec (v0.10) tags text that rests on one of these as **[A: SU-n]**.
 
 ## How to use this
 
@@ -17,7 +17,7 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 
 - [Troops, characters, stats & equipment](#troops-characters-stats--equipment) (20)
 - [Soldier simulation & physics](#soldier-simulation--physics) (6)
-- [Formations, movement & geometry](#formations-movement--geometry) (16)
+- [Formations, movement & geometry](#formations-movement--geometry) (23)
 - [Combat (melee, charges, ranged)](#combat-melee-charges-ranged) (28)
 - [Morale, retreat & rout](#morale-retreat--rout) (16)
 - [Controls, orders & battle UI](#controls-orders--battle-ui) (26)
@@ -135,6 +135,19 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 - [ ] "moving back" is a march more than 90° (`LineBackwardAngleDeg`) from the line's facing; the backward scale replaces the line scale (0.6, not 0.48). →
 - [ ] a pursuer in Line is slowed too, so a troop of the same Speed that routs gets away (rout flight is not slowed). →
 - [ ] the AI still plans with the unslowed pivot speed. →
+
+**SU-154** Troops no longer face the nearest enemy by themselves
+
+- [ ] the troop's facing is: locked while engaged; a pursuer near its target squares up to it (SU-75); in line under a line order, the ordered facing; marching, the march direction; otherwise kept, so a troop that stops keeps facing the way it last marched or was ordered. A new troop faces its transform's right. →
+- [ ] an Idle troop's footprint, faces and ranged arc use the kept facing, and its soldiers turn to it when they stand still; soldiers in any line (ordered lines too) face the line's front. →
+- [ ] ranged troops no longer turn toward targets: they shoot only what is in their ±45° front arc. The AI already gives its ranged troops a facing. →
+
+**SU-155** A line wheels to turn, and turning is as slow as moving back
+
+- [ ] both: `LineWheel` (on) turns a troop already in line toward its march or new ordered front at 60°/s; `LineTurnSlowdown` (on) makes a line marching more than 45° off its facing march at the backward speed (0.6). A line under a line order keeps its ordered front and sidesteps or backs up at 0.6. →
+- [ ] the wheel turns the line about its pivot (centre), not about one end. →
+- [ ] only a line that already stood wheels: a troop in column or Idle turns at once, and a forming line takes its facing at once. A pursuer squaring up keeps its SU-75 easing. →
+- [ ] the turning slowdown works without `LineBackwardSlowdown`; with both on, moving back is the same 0.6. →
 
 ## Combat (melee, charges, ranged)
 
