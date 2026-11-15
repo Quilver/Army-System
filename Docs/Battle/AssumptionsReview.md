@@ -1,6 +1,6 @@
 # Assumptions review
 
-Every unconfirmed Assumption in `SpecificationUpdate.md` (SU-01 to SU-165), grouped by system so they can be confirmed in one sitting: 238 assumptions across 100 SU entries. SU-165 (the Assault as one charge per soldier) was added on 2026-11-15; it superseded the SU-148 item and SU-164's "a troop in Assault does not feint", which were removed. SU-164 (feints) was added on 2026-11-15. SU-163 (the assault wheel) was added on 2026-11-15. SU-162 (the troop border) was added on 2026-11-15. SU-161 (flush fronts) was added on 2026-11-15. SU-159 (attack clicks) and SU-160 (linked group lines) were added on 2026-11-15; SU-160 superseded SU-157, whose items were removed. SU-158 (engaged soldiers face their enemy) was added on 2026-11-15. SU-154 to SU-157 (troop facing controls and line spacing, on the `troop-facing-controls` branch) and SU-148 to SU-153 (class design rules) were added on 2026-11-14. SU-136 to SU-140 were added on 2026-11-08; the SU-74 and SU-121 items about routed troops never leaving the map were removed (SU-138 replaced them). Rebuilt 2026-11-08 (SU-135): assumptions that later entries overtook were removed, missing ones were added, and the groups were tidied. The spec (v0.10) tags text that rests on one of these as **[A: SU-n]**.
+Every unconfirmed Assumption in `SpecificationUpdate.md` (SU-01 to SU-166), grouped by system so they can be confirmed in one sitting: 244 assumptions across 101 SU entries. SU-166 (the soldier wave) was added on 2026-11-15. SU-165 (the Assault as one charge per soldier) was added on 2026-11-15; it superseded the SU-148 item and SU-164's "a troop in Assault does not feint", which were removed. SU-164 (feints) was added on 2026-11-15. SU-163 (the assault wheel) was added on 2026-11-15. SU-162 (the troop border) was added on 2026-11-15. SU-161 (flush fronts) was added on 2026-11-15. SU-159 (attack clicks) and SU-160 (linked group lines) were added on 2026-11-15; SU-160 superseded SU-157, whose items were removed. SU-158 (engaged soldiers face their enemy) was added on 2026-11-15. SU-154 to SU-157 (troop facing controls and line spacing, on the `troop-facing-controls` branch) and SU-148 to SU-153 (class design rules) were added on 2026-11-14. SU-136 to SU-140 were added on 2026-11-08; the SU-74 and SU-121 items about routed troops never leaving the map were removed (SU-138 replaced them). Rebuilt 2026-11-08 (SU-135): assumptions that later entries overtook were removed, missing ones were added, and the groups were tidied. The spec (v0.10) tags text that rests on one of these as **[A: SU-n]**.
 
 ## How to use this
 
@@ -16,7 +16,7 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 ## Contents
 
 - [Troops, characters, stats & equipment](#troops-characters-stats--equipment) (20)
-- [Soldier simulation & physics](#soldier-simulation--physics) (6)
+- [Soldier simulation & physics](#soldier-simulation--physics) (12)
 - [Formations, movement & geometry](#formations-movement--geometry) (42)
 - [Combat (melee, charges, ranged)](#combat-melee-charges-ranged) (44)
 - [Morale, retreat & rout](#morale-retreat--rout) (16)
@@ -90,6 +90,15 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 **SU-107** Stunned soldiers
 
 - [x] - "At least half" is Bruise >= Bleed (Bruise >= MaxHP / 2 at 0 HP). Overflow counts as Bleed. - A stunned soldier is alive: it counts toward the troop's soldiers, EffectiveMorale and capture points. Its bruises heal at the usual 1 HP/s from 0 HP, so a fully bruised soldier is down for 5 s. - It neither charges nor follows, and cannot support (as a fatigued soldier). It can still be charged, and it still takes part in a clash it is caught in, though it deals no damage if it wins (SU-111). On 0 HP it has no HP left to take, so a hit then does nothing; once healed above 0 a hit that brings it back to 0 stuns it again or, with Bleed over half, kills it. - It is not snapped back inside the troop radius and walks back to its troop with the field; it does not rush back after a charge. - "Retreats in melee": a Case B retreat (only possible in melee, SU-104). Assumption: a **rout while in melee** also leaves its stunned behind. A disorder or a chain's shared retreat does not. The dead are credited to the enemy troop it was engaged with (`BattleEvents.SoldierKilled`). - Drawn greyed like a corpse, without its glow, until it recovers. →
+
+**SU-166** The soldier wave: ranks step off, stop and turn one after another
+
+- [ ] the mechanism: each soldier is carried at its own velocity (the pivot's march of depth / `SoldierWaveSpeed` ago, plus a critically damped catch-up at 2 /s of the lag the delay is no longer building), applied as a counter-shift of its local position; it changes no faster than its acceleration and moves no faster than its top speed, each × `SoldierWaveCatchUpSpeedScale` (1.5). The delay is capped at `SoldierWaveMaxLag` over the pivot speed (0.8 s at Move 5). →
+- [ ] the wave runs along the march direction bisected with the average march over the delay window: setting off ripples from the new front, stopping from the old front, a turn from the side that led before and after (a line sidestepping right ripples from its front right corner). →
+- [ ] on a stop a soldier runs on past its place by at most `SoldierWaveBunchFraction` (0.1) × its depth: the front rank stops at once and the troop closes up by about a tenth of its depth. Soldiers keep a rank spacing apart, so more only shoves the front rank on. →
+- [ ] the march the wave follows is what the pivot moved this frame less the line push; it is zero while holding against a target, disordered, retreating or routed, so those are stops. A soldier joining the wave (back from a charge, recovered from a stun) starts with no lag; a rout, a deployment placement or a respawn forgets all lag. →
+- [ ] the field steers a lagging soldier from where it would stand without its lag; the soldier radius clamp and its soft pull widen by the furthest lag; the footprint, measured from the soldiers, holds a lagging rank. →
+- [ ] a soldier's world velocity (facing, contact relative speed, a charger's lead on its target) includes the wave. →
 
 ## Formations, movement & geometry
 

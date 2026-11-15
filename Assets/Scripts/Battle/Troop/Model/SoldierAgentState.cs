@@ -69,6 +69,27 @@ public sealed class SoldierAgentState
     // soldier has more pressure and shoves settled neighbours aside instead of being stalled by them.
     public float DriveFraction { get => _driveFraction; internal set => _driveFraction = value; }
 
+    // Soldier wave (SU-166, SoldierWave). Not serialized: it is rebuilt from the march.
+    // WaveActive: the soldier takes part in the wave this frame. WaveLag: how far (world units) the soldier's carried place
+    // trails the place the pivot would have carried it to; its walk shifts it back by that much. WaveLagLocal is the
+    // same in troop-local space: the field steers the soldier from Position + WaveLagLocal, so it does not walk to undo the
+    // lag itself. WaveCarried: the world velocity the soldier is carried at, in place of the pivot's march.
+    // WaveVelocity: that less the pivot's march, added to WorldVelocity.
+    internal bool WaveActive;
+    internal Vector2 WaveLag;
+    internal Vector2 WaveLagLocal;
+    internal Vector2 WaveCarried;
+    public Vector2 WaveVelocity { get; internal set; }
+
+    internal void ClearWave()
+    {
+        WaveActive = false;
+        WaveLag = Vector2.zero;
+        WaveLagLocal = Vector2.zero;
+        WaveCarried = Vector2.zero;
+        WaveVelocity = Vector2.zero;
+    }
+
     // Clash pulse
     public bool IsClashColorPulsing => _clashPulse.IsPulsing;
     public float ClashColorPulseProgress => _clashPulse.Progress;

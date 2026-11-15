@@ -208,7 +208,8 @@ public sealed class SoldierSteering
     Vector2 FieldVelocity(SoldierAgentState soldier, FieldShape shape, float fillTarget, float strength, Vector2 spread,
         out float drive)
     {
-        Vector2 query = soldier.Position;
+        // The soldier wave (SU-166): the field steers the soldier from where it would stand without its lag.
+        Vector2 query = soldier.Position + soldier.WaveLagLocal;
         Vector2 core = NearestOnSegment(query, shape.Start, shape.End);
         Vector2 offset = query - core;
         float distance = offset.magnitude;
@@ -267,7 +268,7 @@ public sealed class SoldierSteering
         {
             var soldier = soldiers[i];
             if (!soldier.IsAlive || soldier.Character == null) continue;
-            _fillAlong[i] = Vector2.Dot(soldier.Position - shape.Start, tangent);
+            _fillAlong[i] = Vector2.Dot(soldier.Position + soldier.WaveLagLocal - shape.Start, tangent);
             if (_rankPlan.Active && soldier.Character.RangedWeapon != null) _fillOrderShooters.Add(i);
             else _fillOrder.Add(i);
         }

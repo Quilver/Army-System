@@ -117,6 +117,12 @@ public sealed class TroopTuning
     public float SoldierAlignment => Soldier.SoldierAlignment;
     public float SoldierSeparation => Soldier.SoldierSeparation;
     public float SoldierBrownianMotion => Soldier.SoldierBrownianMotion;
+    // Soldier wave (SU-166): the march's start, stop and turns ripple from the leading edge back.
+    public bool SoldierWave => Soldier.SoldierWave;
+    public float SoldierWaveSpeed => Soldier.SoldierWaveSpeed;
+    public float SoldierWaveMaxLag => Soldier.SoldierWaveMaxLag;
+    public float SoldierWaveBunchFraction => Soldier.SoldierWaveBunchFraction;
+    public float SoldierWaveCatchUpSpeedScale => Soldier.SoldierWaveCatchUpSpeedScale;
     // Soldier facing in melee, display only (SU-158).
     public float EngagedFacingTurnRateDeg => Soldier.EngagedFacingTurnRateDeg;
     public float FacingTargetRepickSeconds => Soldier.FacingTargetRepickSeconds;

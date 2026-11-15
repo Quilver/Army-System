@@ -44,7 +44,7 @@ see `Troop/README.md`.
 | `Combat/` | `TroopCombatWorld`, `TroopRegistry`, `TroopEngagementSystem`, `EngagementFrontage`, `SoldierContactIndex`, `SoldierContact`, `SoldierContactResolver`, `DuelResolver`, `SupportCalculator`, `ChargeCoordinator`, `CrossTroopSeparation`, `RangedFireController`, `TroopProjectiles`, `CombatLog`, `BattleEvents`, `TroopCombatGizmos`. |
 | `Formation/` | `ChainLinker`, `TroopFootprintBuilder`, `TroopPivots`. |
 | `Pressure/` | `TroopSegmentPressureRules`, `FriendlyOverlapResolver`, `AlliedLinkTension`, `SegmentGeometry`. |
-| `Soldiers/` | `SoldierSteering`, `SoldierFieldPlanner` (+ `FieldShape`), `SoldierSpatialGrid`, `SoldierMotionConstraints`. |
+| `Soldiers/` | `SoldierSteering`, `SoldierFieldPlanner` (+ `FieldShape`), `SoldierSpatialGrid`, `SoldierMotionConstraints`, `SoldierWave` (SU-166). |
 | `Input/` | `TroopPlayerOrders`, `TroopSelection`, `TroopOrderPlanner`, `TroopOrderOverlay`, `TroopScreenSpace`, `OrderClassifier` (+ `OrderKind`), `ChainOrderRules`. |
 | `View/` | `TroopSoldierViews`, `SoldierView`, `ProjectileView`, `TroopVisualiser`, `SoldierFacingAnimator`, `SoldierFacingTarget`, `ClashPulseView`, `SoldierSpriteLibrary`, `TroopSoldierShowcase`, `TroopCardHud`, `BattleSpeedHud`, `CombatLogHud`, `SoldierHealthBar`, `TroopRangeMask`, `TroopOrderPathView`, `TroopEngagementView`. |
 | `Diagnostics/` | `TroopDebugOverlay`, `TroopDebugSnapshot` (now in its own file, D-40). |
@@ -91,8 +91,17 @@ in Edit mode at a fixed frame time.
 5. `EvaluateBreak` again.
 6. Rout tick (flee direction, despawn timer).
 7. `TroopPivotMover.Tick` (march, pursue, flee, line push).
-8. `SoldierSteering.Simulate`.
-9. `TroopSoldierViews.Refresh`. `SoldierFacingAnimator` turns each sprite (display only; no rule reads a soldier's
+8. `SoldierWave.Tick` (SU-166): the pivot's march this frame (what it moved less the line push; zero while holding,
+   disordered, retreating or routed) is recorded in a short history. Each soldier taking part (not charging, following,
+   feinting, returning, retreat-tracking or stunned; the troop not routed) is carried at its own velocity
+   (`SoldierAgentState.WaveCarried`) instead of the pivot's: the march of `depth / SoldierWaveSpeed` ago (depth behind the
+   leading edge along the wave axis), plus a critically damped catch-up of the lag the delay is no longer building. The
+   difference is a counter-shift of its local position; `WaveLag` is how far it trails its place, bounded by
+   `SoldierWaveMaxLag` behind and `SoldierWaveBunchFraction` × depth ahead. `SoldierSteering` steers it from
+   `Position + WaveLagLocal`, `SoldierMotionConstraints.EffectiveRadius` widens by the furthest lag, and
+   `WorldVelocity` adds `WaveVelocity`. Off (`SoldierWave`) or with no time step it changes nothing.
+9. `SoldierSteering.Simulate`.
+10. `TroopSoldierViews.Refresh`. `SoldierFacingAnimator` turns each sprite (display only; no rule reads a soldier's
    facing). Not engaged: as SU-154. Engaged (SU-158): a charger faces its charge target; a soldier with an enemy
    soldier of an engaged-with troop within `EngagementFrontage.Reach` (A_Distance + `FacingReachSlack`) faces the
    nearest, found through the world's contact index (`TroopCombatWorld.ContactIndex`); the rest face the front. Each
@@ -333,7 +342,7 @@ run (Troop and Tween tests) is about 350 tests; the main files:
 |---|---|
 | `TroopConstants` | `NeighborRadius 2.5`, `SoldierRadius 0.3`, `SeparationRadius 0.9`, `LineSpacing 0.9`, `SpreadRadius 1.2`, `PressureMassPerDrive 3`, `ContactDistance 0.85`, `MaxChainLinks 2`, wing indices. |
 | `TroopTuning` | Every tunable variable of spec §8, from the eight Battle Tuning assets (code defaults when a field has not been saved yet). |
-| Private constants that are not spec values | `FaultSlipMotion` settle time and pivot slip time, `SoldierSteering` retreat headroom (speed 1.5×, acceleration 6×, SU-133) and gains, `TroopFormationState.HeadingSmoothingTime`, `TroopPivotMover` assault hold `ResumeDelay` (0.25 s) and `ApproachGain` (4 /s, SU-163), `TroopSegmentPressureRules` barrier gains, knock-back 0.3 units. |
+| Private constants that are not spec values | `FaultSlipMotion` settle time and pivot slip time, `SoldierSteering` retreat headroom (speed 1.5×, acceleration 6×, SU-133) and gains, `TroopFormationState.HeadingSmoothingTime`, `TroopPivotMover` assault hold `ResumeDelay` (0.25 s) and `ApproachGain` (4 /s, SU-163), `SoldierWave` catch-up gain (2 /s, tracking at 8 /s, SU-166), `TroopSegmentPressureRules` barrier gains, knock-back 0.3 units. |
 
 ## 10. Scenes
 

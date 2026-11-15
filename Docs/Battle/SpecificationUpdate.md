@@ -11,6 +11,53 @@ SU-128 refer to v0.9 and may have moved.
 
 ---
 
+## 2026-11-15: A front-to-back ripple when a troop moves (branch troop-facing-controls)
+
+### SU-166 The soldier wave: ranks step off, stop and turn one after another (Decision + Assumptions, spec §2, §3.2, §8)
+The designer, on the footage: "There is a lack of momentum/inertia with the way troops move ... I want soldiers in
+general to have a more kinematic wave as the troop moves." He chose: when a troop sets off, stops or turns, the soldiers
+nearest the direction of travel step off first and each rank behind follows a moment later, so the troop stretches as it
+starts and bunches up as it stops.
+- Decision: a soldier responds to a change in the pivot's march (setting off, stopping, turning) after its depth behind
+  the troop's leading edge along the direction of travel, divided by `SoldierWaveSpeed` (4.5 units/s: ranks are 0.9
+  apart, so 0.2 s per rank and about 0.6 s over four ranks). The front rank responds at once. A lagging soldier catches
+  up by walking faster and settles into its place without overshoot; a soldier never lags its place by more than
+  `SoldierWaveMaxLag` (2.4).
+- Decision: the pivot moves exactly as before (no pivot acceleration): its arrival, `PivotSpeed` and the AI's timing are
+  unchanged; only the soldiers trail it. `SoldierWave` (on) switches it off, and off every troop moves as before, to the
+  last digit.
+- Decision: left alone: chargers, followers, feinters and soldiers rushing back; soldiers retreating on the schedule
+  (`FaultSlipMotion`) and stunned soldiers; routed troops; the pivot shifts from line pressure, the line barrier and
+  friendly overlap; the assault wheel (SU-163); deployment.
+- Assumption: the mechanism. Each soldier taking part is carried at its own velocity instead of the pivot's, and the
+  difference is a counter-shift of its troop-local position. That velocity follows the pivot's march of `depth /
+  SoldierWaveSpeed` ago (a short history of the march), plus a critically damped catch-up (2 /s) of the lag the delay is
+  no longer building. It changes no faster than the soldier's acceleration and moves no faster than its top speed, each
+  times `SoldierWaveCatchUpSpeedScale` (1.5). The delay is capped at `SoldierWaveMaxLag` over the pivot speed (0.8 s at
+  Move 5), so a long column does not string out without limit.
+- Assumption: the direction the wave runs along is the march direction bisected with the average march over the delay
+  window: setting off ripples from the new front, stopping from the old front, and a turn from the side that led both
+  before and after (a line sidestepping right ripples from its front right corner).
+- Assumption: on a stop a soldier runs on past its place by at most `SoldierWaveBunchFraction` (0.1) of its depth, so the
+  front rank stops at once, the ranks behind stop a frame or two apart and the troop closes up by about a tenth of its
+  depth before settling. Soldiers keep at least a rank spacing apart (`SeparationRadius` is the line spacing), so a
+  larger bunch only shoves the front rank on (at 0.2 the whole troop slid 0.2 forward and every rank stopped together).
+- Assumption: the march the wave follows is what the pivot actually moved this frame (after terrain and the field edge)
+  less the line push; it is zero while the troop holds against its target, is disordered, retreats or routs, so those
+  are stops. A soldier that joins the wave (back from a charge, recovered from a stun) starts with no lag at the
+  march's last velocity; a routed troop, a deployment placement and a respawn forget all lag.
+- Assumption: the field steers a lagging soldier from where it would stand without its lag, so the field does not undo
+  the wave; the soldier radius clamp (and its soft pull) widen by the furthest lag, and the footprint, measured from the
+  soldiers, holds a lagging rank as before. A soldier's world velocity (facing, contact relative speed, a charger's lead
+  on its target) includes the wave.
+- Measured (four-rank line of 32, line march 2.4 units/s, 1/30 s frames): ranks reach half the march speed at 0.10,
+  0.33, 0.53 and 0.77 s; the depth grows from 2.84 to 4.58 at 0.83 s and is back to 2.95 on the march (as without the
+  wave); on arrival the ranks stop 0.03, 0.07, 0.10 and 0.17 s after the pivot, the depth closes from 2.87 to 2.70 and
+  settles to 3.02 (3.02 without the wave) within 1.8 s; the last soldier is back in its place 1.5 s after the pivot
+  arrives. The same march at 1/120 s frames stretches to within 0.03 of it.
+
+---
+
 ## 2026-11-15: The Assault becomes one charge from every soldier (branch troop-facing-controls)
 
 ### SU-165 The Assault makes every soldier that can charge make one charge (Decision + Assumptions, spec §4.2, §4.3, §4.5, §4.6, §8)

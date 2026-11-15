@@ -7,8 +7,8 @@ using UnityEngine.Serialization;
 // that do the work, running them in a fixed order each frame (see Update):
 //   MonoBehaviours (toggle in the Inspector): TroopRoster, TroopFormationState, TroopMorale
 //   Plain classes: TroopPivotMover, TroopPathFollower, FaultSlipMotion, TroopRout, TroopLineOrder, TroopLineLinks,
-//                  TroopDamageReceiver, AssaultState, TroopAssaultWheel, RangedFireController, SoldierSteering, SoldierMotionConstraints,
-//                  TroopSoldierViews
+//                  TroopDamageReceiver, AssaultState, TroopAssaultWheel, RangedFireController, SoldierWave, SoldierSteering,
+//                  SoldierMotionConstraints, TroopSoldierViews
 // Battle-wide systems (engagement, chains, pressure, charges, clashes, ranged fire) run in TroopCombatWorld.
 [RequireComponent(typeof(TroopRoster), typeof(TroopFormationState), typeof(TroopMorale))]
 public sealed class Troop : MonoBehaviour
@@ -39,6 +39,7 @@ public sealed class Troop : MonoBehaviour
     RangedFireController _rangedFire;
     SoldierMotionConstraints _constraints;
     SoldierSteering _steering;
+    SoldierWave _wave;
     TroopSoldierViews _views;
 
     Army _army;
@@ -231,6 +232,8 @@ public sealed class Troop : MonoBehaviour
     public void ResolveContact(SoldierAgentState soldier, Vector2 worldPositionDelta, Vector2 worldVelocityDelta) =>
         _roster.ResolveContact(soldier, worldPositionDelta, worldVelocityDelta);
     public void ConstrainSoldiersToRadius() => _constraints.ConstrainAllToRadius();
+    // The radius soldiers are clamped to this frame (troop-local, around the pivot).
+    internal float SoldierClampRadius => _constraints.EffectiveRadius;
 
     // --- Morale (TroopMorale, spec §5) ---
 
@@ -289,6 +292,10 @@ public sealed class Troop : MonoBehaviour
     internal TroopAssaultWheel AssaultWheel => _assaultWheel;
     // Whether the assault wheel is turning the troop this frame (SU-163).
     public bool IsAssaultWheeling => _formationState != null && _formationState.IsAssaultWheeling;
+
+    // The soldier wave (SU-166): the furthest any soldier lags its place, and the direction the wave runs along.
+    internal float SoldierWaveReach => _wave != null ? _wave.Reach : 0f;
+    internal Vector2 SoldierWaveAxis => _wave != null ? _wave.Axis : Vector2.right;
 
     // The pivot's own march this frame (Move, Pursue, line order), without line pressure.
     internal Vector2 MarchVelocity => _mover != null ? _mover.MarchVelocity : Vector2.zero;
@@ -583,6 +590,7 @@ public sealed class Troop : MonoBehaviour
         EvaluateBreak();
         if (TickRout(deltaTime)) return;
         // A disordered troop does not march, pursue or get pushed along by line pressure (SU-104).
+        Vector2 marchStart = transform.position;
         if (IsDisordered) _mover.SetLinePushVelocity(Vector2.zero);
         else _mover.Tick(deltaTime);
         KeepPivotOnTheField(pivotBefore);
@@ -593,8 +601,19 @@ public sealed class Troop : MonoBehaviour
             return;
         }
         CompleteOrderAtPathEnd();
+        if (_roster.enabled) _wave.Tick(deltaTime, WaveMarchVelocity(marchStart, deltaTime));
         if (_roster.enabled) _steering.Simulate(deltaTime);
         _views.Refresh(deltaTime);
+    }
+
+    // The pivot's march this frame for the soldier wave (SU-166): what the pivot actually moved (after terrain and the
+    // field edge), less the line push. Zero when it did not march: no order, holding, disordered, retreating or routed.
+    Vector2 WaveMarchVelocity(Vector2 marchStart, float deltaTime)
+    {
+        if (deltaTime <= 0f || IsRouted || IsFaultSlipping || IsDisordered) return Vector2.zero;
+        if (_mover.MarchVelocity.sqrMagnitude <= 1e-8f) return Vector2.zero;
+        Vector2 moved = (Vector2)transform.position - marchStart;
+        return moved / deltaTime - _mover.LinePushVelocity;
     }
 
     void OnEnable()
@@ -721,6 +740,8 @@ public sealed class Troop : MonoBehaviour
             if (_soldiersInPlacedLine) _roster.ScatterInBlob();
             _soldiersInPlacedLine = false;
         }
+        // The soldiers were put straight into place: no lag to walk off (SU-166).
+        _wave.Reset();
         _footprint = TroopFootprint.Circle(transform.position, Radius * Tuning.BlobRadiusScale, transform.right);
         _outline.Reset();
         _border.Reset();
@@ -1059,6 +1080,7 @@ public sealed class Troop : MonoBehaviour
             _soldierObstacleMask = SoldierMotionConstraints.DefaultObstacleMask();
         _constraints = new SoldierMotionConstraints(this, _soldierObstacleMask);
         _steering = new SoldierSteering(this, _constraints);
+        _wave = new SoldierWave(this);
         _path = new TroopPathFollower(this);
         _mover = new TroopPivotMover(this, _path);
         _faultSlip = new FaultSlipMotion(this);
@@ -1095,6 +1117,7 @@ public sealed class Troop : MonoBehaviour
 
         _frontage = DetermineFrontage();
         _roster.Spawn(characters);
+        _wave.Reset();
         _morale.CaptureInitialSoldiers(_roster.LivingCount);
         _rangedFire.Reset();
 

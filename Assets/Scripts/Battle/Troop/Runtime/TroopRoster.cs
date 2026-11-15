@@ -156,8 +156,9 @@ public sealed class TroopRoster : MonoBehaviour
 
     public Vector2 WorldPosition(SoldierAgentState soldier) => transform.TransformPoint(soldier.Position);
 
+    // The soldier's own velocity, the pivot's, and the soldier wave's difference from the pivot's march (SU-166).
     public Vector2 WorldVelocity(SoldierAgentState soldier) =>
-        (Vector2)transform.TransformVector(soldier.Velocity) + _troop.PivotVelocity;
+        (Vector2)transform.TransformVector(soldier.Velocity) + _troop.PivotVelocity + soldier.WaveVelocity;
 
     // Applies a world-space position and velocity correction to a soldier.
     public void ResolveContact(SoldierAgentState soldier, Vector2 worldPositionDelta, Vector2 worldVelocityDelta)

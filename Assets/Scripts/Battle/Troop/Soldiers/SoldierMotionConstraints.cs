@@ -76,13 +76,23 @@ public sealed class SoldierMotionConstraints
 
     // The clamp radius. A stretched line (longer than the troop is wide) widens it to reach its line points: soldiers of a
     // linked, stretched line may sit outside TroopRadius (Q-11 option a, working assumption). A marching column widens it
-    // to the column's tail (SU-120), and it eases back after the march. A routed troop scatters.
+    // to the column's tail (SU-120), and it eases back after the march. A routed troop scatters. The soldier wave (SU-166)
+    // widens it by the furthest lag, inside the soft radius pull too, so a soldier trailing its place is not pulled or
+    // clamped back.
     public float EffectiveRadius
     {
         get
         {
+            if (_troop.IsRouted) return _troop.Radius * TroopTuning.Active.RoutScatterRadiusScale;
+            return FormationRadius + _troop.SoldierWaveReach / SoldierSteering.SoftRadiusFraction;
+        }
+    }
+
+    float FormationRadius
+    {
+        get
+        {
             float radius = _troop.Radius;
-            if (_troop.IsRouted) return radius * TroopTuning.Active.RoutScatterRadiusScale;
             radius = Mathf.Max(radius, _columnReach);
             TroopFormationData formation = _troop.Formation;
             if (formation == null) return radius;

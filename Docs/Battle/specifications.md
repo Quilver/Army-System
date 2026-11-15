@@ -678,6 +678,11 @@ defaults are used when an asset is missing. Values in the rest of this document 
 | `FacingTargetRepickSeconds` | 0.3 (*default*) | s | An engaged soldier picks a new enemy to face at most this often. |
 | `FacingTargetKeepScale` | 1.2 (*default*) | × reach | An engaged soldier keeps its enemy while it lives and is within this × direct reach. |
 | `FacingReachSlack` | 0.45 (*default*) | units | Direct reach for facing: A_Distance between soldier edges plus this slack (as the heat band). |
+| `SoldierWave` | on (*default*) | bool | When the march sets off, stops or turns, the soldiers nearest the direction of travel respond first and each rank behind later (SU-166). Off: soldiers are carried with the pivot. |
+| `SoldierWaveSpeed` | 4.5 (*default*) | units/s | A soldier responds after its depth behind the leading edge over this (0.2 s per rank). |
+| `SoldierWaveMaxLag` | 2.4 (*default*) | units | Furthest a soldier lags its place; the delay is capped at this over the pivot speed. |
+| `SoldierWaveBunchFraction` | 0.1 (*default*) | × depth | On a stop a soldier runs on past its place by at most this fraction of its depth. |
+| `SoldierWaveCatchUpSpeedScale` | 1.5 (*default*) | × | A lagging soldier catches up at up to this × its top speed and acceleration. |
 
 **Formation Tuning**
 

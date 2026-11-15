@@ -37,6 +37,27 @@ public sealed class SoldierTuning : ScriptableObject
     [SerializeField, Range(0f, 1f), Tooltip("Random jitter added to soldier steering.")]
     float _soldierBrownianMotion = 0.04f;
 
+    [Header("Soldier wave (SU-166)")]
+    [SerializeField, Tooltip("When the troop's march sets off, stops or turns, the soldiers nearest the direction of travel " +
+        "respond first and each rank behind a moment later, so the troop stretches as it starts and bunches as it stops. " +
+        "Off: every soldier is carried with the pivot, as before.")]
+    bool _soldierWave = true;
+    [SerializeField, Min(0.1f), Tooltip("How fast the wave runs back through the troop (units/s): a soldier responds after its " +
+        "depth behind the troop's leading edge divided by this. Ranks are 0.9 apart, so 4.5 ripples a four-rank troop " +
+        "over about 0.6 s.")]
+    float _soldierWaveSpeed = 4.5f;
+    [SerializeField, Min(0.1f), Tooltip("Furthest a soldier may lag its place in the troop (units). It also caps the wave's " +
+        "delay at this over the pivot speed, so a long column does not string out without limit.")]
+    float _soldierWaveMaxLag = 2.4f;
+    [SerializeField, Range(0f, 1f), Tooltip("When the troop stops, a soldier may run on past its place by at most this " +
+        "fraction of its depth behind the leading edge (and SoldierWaveMaxLag), so the troop closes up by at most this " +
+        "fraction of its depth and the ranks behind stop one after another. Soldiers keep a rank spacing apart, so " +
+        "much above 0.1 only shoves the front rank on.")]
+    float _soldierWaveBunchFraction = 0.1f;
+    [SerializeField, Min(1f), Tooltip("A lagging soldier catches up by walking faster: at most this times its top speed " +
+        "(and its acceleration).")]
+    float _soldierWaveCatchUpSpeedScale = 1.5f;
+
     [Header("Soldier facing in melee (display only, SU-158)")]
     [SerializeField, Min(1f), Tooltip("How fast a soldier of an engaged troop, or a charging soldier, turns to or from the " +
         "enemy it faces, in degrees per second.")]
@@ -63,6 +84,12 @@ public sealed class SoldierTuning : ScriptableObject
     public float SoldierAlignment => _soldierAlignment;
     public float SoldierSeparation => _soldierSeparation;
     public float SoldierBrownianMotion => _soldierBrownianMotion;
+
+    public bool SoldierWave => _soldierWave;
+    public float SoldierWaveSpeed => _soldierWaveSpeed;
+    public float SoldierWaveMaxLag => _soldierWaveMaxLag;
+    public float SoldierWaveBunchFraction => _soldierWaveBunchFraction;
+    public float SoldierWaveCatchUpSpeedScale => _soldierWaveCatchUpSpeedScale;
 
     public float EngagedFacingTurnRateDeg => _engagedFacingTurnRateDeg;
     public float FacingTargetRepickSeconds => _facingTargetRepickSeconds;

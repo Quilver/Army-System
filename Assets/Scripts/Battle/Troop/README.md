@@ -37,7 +37,8 @@ report, sounds) follows a battle; Troop code never references the campaign.
 5. **Ranged** (`RangedFireController`, `TroopProjectiles`): stationary, unengaged troops fire: Volley weapons in sync,
    others each on its own timing (SU-105).
 6. **Troop update** (`Troop.Update`): morale decay and healing, break test, retreat (in melee) or disorder (out of melee,
-   SU-104), rout, pivot movement, soldier steering.
+   SU-104), rout, pivot movement, the soldier wave (`SoldierWave`, SU-166: on setting off, stopping or turning the
+   soldiers nearest the direction of travel respond first and each rank behind a moment later), soldier steering.
 7. **Contacts** (`SoldierContactResolver`, `DuelResolver`): bounces, clashes, duels, damage through armour, Shock;
    feints end on contact with a knock-back and nothing else (`DuelResolver.ResolveFeint`).
 
@@ -51,7 +52,7 @@ report, sounds) follows a battle; Troop code never references the campaign.
 | `Combat/` | `TroopCombatWorld`, engagement, charges, contacts, duels, support, ranged fire, projectiles, gizmos. |
 | `Formation/` | `ChainLinker`, `TroopFootprintBuilder`. |
 | `Pressure/` | Line pressure, friendly overlap, link tension. |
-| `Soldiers/` | Steering, field shapes, motion constraints, spatial grid. |
+| `Soldiers/` | Steering, field shapes, motion constraints, spatial grid, the soldier wave (`SoldierWave`, SU-166). |
 | `Input/` | Selection and hover, order classification and planning, chain order rules, the order overlay. |
 | `View/` | Soldier sprites, projectile sprites, troop visualiser, showcase driver, troop cards (`TroopCardHud`: selected troop bottom left, hovered troop bottom right), the order paths of the selected troops and the hovered troop (`TroopOrderPathView`) and the engagement view (`TroopEngagementView`). |
 | `Diagnostics/` | `TroopDebugOverlay` (F4 gizmos: footprints, faces, gaps, joints, charges) and `TroopDebugSnapshot`. |
