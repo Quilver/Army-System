@@ -37,6 +37,19 @@ public sealed class SoldierTuning : ScriptableObject
     [SerializeField, Range(0f, 1f), Tooltip("Random jitter added to soldier steering.")]
     float _soldierBrownianMotion = 0.04f;
 
+    [Header("Soldier facing in melee (display only, SU-158)")]
+    [SerializeField, Min(1f), Tooltip("How fast a soldier of an engaged troop, or a charging soldier, turns to or from the " +
+        "enemy it faces, in degrees per second.")]
+    float _engagedFacingTurnRateDeg = 240f;
+    [SerializeField, Min(0f), Tooltip("A soldier of an engaged troop picks a new enemy to face at most this often (seconds).")]
+    float _facingTargetRepickSeconds = 0.3f;
+    [SerializeField, Min(1f), Tooltip("A soldier keeps facing its enemy while that enemy lives and is within this many times " +
+        "its direct reach, so it does not flicker between two equally near enemies.")]
+    float _facingTargetKeepScale = 1.2f;
+    [SerializeField, Min(0f), Tooltip("Direct reach for facing an enemy: A_Distance between soldier edges plus this slack " +
+        "(units), as for the engagement heat band (its Reach Slack on the player orders, 0.45).")]
+    float _facingReachSlack = 0.45f;
+
     public float SpeedUnitsPerStatPoint => _speedUnitsPerStatPoint;
     public float ActionWindowSeconds => _actionWindowSeconds;
     public int MaxWeaponsPerSoldier => _maxWeaponsPerSoldier;
@@ -50,4 +63,9 @@ public sealed class SoldierTuning : ScriptableObject
     public float SoldierAlignment => _soldierAlignment;
     public float SoldierSeparation => _soldierSeparation;
     public float SoldierBrownianMotion => _soldierBrownianMotion;
+
+    public float EngagedFacingTurnRateDeg => _engagedFacingTurnRateDeg;
+    public float FacingTargetRepickSeconds => _facingTargetRepickSeconds;
+    public float FacingTargetKeepScale => _facingTargetKeepScale;
+    public float FacingReachSlack => _facingReachSlack;
 }

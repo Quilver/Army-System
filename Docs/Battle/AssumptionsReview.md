@@ -1,6 +1,6 @@
 # Assumptions review
 
-Every unconfirmed Assumption in `SpecificationUpdate.md` (SU-01 to SU-157), grouped by system so they can be confirmed in one sitting: 189 assumptions across 94 SU entries. SU-154 to SU-157 (troop facing controls and line spacing, on the `troop-facing-controls` branch) and SU-148 to SU-153 (class design rules) were added on 2026-11-14. SU-136 to SU-140 were added on 2026-11-08; the SU-74 and SU-121 items about routed troops never leaving the map were removed (SU-138 replaced them). Rebuilt 2026-11-08 (SU-135): assumptions that later entries overtook were removed, missing ones were added, and the groups were tidied. The spec (v0.10) tags text that rests on one of these as **[A: SU-n]**.
+Every unconfirmed Assumption in `SpecificationUpdate.md` (SU-01 to SU-158), grouped by system so they can be confirmed in one sitting: 194 assumptions across 95 SU entries. SU-158 (engaged soldiers face their enemy) was added on 2026-11-15. SU-154 to SU-157 (troop facing controls and line spacing, on the `troop-facing-controls` branch) and SU-148 to SU-153 (class design rules) were added on 2026-11-14. SU-136 to SU-140 were added on 2026-11-08; the SU-74 and SU-121 items about routed troops never leaving the map were removed (SU-138 replaced them). Rebuilt 2026-11-08 (SU-135): assumptions that later entries overtook were removed, missing ones were added, and the groups were tidied. The spec (v0.10) tags text that rests on one of these as **[A: SU-n]**.
 
 ## How to use this
 
@@ -17,7 +17,7 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 
 - [Troops, characters, stats & equipment](#troops-characters-stats--equipment) (20)
 - [Soldier simulation & physics](#soldier-simulation--physics) (6)
-- [Formations, movement & geometry](#formations-movement--geometry) (23)
+- [Formations, movement & geometry](#formations-movement--geometry) (28)
 - [Combat (melee, charges, ranged)](#combat-melee-charges-ranged) (28)
 - [Morale, retreat & rout](#morale-retreat--rout) (16)
 - [Controls, orders & battle UI](#controls-orders--battle-ui) (34)
@@ -148,6 +148,14 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 - [ ] the wheel turns the line about its pivot (centre), not about one end. →
 - [ ] only a line that already stood wheels: a troop in column or Idle turns at once, and a forming line takes its facing at once. A pursuer squaring up keeps its SU-75 easing. →
 - [ ] the turning slowdown works without `LineBackwardSlowdown`; with both on, moving back is the same 0.6. →
+
+**SU-158** Soldiers directly engaged face their enemy (display only)
+
+- [ ] a charger or follower faces its charge target even if its troop is not engaged that frame. →
+- [ ] every turn of an engaged troop's soldiers runs at 240°/s, turning back to the front and a charger's turn too. →
+- [ ] a soldier that loses its target faces the front until it may pick again (usually at once). →
+- [ ] the reach slack is its own Soldier Tuning value, `FacingReachSlack` (0.45), kept equal to the heat band's Reach Slack (a scene field). →
+- [ ] an engaged troop without a line faces its troop facing; without a combat world (editor) an engaged troop keeps the old behaviour. →
 
 ## Combat (melee, charges, ranged)
 

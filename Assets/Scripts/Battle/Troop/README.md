@@ -62,6 +62,9 @@ report, sounds) follows a battle; Troop code never references the campaign.
 - **Ctrl + RMB click**: Face. The selection turns in place toward the point and holds its line (SU-156).
 - Troops face where they march, or where they were ordered to face, and keep that facing when they stop (SU-154). A
   troop in line wheels to turn (60°/s), and marches as slowly as moving back while more than 45° off its front (SU-155).
+- Soldiers of an engaged troop that have an enemy soldier within direct reach (the heat band's reach) turn to the nearest
+  one; the rest face the troop's front. Chargers face their charge target (SU-158). This is display only: the troop's
+  faces still decide flank and rear attacks.
 - Moving one chained troop: inside the envelope (3.0 x L_nat stretch, 65 degree hinge) it stays linked; outside it the
   link breaks on release. The ghost tether shows which (green = stays, dashed red = breaks).
 - **Alt** + order: unlink a chained troop, or keep an unlinked reserve from snapping onto a line.

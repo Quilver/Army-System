@@ -117,6 +117,11 @@ public sealed class TroopTuning
     public float SoldierAlignment => Soldier.SoldierAlignment;
     public float SoldierSeparation => Soldier.SoldierSeparation;
     public float SoldierBrownianMotion => Soldier.SoldierBrownianMotion;
+    // Soldier facing in melee, display only (SU-158).
+    public float EngagedFacingTurnRateDeg => Soldier.EngagedFacingTurnRateDeg;
+    public float FacingTargetRepickSeconds => Soldier.FacingTargetRepickSeconds;
+    public float FacingTargetKeepScale => Soldier.FacingTargetKeepScale;
+    public float FacingReachSlack => Soldier.FacingReachSlack;
 
     // --- Formation Tuning ---
 

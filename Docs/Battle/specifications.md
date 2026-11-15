@@ -674,6 +674,10 @@ defaults are used when an asset is missing. Values in the rest of this document 
 | `SoldierAlignment` | 0.5 | gain | Velocity matching. |
 | `SoldierSeparation` | 1.8 | gain | Same-troop separation; cross-troop separation scales with it. |
 | `SoldierBrownianMotion` | 0.04 | gain | Random jitter. |
+| `EngagedFacingTurnRateDeg` | 240 (*default*) | deg/s | Turn rate of an engaged troop's soldiers, and chargers, to or from the enemy they face (SU-158, display only). |
+| `FacingTargetRepickSeconds` | 0.3 (*default*) | s | An engaged soldier picks a new enemy to face at most this often. |
+| `FacingTargetKeepScale` | 1.2 (*default*) | × reach | An engaged soldier keeps its enemy while it lives and is within this × direct reach. |
+| `FacingReachSlack` | 0.45 (*default*) | units | Direct reach for facing: A_Distance between soldier edges plus this slack (as the heat band). |
 
 **Formation Tuning**
 

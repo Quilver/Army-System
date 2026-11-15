@@ -45,7 +45,7 @@ see `Troop/README.md`.
 | `Pressure/` | `TroopSegmentPressureRules`, `FriendlyOverlapResolver`, `AlliedLinkTension`, `SegmentGeometry`. |
 | `Soldiers/` | `SoldierSteering`, `SoldierFieldPlanner` (+ `FieldShape`), `SoldierSpatialGrid`, `SoldierMotionConstraints`. |
 | `Input/` | `TroopPlayerOrders`, `TroopSelection`, `TroopOrderPlanner`, `TroopOrderOverlay`, `TroopScreenSpace`, `OrderClassifier` (+ `OrderKind`), `ChainOrderRules`. |
-| `View/` | `TroopSoldierViews`, `SoldierView`, `ProjectileView`, `TroopVisualiser`, `SoldierFacingAnimator`, `ClashPulseView`, `SoldierSpriteLibrary`, `TroopSoldierShowcase`, `TroopCardHud`, `BattleSpeedHud`, `CombatLogHud`, `SoldierHealthBar`, `TroopRangeMask`, `TroopOrderPathView`, `TroopEngagementView`. |
+| `View/` | `TroopSoldierViews`, `SoldierView`, `ProjectileView`, `TroopVisualiser`, `SoldierFacingAnimator`, `SoldierFacingTarget`, `ClashPulseView`, `SoldierSpriteLibrary`, `TroopSoldierShowcase`, `TroopCardHud`, `BattleSpeedHud`, `CombatLogHud`, `SoldierHealthBar`, `TroopRangeMask`, `TroopOrderPathView`, `TroopEngagementView`. |
 | `Diagnostics/` | `TroopDebugOverlay`, `TroopDebugSnapshot` (now in its own file, D-40). |
 | `Editor/` | `TroopEditor`, `TroopModuleEditors` (roster, formation, morale), `SoldierEditors`, `BattleTuningAssets`, `Phase01DataGenerator`, `WeaponProfileMigration`, `TroopCliSmoke`, `Tests/`. |
 
@@ -91,7 +91,11 @@ in Edit mode at a fixed frame time.
 6. Rout tick (flee direction, despawn timer).
 7. `TroopPivotMover.Tick` (march, pursue, flee, line push).
 8. `SoldierSteering.Simulate`.
-9. `TroopSoldierViews.Refresh`.
+9. `TroopSoldierViews.Refresh`. `SoldierFacingAnimator` turns each sprite (display only; no rule reads a soldier's
+   facing). Not engaged: as SU-154. Engaged (SU-158): a charger faces its charge target; a soldier with an enemy
+   soldier of an engaged-with troop within `EngagementFrontage.Reach` (A_Distance + `FacingReachSlack`) faces the
+   nearest, found through the world's contact index (`TroopCombatWorld.ContactIndex`); the rest face the front. Each
+   soldier's target and re-pick delay is a `SoldierFacingTarget` kept by `TroopSoldierViews` beside its sprite.
 
 ## 6. Subsystems
 
@@ -264,6 +268,7 @@ run (Troop and Tween tests) is about 350 tests; the main files:
 | `PursuitAndTerrainTests`, `RoutFleeTests` | Pathing, map edge, pursuit facing, rout flight. |
 | `MeleeDurationTests` | Spearmen melee length (explicit lever sweeps run by name). |
 | `BattleViewTests`, `SoldierViewTests`, `TroopCardHudTests`, `WeaponSpecialRuleTests` | Views, cards, weapon rules. |
+| `SoldierFacingTests` | Engaged soldiers facing the enemy within reach, the front otherwise, chargers, unengaged swing (SU-158). |
 | `Tween/Editor/Tests` | `AchievementTests` (levels, growth, gains in battle, SU-132), `CampaignCharacterTests`. |
 
 `Editor/TroopCliSmoke.cs` plays a scene in real Play mode from the command line and fails on any logged error.

@@ -31,6 +31,8 @@ public sealed class TroopCombatWorld : MonoBehaviour
     public float BattleTime { get; private set; }
     public IReadOnlyList<Troop> Troops => _registry.Troops;
     public TroopProjectiles Projectiles => _projectiles;
+    // Every living soldier by position, as of the last rebuild. The soldier views read it for engaged facing (SU-158).
+    internal SoldierContactIndex ContactIndex => _contactIndex;
 
     // Seeded stream for one troop. streamId must be stable across runs (see Troop.StreamId).
     public ITroopRandom RandomFor(int streamId) =>

@@ -31,6 +31,7 @@ public sealed class TroopSoldierViews
     readonly List<SoldierGlow> _glow = new();     // emission state last applied to each renderer
     readonly List<float> _deadAge = new();        // seconds since the soldier died; negative while alive
     readonly List<float> _hitAge = new();         // seconds into the hit squash and stretch; negative when not playing
+    readonly List<SoldierFacingTarget> _facingTargets = new();   // the enemy each soldier faces while engaged (SU-158)
     readonly MaterialPropertyBlock _hitBlock = new();
     readonly ClashPulseView _pulse = new();
 
@@ -48,6 +49,7 @@ public sealed class TroopSoldierViews
             _glow.Add(SoldierGlow.Healthy);
             _deadAge.Add(-1f);
             _hitAge.Add(-1f);
+            _facingTargets.Add(new SoldierFacingTarget());
         }
         Refresh(0f);
     }
@@ -74,7 +76,7 @@ public sealed class TroopSoldierViews
             UpdateEmission(i, renderer, soldier, deltaTime);
             UpdateHitSquash(i, renderer, deltaTime);
             renderer.transform.position = _troop.transform.TransformPoint(soldier.Position);
-            renderer.transform.rotation = Quaternion.Euler(0f, 0f, SoldierFacingAnimator.Update(_troop, soldier, deltaTime));
+            renderer.transform.rotation = Quaternion.Euler(0f, 0f, SoldierFacingAnimator.Update(_troop, soldier, _facingTargets[i], deltaTime));
         }
     }
 
@@ -106,6 +108,7 @@ public sealed class TroopSoldierViews
         _glow.Clear();
         _deadAge.Clear();
         _hitAge.Clear();
+        _facingTargets.Clear();
     }
 
     // Clash flash; fatigued soldiers glow grey at a third of the luminosity. The property block is only rewritten while

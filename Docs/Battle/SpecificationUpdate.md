@@ -11,6 +11,34 @@ SU-128 refer to v0.9 and may have moved.
 
 ---
 
+## 2026-11-15: Engaged soldiers face their enemy (branch troop-facing-controls)
+
+### SU-158 Soldiers directly engaged face their enemy (Decision + Assumptions, spec §3.3, §4.4)
+- Decision: only the soldiers directly engaged turn to face their enemy. Display only: no rule reads a soldier's facing,
+  so the troop's faces still decide flank and rear attacks.
+- Decision: a charger faces its charge target; a follower faces its leader's charge target.
+- Decision: a soldier of an engaged troop (`Troop.IsEngaged`) with a living enemy soldier within direct reach faces the
+  nearest one. Direct reach is what the engagement heat band counts as engaged (`EngagementFrontage.Reach`: A_Distance
+  between soldier edges plus a slack, 5.2 + 0.6 + 0.45 = 6.25 centre to centre). Only soldiers of troops this troop is
+  engaged with count.
+- Decision: a soldier keeps its target while it lives and is within `FacingTargetKeepScale` (1.2) × reach, and picks a
+  new one at most every `FacingTargetRepickSeconds` (0.3 s), so it does not flicker between two equally near enemies.
+- Decision: every other soldier of an engaged troop faces the troop's front (`Formation.Facing`), with no swing toward
+  its velocity. This ends the ±30° jitter seen in cavalry melee. A troop that is not engaged is unchanged (SU-154).
+- Decision: turning to or from an enemy runs at `EngagedFacingTurnRateDeg` (240°/s).
+- Assumption: a charger or follower faces its charge target even if its troop is not engaged that frame.
+- Assumption: every turn of an engaged troop's soldiers uses 240°/s, including turning to the front; a charger's turn too.
+- Assumption: a soldier whose target is lost (dead, out of 1.2 × reach, or its troop no longer engaged with ours) faces
+  the front until it may pick again; usually it may at once, as its last pick was more than 0.3 s before.
+- Assumption: the reach slack is its own Soldier Tuning value, `FacingReachSlack` (0.45), equal to the heat band's Reach
+  Slack, which is a scene field on the player orders (`TroopPlayerOrders`) that the battle code cannot read; keep the
+  two equal.
+- Assumption: an engaged troop without a line (rare) faces its troop facing instead of `Formation.Facing`. Without a
+  combat world (editor, some tests) an engaged troop keeps the old behaviour.
+- Code: `SoldierFacingAnimator`, `SoldierFacingTarget` (new: each soldier's target and re-pick delay, kept by
+  `TroopSoldierViews`), `TroopCombatWorld.ContactIndex`, `SoldierTuning` / `TroopTuning`. Tests:
+  `SoldierFacingTests`.
+
 ## 2026-11-14: Line order spacing (branch troop-facing-controls)
 
 ### SU-157 Troops in a multi-troop line keep their distance (Decision + Assumptions, spec §6.2, §3.4)
