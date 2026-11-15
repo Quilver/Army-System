@@ -1,6 +1,6 @@
 # Assumptions review
 
-Every unconfirmed Assumption in `SpecificationUpdate.md` (SU-01 to SU-172), grouped by system so they can be confirmed in one sitting: 262 assumptions across 106 SU entries. SU-169 to SU-172 (Movie_023: hidden enemy orders, stronger borders, the Assault chain reaction, no strafing in line) were added on 2026-11-15. SU-168 (the slowed finish and the Victory or Defeat banner) was added on 2026-11-15. SU-167 (the plus for boosted morale on the troop card) was added on 2026-11-15. SU-166 (the soldier wave) was added on 2026-11-15. SU-165 (the Assault as one charge per soldier) was added on 2026-11-15; it superseded the SU-148 item and SU-164's "a troop in Assault does not feint", which were removed. SU-164 (feints) was added on 2026-11-15. SU-163 (the assault wheel) was added on 2026-11-15. SU-162 (the troop border) was added on 2026-11-15. SU-161 (flush fronts) was added on 2026-11-15. SU-159 (attack clicks) and SU-160 (linked group lines) were added on 2026-11-15; SU-160 superseded SU-157, whose items were removed. SU-158 (engaged soldiers face their enemy) was added on 2026-11-15. SU-154 to SU-157 (troop facing controls and line spacing, on the `troop-facing-controls` branch) and SU-148 to SU-153 (class design rules) were added on 2026-11-14. SU-136 to SU-140 were added on 2026-11-08; the SU-74 and SU-121 items about routed troops never leaving the map were removed (SU-138 replaced them). Rebuilt 2026-11-08 (SU-135): assumptions that later entries overtook were removed, missing ones were added, and the groups were tidied. The spec (v0.10) tags text that rests on one of these as **[A: SU-n]**.
+Every unconfirmed Assumption in `SpecificationUpdate.md` (SU-01 to SU-172), grouped by system so they can be confirmed in one sitting: 266 assumptions across 107 SU entries. SU-173 (wheeling on steering circles) and SU-169 to SU-172 (Movie_023: hidden enemy orders, stronger borders, the Assault chain reaction, no strafing in line) were added on 2026-11-15. SU-168 (the slowed finish and the Victory or Defeat banner) was added on 2026-11-15. SU-167 (the plus for boosted morale on the troop card) was added on 2026-11-15. SU-166 (the soldier wave) was added on 2026-11-15. SU-165 (the Assault as one charge per soldier) was added on 2026-11-15; it superseded the SU-148 item and SU-164's "a troop in Assault does not feint", which were removed. SU-164 (feints) was added on 2026-11-15. SU-163 (the assault wheel) was added on 2026-11-15. SU-162 (the troop border) was added on 2026-11-15. SU-161 (flush fronts) was added on 2026-11-15. SU-159 (attack clicks) and SU-160 (linked group lines) were added on 2026-11-15; SU-160 superseded SU-157, whose items were removed. SU-158 (engaged soldiers face their enemy) was added on 2026-11-15. SU-154 to SU-157 (troop facing controls and line spacing, on the `troop-facing-controls` branch) and SU-148 to SU-153 (class design rules) were added on 2026-11-14. SU-136 to SU-140 were added on 2026-11-08; the SU-74 and SU-121 items about routed troops never leaving the map were removed (SU-138 replaced them). Rebuilt 2026-11-08 (SU-135): assumptions that later entries overtook were removed, missing ones were added, and the groups were tidied. The spec (v0.10) tags text that rests on one of these as **[A: SU-n]**.
 
 ## How to use this
 
@@ -17,7 +17,7 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 
 - [Troops, characters, stats & equipment](#troops-characters-stats--equipment) (20)
 - [Soldier simulation & physics](#soldier-simulation--physics) (12)
-- [Formations, movement & geometry](#formations-movement--geometry) (47)
+- [Formations, movement & geometry](#formations-movement--geometry) (51)
 - [Combat (melee, charges, ranged)](#combat-melee-charges-ranged) (49)
 - [Morale, retreat & rout](#morale-retreat--rout) (16)
 - [Controls, orders & battle UI](#controls-orders--battle-ui) (49)
@@ -186,11 +186,18 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 - [ ] the hold does not apply against a routed target (SU-139 chase unchanged); a holding pursuer marches again after the gap has stayed beyond the charge gap for 0.25 s, then closes to half `ChargeGapTolerance` inside it; its last approach is eased and never passes EngagementGap (constants). →
 - [ ] holding, an attacker no longer presses the defender's line back through line pressure; the fight is carried by charges and clashes. →
 
+**SU-173** Lines wheel on steering circles instead of turning on the spot
+
+- [ ] every combination of circle sides is tried at r and at tighter radii down to `LineTurnMinRadiusShare` (0.5) × r, the shortest taken with a tighter radius counting as (2 − share) × its length, instead of the source's swap-both-sides rule (which loops). A tighter wheel turns about a point inside the line. →
+- [ ] around obstacles the line wheels leg by leg along the NavMesh route (ordered front only on the last leg); the path is planned again when the target or waypoint moves 0.3 or the pivot is pushed 0.3 off it; a pursuer plans to its target's pivot. →
+- [ ] SU-172's stand-and-turn is kept only for when no path can be built; Face orders still turn about the middle. →
+- [ ] chained troops each wheel on their own path. →
+
 **SU-172** Lines advance or wheel; they do not strafe
 
 - [ ] a line that has stood wheeling for `LineWheelFirstMaxSeconds` (4 s) without facing its march marches anyway; line pressure, chain tension, give-way, retreats and routs still move lines sideways. →
 - [ ] chained troops follow the rule each on its own (each wheels about its own pivot); the chain opens at its joints while they wheel and closes as they advance. →
-- [ ] moving back further than the small-move distance is strafing too: the line turns about (up to 180°, 3 s at 60°/s) and advances. →
+- [ ] moving back further than the small-move distance is strafing too: the line wheels about (SU-173) and advances. →
 - [ ] the enemy AI's troops follow the same rule. →
 - [ ] the values: `LineAdvanceAngleDeg` 15°, `LineStrafeMaxDistance` 4 units (from where the troop stood; destination not within A_Distance of an enemy), on Formation Tuning. →
 

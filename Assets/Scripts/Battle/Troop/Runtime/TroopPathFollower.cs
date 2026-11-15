@@ -84,6 +84,24 @@ public sealed class TroopPathFollower
         return waypointOffset.normalized * Mathf.Min(waypointOffset.magnitude, maxSpeed * deltaTime);
     }
 
+    // The waypoint the pivot is heading for and whether it is the last one (the route from there to the destination is
+    // straight). Plans the path first if it needs it, as Step does. False without a path. Used by the steering-circle
+    // wheel (SU-173), which marches leg by leg.
+    public bool TryGetLeg(Vector2 position, Vector2 destination, out Vector2 waypoint, out bool last)
+    {
+        waypoint = destination;
+        last = true;
+        if (_invalid || _path == null || Time.time >= _nextRebuild)
+            Rebuild(destination);
+        if (_path == null || _path.Count == 0) return false;
+        while (_pathIndex < _path.Count - 1
+            && Vector2.Distance(position, _path[_pathIndex]) <= WaypointReachedDistance)
+            _pathIndex++;
+        waypoint = _path[_pathIndex];
+        last = _pathIndex >= _path.Count - 1;
+        return true;
+    }
+
     void Rebuild(Vector2 destination)
     {
         EnsurePathfinder();

@@ -11,7 +11,32 @@ SU-128 refer to v0.9 and may have moved.
 
 ---
 
-## 2026-11-15: Movie_023 changes: hidden enemy orders, stronger borders, the Assault chain reaction, no strafing in line (branch troop-facing-controls)
+## 2026-11-15: Movie_023 changes: hidden enemy orders, stronger borders, the Assault chain reaction, no strafing in line, wheeling on steering circles (branch troop-facing-controls)
+
+### SU-173 Lines wheel on steering circles instead of turning on the spot (Decision + Assumptions, spec §3.2, §3.3, §8)
+The designer, after SU-172: "At the moment troops are just pivoting instead of wheeling", pointing to "Techniques for
+Formation Movement Using Steering Circles" (Game AI Pro, ch. 21).
+- Decision: a line that SU-172 makes turn to its march no longer stands and rotates about its pivot. Its front rank's
+  centre follows a steering-circle path (`SteeringCircles`): an arc on a circle beside it, a straight tangent, and for a
+  line order an arc on a circle beside the ordered line that arrives on it facing the ordered front. The line faces along
+  the path (`LineWheelOnSteeringCircles`, Formation Tuning, on; needs `LineNoStrafe`). A line order's front is now taken
+  on the way in, not by turning after arrival.
+- Decision: the turn radius is `LineTurnRadiusScale` (1) x half the line's length: the drill wheel, in which the end of
+  the front rank on the inside of the turn stands and the outer end marches round it. On an arc the outer end keeps the
+  line's march pace, so the front's centre moves at r / (r + half the length) of it.
+- Assumption: the source's choice of circles (each on the side facing the other end, both swapped when they overlap)
+  sends a line round a full loop to sidestep a few widths. Every combination of sides is tried instead, at r and at
+  tighter radii down to `LineTurnMinRadiusShare` (0.5) x r, and the shortest taken, a tighter radius counting as
+  (2 - share) x its length, so the drill wheel is kept unless a tighter one saves a good deal. A tighter wheel turns
+  about a point inside the line (its inner end steps back a little). Measured on a 9-wide line (r 4.5): a 12-unit move
+  north is a drill wheel; a 15-unit sidestep keeping the front uses r 3.4 (path 21.8 units, not the source's 68).
+- Assumption: around obstacles the line wheels leg by leg along the NavMesh route (free arrival facing at each corner,
+  the ordered front only on the last leg). The path is planned again when the target or the next waypoint moves by 0.3,
+  or the pivot is pushed 0.3 off it (line pressure, friendly give-way, terrain). A pursuer plans to its target's pivot
+  with a free arrival facing.
+- Assumption: SU-172's stand-and-turn is kept only for when no steering-circle path can be built. Face orders (SU-156)
+  still turn about the middle, and engaged troops and small moves are unchanged.
+- Assumption: chained troops still wheel each on its own path (the chain does not wheel as one).
 
 ### SU-172 Lines advance or wheel; they do not strafe (Decision + Assumptions, spec §3.2, §3.3, §8)
 The designer: "Troops when moving in line or chain formation should be advancing forwards or wheeling to move, not

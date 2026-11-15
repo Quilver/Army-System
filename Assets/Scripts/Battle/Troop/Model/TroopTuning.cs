@@ -173,6 +173,10 @@ public sealed class TroopTuning
     public float LineAdvanceAngleDeg => Formation.LineAdvanceAngleDeg;
     public float LineStrafeMaxDistance => Formation.LineStrafeMaxDistance;
     public float LineWheelFirstMaxSeconds => Formation.LineWheelFirstMaxSeconds;
+    // Wheeling on steering circles (SU-173).
+    public bool LineWheelOnSteeringCircles => Formation.LineWheelOnSteeringCircles;
+    public float LineTurnRadiusScale => Formation.LineTurnRadiusScale;
+    public float LineTurnMinRadiusShare => Formation.LineTurnMinRadiusShare;
     // Troop border fill (SU-170).
     public float FriendlyFillAlpha => Formation.FriendlyFillAlpha;
     public float EnemyFillAlpha => Formation.EnemyFillAlpha;

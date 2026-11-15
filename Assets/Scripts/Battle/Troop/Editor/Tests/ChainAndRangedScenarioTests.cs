@@ -249,10 +249,11 @@ public sealed class ChainAndRangedScenarioTests
         Assert.AreEqual(3f * 0.6f, speed, 0.15f);
     }
 
-    // SU-172: a line does not strafe. Ordered to march off its front it stands and wheels until it faces the march, then
-    // advances; it never moves more than Line Advance Angle off its facing.
+    // SU-172, SU-173: a line does not strafe or pivot on the spot. Ordered to march off its front it wheels on a steering
+    // circle: the end of its front rank on the inside of the turn stands while the outer end swings round, then it
+    // advances. Its front rank's centre never moves more than Line Advance Angle off its facing.
     [Test]
-    public void LineTroop_StandsAndWheels_ThenAdvances()
+    public void LineTroop_WheelsAboutItsInnerEnd_ThenAdvances()
     {
         Troop troop = CreateTroop("Wheeler", 0, Vector2.zero);
         CreateTroop("Enemy", 1, new Vector2(24f, 0f));
@@ -260,24 +261,39 @@ public sealed class ChainAndRangedScenarioTests
         Assert.AreEqual(FormationMode.Line, troop.FormationMode);
         Assert.Greater(Vector2.Dot(troop.Facing, Vector2.right), 0.99f);
 
-        troop.MoveTo(new Vector2(0f, 12f));
-        Vector2 start = troop.transform.position;
-        Simulate(0.5f);
-        Assert.Less(Vector2.Distance(start, troop.transform.position), 0.05f, "stands while it wheels");
-        Assert.That(Vector2.Angle(Vector2.right, troop.Facing), Is.InRange(15f, 35f), "wheeling at 60°/s");
-        Assert.IsTrue(troop.IsWheelingToMarch);
+        float length = troop.LineLength;
+        float offset = troop.FrontRankOffset(length);
+        Vector2 Front() => (Vector2)troop.transform.position + troop.Facing * offset;
+        // Turning left (north): the inner end is the front rank's left end.
+        Vector2 InnerEnd() => Front() + new Vector2(-troop.Facing.y, troop.Facing.x) * (length * 0.5f);
+        Vector2 innerAtStart = InnerEnd();
+        Vector2 pivotAtStart = troop.transform.position;
 
-        float worst = 0f;
-        for (int i = 0; i < 90; i++)
+        troop.MoveTo(new Vector2(0f, 14f));
+        float worstStrafe = 0f, innerDrift = 0f, turnedWhileWheeling = 0f;
+        bool followed = false;
+        for (int i = 0; i < 300; i++)
         {
-            Vector2 before = troop.transform.position;
+            Vector2 before = Front();
             SimulateFrames(1);
-            Vector2 moved = (Vector2)troop.transform.position - before;
-            if (moved.magnitude > 1e-3f) worst = Mathf.Max(worst, Vector2.Angle(moved, troop.Facing));
+            followed |= troop.IsFollowingWheelPath;
+            Vector2 moved = Front() - before;
+            if (moved.magnitude > 1e-3f) worstStrafe = Mathf.Max(worstStrafe, Vector2.Angle(moved, troop.Facing));
+            float turned = Vector2.Angle(Vector2.right, troop.Facing);
+            if (turned < 80f)
+            {
+                innerDrift = Mathf.Max(innerDrift, Vector2.Distance(innerAtStart, InnerEnd()));
+                turnedWhileWheeling = Mathf.Max(turnedWhileWheeling, turned);
+            }
+            if (!troop.IsMoving) break;
         }
-        Assert.Greater(Vector2.Dot(troop.Facing, Vector2.up), 0.99f, "faces its march");
-        Assert.Greater(troop.transform.position.y, 3f, "and advances");
-        Assert.Less(worst, TroopTuning.Active.LineAdvanceAngleDeg + 2f, "never strafes");
+        TestContext.WriteLine($"line {length:F2}, inner end drift {innerDrift:F2} while turning to {turnedWhileWheeling:F0}°, " +
+            $"worst strafe {worstStrafe:F1}°, ended at {(Vector2)troop.transform.position}");
+        Assert.IsTrue(followed, "it wheels on a steering circle");
+        Assert.Greater(turnedWhileWheeling, 45f, "it turned");
+        Assert.Less(innerDrift, 0.6f, "the inner end stands while the line wheels round it");
+        Assert.Greater(Vector2.Distance(pivotAtStart, troop.transform.position), 5f, "and advances");
+        Assert.Less(worstStrafe, TroopTuning.Active.LineAdvanceAngleDeg + 2f, "never strafes");
     }
 
     // SU-172: a small move (within Line Strafe Max Distance, not into an engagement) may strafe, keeping the front.
@@ -293,20 +309,38 @@ public sealed class ChainAndRangedScenarioTests
         Assert.Greater(Vector2.Dot(troop.Facing, Vector2.right), 0.9f, "keeps facing the enemy");
     }
 
-    // SU-172: a long line order off its front: the troop faces its march on the way, and takes the ordered front on
-    // arrival.
-    [Test]
-    public void LineOrder_FacesItsMarch_ThenTakesItsFront()
+    // SU-172, SU-173: a long line order off its front, sideways: the troop wheels toward it, marches and wheels again to
+    // arrive on its line facing the ordered front, without strafing on the way.
+    [TestCase(0f, 12f)]
+    [TestCase(-12f, 4f)]
+    [TestCase(14f, -6f)]
+    public void LineOrder_WheelsThere_AndArrivesOnItsFront(float x, float y)
     {
         Troop troop = CreateTroop("Marcher", 0, Vector2.zero);
         CreateTroop("Enemy", 1, new Vector2(24f, 0f));
         Simulate(0.5f);
-        troop.OrderLine(new Vector2(0f, 10f), Vector2.right, troop.NaturalLineLength);
-        Simulate(2f);
-        Assert.Greater(Vector2.Dot(troop.Facing, Vector2.up), 0.9f, "faces where it marches");
-        Simulate(10f);
+        Vector2 center = new(x, y);
+        troop.OrderLine(center, Vector2.right, troop.NaturalLineLength);
+        float offset = troop.FrontRankOffset(troop.LineLength);
+        Vector2 Front() => (Vector2)troop.transform.position + troop.Facing * offset;
+        float worstStrafe = 0f;
+        bool followed = false;
+        for (int i = 0; i < 900 && troop.IsMoving; i++)
+        {
+            Vector2 before = Front();
+            SimulateFrames(1);
+            followed |= troop.IsFollowingWheelPath;
+            Vector2 moved = Front() - before;
+            if (troop.IsFollowingWheelPath && moved.magnitude > 1e-3f)
+                worstStrafe = Mathf.Max(worstStrafe, Vector2.Angle(moved, troop.Facing));
+        }
+        Simulate(1f);
+        TestContext.WriteLine($"worst strafe {worstStrafe:F1}°, front at {Front()}, facing {troop.Facing}");
+        Assert.IsTrue(followed, "it wheels on steering circles");
         Assert.IsFalse(troop.IsMoving, "arrived");
-        Assert.Greater(Vector2.Dot(troop.Facing, Vector2.right), 0.99f, "took its ordered front");
+        Assert.Less(Vector2.Distance(Front(), center), 0.3f, "its front rank is on the ordered line");
+        Assert.Greater(Vector2.Dot(troop.Facing, Vector2.right), 0.99f, "facing its ordered front");
+        Assert.Less(worstStrafe, TroopTuning.Active.LineAdvanceAngleDeg + 2f, "never strafes");
     }
 
     // SU-156: a Face order (a line order at the troop's own place) turns a troop that is not in line at once; a troop

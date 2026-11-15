@@ -486,6 +486,8 @@ public sealed class SoldierWaveTests
     public void Off_MatchesTheMarchBeforeTheWave()
     {
         UseTuning("_soldierWave", false);
+        // The checksum predates the steering-circle wheel (SU-173), which plans even a straight march as a path.
+        UseTuning("_lineWheelOnSteeringCircles", false);
         // No jitter: the only random draws in this march, so the result does not depend on the random streams, which
         // follow the scene hierarchy (Troop.StreamId) and so on the tests run before this one.
         UseTuning("_soldierBrownianMotion", 0f);

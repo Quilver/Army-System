@@ -121,6 +121,8 @@ public sealed class TroopFormationState : MonoBehaviour
         float deltaTime)
     {
         if (engaged) return;
+        // SU-173: the steering-circle wheel turns the line along its path; the mover sets the heading.
+        if (_troop.IsFollowingWheelPath) return;
         TroopTuning tuning = TroopTuning.Active;
         if (tuning.LineNoStrafe && inLine)
         {

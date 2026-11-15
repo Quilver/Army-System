@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 // Moves the troop pivot: marching to a destination (Move, or the centre of a line order), pursuing an enemy troop,
@@ -18,6 +19,13 @@ using UnityEngine;
 // its facing does not march; it stands while TroopFormationState wheels it toward the march (MarchIntent), then
 // advances. It may strafe while engaged, on a small move (a Move or line order no longer than LineStrafeMaxDistance whose
 // destination is not within A_Distance of an enemy; never a Pursue), and after LineWheelFirstMaxSeconds of standing.
+// Wheeling on steering circles (SU-173, Line Wheel On Steering Circles): such a line does not stand and turn on the
+// spot. Its front rank's centre follows a SteeringCircles path (an arc of radius LineTurnRadiusScale x half its length,
+// a straight tangent, and for a line order an arc that arrives facing the ordered front) leg by leg along the NavMesh
+// route, and the line faces along the path. At the default radius the end of the front rank on the inside of the turn
+// stands while the outer end marches round it; on an arc the outer end marches at the line's pace, so the centre goes at
+// r / (r + half the length) of it. The path is planned again when the target or the next waypoint moves, or the pivot is
+// pushed off it; the stand-and-turn above is kept only for when no path can be built.
 public sealed class TroopPivotMover
 {
     const float ArrivalDistanceSquared = 0.0004f;
@@ -41,6 +49,20 @@ public sealed class TroopPivotMover
     Vector2 _marchIntent;
     bool _smallMove;
     float _wheelFirstTime;
+    // SU-173: the steering-circle path being followed, how far along it the front rank's centre is, what it was planned
+    // for, and whether the order's last leg has been wheeled (the rest is a short straight finish).
+    readonly List<SteeringCircles.Sample> _wheelPath = new();
+    bool _wheelActive;
+    bool _wheelLastLeg;
+    bool _wheelDone;
+    float _wheelDistance;
+    float _wheelRadius;
+    float _wheelLength;
+    Vector2 _wheelGoal;
+    Vector2 _wheelPlannedPivot;
+    // How far (units) the target or waypoint may move, or the pivot be pushed off the path, before it is planned again.
+    const float WheelReplanDistance = 0.3f;
+    const float WheelSampleSpacing = 0.15f;
 
     public TroopPivotMover(Troop troop, TroopPathFollower path)
     {
@@ -62,6 +84,8 @@ public sealed class TroopPivotMover
     public bool MayStrafe => _smallMove || _troop.IsEngaged;
     // Standing to wheel toward its march before it advances (SU-172).
     public bool IsWheelingFirst { get; private set; }
+    // Marching along a steering-circle path this frame (SU-173).
+    public bool IsFollowingWheelPath => _wheelActive;
     public Vector2 LinePushVelocity => _linePushVelocity;
     public void SetLinePushVelocity(Vector2 velocity) => _linePushVelocity = velocity;
 
@@ -77,6 +101,7 @@ public sealed class TroopPivotMover
         _hasDestination = true;
         _smallMove = IsSmallMove(worldPosition);
         _wheelFirstTime = 0f;
+        DropWheelPath(resetOrder: true);
     }
 
     public void Pursue(Troop target)
@@ -88,6 +113,7 @@ public sealed class TroopPivotMover
         // An attack ends in an engagement: never a small move (SU-172).
         _smallMove = false;
         _wheelFirstTime = 0f;
+        DropWheelPath(resetOrder: true);
     }
 
     // Drops every movement order (used when the troop breaks or routs).
@@ -104,6 +130,7 @@ public sealed class TroopPivotMover
         _marchIntent = Vector2.zero;
         _smallMove = false;
         IsWheelingFirst = false;
+        DropWheelPath(resetOrder: true);
     }
 
     public void Tick(float deltaTime)
@@ -116,6 +143,7 @@ public sealed class TroopPivotMover
             _troop.transform.position += (Vector3)(_linePushVelocity * deltaTime); // linked neighbours keep hold during retreat
         else
             MoveToDestination(deltaTime);
+        if (!_hasDestination || _holding || _troop.IsRouted || _troop.IsFaultSlipping) DropWheelPath(resetOrder: false);
     }
 
     void Flee(float deltaTime)
@@ -143,11 +171,20 @@ public sealed class TroopPivotMover
             }
             else if (deltaTime > 0f && offset.sqrMagnitude > 0.000001f)
             {
-                Vector2 step = _path.Step(position, _destination, PivotSpeed, deltaTime);
-                if (step.sqrMagnitude > 1e-12f) _marchIntent = step.normalized;
-                if (WheelsBeforeMarching(step, deltaTime)) step = Vector2.zero;
-                step *= LineMarchScale(step);
-                step = LimitStepIntoTarget(step, deltaTime);
+                Vector2 step;
+                if (TryWheelStep(position, deltaTime, out Vector2 wheelStep))
+                {
+                    step = LimitStepIntoTarget(wheelStep, deltaTime);
+                    if (step.sqrMagnitude > 1e-12f) _marchIntent = step.normalized;
+                }
+                else
+                {
+                    step = _path.Step(position, _destination, PivotSpeed, deltaTime);
+                    if (step.sqrMagnitude > 1e-12f) _marchIntent = step.normalized;
+                    if (WheelsBeforeMarching(step, deltaTime)) step = Vector2.zero;
+                    step *= LineMarchScale(step);
+                    step = LimitStepIntoTarget(step, deltaTime);
+                }
                 _pivotVelocity = step / deltaTime;
                 position += step;
             }
@@ -218,11 +255,93 @@ public sealed class TroopPivotMover
         return length > room && length > 1e-6f ? step * (room / length) : step;
     }
 
+    // SU-173: whether the line wheels along a steering-circle path this frame, and the pivot's step if so. It applies to
+    // a troop in Line or Chain that may not strafe (SU-172), until the order's last leg has been wheeled.
+    bool TryWheelStep(Vector2 position, float deltaTime, out Vector2 step)
+    {
+        step = Vector2.zero;
+        TroopTuning tuning = TroopTuning.Active;
+        if (!tuning.LineNoStrafe || !tuning.LineWheelOnSteeringCircles || _wheelDone
+            || !LineMarchRules.IsInLine(_troop.FormationMode) || MayStrafe)
+        {
+            DropWheelPath(resetOrder: false);
+            return false;
+        }
+        if (!_path.TryGetLeg(position, _destination, out Vector2 waypoint, out bool last))
+        {
+            DropWheelPath(resetOrder: false);
+            return false;
+        }
+
+        float length = _troop.LineLength;
+        float frontOffset = _troop.FrontRankOffset(length);
+        Vector2 heading = _troop.FormationHeading.normalized;
+        Vector2 goalPivot = last ? _destination : waypoint;
+        bool replan = !_wheelActive || last != _wheelLastLeg
+            || (goalPivot - _wheelGoal).sqrMagnitude > WheelReplanDistance * WheelReplanDistance
+            || (position - _wheelPlannedPivot).sqrMagnitude > WheelReplanDistance * WheelReplanDistance;
+        if (replan && !PlanWheel(position, heading, goalPivot, last, length, frontOffset, tuning))
+        {
+            DropWheelPath(resetOrder: false);
+            return false;
+        }
+
+        // March along the path: the line's pace on the straight; on an arc the outer end keeps that pace.
+        float pace = PivotSpeed * (tuning.LineMarchSlowdown ? Mathf.Clamp01(tuning.LineMarchSpeedScale) : 1f);
+        SteeringCircles.Sample here = SteeringCircles.At(_wheelPath, _wheelDistance);
+        if (here.OnArc) pace *= _wheelRadius / (_wheelRadius + length * 0.5f);
+        _wheelDistance = Mathf.Min(_wheelLength, _wheelDistance + pace * Mathf.Max(0f, deltaTime));
+        SteeringCircles.Sample next = SteeringCircles.At(_wheelPath, _wheelDistance);
+        Vector2 pivot = next.Position - next.Facing * frontOffset;
+        step = pivot - position;
+        _wheelPlannedPivot = pivot;
+        _troop.SetMarchHeading(next.Facing);
+
+        if (_wheelDistance >= _wheelLength - 1e-4f)
+        {
+            // The leg is done: the next leg is planned next frame; after the last one the order finishes straight.
+            if (last) _wheelDone = true;
+            _wheelActive = false;
+        }
+        return true;
+    }
+
+    bool PlanWheel(Vector2 position, Vector2 heading, Vector2 goalPivot, bool last, float length, float frontOffset,
+        TroopTuning tuning)
+    {
+        Vector2? endFacing = null;
+        if (last && !_pursuitActive && _troop.TryGetLineOrder(out _, out Vector2 ordered, out _)) endFacing = ordered;
+        Vector2 toGoal = goalPivot - position;
+        if (toGoal.sqrMagnitude < 1e-6f) return false;
+        Vector2 arrival = endFacing ?? toGoal.normalized;
+        Vector2 front = position + heading * frontOffset;
+        Vector2 goalFront = goalPivot + arrival * frontOffset;
+        float radius = Mathf.Max(0.25f, tuning.LineTurnRadiusScale * length * 0.5f);
+        if (!SteeringCircles.Build(front, heading, goalFront, endFacing, radius, WheelSampleSpacing, _wheelPath,
+                tuning.LineTurnMinRadiusShare, out float used))
+            return false;
+        _wheelActive = true;
+        _wheelLastLeg = last;
+        _wheelGoal = goalPivot;
+        _wheelRadius = used;
+        _wheelDistance = 0f;
+        _wheelLength = SteeringCircles.Length(_wheelPath);
+        _wheelPlannedPivot = position;
+        return _wheelLength > 1e-4f;
+    }
+
+    void DropWheelPath(bool resetOrder)
+    {
+        _wheelActive = false;
+        _wheelPath.Clear();
+        if (resetOrder) _wheelDone = false;
+    }
+
     // SU-172: a troop in Line or Chain whose march is off its facing stands while it wheels to face the march.
     bool WheelsBeforeMarching(Vector2 step, float deltaTime)
     {
         TroopTuning tuning = TroopTuning.Active;
-        if (!tuning.LineNoStrafe || !tuning.LineWheel || step.sqrMagnitude < 1e-12f
+        if (!tuning.LineNoStrafe || !tuning.LineWheel || _wheelDone || step.sqrMagnitude < 1e-12f
             || !LineMarchRules.IsInLine(_troop.FormationMode) || MayStrafe
             || !LineMarchRules.IsOffFacing(step, _troop.Facing, tuning.LineAdvanceAngleDeg))
         {

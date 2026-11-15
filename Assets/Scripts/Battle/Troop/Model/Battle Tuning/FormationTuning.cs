@@ -91,6 +91,19 @@ public sealed class FormationTuning : ScriptableObject
         "anyway, so it is never stuck (a facing it cannot reach).")]
     float _lineWheelFirstMaxSeconds = 4f;
 
+    [SerializeField, Tooltip("On (with Line No Strafe): a line that has to turn wheels on steering circles (SU-173): its " +
+        "front rank's centre marches along arcs and straight tangents and the line faces along them, arriving facing a line " +
+        "order's front. Off: it stands and turns on the spot first (SU-172).")]
+    bool _lineWheelOnSteeringCircles = true;
+    [SerializeField, Min(0.1f), Tooltip("Turn radius of the steering-circle wheel, x half the line's length. 1: the drill " +
+        "wheel, the inner end of the front rank stands while the outer end marches round it. Larger: a wider arc on which " +
+        "the inner end walks forward too.")]
+    float _lineTurnRadiusScale = 1f;
+    [SerializeField, Range(0.25f, 1f), Tooltip("Tightest steering-circle wheel, as a share of the turn radius. A tighter wheel " +
+        "is taken only where it is much shorter (a sidestep of a few lines' widths would otherwise loop round); it turns " +
+        "about a point inside the line.")]
+    float _lineTurnMinRadiusShare = 0.5f;
+
     [Header("Troop border fill (SU-170)")]
     [SerializeField, Range(0f, 1f), Tooltip("Fill opacity of a friendly troop's border when it is neither hovered nor selected.")]
     float _friendlyFillAlpha = 0.14f;
@@ -167,6 +180,9 @@ public sealed class FormationTuning : ScriptableObject
     public float LineAdvanceAngleDeg => _lineAdvanceAngleDeg;
     public float LineStrafeMaxDistance => _lineStrafeMaxDistance;
     public float LineWheelFirstMaxSeconds => _lineWheelFirstMaxSeconds;
+    public bool LineWheelOnSteeringCircles => _lineWheelOnSteeringCircles;
+    public float LineTurnRadiusScale => _lineTurnRadiusScale;
+    public float LineTurnMinRadiusShare => _lineTurnMinRadiusShare;
     public float FriendlyFillAlpha => _friendlyFillAlpha;
     public float EnemyFillAlpha => _enemyFillAlpha;
     public float HoverFillAlphaBonus => _hoverFillAlphaBonus;

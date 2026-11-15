@@ -723,6 +723,9 @@ defaults are used when an asset is missing. Values in the rest of this document 
 | `LineAdvanceAngleDeg` | 15 (*default*) | deg | A line marches only while its march is within this of its facing (SU-172). |
 | `LineStrafeMaxDistance` | 4 (*default*) | units | A Move or line order no longer than this whose destination is not within A_Distance of an enemy is a small move, which may strafe (SU-172). |
 | `LineWheelFirstMaxSeconds` | 4 (*default*) | s | A line that has stood wheeling this long marches anyway (SU-172). |
+| `LineWheelOnSteeringCircles` | on (*default*) | bool | A line that has to turn wheels on steering circles: its front's centre follows arcs and tangents and it faces along them, arriving facing a line order's front (SU-173). Off: SU-172's stand and turn. |
+| `LineTurnRadiusScale` | 1 (*default*) | × half the line | Steering-circle turn radius; 1 is the drill wheel about the inner end of the front rank (SU-173). |
+| `LineTurnMinRadiusShare` | 0.5 (*default*) | × turn radius | Tightest wheel taken where it is much shorter (SU-173). |
 | `FriendlyFillAlpha` | 0.14 (*default*) | opacity | Fill of a player troop's border, neither hovered nor selected (SU-170). Display only. |
 | `EnemyFillAlpha` | 0.28 (*default*) | opacity | Fill of an enemy troop's border, not hovered (SU-170). Display only. |
 | `HoverFillAlphaBonus` / `SelectedFillAlphaBonus` | 0.08 / 0.16 (*default*) | opacity | Added to the fill while hovered / selected (SU-170). |

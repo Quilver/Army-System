@@ -304,6 +304,15 @@ public sealed class Troop : MonoBehaviour
     internal Vector2 MarchIntent => _mover != null ? _mover.MarchIntent : Vector2.zero;
     internal bool MayStrafe => _mover == null || _mover.MayStrafe;
     public bool IsWheelingToMarch => _mover != null && _mover.IsWheelingFirst;
+    // The steering-circle wheel (SU-173): the line marches along arcs and tangents, facing along them; the mover sets
+    // the heading while it does.
+    public bool IsFollowingWheelPath => _mover != null && _mover.IsFollowingWheelPath;
+    internal Vector2 FormationHeading =>
+        _formationState != null && _formationState.HasHeading ? _formationState.Heading : (Vector2)transform.right;
+    internal void SetMarchHeading(Vector2 facing)
+    {
+        if (_formationState != null) _formationState.SetHeading(facing);
+    }
 
     // Facing used for faces and ranged arcs: the line's facing, or the march heading, or the troop's own heading (where it
     // last marched or was ordered to face, SU-154), or the transform's right.
