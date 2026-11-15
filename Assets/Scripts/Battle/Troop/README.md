@@ -16,9 +16,9 @@ report, sounds) follows a battle; Troop code never references the campaign.
 `TroopCombatWorld` (one per battle) runs the battle-wide systems; each `Troop` runs its own modules.
 
 1. **Engagement** (`TroopEngagementSystem`): builds every troop's footprint and measures every opposing pair with the
-   footprint gap. Enemies within `S_Distance` (30) turn the troop into a battle line (the line is its front rank, the
+   footprint gap. Enemies within `S_Distance` (Formation Tuning) turn the troop into a battle line (the line is its front rank, the
    ranks behind it and the pivot in their middle, SU-161), which keeps the troop's own
-   facing: where it marched or was ordered to face, never toward the enemy by itself (SU-154). Within `A_Distance` (5.2)
+   facing: where it marched or was ordered to face, never toward the enemy by itself (SU-154). Within `A_Distance` (Formation Tuning)
    the troops are engaged, facing is locked, and the face each opponent attacks (Front, flanks, Rear) is recorded. The
    one exception is the attacker (SU-163): a troop with a Pursue order that is engaged with its target wheels, about the
    end of its front rank nearest the enemy, until its front is parallel to the face it attacks (`TroopAssaultWheel`,
@@ -29,8 +29,8 @@ report, sounds) follows a battle; Troop code never references the campaign.
 3. **Pressure**: line-vs-line barrier and push, friendly pivot and outline separation (SU-94), link tension (never
    moves an engaged troop).
 4. **Charges** (`ChargeCoordinator`): front-rank soldiers (SU-106) of a troop within `EngagementGap` of an enemy troop
-   charge at `Aggression / 45 s` (`ChargeWindowSeconds`, Melee Tuning, SU-112), reaching up to `A_Distance` (SU-95); Discipline-nearest friends follow. Stunned
-   soldiers (SU-107) do neither. Feints (SU-164): a second roll at `FeintsPerCharge` (3) x that rate, on the troop's
+   charge about `Aggression` times per `ChargeWindowSeconds` (Melee Tuning, SU-112), reaching up to `A_Distance` (SU-95); Discipline-nearest friends follow. Stunned
+   soldiers (SU-107) do neither. Feints (SU-164): a second roll at `FeintsPerCharge` (Melee Tuning) x that rate, on the troop's
    own feint stream, sends a soldier at an enemy that recoils on contact with no duel, damage or followers. Assault
    (SU-165): when a troop with an order becomes engaged, each soldier that may charge makes one charge at once, without a
    roll, as it comes into reach (`AssaultState`).
@@ -61,8 +61,8 @@ report, sounds) follows a battle; Troop code never references the campaign.
 ## Controls (battle scenes)
 
 - **LMB** click on a troop: select it. **Double click**: select its whole chain. Click on ground: clear. Drag from
-  ground (8 px): box select. **Shift** toggles.
-- **LMB drag from a troop** (8 px): move the selection (that troop, or its chain after a double click) to where the
+  ground (`BoxSelectMinDragPixels`, Input Tuning): box select. **Shift** toggles.
+- **LMB drag from a troop** (`OrderDragMinPixels`, Input Tuning): move the selection (that troop, or its chain after a double click) to where the
   button is released, keeping offsets (SU-129).
 - **P** (or gamepad Start), or the speed bar (top right): pause and resume. Selection and orders still work while paused.
 - **Battle end** (SU-168): when the battle is won or lost, a Victory or Defeat banner shows (`BattleEndBanner`, drawn by
@@ -70,28 +70,30 @@ report, sounds) follows a battle; Troop code never references the campaign.
   then the next scene loads (`BattleFlow`, on `Battle.Leaving`). Meanwhile orders and the pause key are ignored and the
   speed bar is hidden; the slow-down is a `GamePause.Slow`, which pauses and the speed cannot undo. The result, the
   battle report and the achievements are fixed when the battle ends (`Battle.Ended`), before the banner.
-- **RMB** on an enemy: pursue (Assault on contact). It stays an attack if the mouse moved less than 24 px
-  (`AttackClickSlopPixels`), or if the press was on the same enemy, however far it moved; the ghost shows the attack
+- **RMB** on an enemy: pursue (Assault on contact). It stays an attack if the mouse moved less than
+  `AttackClickSlopPixels` (Input Tuning), or if the press was on the same enemy, however far it moved; the ghost shows the attack
   (SU-159). **RMB** on ground: move, keeping offsets; troops arrive Idle.
-- **RMB drag** (8 px): a battle line, for one troop or several. The drag's direction sets the front: left to right faces
+- **RMB drag** (`OrderDragMinPixels`): a battle line, for one troop or several. The drag's direction sets the front: left to right faces
   up the screen, right to left faces down (SU-156). The ghost shows an arrow on each line's front. Several troops stand
   end to end from the press point, in order along the drag, all linked into a chain; one stretch for the whole line
-  (drag ÷ sum of L_nat, clamped to 0.7–2.0), so each troop's width is in proportion to its frontage. Until the drag is a
-  quarter of the minimum line width the selection keeps its facing (SU-160). One troop's line spans the drag, 0.7–2.0 ×
-  L_nat. The drawn line is each troop's front rank: troops of any depth stand flush on it, their ranks behind it, and
+  (drag ÷ sum of L_nat, clamped to `ChainMinStretchScale`–`ChainMaxStretchScale`, Chain Tuning), so each troop's width is in proportion to its frontage. Until the drag is
+  `LineOrderFacingDeadZone` (Chain Tuning) × the minimum line width the selection keeps its facing (SU-160). One troop's
+  line spans the drag, `ChainMinStretchScale`–`ChainMaxStretchScale` × L_nat. The drawn line is each troop's front rank: troops of any depth stand flush on it, their ranks behind it, and
   the ghost shows the ranks behind the line (SU-161).
 - **Ctrl + RMB click**: Face. The selection turns in place toward the point and holds its line (SU-156).
 - **Troop border**: the faint fill under a hovered or selected troop, and the shape a click inside picks
   (`Troop.Border`, `Rules/TroopBorder.cs`, SU-162). One rounded box that morphs between blob, column and line, holds
-  every soldier not charging or returning with `OutlinePadding` (0.65 units) to spare, grows in about 0.1 s and shrinks
-  in about 0.5 s. Display and picking only: the rules use the footprint, and friendly troops keep their formation
+  every soldier not charging or returning with `OutlinePadding` (Formation Tuning) to spare, grows in about `TroopBorder.GrowTime`
+  (a constant, 0.1 s) and shrinks in about `TroopBorder.ShrinkTime` (a constant, 0.5 s). Display and picking only: the rules use the footprint, and friendly troops keep their formation
   outlines (`Troop.Outline`) apart. Line ghosts are the border's line shape (padded, not following soldiers).
 - Troops face where they march, or where they were ordered to face, and keep that facing when they stop (SU-154). A
-  troop in line wheels to turn (60°/s), and marches as slowly as moving back while more than 45° off its front (SU-155).
+  troop in line wheels to turn (at `LineWheelRateDeg`), and marches as slowly as moving back
+  (`LineBackwardSpeedScale`) while more than `LineTurnAngleDeg` off its front (all Formation Tuning, SU-155).
 - Soldiers of an engaged troop that have an enemy soldier within direct reach (the heat band's reach) turn to the nearest
   one; the rest face the troop's front. Chargers face their charge target (SU-158). This is display only: the troop's
   faces still decide flank and rear attacks.
-- Moving one chained troop: inside the envelope (2.0 x L_nat stretch, 65 degree hinge) it stays linked; outside it the
+- Moving one chained troop: inside the envelope (stretch up to `ChainMaxStretchScale` × L_nat, inner hinge
+  angle at least `ChainMinInnerAngleDeg`, both Chain Tuning) it stays linked; outside it the
   link breaks on release. The ghost tether shows which (green = stays, dashed red = breaks).
 - **Alt** + order: unlink a chained troop, or keep an unlinked reserve from snapping onto a line.
 - **Selected** troops, and the troop under the cursor (any team), with a Move, Line or Attack order: the path to the
@@ -125,7 +127,7 @@ constant in `TroopConstants` when it never changes:
 Code reads them through `TroopTuning.Active` (property names unchanged). A missing asset falls back to the code
 defaults; **Troops > Battle Tuning > Create Missing Assets** recreates it. Characters, troops, classes and equipment are
 in `Assets/Resources/Troop and Character Profiles/`. `TroopCombatWorld` has no distance fields of its own; the scene
-values it used to override (S 5, A 2) are no longer read.
+values it used to override are no longer read.
 
 ## Tests and the command line
 
@@ -138,7 +140,7 @@ Run them from the Unity Test Runner (EditMode), or from the command line with th
 ```
 powershell -ExecutionPolicy Bypass -File Tools\UnityCli\unity-cli.ps1 compile
 powershell -ExecutionPolicy Bypass -File Tools\UnityCli\unity-cli.ps1 editmode [-TestFilter MoraleRulesTests]
-powershell -ExecutionPolicy Bypass -File Tools\UnityCli\unity-cli.ps1 smoke      # plays Level 1 Troop Test for 120 s
+powershell -ExecutionPolicy Bypass -File Tools\UnityCli\unity-cli.ps1 smoke      # plays Level 1 Troop Test for -SmokeSeconds (default 120 s)
 powershell -ExecutionPolicy Bypass -File Tools\UnityCli\unity-cli.ps1 all
 ```
 
