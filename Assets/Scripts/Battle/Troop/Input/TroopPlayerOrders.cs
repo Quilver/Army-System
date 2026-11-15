@@ -24,8 +24,9 @@ using UnityEngine.InputSystem;
 // The first selected troop and the troop under the cursor are shown on troop cards (TroopCardHud), and the soldier under
 // the cursor gets a small HP bar over its head (SoldierHealthBar). Every troop on the field has a floating Effective
 // Morale bar over it, filled with Shock from the left (TroopMoraleBar). A hovered troop with ranged weapons shows a
-// transparent mask of where it can shoot (TroopRangeMask). Every selected troop, and the troop under the cursor, with a
-// Move, Line or Attack order shows the path it is taking with arrows to its waypoint (TroopOrderPathView).
+// transparent mask of where it can shoot (TroopRangeMask). Every selected troop, and the player's troop under the cursor,
+// with a Move, Line or Attack order shows the path it is taking with arrows to its waypoint (TroopOrderPathView). An enemy
+// troop's orders are never shown (SU-169).
 // Engaged troops show a red heat map across the gap between their lines (TroopEngagementView): most intense in the
 // middle of the gap, fading toward each troop's line and the ends of the engagement. F5 toggles it.
 public sealed class TroopPlayerOrders : MonoBehaviour
@@ -43,7 +44,7 @@ public sealed class TroopPlayerOrders : MonoBehaviour
     [SerializeField] Color _rangeMaskOutline = new(0.05f, 0.4f, 0.85f, 1f);
     [SerializeField, Min(0f), Tooltip("Outline width in screen pixels.")] float _rangeMaskOutlinePixels = 3f;
 
-    [Header("Order path (selected troops and the hovered troop)")]
+    [Header("Order path (selected troops and the hovered player troop)")]
     [SerializeField, Tooltip("Path and arrows of a Move or Line order.")] Color _orderPathMoveColor = new(0.95f, 0.95f, 0.85f, 0.95f);
     [SerializeField, Tooltip("Path and arrows of an Attack (pursue) order.")] Color _orderPathAttackColor = new(1f, 0.3f, 0.2f, 0.95f);
 
@@ -115,6 +116,7 @@ public sealed class TroopPlayerOrders : MonoBehaviour
         if (_camera == null) _camera = Camera.main;
         if (_camera == null) return;
         _selection.PlayerTeamId = _playerTeamId;
+        TroopVisualiser.PlayerTeamId = _playerTeamId;
         _selection.Refresh();
         _selection.RemoveDestroyed();
 
@@ -347,7 +349,8 @@ public sealed class TroopPlayerOrders : MonoBehaviour
             DrawOrderPreview(_orderStart.Value, _mousePosition);
     }
 
-    // The order arrows of every selected troop, all the time, and of the hovered troop (any team), each drawn once.
+    // The order arrows of every selected troop, all the time, and of the hovered troop, each drawn once. Only the player's
+    // own troops: the enemy's orders are hidden (SU-169).
     void DrawOrderPaths()
     {
         TroopOrderPathView.Style style = OrderPathStyle();
@@ -355,11 +358,11 @@ public sealed class TroopPlayerOrders : MonoBehaviour
         bool hoveredDrawn = false;
         foreach (var troop in _selection.Selected)
         {
-            if (troop == null) continue;
+            if (troop == null || troop.TeamId != _playerTeamId) continue;
             _orderPath.Draw(_camera, troop, style);
             if (troop == hovered) hoveredDrawn = true;
         }
-        if (!hoveredDrawn) _orderPath.Draw(_camera, hovered, style);
+        if (!hoveredDrawn && hovered != null && hovered.TeamId == _playerTeamId) _orderPath.Draw(_camera, hovered, style);
     }
 
     // Ghost preview of a left-drag move (SU-129): a marker at each troop's planned spot and its chain tethers.

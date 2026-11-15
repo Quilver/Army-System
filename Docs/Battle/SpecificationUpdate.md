@@ -11,6 +11,76 @@ SU-128 refer to v0.9 and may have moved.
 
 ---
 
+## 2026-11-15: Movie_023 changes: hidden enemy orders, stronger borders, the Assault chain reaction, no strafing in line (branch troop-facing-controls)
+
+### SU-172 Lines advance or wheel; they do not strafe (Decision + Assumptions, spec §3.2, §3.3, §8)
+The designer: "Troops when moving in line or chain formation should be advancing forwards or wheeling to move, not
+strafing. The only cases where strafing is allowed are: A, they cannot move to the location otherwise such as when
+engaged. B, small moves that do not result in an engagement."
+- Decision: a troop in Line or Chain whose march (the direction its path takes it this frame) is more than
+  `LineAdvanceAngleDeg` (15°) off its facing does not march: it stands and wheels toward the march at `LineWheelRateDeg`
+  (SU-155), then advances (`LineNoStrafe`, Formation Tuning, on). Off: the SU-155 behaviour, marching while wheeling.
+- Decision: the march takes the place of a line order's front and of a pursuer's squaring-up heading (SU-75) while the
+  troop marches; a line order's front is taken by wheeling once it has arrived. A pursuer still squares up after contact
+  with the assault wheel (SU-163).
+- Decision: strafing stays allowed (a) while the troop is engaged (its facing is locked), and (b) on a small move: a Move
+  or line order no longer than `LineStrafeMaxDistance` (4 units, from where the troop stood) whose destination, with the
+  troop's footprint moved there, is not within A_Distance of an enemy. A Pursue is never small. On a small move a line
+  keeps its front (or wheels to an ordered one) and strafes there.
+- Assumption: "cannot move otherwise" also covers a line that has stood wheeling for `LineWheelFirstMaxSeconds` (4 s)
+  without facing its march (a facing it cannot reach): it then marches anyway, so it is never stuck. Line pressure,
+  chain tension, friendly give-way, retreats and routs are not marches and still move a line sideways.
+- Assumption: chained troops follow the rule each on its own (each wheels about its own pivot); the chain does not wheel
+  as one, so a chain told to march off its front opens at its joints while its troops wheel and closes as they advance.
+- Assumption: moving back is strafing too: a line ordered behind itself further than the small-move distance turns
+  about (wheels up to 180°, 3 s at 60°/s) and advances. The backward and turn slowdowns (SU-150, SU-155) still apply
+  when the rule is off, and to small moves.
+- Assumption: the enemy AI's troops follow the same rule (their orders go through the same mover).
+
+### SU-171 The Assault is a chain reaction (Decision + Assumptions, spec §4.2, §4.3, §8)
+The designer: "The initial assault should feel more coordinated. Have it be a chain reaction with the initially legal
+soldier charge triggering any soldier that should be able to receive a charge once the troop has finished wheeling to
+align with the enemy troop."
+- Decision: when an Assault opens, the first soldier that may make its Assault charge (SU-165's eligibility, a target in
+  reach) charges at once, alone: the spark. If several may, the one nearest its target.
+- Decision: the others wait until the troop has finished its assault wheel (SU-163): not wheeling for
+  `AssaultChainSettleSeconds` (0.2 s). A troop that does not wheel (head-on, or not pursuing) waits only that long.
+  Then the reaction spreads along the line from where the spark stood at `AssaultChainSpeed` (6 units/s, about 0.15 s
+  per file): a soldier makes its Assault charge once the reaction has reached its file and it has a target in reach.
+  One the reaction has passed that comes into reach later charges then, as before.
+  `AssaultChainReaction` (Melee Tuning, on) switches it; off is SU-165 as it was.
+- Assumption: "should be able to receive a charge" read as a soldier that may make its Assault charge (front rank,
+  charge gap, target in reach), i.e. the same soldiers as SU-165, released in turn rather than at once.
+- Assumption: the reaction is released at the latest `AssaultChainMaxWaitSeconds` (3 s) after the spark, even if the
+  troop is still wheeling (blocked by terrain or a neighbour). Until it reaches them, soldiers owing their Assault charge
+  make no ordinary roll and no feint (SU-165), so for those seconds only the spark fights.
+- Assumption: the distance is measured along the troop's line (its facing's perpendicular) from where the spark stood
+  when it charged, so the ranks behind a file go together.
+- Assumption: while the reaction runs, followers are not taken from soldiers that still owe their Assault charge and
+  may make it (front rank under `FrontRankChargesOnly`), so the spark's neighbours are not away following when the
+  reaction reaches them. Followers come from the ranks behind.
+- Measured (`AssaultChargeTests`, 6-wide head-on): spark 0.13 s after the Assault opens, the rest of the front rank
+  0.77 to 1.23 s. Melee durations were not re-measured.
+
+### SU-170 Troop borders are always filled, enemies more strongly, with soft edges (Decision + Assumptions, spec §6, §8)
+The designer: "Troop footprints should have higher opacity; both friendly but especially enemy troops. However the
+edges can be faded." (In Movie_023 the fill was 0 until hovered: 6% hovered, 16% selected.)
+- Decision: every troop's border is filled all the time: player troops at `FriendlyFillAlpha` (0.14), enemy troops at
+  `EnemyFillAlpha` (0.28); hovering adds `HoverFillAlphaBonus` (0.08), selecting `SelectedFillAlphaBonus` (0.16).
+- Decision: the fill is full inside and fades to nothing over `FillEdgeFade` (0.7 units) inside the border's edge (at
+  most 60% of the border's smaller half-size, so a small troop keeps a solid middle). The border's shape and picking are
+  unchanged.
+- Assumption: the values above; they and the fade are on Formation Tuning next to `OutlinePadding` (display only).
+- Assumption: "friendly" is the player's team (`TroopPlayerOrders` sets it); a troop that has left the field draws none.
+
+### SU-169 The enemy's orders are hidden (Decision, spec §6)
+The designer: "I don't want the player seeing the red troop lines" (Movie_023 from 0:16: hovering an enemy troop drew its
+attack path in red to the player's troop it pursued, with that troop's footprint outlined).
+- Decision: order paths (SU-129 path arrows, the line ghost, the attack target outline) are drawn only for the player's
+  own troops, selected or hovered. Hovering an enemy shows its card and border as before, not its order.
+
+---
+
 ## 2026-11-15: A slowed finish and a banner before leaving the battle (branch troop-facing-controls)
 
 ### SU-168 The battle ends with a slow-down and a Victory or Defeat banner (Decision + Assumptions, spec §6, §8)

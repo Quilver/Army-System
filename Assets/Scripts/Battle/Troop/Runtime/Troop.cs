@@ -299,6 +299,11 @@ public sealed class Troop : MonoBehaviour
 
     // The pivot's own march this frame (Move, Pursue, line order), without line pressure.
     internal Vector2 MarchVelocity => _mover != null ? _mover.MarchVelocity : Vector2.zero;
+    // No strafing in line (SU-172): where the pivot is trying to march (also while it stands to wheel first), whether
+    // its order may be carried out strafing, and whether it is standing to wheel this frame.
+    internal Vector2 MarchIntent => _mover != null ? _mover.MarchIntent : Vector2.zero;
+    internal bool MayStrafe => _mover == null || _mover.MayStrafe;
+    public bool IsWheelingToMarch => _mover != null && _mover.IsWheelingFirst;
 
     // Facing used for faces and ranged arcs: the line's facing, or the march heading, or the troop's own heading (where it
     // last marched or was ordered to face, SU-154), or the transform's right.
@@ -335,6 +340,8 @@ public sealed class Troop : MonoBehaviour
     // Whether the soldier still owes its charge to the open Assault.
     internal bool OwesAssaultCharge(SoldierAgentState soldier) => _assault.Owes(soldier);
     internal void MarkAssaultCharge(SoldierAgentState soldier) => _assault.MarkCharged(soldier);
+    // The Assault's chain reaction (SU-171): the spark, the wait for the wheel and the spread along the line.
+    internal AssaultState Assault => _assault;
 
     // Closes the Assault when the troop retreats or slips, is disordered or routs, is no longer engaged with all its
     // soldiers back in the formation, or every living soldier has made its charge (SU-165). Returns whether it is open.

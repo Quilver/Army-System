@@ -9,6 +9,8 @@ using UnityEngine;
 //   reach) and has not yet made its Assault charge charges at once, with no roll. All of a frame's Assault charges
 //   start before any of them picks followers, so no soldier is taken as a follower before it can make its own. An
 //   Assault charge is otherwise an ordinary charge. A soldier that owes one makes no ordinary roll and no feint.
+//   Chain reaction (SU-171): the first of them in reach (the one nearest its target) charges alone; the others wait
+//   until the troop has finished its assault wheel, then charge as the reaction spreads to their file (AssaultState).
 //   Gate (SU-95): the troop's footprint gap to an enemy troop is within EngagementGap (+ ChargeGapTolerance). Being
 //   engaged (A_Distance) is no longer enough: engaged lines that stand off further apart do not charge.
 //   Target: one of the ChargeCandidateCount nearest soldiers within the charge reach, at random, of an enemy troop
@@ -99,7 +101,7 @@ public sealed class ChargeCoordinator
             ITroopRandom random = troop.TroopRandom;
             IReadOnlyList<SoldierAgentState> soldiers = troop.Soldiers;
             bool assault = troop.RefreshAssault() && tuning.AssaultCharges;
-            if (assault) StartAssaultCharges(troop, soldiers, frontRankOnly, tuning, random, now);
+            if (assault) StartAssaultCharges(troop, soldiers, frontRankOnly, tuning, random, now, deltaTime);
             for (int i = 0; i < soldiers.Count; i++)
             {
                 SoldierAgentState soldier = soldiers[i];
@@ -132,9 +134,55 @@ public sealed class ChargeCoordinator
     // Assault charges (SU-165): every eligible soldier that still owes its charge and has a target in reach charges now.
     // Followers are picked once every Assault charge of the frame has started.
     void StartAssaultCharges(Troop troop, IReadOnlyList<SoldierAgentState> soldiers, bool frontRankOnly,
-        TroopTuning tuning, ITroopRandom random, float now)
+        TroopTuning tuning, ITroopRandom random, float now, float deltaTime)
     {
         _assaultChargers.Clear();
+        AssaultState state = troop.Assault;
+        bool chain = tuning.AssaultChainReaction;
+        if (chain)
+        {
+            state.Tick(deltaTime, troop.IsAssaultWheeling, tuning.AssaultChainSettleSeconds,
+                tuning.AssaultChainMaxWaitSeconds);
+            if (!state.HasSpark)
+            {
+                StartAssaultSpark(troop, soldiers, frontRankOnly, tuning, random, now);
+                return;
+            }
+        }
+        Vector2 facing = troop.Facing;
+        Vector2 lineAxis = new(-facing.y, facing.x);
+        for (int i = 0; i < soldiers.Count; i++)
+        {
+            SoldierAgentState soldier = soldiers[i];
+            if (!soldier.IsAlive || soldier.Character == null || soldier.IsCommitted || soldier.IsReturning
+                || soldier.IsStunned) continue;
+            if (frontRankOnly && !_frontRank.Contains(soldier)) continue;
+            if (!troop.OwesAssaultCharge(soldier)) continue;
+            Vector2 position = troop.WorldPosition(soldier);
+            // SU-171: it waits until the chain reaction has spread to its file.
+            if (chain && !state.HasReached(position, lineAxis, tuning.AssaultChainSpeed)) continue;
+            if (!TryPickTarget(troop, position, tuning.ChargeRange, tuning.ChargeCandidateCount, _chargeable, random,
+                    out SoldierContact target))
+                continue;
+            soldier.BeginAssaultCharge(target.Soldier, target.Troop, tuning.ChargeTimeoutSeconds, now);
+            troop.MarkAssaultCharge(soldier);
+            troop.MeleeMetrics.RecordChargeStarted();
+            _assaultChargers.Add((soldier, position));
+        }
+        foreach (var (soldier, position) in _assaultChargers)
+            PickFollowers(troop, soldier, position, tuning, random, now, chain ? frontRankOnly : (bool?)null);
+        troop.RefreshAssault();
+    }
+
+    // SU-171: the spark. Of the soldiers that owe their Assault charge and have a target in reach, the one nearest its
+    // target charges now, alone; the chain reaction starts from where it stood.
+    void StartAssaultSpark(Troop troop, IReadOnlyList<SoldierAgentState> soldiers, bool frontRankOnly, TroopTuning tuning,
+        ITroopRandom random, float now)
+    {
+        SoldierAgentState spark = null;
+        SoldierContact sparkTarget = default;
+        Vector2 sparkPosition = default;
+        float best = float.PositiveInfinity;
         for (int i = 0; i < soldiers.Count; i++)
         {
             SoldierAgentState soldier = soldiers[i];
@@ -146,13 +194,19 @@ public sealed class ChargeCoordinator
             if (!TryPickTarget(troop, position, tuning.ChargeRange, tuning.ChargeCandidateCount, _chargeable, random,
                     out SoldierContact target))
                 continue;
-            soldier.BeginAssaultCharge(target.Soldier, target.Troop, tuning.ChargeTimeoutSeconds, now);
-            troop.MarkAssaultCharge(soldier);
-            troop.MeleeMetrics.RecordChargeStarted();
-            _assaultChargers.Add((soldier, position));
+            float distance = (target.Position - position).sqrMagnitude;
+            if (distance >= best) continue;
+            best = distance;
+            spark = soldier;
+            sparkTarget = target;
+            sparkPosition = position;
         }
-        foreach (var (soldier, position) in _assaultChargers)
-            PickFollowers(troop, soldier, position, tuning, random, now);
+        if (spark == null) return;
+        spark.BeginAssaultCharge(sparkTarget.Soldier, sparkTarget.Troop, tuning.ChargeTimeoutSeconds, now);
+        troop.MarkAssaultCharge(spark);
+        troop.Assault.Spark(sparkPosition);
+        troop.MeleeMetrics.RecordChargeStarted();
+        PickFollowers(troop, spark, sparkPosition, tuning, random, now, frontRankOnly);
         troop.RefreshAssault();
     }
 
@@ -249,8 +303,11 @@ public sealed class ChargeCoordinator
     }
 
     // The Discipline nearest living, uncommitted soldiers of the same troop (Q-9) each follow with the follow chance.
+    // keepAssaultChargers (SU-171, set during the chain reaction, to whether only the front rank charges): a soldier
+    // that still owes its Assault charge and may make it (in the front rank, or anywhere when every rank charges) is
+    // passed over, so the chain reaction is not held up by soldiers away following.
     void PickFollowers(Troop troop, SoldierAgentState charger, Vector2 chargerPosition, TroopTuning tuning,
-        ITroopRandom random, float now)
+        ITroopRandom random, float now, bool? keepAssaultChargers = null)
     {
         int count = Mathf.Max(0, troop.Discipline);
         if (count == 0) return;
@@ -258,6 +315,8 @@ public sealed class ChargeCoordinator
         foreach (var soldier in troop.Soldiers)
         {
             if (soldier == charger || !soldier.IsAlive || soldier.IsCommitted || soldier.IsReturning || soldier.IsStunned) continue;
+            if (keepAssaultChargers.HasValue && troop.OwesAssaultCharge(soldier)
+                && (!keepAssaultChargers.Value || _frontRank.Contains(soldier))) continue;
             _friends.Add((soldier, (troop.WorldPosition(soldier) - chargerPosition).sqrMagnitude));
         }
         _friends.Sort((a, b) => a.distance.CompareTo(b.distance));

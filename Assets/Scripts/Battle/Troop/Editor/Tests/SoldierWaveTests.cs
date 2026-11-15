@@ -357,6 +357,7 @@ public sealed class SoldierWaveTests
     [Test]
     public void TurningOnTheMarch_LeadingSoldiersTurnBeforeTrailingOnes()
     {
+        UseTuning("_lineNoStrafe", false); // a turning march in line: strafing, which SU-172 otherwise rules out
         Troop troop = InLineWithEnemyAhead("Turner");
         Simulate(1.5f);
         Run run = Begin(troop, Vector2.up, FrameTime);

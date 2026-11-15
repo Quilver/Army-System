@@ -39,6 +39,21 @@ public sealed class AssaultChargeTests
         _tuning = null;
     }
 
+    void UseTuning(string property, bool value)
+    {
+        foreach (var section in _tuning.Sections)
+        {
+            var serialized = new SerializedObject(section);
+            SerializedProperty found = serialized.FindProperty(property);
+            if (found == null) continue;
+            found.boolValue = value;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            TroopTuning.OverrideForTests(_tuning);
+            return;
+        }
+        Assert.Fail($"No Battle Tuning section has the field {property}");
+    }
+
     void UseTuning(string property, float value)
     {
         foreach (var section in _tuning.Sections)
@@ -165,9 +180,11 @@ public sealed class AssaultChargeTests
         return (attacker, defender);
     }
 
+    // SU-165 without the chain reaction (SU-171 off).
     [Test]
     public void OrderedTroop_EngagingHeadOn_EveryFrontRankSoldierChargesAtOnce()
     {
+        UseTuning("_assaultChainReaction", false);
         var (attacker, defender) = HeadOn(12, 6);
         AssaultLog log = Run(attacker, 6f);
         Assert.IsFalse(float.IsNaN(log.OpenedAt), "The pursuer's Assault opens on contact");
@@ -224,6 +241,87 @@ public sealed class AssaultChargeTests
         Assert.Greater(log.Chargers, log.ChargedWithin(0.2f), "More soldiers charge as they come into reach");
         Assert.Greater(log.LatestFirstCharge, 0.5f, "Some charge well after contact");
         Assert.AreEqual(1, log.MostByOneSoldier, "Each once");
+    }
+
+    // SU-171: head-on, the chain reaction. One soldier (the spark) charges on contact; the rest of the front rank follow
+    // once the troop has stood square for Assault Chain Settle Seconds, one after another outward from the spark.
+    [Test]
+    public void ChainReaction_HeadOn_OneSparkThenTheFrontRankInTurn()
+    {
+        var (attacker, _) = HeadOn(12, 6);
+        var firsts = new Dictionary<SoldierAgentState, (float time, Vector2 position)>();
+        float opened = float.NaN;
+        for (int i = 0; i < Mathf.CeilToInt(6f / FrameTime); i++)
+        {
+            _world.SimulateFrame(FrameTime);
+            float time = (i + 1) * FrameTime;
+            if (attacker.IsAssaulting && float.IsNaN(opened)) opened = time;
+            foreach (var soldier in attacker.Soldiers)
+                if (soldier.IsAssaultCharging && !firsts.ContainsKey(soldier))
+                    firsts[soldier] = (time, attacker.WorldPosition(soldier));
+        }
+        Assert.IsFalse(float.IsNaN(opened), "The pursuer's Assault opens on contact");
+        var ordered = new List<(float time, Vector2 position)>(firsts.Values);
+        ordered.Sort((a, b) => a.time.CompareTo(b.time));
+        Vector2 sparkAt = ordered[0].position;
+        ordered.Sort((a, b) => a.time != b.time ? a.time.CompareTo(b.time)
+            : Mathf.Abs(a.position.y - sparkAt.y).CompareTo(Mathf.Abs(b.position.y - sparkAt.y)));
+        int front = ChargeCoordinator.FrontRankSize(attacker);
+        float settle = TroopTuning.Active.AssaultChainSettleSeconds;
+        TestContext.WriteLine($"opened {opened:F2} s; first charges at " +
+            string.Join(", ", ordered.ConvertAll(c => $"{c.time - opened:F2}")));
+        Assert.GreaterOrEqual(ordered.Count, front, "The whole front rank makes its Assault charge");
+        Assert.Greater(ordered[1].time - ordered[0].time, settle - FrameTime * 1.5f,
+            "Nobody else charges until the troop has stood square for the settle time");
+        Assert.Greater(ordered[front - 1].time, ordered[1].time, "The rest charge one after another, not at once");
+        Vector2 spark = ordered[0].position;
+        Vector2 axis = Vector2.up; // the attacker's line runs along y
+        for (int i = 2; i < front; i++)
+            Assert.GreaterOrEqual(Mathf.Abs(Vector2.Dot(ordered[i].position - spark, axis)) + 0.6f,
+                Mathf.Abs(Vector2.Dot(ordered[i - 1].position - spark, axis)), "The reaction spreads outward from the spark");
+        Assert.Less(ordered[front - 1].time - opened, 3f, "The whole front rank has charged within 3 s");
+    }
+
+    // SU-171: corner-on, the soldiers in reach wait while the troop wheels: after the spark no Assault charge starts on a
+    // frame the troop is wheeling (before the Assault Chain Max Wait).
+    [Test]
+    public void ChainReaction_WaitsForTheWheel()
+    {
+        UseTuning("_feintsPerCharge", 0f);
+        Troop defender = PlacedLine("Defender", 1, Vector2.zero, Vector2.left, Character(12, 0), 10);
+        Vector2 heading = new(Mathf.Cos(-45f * Mathf.Deg2Rad), Mathf.Sin(-45f * Mathf.Deg2Rad));
+        Vector2 tangent = new(-heading.y, heading.x);
+        float length = LineGeometry.NaturalLength(6);
+        Vector2 leadingEnd = new(-1.75f, 1.5f);
+        Troop attacker = PlacedLine("Attacker", 0, leadingEnd - tangent * (length * 0.5f), heading, Character(8, 0), 6);
+        attacker.Pursue(defender);
+
+        var started = new HashSet<SoldierAgentState>();
+        float sparkAt = float.NaN;
+        bool wheeled = false;
+        int duringWheel = 0;
+        for (int i = 0; i < Mathf.CeilToInt(8f / FrameTime); i++)
+        {
+            _world.SimulateFrame(FrameTime);
+            float time = (i + 1) * FrameTime;
+            int fresh = 0;
+            foreach (var soldier in attacker.Soldiers)
+                if (soldier.IsAssaultCharging && started.Add(soldier)) fresh++;
+            if (fresh > 0 && float.IsNaN(sparkAt))
+            {
+                sparkAt = time;
+                Assert.AreEqual(1, fresh, "One spark");
+                continue;
+            }
+            if (attacker.IsAssaultWheeling) wheeled = true;
+            if (fresh > 0 && attacker.IsAssaultWheeling
+                && time - sparkAt < TroopTuning.Active.AssaultChainMaxWaitSeconds) duringWheel += fresh;
+        }
+        TestContext.WriteLine($"spark at {sparkAt:F2} s, {started.Count} charged in all");
+        Assert.IsFalse(float.IsNaN(sparkAt), "The spark charges");
+        Assert.IsTrue(wheeled, "The attacker wheels");
+        Assert.AreEqual(0, duringWheel, "No Assault charge while it wheels");
+        Assert.Greater(started.Count, 1, "The rest charge once it is square");
     }
 
     // Two troops engaged without orders (not placed in a line either, which counts as a Line order): charges are the

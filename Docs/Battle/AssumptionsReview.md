@@ -1,6 +1,6 @@
 # Assumptions review
 
-Every unconfirmed Assumption in `SpecificationUpdate.md` (SU-01 to SU-168), grouped by system so they can be confirmed in one sitting: 250 assumptions across 103 SU entries. SU-168 (the slowed finish and the Victory or Defeat banner) was added on 2026-11-15. SU-167 (the plus for boosted morale on the troop card) was added on 2026-11-15. SU-166 (the soldier wave) was added on 2026-11-15. SU-165 (the Assault as one charge per soldier) was added on 2026-11-15; it superseded the SU-148 item and SU-164's "a troop in Assault does not feint", which were removed. SU-164 (feints) was added on 2026-11-15. SU-163 (the assault wheel) was added on 2026-11-15. SU-162 (the troop border) was added on 2026-11-15. SU-161 (flush fronts) was added on 2026-11-15. SU-159 (attack clicks) and SU-160 (linked group lines) were added on 2026-11-15; SU-160 superseded SU-157, whose items were removed. SU-158 (engaged soldiers face their enemy) was added on 2026-11-15. SU-154 to SU-157 (troop facing controls and line spacing, on the `troop-facing-controls` branch) and SU-148 to SU-153 (class design rules) were added on 2026-11-14. SU-136 to SU-140 were added on 2026-11-08; the SU-74 and SU-121 items about routed troops never leaving the map were removed (SU-138 replaced them). Rebuilt 2026-11-08 (SU-135): assumptions that later entries overtook were removed, missing ones were added, and the groups were tidied. The spec (v0.10) tags text that rests on one of these as **[A: SU-n]**.
+Every unconfirmed Assumption in `SpecificationUpdate.md` (SU-01 to SU-172), grouped by system so they can be confirmed in one sitting: 262 assumptions across 106 SU entries. SU-169 to SU-172 (Movie_023: hidden enemy orders, stronger borders, the Assault chain reaction, no strafing in line) were added on 2026-11-15. SU-168 (the slowed finish and the Victory or Defeat banner) was added on 2026-11-15. SU-167 (the plus for boosted morale on the troop card) was added on 2026-11-15. SU-166 (the soldier wave) was added on 2026-11-15. SU-165 (the Assault as one charge per soldier) was added on 2026-11-15; it superseded the SU-148 item and SU-164's "a troop in Assault does not feint", which were removed. SU-164 (feints) was added on 2026-11-15. SU-163 (the assault wheel) was added on 2026-11-15. SU-162 (the troop border) was added on 2026-11-15. SU-161 (flush fronts) was added on 2026-11-15. SU-159 (attack clicks) and SU-160 (linked group lines) were added on 2026-11-15; SU-160 superseded SU-157, whose items were removed. SU-158 (engaged soldiers face their enemy) was added on 2026-11-15. SU-154 to SU-157 (troop facing controls and line spacing, on the `troop-facing-controls` branch) and SU-148 to SU-153 (class design rules) were added on 2026-11-14. SU-136 to SU-140 were added on 2026-11-08; the SU-74 and SU-121 items about routed troops never leaving the map were removed (SU-138 replaced them). Rebuilt 2026-11-08 (SU-135): assumptions that later entries overtook were removed, missing ones were added, and the groups were tidied. The spec (v0.10) tags text that rests on one of these as **[A: SU-n]**.
 
 ## How to use this
 
@@ -17,10 +17,10 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 
 - [Troops, characters, stats & equipment](#troops-characters-stats--equipment) (20)
 - [Soldier simulation & physics](#soldier-simulation--physics) (12)
-- [Formations, movement & geometry](#formations-movement--geometry) (42)
-- [Combat (melee, charges, ranged)](#combat-melee-charges-ranged) (44)
+- [Formations, movement & geometry](#formations-movement--geometry) (47)
+- [Combat (melee, charges, ranged)](#combat-melee-charges-ranged) (49)
 - [Morale, retreat & rout](#morale-retreat--rout) (16)
-- [Controls, orders & battle UI](#controls-orders--battle-ui) (47)
+- [Controls, orders & battle UI](#controls-orders--battle-ui) (49)
 - [Campaign, tent, missions & deployment](#campaign-tent-missions--deployment) (45)
 - [Enemy AI](#enemy-ai) (13)
 - [Tooling & other](#tooling--other) (4)
@@ -186,6 +186,14 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 - [ ] the hold does not apply against a routed target (SU-139 chase unchanged); a holding pursuer marches again after the gap has stayed beyond the charge gap for 0.25 s, then closes to half `ChargeGapTolerance` inside it; its last approach is eased and never passes EngagementGap (constants). →
 - [ ] holding, an attacker no longer presses the defender's line back through line pressure; the fight is carried by charges and clashes. →
 
+**SU-172** Lines advance or wheel; they do not strafe
+
+- [ ] a line that has stood wheeling for `LineWheelFirstMaxSeconds` (4 s) without facing its march marches anyway; line pressure, chain tension, give-way, retreats and routs still move lines sideways. →
+- [ ] chained troops follow the rule each on its own (each wheels about its own pivot); the chain opens at its joints while they wheel and closes as they advance. →
+- [ ] moving back further than the small-move distance is strafing too: the line turns about (up to 180°, 3 s at 60°/s) and advances. →
+- [ ] the enemy AI's troops follow the same rule. →
+- [ ] the values: `LineAdvanceAngleDeg` 15°, `LineStrafeMaxDistance` 4 units (from where the troop stood; destination not within A_Distance of an enemy), on Formation Tuning. →
+
 ## Combat (melee, charges, ranged)
 
 **SU-43** Charges are completed through a retreat, then the soldier rushes back
@@ -270,6 +278,14 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 - [ ] with front-rank charges, rear ranks charge only if they reach the front rank while it is open, so a deep troop usually stays in Assault for the whole engagement (and `IsAssaulting` with it). →
 - [ ] the unchanged trigger includes a troop holding a line, so a held or deployed line that is attacked counter-charges with its whole front rank. →
 - [ ] `AssaultCharges` (on) switches the charges off; five tests of other systems run with it off. →
+
+**SU-171** The Assault is a chain reaction
+
+- [ ] "should be able to receive a charge" read as a soldier that may make its Assault charge (front rank, charge gap, target in reach). →
+- [ ] the reaction is released at the latest `AssaultChainMaxWaitSeconds` (3 s) after the spark; until it reaches them, owing soldiers make no ordinary roll or feint, so only the spark fights. →
+- [ ] the distance is measured along the troop's line from where the spark stood, so the ranks behind a file go together. →
+- [ ] while the reaction runs, followers are not taken from soldiers that still owe their Assault charge and may make it. →
+- [ ] the values: `AssaultChainSpeed` 6 units/s, `AssaultChainSettleSeconds` 0.2 s, on Melee Tuning. →
 
 ## Morale, retreat & rout
 
@@ -446,6 +462,11 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 - [ ] the fighting slows to 0.25× (`EndSlowSpeed`) and the banner shows for 10 s of real time (`EndBannerSeconds`); both are on a new Battle Tuning section, Battle End Tuning (one value for every mission). →
 - [ ] the banner reads "Victory" or "Defeat" on a dark panel across the upper middle of the screen, with a blue (victory) or red (defeat) strip along its top, in the battle HUD's style; it takes no clicks. →
 - [ ] the fighting and the enemy AI go on at the slow speed under the banner, changing nothing that is recorded; no jingle was added (none was wired to the battle's end). →
+
+**SU-170** Troop borders are always filled, enemies more strongly, with soft edges
+
+- [ ] the values: friendly 0.14, enemy 0.28, +0.08 hovered, +0.16 selected, fading over 0.7 units inside the edge (at most 60% of the smaller half-size), on Formation Tuning. →
+- [ ] "friendly" is the player's team; a troop that has left the field draws no fill. →
 
 ## Campaign, tent, missions & deployment
 

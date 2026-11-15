@@ -49,6 +49,19 @@ public sealed class MeleeTuning : ScriptableObject
         "that may charge makes one charge, without a roll, as it comes into reach. Off: the Assault still opens and " +
         "closes (achievements read it) but makes no charges, and a Couched Lance never doubles.")]
     bool _assaultCharges = true;
+    [SerializeField, Tooltip("Assault chain reaction (SU-171): the first soldier in reach charges at once; the rest wait " +
+        "until the troop has finished wheeling to square up (and has stood square for Assault Chain Settle Seconds), then " +
+        "charge one after another, spreading out along the line from that first charger at Assault Chain Speed. Off: every " +
+        "soldier charges as soon as it comes into reach (SU-165).")]
+    bool _assaultChainReaction = true;
+    [SerializeField, Min(0.1f), Tooltip("How fast the chain reaction spreads along the line from the first charger, in units " +
+        "per second (6: about 0.15 s per file at the 0.9 line spacing, about 1.4 s along a frontage-10 line from one end).")]
+    float _assaultChainSpeed = 6f;
+    [SerializeField, Min(0f), Tooltip("How long the troop must have stopped wheeling before the chain reaction starts (s).")]
+    float _assaultChainSettleSeconds = 0.2f;
+    [SerializeField, Min(0f), Tooltip("The chain reaction starts at the latest this many seconds after the first charge, " +
+        "even if the troop is still wheeling (blocked by terrain or a neighbour).")]
+    float _assaultChainMaxWaitSeconds = 3f;
 
     [Header("Support and duel (spec §4.5)")]
     [SerializeField, Min(0f), Tooltip("Support range (units).")]
@@ -83,6 +96,10 @@ public sealed class MeleeTuning : ScriptableObject
     public float FeintKnockBackScale => _feintKnockBackScale;
     public float FeintTimeoutSeconds => _feintTimeoutSeconds;
     public bool AssaultCharges => _assaultCharges;
+    public bool AssaultChainReaction => _assaultChainReaction;
+    public float AssaultChainSpeed => _assaultChainSpeed;
+    public float AssaultChainSettleSeconds => _assaultChainSettleSeconds;
+    public float AssaultChainMaxWaitSeconds => _assaultChainMaxWaitSeconds;
 
     public float SupportRadius => _supportRadius;
     public float SpearSupportRangeMultiplier => _spearSupportRangeMultiplier;

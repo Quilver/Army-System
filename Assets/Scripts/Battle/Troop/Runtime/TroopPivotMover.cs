@@ -14,6 +14,10 @@ using UnityEngine;
 // ChargeGapTolerance inside the charge gap before it holds again, so it does not step in for one frame and recoil out.
 // While it closes on its engaged target it eases in: its step is cut to ApproachGain x the gap left to EngagementGap,
 // and never past EngagementGap, so it does not step into the barrier.
+// No strafing in line (SU-172, Line No Strafe): a troop in Line or Chain whose march is more than LineAdvanceAngleDeg off
+// its facing does not march; it stands while TroopFormationState wheels it toward the march (MarchIntent), then
+// advances. It may strafe while engaged, on a small move (a Move or line order no longer than LineStrafeMaxDistance whose
+// destination is not within A_Distance of an enemy; never a Pursue), and after LineWheelFirstMaxSeconds of standing.
 public sealed class TroopPivotMover
 {
     const float ArrivalDistanceSquared = 0.0004f;
@@ -34,6 +38,9 @@ public sealed class TroopPivotMover
     Troop _pursuitTarget;
     Vector2 _pivotVelocity;
     Vector2 _linePushVelocity;
+    Vector2 _marchIntent;
+    bool _smallMove;
+    float _wheelFirstTime;
 
     public TroopPivotMover(Troop troop, TroopPathFollower path)
     {
@@ -48,6 +55,13 @@ public sealed class TroopPivotMover
     public Vector2 Destination => _destination;
     public Vector2 PivotVelocity => _pivotVelocity + _linePushVelocity;
     public Vector2 MarchVelocity => _pivotVelocity;
+    // The direction the pivot is trying to march this frame (unit length), also while it stands to wheel first (SU-172);
+    // zero without a march (no order, arrived, holding against its target, retreating or routed).
+    public Vector2 MarchIntent => _marchIntent;
+    // The current order may be carried out strafing (SU-172): a small move, or the troop is engaged.
+    public bool MayStrafe => _smallMove || _troop.IsEngaged;
+    // Standing to wheel toward its march before it advances (SU-172).
+    public bool IsWheelingFirst { get; private set; }
     public Vector2 LinePushVelocity => _linePushVelocity;
     public void SetLinePushVelocity(Vector2 velocity) => _linePushVelocity = velocity;
 
@@ -61,6 +75,8 @@ public sealed class TroopPivotMover
         _path.RequestRebuild();
         _destination = worldPosition;
         _hasDestination = true;
+        _smallMove = IsSmallMove(worldPosition);
+        _wheelFirstTime = 0f;
     }
 
     public void Pursue(Troop target)
@@ -69,6 +85,9 @@ public sealed class TroopPivotMover
         _pursuitActive = true;
         _hasDestination = true;
         _path.RequestRebuild();
+        // An attack ends in an engagement: never a small move (SU-172).
+        _smallMove = false;
+        _wheelFirstTime = 0f;
     }
 
     // Drops every movement order (used when the troop breaks or routs).
@@ -82,10 +101,15 @@ public sealed class TroopPivotMover
         _beyondChargeGapTime = 0f;
         _path.Invalidate();
         _pivotVelocity = Vector2.zero;
+        _marchIntent = Vector2.zero;
+        _smallMove = false;
+        IsWheelingFirst = false;
     }
 
     public void Tick(float deltaTime)
     {
+        _marchIntent = Vector2.zero;
+        IsWheelingFirst = false;
         if (_troop.IsRouted)
             Flee(deltaTime);
         else if (_troop.IsFaultSlipping)
@@ -120,6 +144,8 @@ public sealed class TroopPivotMover
             else if (deltaTime > 0f && offset.sqrMagnitude > 0.000001f)
             {
                 Vector2 step = _path.Step(position, _destination, PivotSpeed, deltaTime);
+                if (step.sqrMagnitude > 1e-12f) _marchIntent = step.normalized;
+                if (WheelsBeforeMarching(step, deltaTime)) step = Vector2.zero;
                 step *= LineMarchScale(step);
                 step = LimitStepIntoTarget(step, deltaTime);
                 _pivotVelocity = step / deltaTime;
@@ -190,6 +216,44 @@ public sealed class TroopPivotMover
         room = Mathf.Min(room, room * ApproachGain * Mathf.Max(0f, deltaTime));
         float length = step.magnitude;
         return length > room && length > 1e-6f ? step * (room / length) : step;
+    }
+
+    // SU-172: a troop in Line or Chain whose march is off its facing stands while it wheels to face the march.
+    bool WheelsBeforeMarching(Vector2 step, float deltaTime)
+    {
+        TroopTuning tuning = TroopTuning.Active;
+        if (!tuning.LineNoStrafe || !tuning.LineWheel || step.sqrMagnitude < 1e-12f
+            || !LineMarchRules.IsInLine(_troop.FormationMode) || MayStrafe
+            || !LineMarchRules.IsOffFacing(step, _troop.Facing, tuning.LineAdvanceAngleDeg))
+        {
+            _wheelFirstTime = 0f;
+            return false;
+        }
+        _wheelFirstTime += Mathf.Max(0f, deltaTime);
+        if (_wheelFirstTime > tuning.LineWheelFirstMaxSeconds) return false;
+        IsWheelingFirst = true;
+        return true;
+    }
+
+    // SU-172: a Move or line order no longer than LineStrafeMaxDistance whose destination is not within A_Distance of an
+    // enemy (the troop's footprint moved there).
+    bool IsSmallMove(Vector2 destination)
+    {
+        TroopTuning tuning = TroopTuning.Active;
+        Vector2 pivot = _troop.transform.position;
+        Vector2 offset = destination - pivot;
+        if (offset.magnitude > tuning.LineStrafeMaxDistance) return false;
+        TroopCombatWorld world = TroopCombatWorld.Current;
+        if (world == null) return true;
+        TroopFootprint own = _troop.Footprint;
+        var there = new TroopFootprint(own.Kind, own.Center + offset, own.Facing, own.HalfLength, own.HalfWidth,
+            own.Rounding);
+        foreach (var other in world.Troops)
+        {
+            if (other == null || other == _troop || other.TeamId == _troop.TeamId || other.IsRouted) continue;
+            if (FootprintGap.Gap(there, other.Footprint) <= tuning.ADistance) return false;
+        }
+        return true;
     }
 
     // Whether the pursuer held against its target this frame (SU-163).

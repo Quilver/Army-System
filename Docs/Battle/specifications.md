@@ -719,6 +719,14 @@ defaults are used when an asset is missing. Values in the rest of this document 
 | `AssaultFaceHysteresisDeg` | 20 (*default*) | deg | How far past a face boundary (45°, 135°) the bearing must go before the assault wheel changes face. |
 | `MutualPursuitFrontToFront` | on (*default*) | bool | Two troops pursuing each other face pivot to pivot as they close and, once engaged, square to the line between their pivots taken when they engaged (SU-163). |
 | `AssaultHold` | on (*default*) | bool | A pursuer engaged with its unrouted target does not march at it within `ChargeGap`; it marches again after the gap has stayed beyond it for 0.25 s (SU-163). |
+| `LineNoStrafe` | on (*default*) | bool | A troop in Line or Chain marches only forward: more than `LineAdvanceAngleDeg` off its facing it stands and wheels at `LineWheelRateDeg` until it faces the march; a line order's front is taken on arrival. It may strafe while engaged and on a small move (SU-172). |
+| `LineAdvanceAngleDeg` | 15 (*default*) | deg | A line marches only while its march is within this of its facing (SU-172). |
+| `LineStrafeMaxDistance` | 4 (*default*) | units | A Move or line order no longer than this whose destination is not within A_Distance of an enemy is a small move, which may strafe (SU-172). |
+| `LineWheelFirstMaxSeconds` | 4 (*default*) | s | A line that has stood wheeling this long marches anyway (SU-172). |
+| `FriendlyFillAlpha` | 0.14 (*default*) | opacity | Fill of a player troop's border, neither hovered nor selected (SU-170). Display only. |
+| `EnemyFillAlpha` | 0.28 (*default*) | opacity | Fill of an enemy troop's border, not hovered (SU-170). Display only. |
+| `HoverFillAlphaBonus` / `SelectedFillAlphaBonus` | 0.08 / 0.16 (*default*) | opacity | Added to the fill while hovered / selected (SU-170). |
+| `FillEdgeFade` | 0.7 (*default*) | units | The border fill fades from full to nothing over this much inside its edge (SU-170). |
 
 **Morale Tuning**
 
@@ -761,6 +769,10 @@ defaults are used when an asset is missing. Values in the rest of this document 
 | `EloDuel` | off (*default*) | bool | On: P_A = 1 / (1 + 10^((CP_B − CP_A) / EloScale)) (SU-153). |
 | `EloScale` | 30 (*default*) | CP | Elo duel: this lead wins 10 to 1. |
 | `AssaultCharges` | on (*default*) | bool | An open Assault makes each eligible soldier charge once, without a roll, as it comes into reach (SU-165). Off: no Assault charges. |
+| `AssaultChainReaction` | on (*default*) | bool | The first soldier in reach charges alone; the rest wait until the troop has stopped its assault wheel for `AssaultChainSettleSeconds`, then charge as the reaction spreads along the line from it at `AssaultChainSpeed` (SU-171). Off: each as it comes into reach. |
+| `AssaultChainSpeed` | 6 (*default*) | units/s | How fast the chain reaction spreads along the line (SU-171). |
+| `AssaultChainSettleSeconds` | 0.2 (*default*) | s | How long the troop must have stopped wheeling before the reaction spreads (SU-171). |
+| `AssaultChainMaxWaitSeconds` | 3 (*default*) | s | The reaction spreads at the latest this long after the first charge (SU-171). |
 
 **Chain Tuning**
 

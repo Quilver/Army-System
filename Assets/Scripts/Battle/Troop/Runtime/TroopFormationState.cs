@@ -11,6 +11,9 @@ using UnityEngine;
 // forming its line, or not in line, turns at once. While the troop is engaged its facing is locked (spec §3.3, §4.1), except
 // for the assault wheel (SU-163): a pursuer engaged with its target wheels square to the face it attacks, about the end of
 // its front rank nearest the enemy (AssaultWheelRules), and stops within AssaultWheelToleranceDeg.
+// No strafing in line (SU-172, Line No Strafe): a troop in line that is marching (its MarchIntent), on an order it may not
+// strafe (Troop.MayStrafe), heads where it marches, ahead of an ordered front or a pursuit heading; the pivot stands
+// until it faces the march (TroopPivotMover). A line order's front is taken once it has arrived.
 // The chain step (ChainLinker) then joins linked line points and publishes the final Formation.
 // Disable to drop the line and stop it updating.
 [DisallowMultipleComponent]
@@ -118,6 +121,26 @@ public sealed class TroopFormationState : MonoBehaviour
         float deltaTime)
     {
         if (engaged) return;
+        TroopTuning tuning = TroopTuning.Active;
+        if (tuning.LineNoStrafe && inLine)
+        {
+            Vector2 intent = _troop.MarchIntent;
+            if (intent.sqrMagnitude > MinimumHeadingSquared)
+            {
+                // A small move strafes: the line keeps its front (or wheels to an ordered one, below).
+                if (_troop.MayStrafe)
+                {
+                    if (!orderedFacing.HasValue) return;
+                }
+                else
+                {
+                    _heading = wasInLine && tuning.LineWheel
+                        ? LineMarchRules.Wheel(_heading, intent, tuning.LineWheelRateDeg * Mathf.Max(0f, deltaTime))
+                        : intent.normalized;
+                    return;
+                }
+            }
+        }
         if (pursuitHeading.HasValue)
         {
             SmoothHeading(pursuitHeading.Value, deltaTime);
@@ -135,7 +158,6 @@ public sealed class TroopFormationState : MonoBehaviour
         }
         if (target.sqrMagnitude < MinimumHeadingSquared) return;
 
-        TroopTuning tuning = TroopTuning.Active;
         _heading = inLine && wasInLine && tuning.LineWheel
             ? LineMarchRules.Wheel(_heading, target, tuning.LineWheelRateDeg * Mathf.Max(0f, deltaTime))
             : target.normalized;

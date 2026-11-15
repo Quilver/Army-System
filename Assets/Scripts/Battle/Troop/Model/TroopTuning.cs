@@ -168,6 +168,17 @@ public sealed class TroopTuning
     public float AssaultFaceHysteresisDeg => Formation.AssaultFaceHysteresisDeg;
     public bool MutualPursuitFrontToFront => Formation.MutualPursuitFrontToFront;
     public bool AssaultHold => Formation.AssaultHold;
+    // No strafing in line (SU-172).
+    public bool LineNoStrafe => Formation.LineNoStrafe;
+    public float LineAdvanceAngleDeg => Formation.LineAdvanceAngleDeg;
+    public float LineStrafeMaxDistance => Formation.LineStrafeMaxDistance;
+    public float LineWheelFirstMaxSeconds => Formation.LineWheelFirstMaxSeconds;
+    // Troop border fill (SU-170).
+    public float FriendlyFillAlpha => Formation.FriendlyFillAlpha;
+    public float EnemyFillAlpha => Formation.EnemyFillAlpha;
+    public float HoverFillAlphaBonus => Formation.HoverFillAlphaBonus;
+    public float SelectedFillAlphaBonus => Formation.SelectedFillAlphaBonus;
+    public float FillEdgeFade => Formation.FillEdgeFade;
 
     // --- Morale Tuning ---
 
@@ -206,6 +217,11 @@ public sealed class TroopTuning
     public float FeintTimeoutSeconds => Melee.FeintTimeoutSeconds;
     // Whether an open Assault makes its soldiers charge (SU-165).
     public bool AssaultCharges => Melee.AssaultCharges;
+    // The Assault's chain reaction (SU-171).
+    public bool AssaultChainReaction => Melee.AssaultChainReaction;
+    public float AssaultChainSpeed => Melee.AssaultChainSpeed;
+    public float AssaultChainSettleSeconds => Melee.AssaultChainSettleSeconds;
+    public float AssaultChainMaxWaitSeconds => Melee.AssaultChainMaxWaitSeconds;
     public float SupportRadius => Melee.SupportRadius;
     public float SpearSupportRangeMultiplier => Melee.SpearSupportRangeMultiplier;
     public float SupportBonusPerSupportPoint => Melee.SupportBonusPerSupportPoint;

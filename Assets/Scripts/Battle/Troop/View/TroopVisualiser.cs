@@ -1,15 +1,20 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// Shows a troop's border (Troop.Border, see TroopBorder, SU-162) and its pivot: a faint fill in the army colour, with no
-// stroke along its edge (SU-143). The fill is invisible until the troop is hovered or selected. The border is the same
-// shape the player can click inside to select the troop (TroopSelection).
+// Shows a troop's border (Troop.Border, see TroopBorder, SU-162) and its pivot: a fill in the army colour, with no
+// stroke along its edge (SU-143). The fill is always shown (SU-170): enemy troops more strongly than the player's
+// (Formation Tuning: Friendly / Enemy Fill Alpha), stronger again while hovered or selected, and soft at the edge: full
+// opacity inside, fading to nothing over Fill Edge Fade at the border. The border is the same shape the player can click
+// inside to select the troop (TroopSelection).
 public sealed class TroopVisualiser : MonoBehaviour
 {
     const float PivotSize = 1f;
-    const float DefaultFillAlpha = 0f;
-    const float HoverFillAlpha = 15f / 255f;
-    const float SelectedFillAlpha = 40f / 255f;
+    // The soft edge is never more than this share of the border's smaller half-size, so a small troop keeps a solid middle.
+    const float MaxEdgeFadeShare = 0.6f;
+    const int CornerSegments = TroopOutlinePolygon.DefaultCornerSegments;
+
+    // The player's team (set by TroopPlayerOrders): its troops get the friendly fill, every other team the enemy fill.
+    public static int PlayerTeamId { get; set; }
     // Below the range mask (12) and engagement view (13); above the terrain.
     const int OutlineSortingOrder = 10;
     const string SortingLayer = "Terrain";
@@ -28,7 +33,8 @@ public sealed class TroopVisualiser : MonoBehaviour
     [SerializeField]
     bool _showRadius;
 
-    readonly List<Vector2> _polygon = new();
+    readonly List<Vector2> _outer = new();
+    readonly List<Vector2> _inner = new();
     readonly List<Vector3> _vertices = new();
     readonly List<Color> _colors = new();
     readonly List<int> _triangles = new();
@@ -109,7 +115,7 @@ public sealed class TroopVisualiser : MonoBehaviour
         if (_troop == null || _pivotRenderer == null) return;
 
         Color armyColor = _troop.ArmyColor;
-        float fillAlpha = _selected ? SelectedFillAlpha : _hovered ? HoverFillAlpha : DefaultFillAlpha;
+        float fillAlpha = FillAlpha(TroopTuning.Active, _troop.TeamId == PlayerTeamId, _hovered, _selected);
 
         if (_radiusRenderer != null)
         {
@@ -129,16 +135,25 @@ public sealed class TroopVisualiser : MonoBehaviour
         _pivotRenderer.transform.localScale = Vector3.one * PivotSize;
     }
 
+    // The border's fill opacity (SU-170).
+    public static float FillAlpha(TroopTuning tuning, bool friendly, bool hovered, bool selected)
+    {
+        float alpha = friendly ? tuning.FriendlyFillAlpha : tuning.EnemyFillAlpha;
+        if (selected) alpha += tuning.SelectedFillAlphaBonus;
+        else if (hovered) alpha += tuning.HoverFillAlphaBonus;
+        return Mathf.Clamp01(alpha);
+    }
+
     void UpdateOutline(Color armyColor, float fillAlpha)
     {
         if (_outlineRenderer == null) return;
-        bool visible = fillAlpha > 0f;
+        bool visible = fillAlpha > 0f && !_troop.HasLeftField;
         if (_outlineRenderer.enabled != visible) _outlineRenderer.enabled = visible;
         if (!visible) return;
 
         TroopFootprint border = _troop.Border;
-        TroopOutlinePolygon.Build(border, _polygon);
-        int count = _polygon.Count;
+        BuildRings(border, TroopTuning.Active.FillEdgeFade, _outer, _inner);
+        int count = _outer.Count;
         if (count < 3)
         {
             _outlineRenderer.enabled = false;
@@ -146,24 +161,38 @@ public sealed class TroopVisualiser : MonoBehaviour
         }
 
         Color fill = new(armyColor.r, armyColor.g, armyColor.b, fillAlpha);
+        Color clear = new(armyColor.r, armyColor.g, armyColor.b, 0f);
         _vertices.Clear();
         _colors.Clear();
         _triangles.Clear();
 
-        // Fill: a fan from the footprint centre (the polygon is convex).
-        Vector2 center = border.Center;
-        _vertices.Add(Local(center));
+        // Solid middle: a fan from the centre to the inner ring (the shape is convex). Vertex 0 is the centre, 1..count
+        // the inner ring, count+1..2count the outer ring.
+        _vertices.Add(Local(border.Center));
         _colors.Add(fill);
         for (int i = 0; i < count; i++)
         {
-            _vertices.Add(Local(_polygon[i]));
+            _vertices.Add(Local(_inner[i]));
             _colors.Add(fill);
         }
         for (int i = 0; i < count; i++)
         {
+            _vertices.Add(Local(_outer[i]));
+            _colors.Add(clear);
+        }
+        for (int i = 0; i < count; i++)
+        {
+            int next = (i + 1) % count;
             _triangles.Add(0);
             _triangles.Add(1 + i);
-            _triangles.Add(1 + (i + 1) % count);
+            _triangles.Add(1 + next);
+            // Soft edge: the band from the inner ring (full) to the outer ring (clear).
+            _triangles.Add(1 + i);
+            _triangles.Add(1 + count + i);
+            _triangles.Add(1 + count + next);
+            _triangles.Add(1 + i);
+            _triangles.Add(1 + count + next);
+            _triangles.Add(1 + next);
         }
 
         _mesh.Clear();
@@ -171,6 +200,38 @@ public sealed class TroopVisualiser : MonoBehaviour
         _mesh.SetColors(_colors);
         _mesh.SetTriangles(_triangles, 0);
         _mesh.RecalculateBounds();
+    }
+
+    // The border's edge (outer) and the same rounded box inset by the edge fade (inner), point for point, so the band
+    // between them can be drawn as quads. Same corner order as TroopOutlinePolygon; the winding does not matter here.
+    public static void BuildRings(in TroopFootprint border, float fade, List<Vector2> outer, List<Vector2> inner)
+    {
+        outer.Clear();
+        inner.Clear();
+        float rounding = border.Rounding;
+        float smallest = Mathf.Min(border.HalfLength, border.HalfWidth) + rounding;
+        fade = Mathf.Clamp(fade, 0f, smallest * MaxEdgeFadeShare);
+        float innerRounding = Mathf.Max(0f, rounding - fade);
+        float shrink = Mathf.Max(0f, fade - rounding);
+        float innerHalfLength = Mathf.Max(0f, border.HalfLength - shrink);
+        float innerHalfWidth = Mathf.Max(0f, border.HalfWidth - shrink);
+        Vector2 axis = border.Axis;
+        Vector2 facing = border.Facing;
+        for (int corner = 0; corner < 4; corner++)
+        {
+            float alongSign = corner == 0 || corner == 3 ? 1f : -1f;
+            float acrossSign = corner < 2 ? 1f : -1f;
+            Vector2 core = border.Center + axis * (alongSign * border.HalfLength) + facing * (acrossSign * border.HalfWidth);
+            Vector2 innerCore = border.Center + axis * (alongSign * innerHalfLength)
+                + facing * (acrossSign * innerHalfWidth);
+            for (int i = 0; i <= CornerSegments; i++)
+            {
+                float angle = (corner + i / (float)CornerSegments) * Mathf.PI * 0.5f;
+                Vector2 direction = axis * Mathf.Cos(angle) + facing * Mathf.Sin(angle);
+                outer.Add(core + direction * rounding);
+                inner.Add(innerCore + direction * innerRounding);
+            }
+        }
     }
 
     Vector3 Local(Vector2 world) => transform.InverseTransformPoint(world);

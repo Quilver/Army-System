@@ -76,6 +76,34 @@ public sealed class FormationTuning : ScriptableObject
     [SerializeField, Range(0f, 180f), Tooltip("A march more than this many degrees from the line's facing counts as turning.")]
     float _lineTurnAngleDeg = 45f;
 
+    [Header("No strafing in line (SU-172)")]
+    [SerializeField, Tooltip("On: a troop in Line or Chain only marches forward. When its march is more than Line Advance " +
+        "Angle off its facing it stands and wheels (at Line Wheel Rate) until it faces the march, then advances; a line " +
+        "order's front is taken on arrival. It may still strafe while engaged, and on a small move (Line Strafe Max " +
+        "Distance) that does not end in an engagement. Off: lines march in any direction while they wheel (SU-155).")]
+    bool _lineNoStrafe = true;
+    [SerializeField, Range(1f, 90f), Tooltip("A line marches only while its march is within this many degrees of its facing.")]
+    float _lineAdvanceAngleDeg = 15f;
+    [SerializeField, Min(0f), Tooltip("A Move or line order no longer than this (units, from where the troop stood) whose " +
+        "destination is not within A_Distance of an enemy is a small move: the line may strafe to it.")]
+    float _lineStrafeMaxDistance = 4f;
+    [SerializeField, Min(0f), Tooltip("A line that has stood wheeling this long (s) and still does not face its march marches " +
+        "anyway, so it is never stuck (a facing it cannot reach).")]
+    float _lineWheelFirstMaxSeconds = 4f;
+
+    [Header("Troop border fill (SU-170)")]
+    [SerializeField, Range(0f, 1f), Tooltip("Fill opacity of a friendly troop's border when it is neither hovered nor selected.")]
+    float _friendlyFillAlpha = 0.14f;
+    [SerializeField, Range(0f, 1f), Tooltip("Fill opacity of an enemy troop's border when it is not hovered.")]
+    float _enemyFillAlpha = 0.28f;
+    [SerializeField, Range(0f, 1f), Tooltip("Added to the fill opacity while the troop is hovered.")]
+    float _hoverFillAlphaBonus = 0.08f;
+    [SerializeField, Range(0f, 1f), Tooltip("Added to the fill opacity while the troop is selected.")]
+    float _selectedFillAlphaBonus = 0.16f;
+    [SerializeField, Min(0f), Tooltip("Width of the border's soft edge (units): the fill fades from full to nothing over this " +
+        "much inside the border's edge.")]
+    float _fillEdgeFade = 0.7f;
+
     [Header("Assault wheel (SU-163)")]
     [SerializeField, Tooltip("On: a troop with a Pursue order that is engaged with its target wheels at Line Wheel Rate until " +
         "its front is parallel to the face of the target it attacks (square to the target's direction for a blob or column), " +
@@ -135,4 +163,13 @@ public sealed class FormationTuning : ScriptableObject
     public float AssaultFaceHysteresisDeg => _assaultFaceHysteresisDeg;
     public bool MutualPursuitFrontToFront => _mutualPursuitFrontToFront;
     public bool AssaultHold => _assaultHold;
+    public bool LineNoStrafe => _lineNoStrafe;
+    public float LineAdvanceAngleDeg => _lineAdvanceAngleDeg;
+    public float LineStrafeMaxDistance => _lineStrafeMaxDistance;
+    public float LineWheelFirstMaxSeconds => _lineWheelFirstMaxSeconds;
+    public float FriendlyFillAlpha => _friendlyFillAlpha;
+    public float EnemyFillAlpha => _enemyFillAlpha;
+    public float HoverFillAlphaBonus => _hoverFillAlphaBonus;
+    public float SelectedFillAlphaBonus => _selectedFillAlphaBonus;
+    public float FillEdgeFade => _fillEdgeFade;
 }

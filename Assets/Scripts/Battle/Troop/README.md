@@ -81,7 +81,8 @@ report, sounds) follows a battle; Troop code never references the campaign.
   line spans the drag, `ChainMinStretchScale`–`ChainMaxStretchScale` × L_nat. The drawn line is each troop's front rank: troops of any depth stand flush on it, their ranks behind it, and
   the ghost shows the ranks behind the line (SU-161).
 - **Ctrl + RMB click**: Face. The selection turns in place toward the point and holds its line (SU-156).
-- **Troop border**: the faint fill under a hovered or selected troop, and the shape a click inside picks
+- **Troop border**: the fill under every troop (enemies stronger, more when hovered or selected, soft at the edge:
+  `FriendlyFillAlpha`, `EnemyFillAlpha`, `FillEdgeFade` on Formation Tuning, SU-170), and the shape a click inside picks
   (`Troop.Border`, `Rules/TroopBorder.cs`, SU-162). One rounded box that morphs between blob, column and line, holds
   every soldier not charging or returning with `OutlinePadding` (Formation Tuning) to spare, grows in about `TroopBorder.GrowTime`
   (a constant, 0.1 s) and shrinks in about `TroopBorder.ShrinkTime` (a constant, 0.5 s). Display and picking only: the rules use the footprint, and friendly troops keep their formation
