@@ -76,6 +76,31 @@ public sealed class FormationTuning : ScriptableObject
     [SerializeField, Range(0f, 180f), Tooltip("A march more than this many degrees from the line's facing counts as turning.")]
     float _lineTurnAngleDeg = 45f;
 
+    [Header("Assault wheel (SU-163)")]
+    [SerializeField, Tooltip("On: a troop with a Pursue order that is engaged with its target wheels at Line Wheel Rate until " +
+        "its front is parallel to the face of the target it attacks (square to the target's direction for a blob or column), " +
+        "so more of its front rank comes into contact. Off: it eases toward that face about its pivot (SU-75).")]
+    bool _assaultWheel = true;
+    [SerializeField, Tooltip("On: the assault wheel turns about the end of the front rank nearest the enemy, which stays put " +
+        "while the far end swings in. Off: it turns about its pivot.")]
+    bool _assaultWheelAboutEngagedEnd = true;
+    [SerializeField, Range(0f, 45f), Tooltip("The assault wheel stops when the front is within this many degrees of square, " +
+        "and starts again only when it is further out than this.")]
+    float _assaultWheelToleranceDeg = 4f;
+    [SerializeField, Tooltip("On: the face of the target that the assault wheel squares to is chosen when the troops engage " +
+        "and kept until the attacker's bearing from the target is Assault Face Hysteresis past that face's boundary. " +
+        "Off: it is re-classified every frame. The rules' flank test is not affected.")]
+    bool _assaultFaceHold = true;
+    [SerializeField, Range(0f, 45f), Tooltip("How many degrees past a face boundary (45 and 135 degrees from the target's " +
+        "facing) the attacker's bearing must go before the assault wheel squares to the next face.")]
+    float _assaultFaceHysteresisDeg = 20f;
+    [SerializeField, Tooltip("On: two troops pursuing each other face pivot to pivot as they close and, once engaged, both " +
+        "wheel square to the line between their pivots taken when they engaged, so they meet front to front.")]
+    bool _mutualPursuitFrontToFront = true;
+    [SerializeField, Tooltip("On: a pursuer engaged with its (unrouted) target within the charge gap (EngagementGap + " +
+        "ChargeGapTolerance) does not march at it; the wheel is its only movement. It marches again when the gap opens.")]
+    bool _assaultHold = true;
+
     public float SDistance => _sDistance;
     public float SDistanceExitHysteresis => _sDistanceExitHysteresis;
     public float ADistance => _aDistance;
@@ -103,4 +128,11 @@ public sealed class FormationTuning : ScriptableObject
     public float LineWheelRateDeg => _lineWheelRateDeg;
     public bool LineTurnSlowdown => _lineTurnSlowdown;
     public float LineTurnAngleDeg => _lineTurnAngleDeg;
+    public bool AssaultWheel => _assaultWheel;
+    public bool AssaultWheelAboutEngagedEnd => _assaultWheelAboutEngagedEnd;
+    public float AssaultWheelToleranceDeg => _assaultWheelToleranceDeg;
+    public bool AssaultFaceHold => _assaultFaceHold;
+    public float AssaultFaceHysteresisDeg => _assaultFaceHysteresisDeg;
+    public bool MutualPursuitFrontToFront => _mutualPursuitFrontToFront;
+    public bool AssaultHold => _assaultHold;
 }

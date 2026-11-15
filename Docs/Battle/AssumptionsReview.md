@@ -1,6 +1,6 @@
 # Assumptions review
 
-Every unconfirmed Assumption in `SpecificationUpdate.md` (SU-01 to SU-162), grouped by system so they can be confirmed in one sitting: 214 assumptions across 98 SU entries. SU-162 (the troop border) was added on 2026-11-15. SU-161 (flush fronts) was added on 2026-11-15. SU-159 (attack clicks) and SU-160 (linked group lines) were added on 2026-11-15; SU-160 superseded SU-157, whose items were removed. SU-158 (engaged soldiers face their enemy) was added on 2026-11-15. SU-154 to SU-157 (troop facing controls and line spacing, on the `troop-facing-controls` branch) and SU-148 to SU-153 (class design rules) were added on 2026-11-14. SU-136 to SU-140 were added on 2026-11-08; the SU-74 and SU-121 items about routed troops never leaving the map were removed (SU-138 replaced them). Rebuilt 2026-11-08 (SU-135): assumptions that later entries overtook were removed, missing ones were added, and the groups were tidied. The spec (v0.10) tags text that rests on one of these as **[A: SU-n]**.
+Every unconfirmed Assumption in `SpecificationUpdate.md` (SU-01 to SU-163), grouped by system so they can be confirmed in one sitting: 222 assumptions across 99 SU entries. SU-163 (the assault wheel) was added on 2026-11-15. SU-162 (the troop border) was added on 2026-11-15. SU-161 (flush fronts) was added on 2026-11-15. SU-159 (attack clicks) and SU-160 (linked group lines) were added on 2026-11-15; SU-160 superseded SU-157, whose items were removed. SU-158 (engaged soldiers face their enemy) was added on 2026-11-15. SU-154 to SU-157 (troop facing controls and line spacing, on the `troop-facing-controls` branch) and SU-148 to SU-153 (class design rules) were added on 2026-11-14. SU-136 to SU-140 were added on 2026-11-08; the SU-74 and SU-121 items about routed troops never leaving the map were removed (SU-138 replaced them). Rebuilt 2026-11-08 (SU-135): assumptions that later entries overtook were removed, missing ones were added, and the groups were tidied. The spec (v0.10) tags text that rests on one of these as **[A: SU-n]**.
 
 ## How to use this
 
@@ -17,7 +17,7 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 
 - [Troops, characters, stats & equipment](#troops-characters-stats--equipment) (20)
 - [Soldier simulation & physics](#soldier-simulation--physics) (6)
-- [Formations, movement & geometry](#formations-movement--geometry) (34)
+- [Formations, movement & geometry](#formations-movement--geometry) (42)
 - [Combat (melee, charges, ranged)](#combat-melee-charges-ranged) (28)
 - [Morale, retreat & rout](#morale-retreat--rout) (16)
 - [Controls, orders & battle UI](#controls-orders--battle-ui) (41)
@@ -165,6 +165,17 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 - [ ] footprint rank floor RankThickness ahead of the line and rank depth + RankThickness behind (less slack); outline and line ghosts one soldier radius more on each side. →
 - [ ] the heat band's rim is the footprint's part ahead of its line; front-rank charges are unchanged (soldiers furthest toward the enemy). →
 - [ ] the soldier radius clamp reaches the ends of the front and rear ranks. →
+
+**SU-163** An engaged pursuer wheels square to the face it attacks and holds instead of marching into it
+
+- [ ] the wheel turns at `LineWheelRateDeg` (60°/s), capped so the swinging end moves no faster than the troop's pivot speed (about 19°/s for a frontage-10 line at Move 5); no separate rate. →
+- [ ] the "end nearest the enemy" is the end of the front rank further along the heading the troop wheels to (toward the face it squares to). →
+- [ ] when the pivot moves for the wheel, the soldiers are left where they stand and walk into the wheeled line; the pivot move is not part of the pivot velocity. →
+- [ ] the wheel starts when the front is more than 4° off square and then turns until exactly square; it also turns a pursuer engaged with other enemies as well as its target; one engaged only with other enemies keeps the facing lock. →
+- [ ] the face is chosen with FaceClassifier's boundaries on the attacker's nearest footprint point, and forgotten when the pursuer is no longer engaged with its target or the target changes. →
+- [ ] two troops pursuing each other take the line between their pivots when they engage and keep it while engaged; while closing they face pivot to pivot instead of squaring to a face (SU-75). →
+- [ ] the hold does not apply against a routed target (SU-139 chase unchanged); a holding pursuer marches again after the gap has stayed beyond the charge gap for 0.25 s, then closes to half `ChargeGapTolerance` inside it; its last approach is eased and never passes EngagementGap (constants). →
+- [ ] holding, an attacker no longer presses the defender's line back through line pressure; the fight is carried by charges and clashes. →
 
 ## Combat (melee, charges, ranged)
 

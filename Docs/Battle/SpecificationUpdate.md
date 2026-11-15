@@ -11,6 +11,53 @@ SU-128 refer to v0.9 and may have moved.
 
 ---
 
+## 2026-11-15: The assaulting troop wheels to maximise its frontage (branch troop-facing-controls)
+
+### SU-163 An engaged pursuer wheels square to the face it attacks and holds instead of marching into it (Decision + Assumptions, spec §3.3, §4.1, §8)
+Seen in playtest: the player's cavalry, ordered to attack an enemy cavalry troop that was itself pursuing, met it corner
+to corner and stayed so for about 25 s with one soldier's width in contact; AI spearmen took about 6 s to bring their
+front round on a corner contact and later took a flank on a corner; the attacking cavalry rocked and its riders
+jittered. Where two troops met head-on the whole front was in contact at once, which is the look wanted.
+- Decision: no slots and no change to where a pursuer marches. The troop that is assaulting (a Pursue order, engaged
+  with its target) wheels until its front is parallel to the face of the target it attacks; against a target with no
+  line (blob or column), until its front is square to the target's direction (`AssaultWheel`, on).
+- Decision: it wheels about the end of its front rank nearest the enemy, which stays where it is while the far end
+  swings in, so contact is kept and the frontage in contact grows (`AssaultWheelAboutEngagedEnd`, on). Terrain and the
+  map edge still limit the pivot (`ConstrainPivotStep`), and the barrier keeps the EngagementGap. Nearly square
+  (within `AssaultWheelToleranceDeg`, 4°) it does not turn, so it does not hunt.
+- Decision: only the attacker dresses its line. A troop that is attacked and is not pursuing that attacker stays
+  facing-locked while engaged, so a flank attack still finds a flank (SU-154); a troop holding or marching to a line
+  order keeps its ordered front.
+- Decision: the face the wheel squares to is chosen when the troops engage and kept until the attacker's bearing from
+  the target is `AssaultFaceHysteresisDeg` (20°) past a face boundary (`AssaultFaceHold`, on). Only the wheel uses it:
+  `FaceClassifier` and what counts as a flank attack in the rules are unchanged.
+- Decision: two troops pursuing each other both face along the line between their pivots, so they meet front to front
+  and do not chase each other's faces (`MutualPursuitFrontToFront`, on).
+- Decision: a pursuer engaged with its target within the charge gap (`EngagementGap + ChargeGapTolerance`) does not
+  march at it; the wheel is its only movement. It marches again when the gap opens beyond that (`AssaultHold`, on).
+  This removes the rocking: it used to keep stepping into the barrier, which pushed it back every frame.
+- Decision: the enemy AI gets this through the same Pursue path (its Attack and Charge orders are `Troop.Pursue`).
+- Assumption: the wheel turns at `LineWheelRateDeg` (60°/s), capped so the swinging end moves no faster than the
+  troop's pivot speed (about 19°/s for a frontage-10 line at Move 5, 32°/s for frontage 6); no separate rate.
+- Assumption: the "end nearest the enemy" is the end of the front rank further along the heading the troop wheels to
+  (toward the face it squares to), which keeps the choice steady while the troop turns.
+- Assumption: when the pivot moves for the wheel, the soldiers are left where they stand and walk into the wheeled line
+  (as the retreat slip does); the pivot move is not part of the troop's pivot velocity.
+- Assumption: the wheel starts when the front is more than the tolerance off square and then turns until exactly
+  square. It also turns a pursuer that is engaged with other enemies as well as its target (as SU-75 did); a pursuer
+  engaged only with other enemies keeps the facing lock.
+- Assumption: the face is chosen with FaceClassifier's boundaries on the attacker's nearest footprint point, as the
+  rules do, and is forgotten when the pursuer is no longer engaged with its target or its target changes.
+- Assumption: two troops pursuing each other take the line between their pivots at the moment they engage and keep it
+  while engaged (the second takes the first one's line reversed); while closing they face pivot to pivot instead of the
+  SU-75 squaring to a face.
+- Assumption: the hold does not apply against a routed target, so the SU-139 chase is unchanged. A holding pursuer
+  marches again only after the gap has stayed beyond the charge gap for 0.25 s, then closes to half
+  `ChargeGapTolerance` inside it before holding again; while closing on its engaged target its step is eased (4 x the
+  gap left to EngagementGap per second) and never passes EngagementGap. These are constants in `TroopPivotMover`.
+- Assumption: because it holds, an attacker no longer presses the defender's line back through line pressure once it
+  is within the charge gap; the fight is carried by charges and clashes.
+
 ## 2026-11-15: The troop border (branch troop-facing-controls)
 
 ### SU-162 The troop border holds its soldiers, has a wider margin and morphs smoothly (Decision + Assumptions, spec §6.1, §8)

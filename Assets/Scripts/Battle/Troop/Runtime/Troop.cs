@@ -7,7 +7,7 @@ using UnityEngine.Serialization;
 // that do the work, running them in a fixed order each frame (see Update):
 //   MonoBehaviours (toggle in the Inspector): TroopRoster, TroopFormationState, TroopMorale
 //   Plain classes: TroopPivotMover, TroopPathFollower, FaultSlipMotion, TroopRout, TroopLineOrder, TroopLineLinks,
-//                  TroopDamageReceiver, AssaultState, RangedFireController, SoldierSteering, SoldierMotionConstraints,
+//                  TroopDamageReceiver, AssaultState, TroopAssaultWheel, RangedFireController, SoldierSteering, SoldierMotionConstraints,
 //                  TroopSoldierViews
 // Battle-wide systems (engagement, chains, pressure, charges, clashes, ranged fire) run in TroopCombatWorld.
 [RequireComponent(typeof(TroopRoster), typeof(TroopFormationState), typeof(TroopMorale))]
@@ -29,6 +29,7 @@ public sealed class Troop : MonoBehaviour
     readonly TroopLineLinks _lineLinks = new();
     readonly List<EngagementRecord> _engagements = new();
     readonly AssaultState _assault = new();
+    readonly TroopAssaultWheel _assaultWheel = new();
     TroopLineOrder _lineOrder;
     TroopPathFollower _path;
     TroopPivotMover _mover;
@@ -264,9 +265,16 @@ public sealed class Troop : MonoBehaviour
     // pursuitHeading: the heading of a pursuer whose target is within S_Distance (SU-75), else null.
     // turnWhileEngaged lifts the engaged facing lock for this update: a pursuer keeps squaring up to the face of its
     // target that it attacks (SU-75). The engaged flag only drives that lock in TroopFormationState.
+    // assaultHeading: the heading a pursuer engaged with its target wheels to (SU-163), else null.
     internal void UpdateNaturalFormation(bool threatWithinSDistance, Vector2? pursuitHeading, float deltaTime,
-        bool turnWhileEngaged = false) =>
-        _formationState.UpdateNatural(threatWithinSDistance, pursuitHeading, _engaged && !turnWhileEngaged, deltaTime);
+        bool turnWhileEngaged = false, Vector2? assaultHeading = null) =>
+        _formationState.UpdateNatural(threatWithinSDistance, pursuitHeading, _engaged && !turnWhileEngaged, deltaTime,
+            assaultHeading);
+
+    // The assault wheel's state (SU-163): the face of the pursuit target it squares to, or the pair's axis.
+    internal TroopAssaultWheel AssaultWheel => _assaultWheel;
+    // Whether the assault wheel is turning the troop this frame (SU-163).
+    public bool IsAssaultWheeling => _formationState != null && _formationState.IsAssaultWheeling;
 
     // The pivot's own march this frame (Move, Pursue, line order), without line pressure.
     internal Vector2 MarchVelocity => _mover != null ? _mover.MarchVelocity : Vector2.zero;
@@ -339,6 +347,19 @@ public sealed class Troop : MonoBehaviour
         return false;
     }
 
+    // The footprint gap to an enemy this troop is engaged with in its current records; false when not engaged with it.
+    public bool TryGetEngagedGap(Troop opponent, out float gap)
+    {
+        foreach (var record in _engagements)
+        {
+            if (record.Opponent != opponent || !record.Engaged) continue;
+            gap = record.Gap;
+            return true;
+        }
+        gap = float.PositiveInfinity;
+        return false;
+    }
+
     internal void SetFootprint(in TroopFootprint footprint) => _footprint = footprint;
     internal void UpdateOutline(float deltaTime)
     {
@@ -389,6 +410,8 @@ public sealed class Troop : MonoBehaviour
 
     public bool IsMoving => _mover != null && _mover.IsMoving;
     public bool IsPursuing => _mover != null && _mover.IsPursuing;
+    // A pursuer engaged with its target within the charge gap that does not march at it this frame (SU-163).
+    public bool IsHoldingAgainstPursuitTarget => _mover != null && _mover.IsHoldingAgainstTarget;
     public Troop PursuitTarget => _mover?.PursuitTarget;
     // An active Move, Pursue or Line order (spec §4.2 Assault trigger).
     public bool HasActiveOrder => IsMoving || HasManualLineOrder;
@@ -443,6 +466,17 @@ public sealed class Troop : MonoBehaviour
     // Moves the whole troop (soldiers are positioned relative to the pivot, so they travel with it). The shift is kept
     // off terrain and on the map (ConstrainPivotStep).
     public void ShiftPivot(Vector2 worldDelta) => transform.position += (Vector3)ConstrainPivotStep(worldDelta);
+
+    // Moves the pivot (limited by ConstrainPivotStep) and leaves the soldiers where they stand, so they walk to the moved
+    // formation themselves: the assault wheel's turn about the engaged end of the front rank (SU-163).
+    internal void ShiftPivotKeepingSoldiers(Vector2 worldDelta)
+    {
+        Vector2 allowed = ConstrainPivotStep(worldDelta);
+        if (allowed.sqrMagnitude <= 1e-12f) return;
+        transform.position += (Vector3)allowed;
+        Vector2 compensation = transform.InverseTransformVector(-allowed);
+        foreach (var soldier in _roster.SoldierList) soldier.Position += compensation;
+    }
 
     // A pivot displacement limited to the battlefield (BattlefieldBounds, inset by the blob radius so soldiers stay on
     // the map) and clipped against terrain obstacles with a slide along them (SU-74).

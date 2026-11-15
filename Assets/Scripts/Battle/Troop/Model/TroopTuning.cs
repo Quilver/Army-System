@@ -150,6 +150,13 @@ public sealed class TroopTuning
     public float LineWheelRateDeg => Formation.LineWheelRateDeg;
     public bool LineTurnSlowdown => Formation.LineTurnSlowdown;
     public float LineTurnAngleDeg => Formation.LineTurnAngleDeg;
+    public bool AssaultWheel => Formation.AssaultWheel;
+    public bool AssaultWheelAboutEngagedEnd => Formation.AssaultWheelAboutEngagedEnd;
+    public float AssaultWheelToleranceDeg => Formation.AssaultWheelToleranceDeg;
+    public bool AssaultFaceHold => Formation.AssaultFaceHold;
+    public float AssaultFaceHysteresisDeg => Formation.AssaultFaceHysteresisDeg;
+    public bool MutualPursuitFrontToFront => Formation.MutualPursuitFrontToFront;
+    public bool AssaultHold => Formation.AssaultHold;
 
     // --- Morale Tuning ---
 

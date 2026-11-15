@@ -6,15 +6,30 @@ using UnityEngine;
 // In Line or Chain the march is slowed, more when moving back (LineMarchRules, SU-150) or turning: more than
 // LineTurnAngleDeg from the line's facing, while it wheels to its march or keeps an ordered front (SU-155). Charges are
 // soldier motion and keep their own speed.
+// A pursuer engaged with its unrouted target within the charge gap (EngagementGap + ChargeGapTolerance) holds: it does
+// not march at the target, so it no longer steps into the barrier every frame and rocks; the assault wheel is its only
+// movement (SU-163). It marches again once the gap has stayed beyond the charge gap for ResumeDelay (0.25 s), so it never
+// holds for long where its soldiers may not charge, and the recoil of its arrival (line pressure) or a soldier shuffling
+// the footprint does not start the march for a frame. A pursuer that marches again after holding closes to half
+// ChargeGapTolerance inside the charge gap before it holds again, so it does not step in for one frame and recoil out.
+// While it closes on its engaged target it eases in: its step is cut to ApproachGain x the gap left to EngagementGap,
+// and never past EngagementGap, so it does not step into the barrier.
 public sealed class TroopPivotMover
 {
     const float ArrivalDistanceSquared = 0.0004f;
     const float ArrivalPushSquared = 0.0025f;
+    // How long (s) the gap must stay beyond the charge gap before a holding pursuer marches again (SU-163).
+    const float ResumeDelay = 0.25f;
+    // How fast (per second) an engaged pursuer closes the last of the gap to its target (SU-163).
+    const float ApproachGain = 4f;
 
     readonly Troop _troop;
     readonly TroopPathFollower _path;
     bool _hasDestination;
     bool _pursuitActive;
+    bool _holding;
+    bool _reclosing;
+    float _beyondChargeGapTime;
     Vector2 _destination;
     Troop _pursuitTarget;
     Vector2 _pivotVelocity;
@@ -62,6 +77,9 @@ public sealed class TroopPivotMover
         _hasDestination = false;
         _pursuitActive = false;
         _pursuitTarget = null;
+        _holding = false;
+        _reclosing = false;
+        _beyondChargeGapTime = 0f;
         _path.Invalidate();
         _pivotVelocity = Vector2.zero;
     }
@@ -90,7 +108,8 @@ public sealed class TroopPivotMover
         _pivotVelocity = Vector2.zero;
         UpdatePursuit();
 
-        if (_hasDestination)
+        _holding = HoldsAgainstPursuitTarget(deltaTime);
+        if (_hasDestination && !_holding)
         {
             Vector2 offset = _destination - position;
             if (offset.sqrMagnitude <= ArrivalDistanceSquared && _linePushVelocity.sqrMagnitude <= ArrivalPushSquared)
@@ -102,6 +121,7 @@ public sealed class TroopPivotMover
             {
                 Vector2 step = _path.Step(position, _destination, PivotSpeed, deltaTime);
                 step *= LineMarchScale(step);
+                step = LimitStepIntoTarget(step, deltaTime);
                 _pivotVelocity = step / deltaTime;
                 position += step;
             }
@@ -129,6 +149,51 @@ public sealed class TroopPivotMover
         _hasDestination = true;
         _path.RequestRebuildIfTargetMoved(_destination);
     }
+
+    // SU-163: an engaged pursuer does not march at its target within the charge gap, nor, once holding, until the gap
+    // has stayed beyond it for ResumeDelay.
+    bool HoldsAgainstPursuitTarget(float deltaTime)
+    {
+        if (!AppliesAssaultHold() || !_troop.TryGetEngagedGap(_pursuitTarget, out float gap))
+        {
+            _beyondChargeGapTime = 0f;
+            _reclosing = false;
+            return false;
+        }
+        TroopTuning tuning = TroopTuning.Active;
+        if (_holding ? gap <= tuning.ChargeGap : gap <= HoldEntryGap(tuning))
+        {
+            _beyondChargeGapTime = 0f;
+            _reclosing = false;
+            return true;
+        }
+        if (!_holding) return false;
+        _beyondChargeGapTime += Mathf.Max(0f, deltaTime);
+        if (_beyondChargeGapTime < ResumeDelay) return true;
+        _reclosing = true;
+        return false;
+    }
+
+    // The gap at which a pursuer closing on its engaged target starts holding: the charge gap, or half
+    // ChargeGapTolerance inside it when it is closing again after holding.
+    float HoldEntryGap(TroopTuning tuning) =>
+        _reclosing ? tuning.ChargeGap - tuning.ChargeGapTolerance * 0.5f : tuning.ChargeGap;
+
+    bool AppliesAssaultHold() =>
+        _pursuitActive && _pursuitTarget != null && !_pursuitTarget.IsRouted && TroopTuning.Active.AssaultHold;
+
+    // SU-163: closing on its engaged target, the pursuer eases into the charge gap and never steps past EngagementGap.
+    Vector2 LimitStepIntoTarget(Vector2 step, float deltaTime)
+    {
+        if (!AppliesAssaultHold() || !_troop.TryGetEngagedGap(_pursuitTarget, out float gap)) return step;
+        float room = Mathf.Max(0f, gap - TroopTuning.Active.EngagementGap);
+        room = Mathf.Min(room, room * ApproachGain * Mathf.Max(0f, deltaTime));
+        float length = step.magnitude;
+        return length > room && length > 1e-6f ? step * (room / length) : step;
+    }
+
+    // Whether the pursuer held against its target this frame (SU-163).
+    public bool IsHoldingAgainstTarget => _holding;
 
     // SU-150, SU-155: the march scale for a step in this direction (1 outside Line and Chain).
     float LineMarchScale(Vector2 direction)

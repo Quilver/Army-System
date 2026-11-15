@@ -19,7 +19,11 @@ report, sounds) follows a battle; Troop code never references the campaign.
    footprint gap. Enemies within `S_Distance` (30) turn the troop into a battle line (the line is its front rank, the
    ranks behind it and the pivot in their middle, SU-161), which keeps the troop's own
    facing: where it marched or was ordered to face, never toward the enemy by itself (SU-154). Within `A_Distance` (5.2)
-   the troops are engaged, facing is locked, and the face each opponent attacks (Front, flanks, Rear) is recorded.
+   the troops are engaged, facing is locked, and the face each opponent attacks (Front, flanks, Rear) is recorded. The
+   one exception is the attacker (SU-163): a troop with a Pursue order that is engaged with its target wheels, about the
+   end of its front rank nearest the enemy, until its front is parallel to the face it attacks (`TroopAssaultWheel`,
+   `AssaultWheelRules`); two troops pursuing each other square to the line between them. An engaged pursuer within the
+   charge gap holds instead of marching into its target (`TroopPivotMover`).
 2. **Chains** (`ChainLinker`): joins allied line points into chains, solves the shared joints, breaks over-stretched,
    over-bent or obstructed links, and resolves each troop's formation state (Idle, Column, Line, Chain, Rout).
 3. **Pressure**: line-vs-line barrier and push, friendly pivot and outline separation (SU-94), link tension (never
@@ -39,7 +43,7 @@ report, sounds) follows a battle; Troop code never references the campaign.
 |---|---|
 | `Rules/` | Pure maths with no Unity lifecycle: morale, duel, support, damage, mitigation, charge rate, footprints and gaps, faces, surround path, line geometry, chain geometry and topology, ranged rules, formation priority, composite troops, seeded random. Covered by EditMode tests. |
 | `Model/` | Profiles (`CharacterProfile`, `SoldierProfile`, `WeaponProfile` (abstract) / `MeleeWeaponProfile` / `RangedWeaponProfile`, `ArmourProfile`), `TroopTuning` (every §7.2 value), character classes (`CharacterClass`, `StatCaps`, `CharacterStat`), runtime state (`SoldierAgentState`, `SoldierHealth`, `SoldierChargeState`, ...). |
-| `Runtime/` | `Troop` and its modules: `TroopRoster`, `TroopMorale`, `TroopFormationState`, `TroopLineOrder`, `TroopLineLinks`, `TroopPivotMover`, `FaultSlipMotion` (retreat), `TroopRout`, `AssaultState`, `TroopDamageReceiver`, `MeleeMetrics`. |
+| `Runtime/` | `Troop` and its modules: `TroopRoster`, `TroopMorale`, `TroopFormationState`, `TroopLineOrder`, `TroopLineLinks`, `TroopPivotMover`, `TroopAssaultWheel` (SU-163), `FaultSlipMotion` (retreat), `TroopRout`, `AssaultState`, `TroopDamageReceiver`, `MeleeMetrics`. |
 | `Combat/` | `TroopCombatWorld`, engagement, charges, contacts, duels, support, ranged fire, projectiles, gizmos. |
 | `Formation/` | `ChainLinker`, `TroopFootprintBuilder`. |
 | `Pressure/` | Line pressure, friendly overlap, link tension. |

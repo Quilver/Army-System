@@ -37,9 +37,9 @@ see `Troop/README.md`.
 
 | Folder | Contents |
 |---|---|
-| `Rules/` | `MoraleRules`, `DuelRules`, `CombatPower`, `SupportRules`, `DamageRules`, `MitigationResolver`, `ChargeRules`, `ClashRules`, `TroopFootprint` (+ `TroopFace`, `FootprintKind`), `FootprintGap`, `FaceClassifier`, `SurroundTest`, `LineGeometry` (line, radius and column sizes), `TroopFrontageRule`, `TroopOutline`, `TroopBorder` (SU-162), `TroopOutlinePolygon`, `FormationModeResolver`, `ChainGeometry`, `ChainLinkRules` (+ `ChainLinkCandidate`, `ChainBreakReason`), `ChainTopology`, `RangedRules`, `LineMarchRules` (SU-150), `EngagementHeatStrip`, `CompositeTroopResolver`, `ITroopRandom`, `SeededTroopRandom`. |
+| `Rules/` | `MoraleRules`, `DuelRules`, `CombatPower`, `SupportRules`, `DamageRules`, `MitigationResolver`, `ChargeRules`, `ClashRules`, `TroopFootprint` (+ `TroopFace`, `FootprintKind`), `FootprintGap`, `FaceClassifier`, `SurroundTest`, `LineGeometry` (line, radius and column sizes), `TroopFrontageRule`, `TroopOutline`, `TroopBorder` (SU-162), `TroopOutlinePolygon`, `FormationModeResolver`, `ChainGeometry`, `ChainLinkRules` (+ `ChainLinkCandidate`, `ChainBreakReason`), `ChainTopology`, `RangedRules`, `LineMarchRules` (SU-150), `AssaultWheelRules` (SU-163), `EngagementHeatStrip`, `CompositeTroopResolver`, `ITroopRandom`, `SeededTroopRandom`. |
 | `Model/` | `CharacterProfile` (+ `CreateWithGains`, `Source`), `CharacterEquipment`, `SoldierStats`, `CharacterClass`, `StatCaps`, `CharacterStat`, `WeaponProfile` (abstract) with `MeleeWeaponProfile` and `RangedWeaponProfile` (D-52), `WeaponSpecialRuleEntry`, `ArmourProfile`, `WeaponSkill`, `WeaponTypes`, `CombatStatLimits`, `TroopTuning` and the eight `Battle Tuning/` sections, `FormationMode`, `SoldierAgentState`, `SoldierHealth`, `SoldierChargeState` (+ `ChargeRole`), `SoldierFaultMotionState`, `SoldierClashPulseState`, `SoldierSeparationState`, `MitigationResult` (+ `AppliedDamage`), `TroopFormationData`, `TroopEndpointLink`. |
-| `Runtime/` | `Troop`, `TroopState`, `TroopOrderKind`, `TroopRoster`, `TroopFormationState`, `TroopMorale`, `TroopLineOrder`, `TroopLineLinks`, `TroopPivotMover`, `TroopPathFollower`, `BattlefieldBounds`, `FaultSlipMotion`, `TroopRout`, `RoutFleePlanner`, `AssaultState`, `EngagementRecord`, `TroopDamageReceiver`, `MeleeMetrics`, `TroopConstants`, `TroopObjects`, `TroopAssemblyInfo`. |
+| `Runtime/` | `Troop`, `TroopState`, `TroopOrderKind`, `TroopRoster`, `TroopFormationState`, `TroopMorale`, `TroopLineOrder`, `TroopLineLinks`, `TroopPivotMover`, `TroopAssaultWheel`, `TroopPathFollower`, `BattlefieldBounds`, `FaultSlipMotion`, `TroopRout`, `RoutFleePlanner`, `AssaultState`, `EngagementRecord`, `TroopDamageReceiver`, `MeleeMetrics`, `TroopConstants`, `TroopObjects`, `TroopAssemblyInfo`. |
 | `Combat/` | `TroopCombatWorld`, `TroopRegistry`, `TroopEngagementSystem`, `EngagementFrontage`, `SoldierContactIndex`, `SoldierContact`, `SoldierContactResolver`, `DuelResolver`, `SupportCalculator`, `ChargeCoordinator`, `CrossTroopSeparation`, `RangedFireController`, `TroopProjectiles`, `CombatLog`, `BattleEvents`, `TroopCombatGizmos`. |
 | `Formation/` | `ChainLinker`, `TroopFootprintBuilder`, `TroopPivots`. |
 | `Pressure/` | `TroopSegmentPressureRules`, `FriendlyOverlapResolver`, `AlliedLinkTension`, `SegmentGeometry`. |
@@ -171,11 +171,28 @@ in Edit mode at a fixed frame time.
   `Troop.FaceAttackedBy` / `IsFlankedBy` answer clashes and support.
 - Facing lock: while engaged, `TroopFormationState` does not change the heading. Enemies within S_Distance only put the
   troop in line; they no longer turn it (SU-154).
+- Assault wheel (SU-163): the one exception to the lock. A troop with a Pursue order that is engaged with its (unrouted)
+  target gets an assault heading from `TroopAssaultWheel.TargetHeading`: square to the face of a line target it attacks
+  (face chosen with FaceClassifier's boundaries when they engage and kept until the attacker's bearing is
+  `AssaultFaceHysteresisDeg` (20) past a boundary, `AssaultWheelRules.KeepFace`), square to the direction of a blob or
+  column target, or, when the two troops pursue each other, the line between their pivots taken when they engaged (the
+  second takes the first one's axis reversed). `TroopFormationState.AssaultWheel` turns the heading at
+  `LineWheelRateDeg`, capped so the swinging end moves no faster than the troop's pivot speed, starting when it is more
+  than `AssaultWheelToleranceDeg` (4) off and running until square. In line it turns about the end of the front rank
+  nearest the face (`AssaultWheelRules.LeadingEnd`): `Troop.ShiftPivotKeepingSoldiers` moves the pivot through
+  `ConstrainPivotStep` and leaves the soldiers where they stand, so they walk into the wheeled line; the barrier keeps
+  the EngagementGap. The rules' face records are not affected. Two troops pursuing each other face pivot to pivot as
+  they close (instead of the SU-75 squaring), so they meet front to front.
+- Assault hold (SU-163): `TroopPivotMover` does not march a pursuer at its engaged, unrouted target while the gap is
+  within `ChargeGap`; it marches again once the gap has stayed beyond it for 0.25 s, then closes to half
+  `ChargeGapTolerance` inside before holding again. While closing on its engaged target its step is eased (4 × the gap
+  left to EngagementGap per second) and never passes EngagementGap.
 
 ### 6.4 Formation state and lines (spec §3.1–§3.3)
 
 - `TroopFormationState.UpdateNatural` keeps the troop's own heading (SU-154): the ordered facing in line under a line
-  order, else the march direction, else unchanged; a pursuer near its target squares up to it (SU-75). A line that
+  order, else the march direction, else unchanged; a pursuer near its target squares up to it (SU-75), and once
+  engaged with it wheels square to the face it attacks (SU-163, §6.3). A line that
   already stood wheels to a new heading at `LineWheelRateDeg` (SU-155). It builds the natural line on that heading
   while a line order is held or an enemy is within S: the ordered length, or L_nat = Frontage × LineSpacing (SU-103).
   `ChainLinker` publishes the final line (`Formation`).
@@ -300,7 +317,7 @@ run (Troop and Tween tests) is about 350 tests; the main files:
 |---|---|
 | `TroopConstants` | `NeighborRadius 2.5`, `SoldierRadius 0.3`, `SeparationRadius 0.9`, `LineSpacing 0.9`, `SpreadRadius 1.2`, `PressureMassPerDrive 3`, `ContactDistance 0.85`, `MaxChainLinks 2`, wing indices. |
 | `TroopTuning` | Every tunable variable of spec §8, from the eight Battle Tuning assets (code defaults when a field has not been saved yet). |
-| Private constants that are not spec values | `FaultSlipMotion` settle time and pivot slip time, `SoldierSteering` retreat headroom (speed 1.5×, acceleration 6×, SU-133) and gains, `TroopFormationState.HeadingSmoothingTime`, `TroopSegmentPressureRules` barrier gains, knock-back 0.3 units. |
+| Private constants that are not spec values | `FaultSlipMotion` settle time and pivot slip time, `SoldierSteering` retreat headroom (speed 1.5×, acceleration 6×, SU-133) and gains, `TroopFormationState.HeadingSmoothingTime`, `TroopPivotMover` assault hold `ResumeDelay` (0.25 s) and `ApproachGain` (4 /s, SU-163), `TroopSegmentPressureRules` barrier gains, knock-back 0.3 units. |
 
 ## 10. Scenes
 

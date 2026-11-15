@@ -8,7 +8,9 @@ using UnityEngine;
 //   - for a pursuer whose target is within S_Distance, squaring up to the face it attacks (SU-75);
 //   - otherwise unchanged: a troop that stops keeps facing the way it last marched or was ordered.
 // A troop that is already in line wheels to a new heading at LineWheelRateDeg when Line Wheel is on (SU-155); a troop
-// forming its line, or not in line, turns at once. While the troop is engaged its facing is locked (spec §3.3, §4.1).
+// forming its line, or not in line, turns at once. While the troop is engaged its facing is locked (spec §3.3, §4.1), except
+// for the assault wheel (SU-163): a pursuer engaged with its target wheels square to the face it attacks, about the end of
+// its front rank nearest the enemy (AssaultWheelRules), and stops within AssaultWheelToleranceDeg.
 // The chain step (ChainLinker) then joins linked line points and publishes the final Formation.
 // Disable to drop the line and stop it updating.
 [DisallowMultipleComponent]
@@ -24,6 +26,7 @@ public sealed class TroopFormationState : MonoBehaviour
     TroopFormationData _formation;
     bool _hasHeading;
     bool _hasThreat;
+    bool _assaultWheeling;
     Vector2 _heading;
 
     // The line the troop is using this frame, after chain joints (null without a line, or while disabled).
@@ -62,11 +65,14 @@ public sealed class TroopFormationState : MonoBehaviour
         _natural = null;
         _hasHeading = false;
         _hasThreat = false;
+        _assaultWheeling = false;
     }
 
     // Called by the combat world each frame. threat: an enemy is within S_Distance. pursuitHeading: the heading of a
     // pursuer whose target is within S_Distance (SU-75), else null. While engaged the heading is locked.
-    internal void UpdateNatural(bool threat, Vector2? pursuitHeading, bool engaged, float deltaTime)
+    // assaultHeading: the heading a pursuer engaged with its target wheels to (SU-163), else null; it overrides both.
+    internal void UpdateNatural(bool threat, Vector2? pursuitHeading, bool engaged, float deltaTime,
+        Vector2? assaultHeading = null)
     {
         if (!enabled) return;
         _hasThreat = threat;
@@ -84,7 +90,13 @@ public sealed class TroopFormationState : MonoBehaviour
         bool inLine = _hasThreat || holdingOrder;
         bool wasInLine = _natural != null;
 
-        UpdateHeading(ordered ? order.Facing : (Vector2?)null, inLine, wasInLine, pursuitHeading, engaged, deltaTime);
+        if (assaultHeading.HasValue)
+            AssaultWheel(assaultHeading.Value, inLine, deltaTime);
+        else
+        {
+            _assaultWheeling = false;
+            UpdateHeading(ordered ? order.Facing : (Vector2?)null, inLine, wasInLine, pursuitHeading, engaged, deltaTime);
+        }
 
         if (!inLine)
         {
@@ -154,6 +166,46 @@ public sealed class TroopFormationState : MonoBehaviour
         if (Formation == null) return transform.position;
         return end == 0 ? _formation.Start : _formation.End;
     }
+
+    // SU-163: wheels the heading toward target at LineWheelRateDeg, capped so the swinging end moves no faster than the
+    // troop marches. In line, with Assault Wheel About Engaged End on, the end of the front rank nearest the face (the
+    // leading end along target) stays where it is: the pivot moves and the soldiers are left where they stand, so the far
+    // end swings in. The wheel starts when the heading is more than AssaultWheelToleranceDeg off and runs until it is
+    // square, so a troop that is nearly square does not hunt. The pivot step goes through Troop.ConstrainPivotStep, and
+    // the barrier (TroopSegmentPressureRules) keeps the EngagementGap.
+    void AssaultWheel(Vector2 target, bool inLine, float deltaTime)
+    {
+        if (target.sqrMagnitude < MinimumHeadingSquared) return;
+        target.Normalize();
+        TroopTuning tuning = TroopTuning.Active;
+        float offAngle = Vector2.Angle(_heading, target);
+        if (!_assaultWheeling)
+        {
+            if (offAngle <= tuning.AssaultWheelToleranceDeg) return;
+            _assaultWheeling = true;
+        }
+
+        bool aboutEnd = inLine && tuning.AssaultWheelAboutEngagedEnd;
+        float length = _troop.NaturalLineLength;
+        float swingRadius = aboutEnd ? length : length * 0.5f;
+        float rate = tuning.LineWheelRateDeg;
+        if (swingRadius > 0.01f) rate = Mathf.Min(rate, _troop.PivotSpeed / swingRadius * Mathf.Rad2Deg);
+        Vector2 next = LineMarchRules.Wheel(_heading, target, rate * Mathf.Max(0f, deltaTime));
+
+        if (aboutEnd)
+        {
+            float frontOffset = LineGeometry.FrontRankOffset(length, _troop.LivingSoldierCount);
+            Vector2 pivot = transform.position;
+            int side = AssaultWheelRules.LeadingEnd(pivot, _heading, length, frontOffset, target);
+            _troop.ShiftPivotKeepingSoldiers(
+                AssaultWheelRules.PivotStepKeepingEnd(_heading, next, length, frontOffset, side));
+        }
+        _heading = next;
+        if (Vector2.Angle(_heading, target) < 0.01f) _assaultWheeling = false;
+    }
+
+    // Whether the assault wheel is turning this frame (SU-163).
+    public bool IsAssaultWheeling => _assaultWheeling;
 
     // A pursuer squares up to its target (SU-75): eased toward the target heading.
     void SmoothHeading(Vector2 target, float deltaTime)

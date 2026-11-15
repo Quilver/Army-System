@@ -7,7 +7,11 @@ using UnityEngine;
 //   - whether an enemy is within S_Distance, which turns the troop into a battle line. The line faces the troop's own
 //     heading (where it marches or was ordered to face): troops no longer turn toward enemies by themselves (SU-154).
 //     A troop pursuing an enemy within S_Distance takes its heading from that target and squares up to the face it
-//     attacks, and keeps turning to it while engaged with it (SU-75).
+//     attacks, and keeps turning to it while engaged with it (SU-75). Two troops pursuing each other face pivot to pivot
+//     instead (SU-163).
+//   - the assault wheel (SU-163): a pursuer engaged with its target wheels square to the face it attacks, kept by
+//     TroopAssaultWheel, about the end of its front rank nearest the enemy (TroopFormationState). Only the attacker turns:
+//     a troop that is attacked and not pursuing that attacker keeps its facing lock.
 // Engagement starts at A_Distance and has an exit hold (SU-45, Q-16): two troops that were engaged last frame stay engaged
 // until their gap passes A_Distance + EngagementHoldMargin. Engaged lines are held at EngagementGap by the barrier, which can
 // equal A_Distance, so without the hold a fight would flick in and out of 'engaged' (charges, facing lock, chain pinning).
@@ -58,8 +62,11 @@ public sealed class TroopEngagementSystem
 
                 if (other == pursuitTarget)
                 {
-                    pursuitHeading = PursuitHeading(theirs, other.transform.position, own, pivot, gap, tuning.SDistance,
-                        tuning.ADistance, tuning.FrontFaceHalfAngleDeg, tuning.RearFaceAngleDeg);
+                    // SU-163: two troops pursuing each other face pivot to pivot, so neither chases the other's faces.
+                    pursuitHeading = TroopAssaultWheel.IsMutual(troop, other, tuning)
+                        ? PivotToPivot(other.transform.position, pivot, own.Facing)
+                        : PursuitHeading(theirs, other.transform.position, own, pivot, gap, tuning.SDistance,
+                            tuning.ADistance, tuning.FrontFaceHalfAngleDeg, tuning.RearFaceAngleDeg);
                     hasPursuitHeading = true;
                 }
             }
@@ -69,18 +76,29 @@ public sealed class TroopEngagementSystem
 
             if (!hasThreat || troop.IsRouted)
             {
+                troop.AssaultWheel.Reset();
                 troop.UpdateNaturalFormation(false, null, deltaTime);
                 continue;
             }
 
             if (hasPursuitHeading)
             {
+                // SU-163: engaged with its target, the pursuer wheels square to the face it attacks.
+                if (tuning.AssaultWheel && troop.WasEngagedWith(pursuitTarget))
+                {
+                    Vector2 assaultHeading = troop.AssaultWheel.TargetHeading(troop, pursuitTarget, tuning);
+                    troop.UpdateNaturalFormation(true, null, deltaTime, turnWhileEngaged: true,
+                        assaultHeading: assaultHeading);
+                    continue;
+                }
+                troop.AssaultWheel.Reset();
                 // The facing lock still holds while the pursuer is engaged only with other enemies.
                 bool engagedElsewhere = troop.IsEngaged && !troop.WasEngagedWith(pursuitTarget);
                 troop.UpdateNaturalFormation(true, pursuitHeading, deltaTime, turnWhileEngaged: !engagedElsewhere);
                 continue;
             }
 
+            troop.AssaultWheel.Reset();
             troop.UpdateNaturalFormation(true, null, deltaTime);
         }
     }
@@ -100,6 +118,12 @@ public sealed class TroopEngagementSystem
         float closeness = sDistance > aDistance ? Mathf.InverseLerp(sDistance, aDistance, gap) : 1f;
         Vector2 heading = Vector2.Lerp(toTarget, squared, closeness);
         return heading.sqrMagnitude > 1e-6f ? heading.normalized : squared;
+    }
+
+    static Vector2 PivotToPivot(Vector2 targetPivot, Vector2 ownPivot, Vector2 fallback)
+    {
+        Vector2 toTarget = targetPivot - ownPivot;
+        return toTarget.sqrMagnitude > 1e-8f ? toTarget.normalized : fallback;
     }
 
     // Extra gap before a troop that already faces a threat drops it again: at least the shape change of both footprints

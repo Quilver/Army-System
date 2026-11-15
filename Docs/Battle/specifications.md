@@ -707,6 +707,13 @@ defaults are used when an asset is missing. Values in the rest of this document 
 | `LineWheelRateDeg` | 60 (*default*) | deg/s | How fast a line wheels. |
 | `LineTurnSlowdown` | on (*default*) | bool | A troop in Line or Chain marching more than `LineTurnAngleDeg` from its facing marches at `LineBackwardSpeedScale` (SU-155). |
 | `LineTurnAngleDeg` | 45 (*default*) | deg | A march more than this from the line's facing counts as turning. |
+| `AssaultWheel` | on (*default*) | bool | A pursuer engaged with its target wheels at `LineWheelRateDeg` (no faster than its swinging end can march) until its front is parallel to the face it attacks (SU-163). Off: the SU-75 ease about the pivot. |
+| `AssaultWheelAboutEngagedEnd` | on (*default*) | bool | The assault wheel turns about the end of the front rank nearest the enemy, which stays put (SU-163). Off: about the pivot. |
+| `AssaultWheelToleranceDeg` | 4 (*default*) | deg | The assault wheel starts when the front is more than this off square and then turns until square (SU-163). |
+| `AssaultFaceHold` | on (*default*) | bool | The face the assault wheel squares to is chosen on engaging and kept until the attacker's bearing is `AssaultFaceHysteresisDeg` past a face boundary (SU-163). Rules faces are unchanged. |
+| `AssaultFaceHysteresisDeg` | 20 (*default*) | deg | How far past a face boundary (45°, 135°) the bearing must go before the assault wheel changes face. |
+| `MutualPursuitFrontToFront` | on (*default*) | bool | Two troops pursuing each other face pivot to pivot as they close and, once engaged, square to the line between their pivots taken when they engaged (SU-163). |
+| `AssaultHold` | on (*default*) | bool | A pursuer engaged with its unrouted target does not march at it within `ChargeGap`; it marches again after the gap has stayed beyond it for 0.25 s (SU-163). |
 
 **Morale Tuning**
 
