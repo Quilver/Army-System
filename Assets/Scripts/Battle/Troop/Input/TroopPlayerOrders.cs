@@ -385,8 +385,9 @@ public sealed class TroopPlayerOrders : MonoBehaviour
             var placement = placements[i];
             if (kind == OrderKind.Line)
             {
-                // The planned line is the front rank; the ghost is the line's outline, its ranks behind it (SU-161).
-                TroopFootprint ghost = TroopOutline.Line(
+                // The planned line is the front rank; the ghost is the line's border, its ranks behind it (SU-161),
+                // padded as the troop's border will be (SU-162).
+                TroopFootprint ghost = TroopBorder.Line(
                     TroopOrderPlanner.PlannedLinePoint(placement, TroopConstants.RightEnd),
                     TroopOrderPlanner.PlannedLinePoint(placement, TroopConstants.LeftEnd), placement.Facing,
                     placement.Troop.LivingSoldierCount);

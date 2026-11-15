@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// Shows a troop's formation outline (Troop.Outline, see TroopOutline) and its pivot: a faint fill in the army colour,
-// with no stroke along its border (SU-143). The fill is invisible until the troop is hovered or selected. The outline is
-// the same shape the player can click inside to select the troop (TroopSelection).
+// Shows a troop's border (Troop.Border, see TroopBorder, SU-162) and its pivot: a faint fill in the army colour, with no
+// stroke along its edge (SU-143). The fill is invisible until the troop is hovered or selected. The border is the same
+// shape the player can click inside to select the troop (TroopSelection).
 public sealed class TroopVisualiser : MonoBehaviour
 {
     const float PivotSize = 1f;
@@ -136,7 +136,8 @@ public sealed class TroopVisualiser : MonoBehaviour
         if (_outlineRenderer.enabled != visible) _outlineRenderer.enabled = visible;
         if (!visible) return;
 
-        TroopOutlinePolygon.Build(_troop.Outline, _polygon);
+        TroopFootprint border = _troop.Border;
+        TroopOutlinePolygon.Build(border, _polygon);
         int count = _polygon.Count;
         if (count < 3)
         {
@@ -150,7 +151,7 @@ public sealed class TroopVisualiser : MonoBehaviour
         _triangles.Clear();
 
         // Fill: a fan from the footprint centre (the polygon is convex).
-        Vector2 center = _troop.Outline.Center;
+        Vector2 center = border.Center;
         _vertices.Add(Local(center));
         _colors.Add(fill);
         for (int i = 0; i < count; i++)

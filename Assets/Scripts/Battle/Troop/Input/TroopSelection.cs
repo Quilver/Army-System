@@ -56,7 +56,7 @@ public sealed class TroopSelection
     }
 
     // Selects the player's troop under the cursor: one of its living soldiers within pickRadius, or inside its outline
-    // (Troop.Outline, the formation outline the visualiser draws), or its pivot within pickRadius. pickRadius is in
+    // border (Troop.Border, the shape the visualiser draws, SU-162), or its pivot within pickRadius. pickRadius is in
     // world units, converted from screen pixels by the caller. Empty ground clears the selection unless Shift is held.
     public void SelectAtPoint(Vector2 worldPosition, float pickRadius, bool toggle)
     {
@@ -145,10 +145,10 @@ public sealed class TroopSelection
                 tier = 0;
                 score = soldierDistance;
             }
-            else if (Application.isPlaying && troop.Outline.Contains(worldPosition))
+            else if (Application.isPlaying && troop.Border.Contains(worldPosition))
             {
                 tier = 1;
-                score = troop.Outline.SignedDistance(worldPosition);
+                score = troop.Border.SignedDistance(worldPosition);
             }
             else
             {

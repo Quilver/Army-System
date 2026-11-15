@@ -1,6 +1,6 @@
 # Assumptions review
 
-Every unconfirmed Assumption in `SpecificationUpdate.md` (SU-01 to SU-161), grouped by system so they can be confirmed in one sitting: 207 assumptions across 97 SU entries. SU-161 (flush fronts) was added on 2026-11-15. SU-159 (attack clicks) and SU-160 (linked group lines) were added on 2026-11-15; SU-160 superseded SU-157, whose items were removed. SU-158 (engaged soldiers face their enemy) was added on 2026-11-15. SU-154 to SU-157 (troop facing controls and line spacing, on the `troop-facing-controls` branch) and SU-148 to SU-153 (class design rules) were added on 2026-11-14. SU-136 to SU-140 were added on 2026-11-08; the SU-74 and SU-121 items about routed troops never leaving the map were removed (SU-138 replaced them). Rebuilt 2026-11-08 (SU-135): assumptions that later entries overtook were removed, missing ones were added, and the groups were tidied. The spec (v0.10) tags text that rests on one of these as **[A: SU-n]**.
+Every unconfirmed Assumption in `SpecificationUpdate.md` (SU-01 to SU-162), grouped by system so they can be confirmed in one sitting: 214 assumptions across 98 SU entries. SU-162 (the troop border) was added on 2026-11-15. SU-161 (flush fronts) was added on 2026-11-15. SU-159 (attack clicks) and SU-160 (linked group lines) were added on 2026-11-15; SU-160 superseded SU-157, whose items were removed. SU-158 (engaged soldiers face their enemy) was added on 2026-11-15. SU-154 to SU-157 (troop facing controls and line spacing, on the `troop-facing-controls` branch) and SU-148 to SU-153 (class design rules) were added on 2026-11-14. SU-136 to SU-140 were added on 2026-11-08; the SU-74 and SU-121 items about routed troops never leaving the map were removed (SU-138 replaced them). Rebuilt 2026-11-08 (SU-135): assumptions that later entries overtook were removed, missing ones were added, and the groups were tidied. The spec (v0.10) tags text that rests on one of these as **[A: SU-n]**.
 
 ## How to use this
 
@@ -20,7 +20,7 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 - [Formations, movement & geometry](#formations-movement--geometry) (34)
 - [Combat (melee, charges, ranged)](#combat-melee-charges-ranged) (28)
 - [Morale, retreat & rout](#morale-retreat--rout) (16)
-- [Controls, orders & battle UI](#controls-orders--battle-ui) (34)
+- [Controls, orders & battle UI](#controls-orders--battle-ui) (41)
 - [Campaign, tent, missions & deployment](#campaign-tent-missions--deployment) (45)
 - [Enemy AI](#enemy-ai) (13)
 - [Tooling & other](#tooling--other) (4)
@@ -385,6 +385,16 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 - [ ] one troop's right-drag line is unchanged apart from the new maximum: it spans the drag, centred on its midpoint. →
 - [ ] deployment uses the same plan and now also links the ordered troops end to end (before, it only broke their links); a link the deployment zone over-stretches breaks as usual. →
 - [ ] Alt is unchanged: links to troops outside the order break and the ordered troops become ChainSuppressed, but the order still links them to each other. →
+
+**SU-162** The troop border holds its soldiers, has a wider margin and morphs smoothly
+
+- [ ] the border is a rounded box (centre, frame, half sizes, corner rounding) for every formation: the blob and rout disc are a box rounded to its half size, the column a box rounded on its short side, a line a box with corners rounded to the padding. Sizes, frame and rounding ease, so the shape never switches; the box looks the same turned a quarter turn, so its frame turns at most 45° and its facing is not the troop's front. →
+- [ ] the target is fitted to the soldiers in the formation's frame: each side lies `OutlinePadding` beyond the outermost held soldier centre and reaches on toward the formation's side by at most `TroopBorder.FormationReach` (one LineSpacing, 0.9). A settled formation therefore shows its own shape, but the column a line is turning into (or the ranks a blob is forming) is not drawn before the soldiers get there. Read literally, "the formation grown to hold the soldiers" would still have shown the column behind the soldiers. →
+- [ ] the corner rounding is the formation's (line: the padding; column: lane half-width + padding; blob: radius + padding), cut where a soldier near a corner would be closer to the edge than `OutlinePadding`. →
+- [ ] the timings are named constants in `TroopBorder`, not tunables: a side moving out closes most of its gap in 0.1 s (`GrowTime`), moving in 0.5 s (`ShrinkTime`); the frame turns over 0.2 s (`TurnTime`) and the rounding follows over 0.25 s (`RoundingTime`). →
+- [ ] however it eases, every held soldier centre stays at least one soldier radius inside the border, so no sprite of a held soldier sticks out; a soldier who outruns the easing pushes the border out with him. →
+- [ ] friendly troops keep using the formation outline (`Troop.Outline`, `TroopOutline`, still padded by one soldier radius) to keep `FriendlyGap` apart (SU-94), so troop spacing is unchanged; the border is a separate shape, `Troop.Border`. →
+- [ ] the line ghosts (order preview and order path) are the border's line shape: padded by `OutlinePadding` with rounded corners in the shape, still drawn as a box with a bold front edge, and they do not follow soldiers. The attack target in the order path stays outlined by its rules footprint, whose bold edge is its front. The morale bar sits above the border. →
 
 ## Campaign, tent, missions & deployment
 

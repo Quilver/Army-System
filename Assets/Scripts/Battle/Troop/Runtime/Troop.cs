@@ -66,6 +66,7 @@ public sealed class Troop : MonoBehaviour
     float _lastAttackTime = float.NegativeInfinity;
     TroopFootprint _footprint;
     readonly TroopOutline _outline = new();
+    readonly TroopBorder _border = new();
 
     public event Action<SoldierAgentState> SoldierDied;
 
@@ -288,9 +289,12 @@ public sealed class Troop : MonoBehaviour
     // --- Footprint and engagement (spec §3.3, §4.1, §4.8) ---
 
     public TroopFootprint Footprint => _footprint;
-    // The formation outline for display and picking (TroopOutline): drawn from the formation, not the soldiers, so it is
-    // steady in melee and on the march. The rules keep using Footprint.
+    // The formation outline (TroopOutline): drawn from the formation, not the soldiers, so it is steady in melee and on the
+    // march. Friendly troops keep their outlines apart (SU-94); the rules keep using Footprint.
     public TroopFootprint Outline => _outline.IsSeeded ? _outline.At(transform.position) : _footprint;
+    // The border shown under a hovered or selected troop and picked by clicks (TroopBorder, SU-162): the formation fitted
+    // to the soldiers and padded by OutlinePadding. Display and picking only.
+    public TroopFootprint Border => _border.IsSeeded ? _border.At(transform.position) : Outline;
     public IReadOnlyList<EngagementRecord> Engagements => _engagements;
     public bool IsEngaged => _engaged;
     // Engaged (with the engagement hold) or carrying an attack order. Chain tension, shared joints, shared retreat and
@@ -336,7 +340,11 @@ public sealed class Troop : MonoBehaviour
     }
 
     internal void SetFootprint(in TroopFootprint footprint) => _footprint = footprint;
-    internal void UpdateOutline(float deltaTime) => _outline.Update(this, deltaTime);
+    internal void UpdateOutline(float deltaTime)
+    {
+        _outline.Update(this, deltaTime);
+        _border.Update(this, _outline, deltaTime);
+    }
 
     // Replaces this frame's engagement records. Entering engagement with an active order starts Assault (spec §4.2).
     internal void SetEngagements(List<EngagementRecord> records)
@@ -642,6 +650,7 @@ public sealed class Troop : MonoBehaviour
         }
         _footprint = TroopFootprint.Circle(transform.position, Radius * Tuning.BlobRadiusScale, transform.right);
         _outline.Reset();
+        _border.Reset();
         State = TroopState.Idle;
         _views.Refresh(0f);
     }
@@ -1022,6 +1031,7 @@ public sealed class Troop : MonoBehaviour
         CreateVisualiser();
         _footprint = TroopFootprint.Circle(transform.position, Radius * Tuning.BlobRadiusScale, transform.right);
         _outline.Reset();
+        _border.Reset();
         _initialized = true;
     }
 

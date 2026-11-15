@@ -67,6 +67,11 @@ report, sounds) follows a battle; Troop code never references the campaign.
   L_nat. The drawn line is each troop's front rank: troops of any depth stand flush on it, their ranks behind it, and
   the ghost shows the ranks behind the line (SU-161).
 - **Ctrl + RMB click**: Face. The selection turns in place toward the point and holds its line (SU-156).
+- **Troop border**: the faint fill under a hovered or selected troop, and the shape a click inside picks
+  (`Troop.Border`, `Rules/TroopBorder.cs`, SU-162). One rounded box that morphs between blob, column and line, holds
+  every soldier not charging or returning with `OutlinePadding` (0.65 units) to spare, grows in about 0.1 s and shrinks
+  in about 0.5 s. Display and picking only: the rules use the footprint, and friendly troops keep their formation
+  outlines (`Troop.Outline`) apart. Line ghosts are the border's line shape (padded, not following soldiers).
 - Troops face where they march, or where they were ordered to face, and keep that facing when they stop (SU-154). A
   troop in line wheels to turn (60°/s), and marches as slowly as moving back while more than 45° off its front (SU-155).
 - Soldiers of an engaged troop that have an enemy soldier within direct reach (the heat band's reach) turn to the nearest

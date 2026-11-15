@@ -45,7 +45,7 @@ public sealed class TroopMoraleBar
 
     void DrawBar(Camera camera, Troop troop, float scale)
     {
-        TroopFootprint outline = troop.Outline;
+        TroopFootprint outline = troop.Border;
         TroopOutlinePolygon.Build(outline, _polygon);
         if (_polygon.Count == 0) return;
         float topY = float.NegativeInfinity;

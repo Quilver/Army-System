@@ -11,6 +11,47 @@ SU-128 refer to v0.9 and may have moved.
 
 ---
 
+## 2026-11-15: The troop border (branch troop-facing-controls)
+
+### SU-162 The troop border holds its soldiers, has a wider margin and morphs smoothly (Decision + Assumptions, spec §6.1, §8)
+Seen in playtest: a selected line's border sat flush against its soldier sprites; on a move order the border jumped to
+the column capsule behind the soldiers about 1.5 s before they got there; in melee, sprites stuck out of the border.
+The border (the faint fill under a hovered or selected troop, and the shape clicks pick) was the formation the soldiers
+were steered into, padded by one soldier radius (0.3), and switched shape type at once when the formation changed.
+- Decision: the border is one continuous shape: changes between Idle, Column, Line / Chain and Rout morph smoothly,
+  with no frame where the shape type switches.
+- Decision: it holds the troop's living soldiers, leaving out those charging, following a charge or returning, so a
+  charger running out does not stretch it. During a formation change it follows the soldiers and settles onto the
+  formation as they arrive.
+- Decision: a margin of `OutlinePadding` (0.65 units, new Formation Tuning value) beyond the soldiers on every side,
+  replacing the one-soldier-radius padding.
+- Decision: it grows quickly (about 0.1 s) and shrinks slowly (about 0.5 s), so it does not pulse; with no time step
+  (paused, deploying) it snaps.
+- Decision: display and picking only; the rules keep using the footprint, and no stroke is drawn (SU-143 stands).
+- Assumption: the border is a rounded box (centre, frame, half sizes, corner rounding) for every formation: the blob and
+  rout disc are a box rounded to its half size, the column a box rounded on its short side, a line a box with corners
+  rounded to the padding. Sizes, frame and rounding ease, so the shape never switches; the box looks the same turned a
+  quarter turn, so its frame turns at most 45° and its facing is not the troop's front.
+- Assumption: the target is fitted to the soldiers in the formation's frame: each side lies `OutlinePadding` beyond the
+  outermost held soldier centre and reaches on toward the formation's side by at most `TroopBorder.FormationReach` (one
+  LineSpacing, 0.9). A settled formation therefore shows its own shape, but the column a line is turning into (or the
+  ranks a blob is forming) is not drawn before the soldiers get there. Read literally, "the formation grown to hold the
+  soldiers" would still have shown the column behind the soldiers.
+- Assumption: the corner rounding is the formation's (line: the padding; column: lane half-width + padding; blob:
+  radius + padding), cut where a soldier near a corner would be closer to the edge than `OutlinePadding`.
+- Assumption: the timings are named constants in `TroopBorder`, not tunables: a side moving out closes most of its gap
+  in 0.1 s (`GrowTime`), moving in 0.5 s (`ShrinkTime`); the frame turns over 0.2 s (`TurnTime`) and the rounding
+  follows over 0.25 s (`RoundingTime`).
+- Assumption: however it eases, every held soldier centre stays at least one soldier radius inside the border, so no
+  sprite of a held soldier sticks out; a soldier who outruns the easing pushes the border out with him.
+- Assumption: friendly troops keep using the formation outline (`Troop.Outline`, `TroopOutline`, still padded by one
+  soldier radius) to keep `FriendlyGap` apart (SU-94), so troop spacing is unchanged; the border is a separate shape,
+  `Troop.Border`.
+- Assumption: the line ghosts (order preview and order path) are the border's line shape: padded by `OutlinePadding`
+  with rounded corners in the shape, still drawn as a box with a bold front edge, and they do not follow soldiers. The
+  attack target in the order path stays outlined by its rules footprint, whose bold edge is its front. The morale bar
+  sits above the border.
+
 ## 2026-11-15: Flush fronts in a battle line (branch troop-facing-controls)
 
 ### SU-161 A battle line is the troop's front rank; troops of any depth stand flush (Decision + Assumptions, spec §3.3, §3.4, §6.2)

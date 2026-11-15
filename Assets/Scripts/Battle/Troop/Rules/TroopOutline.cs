@@ -1,16 +1,17 @@
 using UnityEngine;
 
-// The outline a troop shows and is picked by (spec §6.1). It is drawn from the troop's formation, the shape its soldiers
-// are steered into (SoldierFieldPlanner), not from where each soldier happens to stand, so it does not pulse as soldiers
-// sway, jostle and charge:
+// The troop's formation outline. Friendly troops keep these apart (FriendlyOverlapResolver, SU-94), and the troop
+// border (TroopBorder, SU-162: what the player sees and clicks) starts from the same formation and march heading. It is
+// drawn from the troop's formation, the shape its soldiers are steered into (SoldierFieldPlanner), not from where each
+// soldier happens to stand, so it does not pulse as soldiers sway, jostle and charge:
 //   Line / Chain  the battle line from line point to line point, its ranks behind it (the line is the front rank, SU-161).
 //   Column        the marching column trailing the pivot, along a smoothed march heading. Its length and width are the
 //                 soldier field's (LineGeometry column helpers, SU-120), so it hugs the column and is longer than wide.
 //   Idle          the blob disc (BlobRadiusScale x TroopRadius).
 //   Rout          the scatter disc.
 // Each is padded by one soldier radius. The outline is kept relative to the pivot, so a marching troop's outline moves
-// exactly with it; changes of shape, size and facing ease in over ShapeSmoothTime. The rules keep using the footprint
-// (TroopFootprintBuilder); this is for display and picking only.
+// exactly with it; changes of shape, size and facing ease in over ShapeSmoothTime. The engagement rules keep using the
+// footprint (TroopFootprintBuilder).
 public sealed class TroopOutline
 {
     // Seconds for the outline's size, facing and place around the pivot to close most of the gap to the formation.

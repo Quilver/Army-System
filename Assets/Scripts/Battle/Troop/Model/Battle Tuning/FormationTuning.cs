@@ -44,6 +44,9 @@ public sealed class FormationTuning : ScriptableObject
     float _jointClearanceFraction = 0.15f;
     [SerializeField, Min(0.5f), Tooltip("A routed troop's soldiers scatter in a disc this many times its radius.")]
     float _routScatterRadiusScale = 1.6f;
+    [SerializeField, Min(0f), Tooltip("Margin of the troop border (the shape shown under a hovered or selected troop and " +
+        "clicked to pick it) beyond its outermost soldier centres, on every side (units, SU-162). Display and picking only.")]
+    float _outlinePadding = 0.65f;
 
     [Header("Marching in line (SU-150)")]
     [SerializeField, Tooltip("On: a troop in Line or Chain marches at Line March Speed Scale of its speed. Charges are not " +
@@ -89,6 +92,7 @@ public sealed class FormationTuning : ScriptableObject
     public float JointClearance => _jointClearance;
     public float JointClearanceFraction => _jointClearanceFraction;
     public float RoutScatterRadiusScale => _routScatterRadiusScale;
+    public float OutlinePadding => _outlinePadding;
 
     public bool LineMarchSlowdown => _lineMarchSlowdown;
     public float LineMarchSpeedScale => _lineMarchSpeedScale;

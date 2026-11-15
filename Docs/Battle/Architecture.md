@@ -37,7 +37,7 @@ see `Troop/README.md`.
 
 | Folder | Contents |
 |---|---|
-| `Rules/` | `MoraleRules`, `DuelRules`, `CombatPower`, `SupportRules`, `DamageRules`, `MitigationResolver`, `ChargeRules`, `ClashRules`, `TroopFootprint` (+ `TroopFace`, `FootprintKind`), `FootprintGap`, `FaceClassifier`, `SurroundTest`, `LineGeometry` (line, radius and column sizes), `TroopFrontageRule`, `TroopOutline`, `TroopOutlinePolygon`, `FormationModeResolver`, `ChainGeometry`, `ChainLinkRules` (+ `ChainLinkCandidate`, `ChainBreakReason`), `ChainTopology`, `RangedRules`, `LineMarchRules` (SU-150), `EngagementHeatStrip`, `CompositeTroopResolver`, `ITroopRandom`, `SeededTroopRandom`. |
+| `Rules/` | `MoraleRules`, `DuelRules`, `CombatPower`, `SupportRules`, `DamageRules`, `MitigationResolver`, `ChargeRules`, `ClashRules`, `TroopFootprint` (+ `TroopFace`, `FootprintKind`), `FootprintGap`, `FaceClassifier`, `SurroundTest`, `LineGeometry` (line, radius and column sizes), `TroopFrontageRule`, `TroopOutline`, `TroopBorder` (SU-162), `TroopOutlinePolygon`, `FormationModeResolver`, `ChainGeometry`, `ChainLinkRules` (+ `ChainLinkCandidate`, `ChainBreakReason`), `ChainTopology`, `RangedRules`, `LineMarchRules` (SU-150), `EngagementHeatStrip`, `CompositeTroopResolver`, `ITroopRandom`, `SeededTroopRandom`. |
 | `Model/` | `CharacterProfile` (+ `CreateWithGains`, `Source`), `CharacterEquipment`, `SoldierStats`, `CharacterClass`, `StatCaps`, `CharacterStat`, `WeaponProfile` (abstract) with `MeleeWeaponProfile` and `RangedWeaponProfile` (D-52), `WeaponSpecialRuleEntry`, `ArmourProfile`, `WeaponSkill`, `WeaponTypes`, `CombatStatLimits`, `TroopTuning` and the eight `Battle Tuning/` sections, `FormationMode`, `SoldierAgentState`, `SoldierHealth`, `SoldierChargeState` (+ `ChargeRole`), `SoldierFaultMotionState`, `SoldierClashPulseState`, `SoldierSeparationState`, `MitigationResult` (+ `AppliedDamage`), `TroopFormationData`, `TroopEndpointLink`. |
 | `Runtime/` | `Troop`, `TroopState`, `TroopOrderKind`, `TroopRoster`, `TroopFormationState`, `TroopMorale`, `TroopLineOrder`, `TroopLineLinks`, `TroopPivotMover`, `TroopPathFollower`, `BattlefieldBounds`, `FaultSlipMotion`, `TroopRout`, `RoutFleePlanner`, `AssaultState`, `EngagementRecord`, `TroopDamageReceiver`, `MeleeMetrics`, `TroopConstants`, `TroopObjects`, `TroopAssemblyInfo`. |
 | `Combat/` | `TroopCombatWorld`, `TroopRegistry`, `TroopEngagementSystem`, `EngagementFrontage`, `SoldierContactIndex`, `SoldierContact`, `SoldierContactResolver`, `DuelResolver`, `SupportCalculator`, `ChargeCoordinator`, `CrossTroopSeparation`, `RangedFireController`, `TroopProjectiles`, `CombatLog`, `BattleEvents`, `TroopCombatGizmos`. |
@@ -159,6 +159,13 @@ in Edit mode at a fixed frame time.
 - `TroopFootprintBuilder`: Line/Chain → rectangle around the line (half-width = furthest soldier + soldier radius);
   marching → capsule; Idle/Rout → circle.
 - `FootprintGap`: separating-axis gap between rounded boxes; negative when they overlap.
+- Three shapes per troop: `Troop.Footprint` (the rules), `Troop.Outline` (`TroopOutline`: the formation the soldiers
+  are steered into, padded by one soldier radius; friendly outline separation, SU-94) and `Troop.Border`
+  (`TroopBorder`, SU-162: display and picking only). The border is one rounded box for every formation, fitted each
+  frame to the held soldiers (living, not charging, following or returning) with `OutlinePadding` (0.65) on every side
+  and reaching at most one LineSpacing further toward the formation's own shape; it grows over 0.1 s, shrinks over
+  0.5 s, never lets a held soldier centre within one soldier radius of its edge, and snaps with no time step. Both are
+  stepped by `Troop.UpdateOutline` in `TroopEngagementSystem.Update` after the footprint.
 - `TroopEngagementSystem` stores an `EngagementRecord` per opponent within S_Distance: gap, `FaceClassifier` face
   (defender pivot → attacker's nearest footprint point; ±45° Front, beyond 135° Rear), engaged (gap ≤ 5.2).
   `Troop.FaceAttackedBy` / `IsFlankedBy` answer clashes and support.
@@ -179,7 +186,7 @@ in Edit mode at a fixed frame time.
   `Troop.OrderLine` (and `PlaceAt` with a held line) puts the pivot that far behind the ordered line
   (`Troop.PivotBehindLine` / `LineCenterAhead`). Everything that draws or measures the ranks offsets them from the line
   with `TroopFormationData.RanksOffset` or `RankDepth`: the soldier field core, the footprint's rank floors, the outline
-  and line ghosts (`TroopOutline.Line`), the soldier radius clamp, and the heat band's rim (the footprint ahead of the
+  (`TroopOutline.Line`), the border and line ghosts (`TroopBorder.Line`, SU-162), the soldier radius clamp, and the heat band's rim (the footprint ahead of the
   line). The troop's size in units
   (`Troop.Radius`: blob, soldier clamp, pivot spacing) is derived: L_nat / 1.8, or more when its soldiers need room,
   times `TroopSizeScale` (1.5, SU-131). Frontage comes from the soldier count (`TroopFrontageRule`, SU-117).
@@ -219,7 +226,7 @@ in Edit mode at a fixed frame time.
 
 - `TroopPlayerOrders` reads the Input System directly (decision kept, D-42). Thresholds are screen pixels from
   `TroopTuning` (box select 8 px, order drag 8 px, click pick 24 px).
-- `TroopSelection`: hover, click (soldier within the pick radius, then outline, then pivot), box (pivot or any
+- `TroopSelection`: hover, click (soldier within the pick radius, then the border `Troop.Border`, then pivot), box (pivot or any
   soldier), Shift toggles; `SelectTroop` (a left press on a troop: that troop, or its whole chain on a double click,
   `ChainMembers`) (SU-129).
 - `TroopPlayerOrders`: a left press on one of the player's troops selects it at once; dragging from it and releasing
@@ -277,7 +284,7 @@ run (Troop and Tween tests) is about 350 tests; the main files:
 | `ScenarioTests` | Rout event and despawn, retreat, surrounded break, flank Shock, facing lock, 30 s charge rate, mid-chain rout, acyclic and same-team links, pinned anchor. |
 | `ChainAndRangedScenarioTests` | No link stealing, obstruction, shared retreat 10 → 7 → 4.9, archer volleys and single shots, hit rate, no fire while engaged, Fire & Engage, composite ranks. |
 | `ChainEngagementScenarioTests` | Engagement hold, committed troops, auto-link facing, charge gate and reach, friendly outlines, placement, ChainSuppressed (SU-130), click and double-click selection (SU-129). |
-| `GeometryTests`, `ColumnGeometryTests`, `TroopFrontageRuleTests`, `TroopOutlineTests`, `SurroundAndFootprintTests` | Troop size (SU-131), columns, frontage, outlines, footprints and the surround test. |
+| `GeometryTests`, `ColumnGeometryTests`, `TroopFrontageRuleTests`, `TroopOutlineTests`, `TroopBorderTests`, `SurroundAndFootprintTests` | Troop size (SU-131), columns, frontage, outlines, the troop border (SU-162), footprints and the surround test. |
 | `PursuitAndTerrainTests`, `RoutFleeTests` | Pathing, map edge, pursuit facing, rout flight. |
 | `MeleeDurationTests` | Spearmen melee length (explicit lever sweeps run by name). |
 | `BattleViewTests`, `SoldierViewTests`, `TroopCardHudTests`, `WeaponSpecialRuleTests` | Views, cards, weapon rules. |
