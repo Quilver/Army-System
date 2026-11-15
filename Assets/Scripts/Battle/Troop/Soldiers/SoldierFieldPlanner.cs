@@ -3,7 +3,9 @@ using UnityEngine;
 // The shape each troop's soldiers flow toward (spec §2.1, §3.1). Soldiers do not have slots: each one is pulled toward the
 // nearest point of the troop's shape (a capsule in troop-local space) and spreads out from crowded neighbours (see
 // SoldierSteering). The shape follows the troop's FormationMode:
-//   Line / Chain  the battle line. Linked ends are pulled in by the joint clearance so soldiers stay off the joint.
+//   Line / Chain  the battle line's ranks: the line is the front rank and the core runs along the middle of the ranks,
+//                 half their depth behind it (SU-161). Linked ends are pulled in by the joint clearance so soldiers stay
+//                 off the joint.
 //                 Soldiers are also spread evenly along the line so it fills its length (SoldierSteering line fill).
 //   Column        a column trailing the pivot while marching: up to LineGeometry.MaxColumnLanes lanes, as many rows as
 //                 the soldiers need, always longer than wide (LineGeometry column helpers, SU-120). Soldiers are spread
@@ -102,8 +104,10 @@ public sealed class SoldierFieldPlanner
         TroopTuning tuning = TroopTuning.Active;
         TroopFormationData formation = _troop.Formation;
         Transform transform = _troop.transform;
-        Vector2 start = transform.InverseTransformPoint(formation.Start);
-        Vector2 end = transform.InverseTransformPoint(formation.End);
+        // SU-161: the formation line is the front rank; the core is the middle of the ranks, half their depth behind it.
+        Vector2 ranks = formation.RanksOffset(livingCount);
+        Vector2 start = transform.InverseTransformPoint(formation.Start + ranks);
+        Vector2 end = transform.InverseTransformPoint(formation.End + ranks);
         Vector2 delta = end - start;
         float length = delta.magnitude;
         Vector2 tangent = length > 0.0001f ? delta / length : Vector2.up;

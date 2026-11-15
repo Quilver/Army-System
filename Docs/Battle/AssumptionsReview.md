@@ -1,6 +1,6 @@
 # Assumptions review
 
-Every unconfirmed Assumption in `SpecificationUpdate.md` (SU-01 to SU-160), grouped by system so they can be confirmed in one sitting: 201 assumptions across 96 SU entries. SU-159 (attack clicks) and SU-160 (linked group lines) were added on 2026-11-15; SU-160 superseded SU-157, whose items were removed. SU-158 (engaged soldiers face their enemy) was added on 2026-11-15. SU-154 to SU-157 (troop facing controls and line spacing, on the `troop-facing-controls` branch) and SU-148 to SU-153 (class design rules) were added on 2026-11-14. SU-136 to SU-140 were added on 2026-11-08; the SU-74 and SU-121 items about routed troops never leaving the map were removed (SU-138 replaced them). Rebuilt 2026-11-08 (SU-135): assumptions that later entries overtook were removed, missing ones were added, and the groups were tidied. The spec (v0.10) tags text that rests on one of these as **[A: SU-n]**.
+Every unconfirmed Assumption in `SpecificationUpdate.md` (SU-01 to SU-161), grouped by system so they can be confirmed in one sitting: 207 assumptions across 97 SU entries. SU-161 (flush fronts) was added on 2026-11-15. SU-159 (attack clicks) and SU-160 (linked group lines) were added on 2026-11-15; SU-160 superseded SU-157, whose items were removed. SU-158 (engaged soldiers face their enemy) was added on 2026-11-15. SU-154 to SU-157 (troop facing controls and line spacing, on the `troop-facing-controls` branch) and SU-148 to SU-153 (class design rules) were added on 2026-11-14. SU-136 to SU-140 were added on 2026-11-08; the SU-74 and SU-121 items about routed troops never leaving the map were removed (SU-138 replaced them). Rebuilt 2026-11-08 (SU-135): assumptions that later entries overtook were removed, missing ones were added, and the groups were tidied. The spec (v0.10) tags text that rests on one of these as **[A: SU-n]**.
 
 ## How to use this
 
@@ -17,7 +17,7 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 
 - [Troops, characters, stats & equipment](#troops-characters-stats--equipment) (20)
 - [Soldier simulation & physics](#soldier-simulation--physics) (6)
-- [Formations, movement & geometry](#formations-movement--geometry) (28)
+- [Formations, movement & geometry](#formations-movement--geometry) (34)
 - [Combat (melee, charges, ranged)](#combat-melee-charges-ranged) (28)
 - [Morale, retreat & rout](#morale-retreat--rout) (16)
 - [Controls, orders & battle UI](#controls-orders--battle-ui) (34)
@@ -156,6 +156,15 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 - [ ] a soldier that loses its target faces the front until it may pick again (usually at once). →
 - [ ] the reach slack is its own Soldier Tuning value, `FacingReachSlack` (0.45), kept equal to the heat band's Reach Slack (a scene field). →
 - [ ] an engaged troop without a line faces its troop facing; without a combat world (editor) an engaged troop keeps the old behaviour. →
+
+**SU-161** A battle line is the troop's front rank; troops of any depth stand flush
+
+- [ ] the line (Start to End) is the front rank and the pivot stays in the middle of the ranks, half the rank depth behind it; a line order marches the pivot there, and chain joints are the front corners (no lurch when a lone troop forms or drops a threat line). →
+- [ ] the half depth is worked out each frame from the living soldiers and line length, but the pivot's march target is fixed when the order is given: if the rank count changes while holding, the front moves by half a rank spacing. →
+- [ ] every line position the player gives (right-drag lines, deployment line placement, the ghost) is the front rank's centre; a Face order turns the troop about its pivot; the enemy AI keeps planning pivot positions, so its behaviour is unchanged. →
+- [ ] footprint rank floor RankThickness ahead of the line and rank depth + RankThickness behind (less slack); outline and line ghosts one soldier radius more on each side. →
+- [ ] the heat band's rim is the footprint's part ahead of its line; front-rank charges are unchanged (soldiers furthest toward the enemy). →
+- [ ] the soldier radius clamp reaches the ends of the front and rear ranks. →
 
 ## Combat (melee, charges, ranged)
 

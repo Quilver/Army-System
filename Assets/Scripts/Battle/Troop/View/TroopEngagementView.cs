@@ -92,8 +92,9 @@ public sealed class TroopEngagementView
         SetVisible(true);
     }
 
-    // How far a troop's footprint reaches out from its line: the half-width of a line footprint, the radius of a blob.
-    static float LineHalfWidth(in TroopFootprint footprint) => footprint.HalfWidth + footprint.Rounding;
+    // How far a troop's footprint reaches out from its line toward the front: the part of a line footprint ahead of the
+    // line (the line is the front rank, SU-161, so the ranks behind it do not count), the radius of a blob.
+    static float LineHalfWidth(in TroopFootprint footprint) => footprint.FrontHalfWidth + footprint.Rounding;
 
     public void Hide() => SetVisible(false);
 

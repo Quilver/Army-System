@@ -67,7 +67,8 @@ public sealed class ChainAndRangedScenarioTests
     Troop LineTroop(string name, Vector2 position, Vector2 facing, int team = 0, int baseMorale = 5, CharacterProfile character = null)
     {
         Troop troop = CreateTroop(name, team, position, baseMorale, character);
-        troop.OrderLine(position, facing, troop.NaturalLineLength);
+        // The ordered line is the front rank (SU-161): order it half the rank depth ahead, so the pivot stays at position.
+        troop.OrderLine(troop.LineCenterAhead(position, facing, troop.NaturalLineLength), facing, troop.NaturalLineLength);
         return troop;
     }
 

@@ -16,7 +16,8 @@ report, sounds) follows a battle; Troop code never references the campaign.
 `TroopCombatWorld` (one per battle) runs the battle-wide systems; each `Troop` runs its own modules.
 
 1. **Engagement** (`TroopEngagementSystem`): builds every troop's footprint and measures every opposing pair with the
-   footprint gap. Enemies within `S_Distance` (30) turn the troop into a battle line, which keeps the troop's own
+   footprint gap. Enemies within `S_Distance` (30) turn the troop into a battle line (the line is its front rank, the
+   ranks behind it and the pivot in their middle, SU-161), which keeps the troop's own
    facing: where it marched or was ordered to face, never toward the enemy by itself (SU-154). Within `A_Distance` (5.2)
    the troops are engaged, facing is locked, and the face each opponent attacks (Front, flanks, Rear) is recorded.
 2. **Chains** (`ChainLinker`): joins allied line points into chains, solves the shared joints, breaks over-stretched,
@@ -63,7 +64,8 @@ report, sounds) follows a battle; Troop code never references the campaign.
   end to end from the press point, in order along the drag, all linked into a chain; one stretch for the whole line
   (drag ÷ sum of L_nat, clamped to 0.7–2.0), so each troop's width is in proportion to its frontage. Until the drag is a
   quarter of the minimum line width the selection keeps its facing (SU-160). One troop's line spans the drag, 0.7–2.0 ×
-  L_nat.
+  L_nat. The drawn line is each troop's front rank: troops of any depth stand flush on it, their ranks behind it, and
+  the ghost shows the ranks behind the line (SU-161).
 - **Ctrl + RMB click**: Face. The selection turns in place toward the point and holds its line (SU-156).
 - Troops face where they march, or where they were ordered to face, and keep that facing when they stop (SU-154). A
   troop in line wheels to turn (60°/s), and marches as slowly as moving back while more than 45° off its front (SU-155).

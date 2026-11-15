@@ -4,6 +4,7 @@ using UnityEngine;
 // Builds each troop's footprint from its current shape and soldiers (spec §3.3, Q-32):
 //   Line / Chain  rectangle from line point to line point; ahead of and behind the line separately, it reaches the
 //                 furthest soldier on that side + SoldierRadius, and at least the line's ranks (LineFootprint, SU-123).
+//                 The line is the front rank, so the ranks lie behind it (SU-161).
 //   Column        capsule along the march, as wide as the furthest soldier from the march axis.
 //   Idle / Rout   circle around the pivot, out to the furthest soldier.
 public static class TroopFootprintBuilder
@@ -43,9 +44,13 @@ public static class TroopFootprintBuilder
         Vector2 facing = TroopFootprint.RectFacing(formation.Start, formation.End, formation.Facing);
         MeasureAcross(troop, formation, facing, out float front, out float rear);
         float length = Vector2.Distance(formation.Start, formation.End);
-        float rankFloor = Mathf.Max(0f, LineGeometry.RankHalfWidth(length, troop.LivingSoldierCount) - RankFloorSlack);
+        // The line is the front rank (SU-161): the rank field reaches RankThickness ahead of it and the rank depth plus
+        // RankThickness behind it.
+        float frontFloor = Mathf.Max(0f, LineGeometry.RankThickness - RankFloorSlack);
+        float rearFloor = Mathf.Max(0f,
+            LineGeometry.RankDepth(length, troop.LivingSoldierCount) + LineGeometry.RankThickness - RankFloorSlack);
         return TroopFootprint.RectAcross(formation.Start, formation.End, facing,
-            Mathf.Max(front, rankFloor) + SoldierRadius, Mathf.Max(rear, rankFloor) + SoldierRadius);
+            Mathf.Max(front, frontFloor) + SoldierRadius, Mathf.Max(rear, rearFloor) + SoldierRadius);
     }
 
     // How far the soldiers alongside the line stand ahead of it (front) and behind it (rear), along facing; 0 for a side

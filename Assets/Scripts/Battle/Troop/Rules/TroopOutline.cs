@@ -3,7 +3,7 @@ using UnityEngine;
 // The outline a troop shows and is picked by (spec §6.1). It is drawn from the troop's formation, the shape its soldiers
 // are steered into (SoldierFieldPlanner), not from where each soldier happens to stand, so it does not pulse as soldiers
 // sway, jostle and charge:
-//   Line / Chain  the battle line from line point to line point, as deep as its ranks (LineGeometry.RankHalfWidth).
+//   Line / Chain  the battle line from line point to line point, its ranks behind it (the line is the front rank, SU-161).
 //   Column        the marching column trailing the pivot, along a smoothed march heading. Its length and width are the
 //                 soldier field's (LineGeometry column helpers, SU-120), so it hugs the column and is longer than wide.
 //   Idle          the blob disc (BlobRadiusScale x TroopRadius).
@@ -82,11 +82,13 @@ public sealed class TroopOutline
 
     // --- Formation outlines (pure) ---
 
-    // The battle line: a box from line point to line point, as deep as the line's ranks.
+    // The battle line: a box from line point to line point around the line's ranks. The line is the front rank, so the
+    // box reaches RankThickness ahead of it and the rank depth plus RankThickness behind it (SU-161), each padded.
     public static TroopFootprint Line(Vector2 start, Vector2 end, Vector2 facing, int livingSoldiers)
     {
         float length = Vector2.Distance(start, end);
-        return TroopFootprint.Rect(start, end, facing, LineGeometry.RankHalfWidth(length, livingSoldiers) + Padding);
+        return TroopFootprint.RectAcross(start, end, facing, LineGeometry.RankThickness + Padding,
+            LineGeometry.RankDepth(length, livingSoldiers) + LineGeometry.RankThickness + Padding);
     }
 
     // The marching column for a troop whose frontage comes from its soldier count (TroopFrontageRule, SU-117).

@@ -385,11 +385,11 @@ public sealed class TroopPlayerOrders : MonoBehaviour
             var placement = placements[i];
             if (kind == OrderKind.Line)
             {
-                float halfWidth = LineGeometry.RankHalfWidth(placement.Length, placement.Troop.LivingSoldierCount)
-                    + TroopConstants.SoldierRadius;
-                TroopFootprint ghost = TroopFootprint.Rect(
+                // The planned line is the front rank; the ghost is the line's outline, its ranks behind it (SU-161).
+                TroopFootprint ghost = TroopOutline.Line(
                     TroopOrderPlanner.PlannedLinePoint(placement, TroopConstants.RightEnd),
-                    TroopOrderPlanner.PlannedLinePoint(placement, TroopConstants.LeftEnd), placement.Facing, halfWidth);
+                    TroopOrderPlanner.PlannedLinePoint(placement, TroopConstants.LeftEnd), placement.Facing,
+                    placement.Troop.LivingSoldierCount);
                 TroopOrderOverlay.DrawFootprint(_camera, ghost, placement.Troop.ArmyColor);
                 TroopOrderOverlay.DrawFacingArrow(_camera, placement.Center, placement.Facing, placement.Troop.ArmyColor);
                 if (i + 1 < placements.Count && _planner.JoinsNext(i))

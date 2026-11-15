@@ -52,9 +52,9 @@ public sealed class TroopOrderPathView
 
     static TroopFootprint LineGhost(Troop troop, Vector2 centre, Vector2 facing, float length)
     {
+        // The ordered line is the front rank: the ghost is that line's outline, its ranks behind it (SU-161).
         Vector2 axis = new Vector2(-facing.y, facing.x) * (length * 0.5f);
-        float halfWidth = LineGeometry.RankHalfWidth(length, troop.LivingSoldierCount) + TroopConstants.SoldierRadius;
-        return TroopFootprint.Rect(centre - axis, centre + axis, facing, halfWidth);
+        return TroopOutline.Line(centre - axis, centre + axis, facing, troop.LivingSoldierCount);
     }
 
     // A polyline in GUI space with a shadow, chevrons along it and an arrowhead at its last point.

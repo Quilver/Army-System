@@ -11,6 +11,36 @@ SU-128 refer to v0.9 and may have moved.
 
 ---
 
+## 2026-11-15: Flush fronts in a battle line (branch troop-facing-controls)
+
+### SU-161 A battle line is the troop's front rank; troops of any depth stand flush (Decision + Assumptions, spec §3.3, §3.4, §6.2)
+Seen in playtest: three troops in one line order (one, two and four ranks) each had their ranks centred on the ordered
+line, so the four-rank troop's front stood a rank and a half ahead of the one-rank troop's.
+- Decision: troops in one line order or chain stand with their front ranks flush on the ordered line; their ranks
+  extend backward from it.
+- Assumption: the formation line (Start to End) is now the troop's front rank, and the pivot stays in the middle of the
+  ranks, half the rank depth (`LineGeometry.FrontRankOffset`: (ranks − 1) × LineSpacing ÷ 2) behind the line. A line
+  order (and a line placement) marches the pivot to that point behind the ordered line. Chain joints are the lines'
+  front corners, so chained troops are flush by construction and `ChainLinker` is unchanged. Chosen over making the
+  pivot the front-rank centre: a lone troop forming or dropping a threat line keeps its soldiers centred on the same
+  pivot (no half-depth lurch), and the soldier radius clamp needs only to reach the rear corners.
+- Assumption: the offset is worked out each frame from the living soldiers and the line's length. The pivot's march
+  target is fixed when the order is given, so if the rank count changes while the troop holds (losses, a chain
+  stretching the line), its front moves by half a rank spacing; it does not march to put it back.
+- Assumption: every position the player gives for a line now names the front rank's centre: right-drag lines (one troop
+  or several), deployment line placement and the order ghost. A Face order (Ctrl + right click) orders the line half
+  the depth ahead of the pivot, so the troop turns about its pivot and does not step. The enemy AI keeps planning pivot
+  positions: its hold and ranged-hold orders put the line half the depth ahead of the planned pivot, so its behaviour
+  is unchanged.
+- Assumption: the footprint's rank floor is RankThickness ahead of the line and the rank depth + RankThickness behind
+  it (each less the existing slack); the outline and the line ghosts (order preview, order path) reach RankThickness +
+  one soldier radius ahead of the line and the rank depth + RankThickness + one soldier radius behind it. Engaged lines
+  are still held EngagementGap apart between footprints.
+- Assumption: the heat band's rim on each side is the footprint's part ahead of its line (it was the whole half-width).
+  Front-rank charges are unchanged: the front rank is still the soldiers furthest toward the enemy.
+- Assumption: the soldier radius clamp reaches the far ends of the front and rear ranks (it reached only the line's
+  ends).
+
 ## 2026-11-15: Attack clicks and linked group lines (branch troop-facing-controls)
 
 ### SU-160 A multi-troop line stays linked end to end, 0.7–2 × frontage wide (Decision + Assumptions, spec §6.2, §3.4)

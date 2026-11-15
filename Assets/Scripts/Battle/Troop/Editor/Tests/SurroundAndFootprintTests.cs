@@ -205,20 +205,23 @@ public sealed class SurroundAndFootprintTests
 
     // --- Footprint (spec §3.3) ---
 
-    // A formed-up line is unchanged: its soldiers stand evenly either side of the line, so both sides match the old
-    // symmetric half-width.
+    // A formed-up line: the line is its front rank (SU-161), so the footprint reaches one soldier radius ahead of it and
+    // the ranks plus a soldier radius behind it (the old symmetric half-width, measured from the line).
     [Test]
-    public void FormedLineFootprint_MatchesTheSymmetricHalfWidth()
+    public void FormedLineFootprint_FrontRankOnTheLine_RanksBehindIt()
     {
         Troop troop = PlaceLine("Formed", 0, EnemySoldiers, EnemyFrontage, 0f, Vector2.right);
         Rebuild(troop);
         TroopFootprint footprint = troop.Footprint;
         float symmetric = TroopFootprintBuilder.LineHalfWidth(troop, troop.Formation);
+        float depth = LineGeometry.RankDepth(troop.Formation.Length, troop.LivingSoldierCount);
 
         Assert.AreEqual(FootprintKind.Rect, footprint.Kind);
-        Assert.AreEqual(symmetric, footprint.FrontHalfWidth, Tolerance);
+        Assert.Greater(depth, 0f, "a troop of several ranks");
+        Assert.AreEqual(TroopConstants.SoldierRadius, footprint.FrontHalfWidth, Tolerance);
+        Assert.AreEqual(depth + TroopConstants.SoldierRadius, footprint.RearHalfWidth, Tolerance);
         Assert.AreEqual(symmetric, footprint.RearHalfWidth, Tolerance);
-        Assert.AreEqual(0f, footprint.LineOffset, Tolerance);
+        Assert.AreEqual(depth * 0.5f, footprint.LineOffset, Tolerance);
     }
 
     // A line run ahead of its soldiers: the footprint covers the soldiers behind the line and the line's own ranks ahead
@@ -248,11 +251,10 @@ public sealed class SurroundAndFootprintTests
         }
         Assert.AreEqual(furthestBehind + TroopConstants.SoldierRadius, footprint.RearHalfWidth, Tolerance);
 
-        float length = Vector2.Distance(formation.Start, formation.End);
-        float rankFloor = Mathf.Max(0f, LineGeometry.RankHalfWidth(length, enemy.LivingSoldierCount)
-            - 2f * LineGeometry.RankThickness);
-        Assert.AreEqual(rankFloor + TroopConstants.SoldierRadius, footprint.FrontHalfWidth, Tolerance,
-            "Ahead of the line: only the line's ranks");
+        // The line is the front rank (SU-161): ahead of it the rank floor is only the front rank's thickness, less slack.
+        float frontFloor = Mathf.Max(0f, LineGeometry.RankThickness - 2f * LineGeometry.RankThickness);
+        Assert.AreEqual(frontFloor + TroopConstants.SoldierRadius, footprint.FrontHalfWidth, Tolerance,
+            "Ahead of the line: only the line's front rank");
     }
 
     [Test]

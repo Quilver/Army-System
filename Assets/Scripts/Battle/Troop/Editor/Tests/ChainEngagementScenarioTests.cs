@@ -87,7 +87,8 @@ public sealed class ChainEngagementScenarioTests
     Troop LineTroop(string name, Vector2 position, Vector2 facing, int team = 0, int frontage = 10, int soldiers = 12)
     {
         Troop troop = CreateTroop(name, team, position, frontage, soldiers);
-        troop.OrderLine(position, facing, troop.NaturalLineLength);
+        // The ordered line is the front rank (SU-161): order it half the rank depth ahead, so the pivot stays at position.
+        troop.OrderLine(troop.LineCenterAhead(position, facing, troop.NaturalLineLength), facing, troop.NaturalLineLength);
         return troop;
     }
 
@@ -421,7 +422,10 @@ public sealed class ChainEngagementScenarioTests
         Assert.AreEqual(FormationMode.Line, troop.FormationMode, "a line placement holds the line");
         TroopFootprint line = troop.Outline;
         Assert.AreEqual(FootprintKind.Rect, line.Kind);
-        Assert.Less(Vector2.Distance(spot, line.Center), 0.01f, "the outline is on the troop");
+        // The placed line is the front rank (SU-161): the outline is centred on the middle of the ranks, the pivot.
+        Vector2 ranksMiddle = spot - Vector2.up * troop.FrontRankOffset(troop.NaturalLineLength);
+        Assert.Less(Vector2.Distance(ranksMiddle, line.Center), 0.01f, "the outline is on the troop");
+        Assert.Less(Vector2.Distance(ranksMiddle, troop.transform.position), 0.01f, "the pivot in the middle of the ranks");
         Assert.Less(Vector2.Angle(Vector2.up, line.Facing), 0.5f, "facing the placed way");
         foreach (var soldier in troop.Soldiers)
             Assert.LessOrEqual(line.SignedDistance(troop.WorldPosition(soldier)), 1e-3f, "the soldiers stand in the line");

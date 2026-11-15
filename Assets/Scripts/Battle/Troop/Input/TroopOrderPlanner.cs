@@ -363,7 +363,8 @@ public sealed class TroopOrderPlanner
             _placements.Add(new Placement
             {
                 Troop = troop,
-                Center = troop.transform.position,
+                // The line's front rank, so the troop turns about its pivot and does not step (SU-161).
+                Center = troop.LineCenterAhead(troop.transform.position, facing, troop.LineLength),
                 Facing = facing,
                 Length = troop.LineLength
             });

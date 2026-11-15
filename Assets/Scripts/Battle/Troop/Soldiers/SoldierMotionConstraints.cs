@@ -86,8 +86,12 @@ public sealed class SoldierMotionConstraints
             radius = Mathf.Max(radius, _columnReach);
             TroopFormationData formation = _troop.Formation;
             if (formation == null) return radius;
+            // Every rank's ends (SU-161): the line is the front rank and the rear rank stands RankDepth behind it.
             Vector2 pivot = _troop.transform.position;
-            float reach = Mathf.Max(Vector2.Distance(pivot, formation.Start), Vector2.Distance(pivot, formation.End));
+            Vector2 back = -formation.Front * LineGeometry.RankDepth(formation.Length, _troop.LivingSoldierCount);
+            float reach = Mathf.Max(
+                Mathf.Max(Vector2.Distance(pivot, formation.Start), Vector2.Distance(pivot, formation.End)),
+                Mathf.Max(Vector2.Distance(pivot, formation.Start + back), Vector2.Distance(pivot, formation.End + back)));
             return Mathf.Max(radius, reach + TroopConstants.LineSpacing);
         }
     }

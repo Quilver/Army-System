@@ -169,9 +169,18 @@ in Edit mode at a fixed frame time.
 
 - `TroopFormationState.UpdateNatural` keeps the troop's own heading (SU-154): the ordered facing in line under a line
   order, else the march direction, else unchanged; a pursuer near its target squares up to it (SU-75). A line that
-  already stood wheels to a new heading at `LineWheelRateDeg` (SU-155). It builds the natural line through the pivot
-  on that heading while a line order is held or an enemy is within S: the ordered length, or
-  L_nat = Frontage × LineSpacing (SU-103). `ChainLinker` publishes the final line (`Formation`). The troop's size in units
+  already stood wheels to a new heading at `LineWheelRateDeg` (SU-155). It builds the natural line on that heading
+  while a line order is held or an enemy is within S: the ordered length, or L_nat = Frontage × LineSpacing (SU-103).
+  `ChainLinker` publishes the final line (`Formation`).
+- The line is the troop's front rank (SU-161). Start (end 0, right wing) and End (end 1, left wing) are the front
+  rank's ends, and chain joints are the front corners. The ranks stand behind the line, `LineGeometry.RankDepth`
+  ((ranks − 1) × LineSpacing) deep from the front rank's soldier centres to the rear rank's. The pivot stays in the
+  middle of the ranks: the natural line is built `LineGeometry.FrontRankOffset` (half the rank depth) ahead of it, and
+  `Troop.OrderLine` (and `PlaceAt` with a held line) puts the pivot that far behind the ordered line
+  (`Troop.PivotBehindLine` / `LineCenterAhead`). Everything that draws or measures the ranks offsets them from the line
+  with `TroopFormationData.RanksOffset` or `RankDepth`: the soldier field core, the footprint's rank floors, the outline
+  and line ghosts (`TroopOutline.Line`), the soldier radius clamp, and the heat band's rim (the footprint ahead of the
+  line). The troop's size in units
   (`Troop.Radius`: blob, soldier clamp, pivot spacing) is derived: L_nat / 1.8, or more when its soldiers need room,
   times `TroopSizeScale` (1.5, SU-131). Frontage comes from the soldier count (`TroopFrontageRule`, SU-117).
 - `FormationModeResolver`: Rout > Chain > Line > Column > Idle. `SoldierFieldPlanner.Shape` switches on the mode
@@ -273,6 +282,7 @@ run (Troop and Tween tests) is about 350 tests; the main files:
 | `MeleeDurationTests` | Spearmen melee length (explicit lever sweeps run by name). |
 | `BattleViewTests`, `SoldierViewTests`, `TroopCardHudTests`, `WeaponSpecialRuleTests` | Views, cards, weapon rules. |
 | `SoldierFacingTests` | Engaged soldiers facing the enemy within reach, the front otherwise, chargers, unengaged swing (SU-158). |
+| `FlushFrontTests` | Flush fronts (SU-161): a line order of 1-, 2- and 4-rank troops on one line, linked; no lurch on a threat line; every rank inside the clamp. |
 | `Tween/Editor/Tests` | `AchievementTests` (levels, growth, gains in battle, SU-132), `CampaignCharacterTests`. |
 
 `Editor/TroopCliSmoke.cs` plays a scene in real Play mode from the command line and fails on any logged error.

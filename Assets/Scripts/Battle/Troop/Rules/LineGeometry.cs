@@ -4,6 +4,8 @@ using System;
 //   L_nat = Frontage x LineSpacing (SU-103): a troop of frontage 5 stands 5 soldiers wide. It does not depend on the
 //   living soldier count (Q-12).
 //   Soldiers per rank = floor(length / LineSpacing). Ranks = ceil(soldiers / per rank).
+//   The line itself is the front rank (SU-161): the ranks reach RankDepth behind it, so troops of different depths
+//   placed on one line stand with their fronts flush.
 //   Troop radius (world units, used for the blob, the soldier clamp and spacing) = L_nat / NaturalLineRadiusScale, but at
 //   least the radius of a blob that holds the troop's soldiers, times TroopSizeScale (1.5, SU-131) so they have room.
 public static class LineGeometry
@@ -35,9 +37,18 @@ public static class LineGeometry
     public static int Ranks(int soldiers, float length, float spacing = TroopConstants.LineSpacing) =>
         Math.Max(1, (int)Math.Ceiling((double)Math.Max(0, soldiers) / SoldiersPerRank(length, spacing)));
 
-    // Half the depth of the soldier field around the centre line: rank spacing for every rank after the first.
+    // Half the depth of the soldier field around the middle of its ranks: rank spacing for every rank after the first.
     public static float RankHalfWidth(float length, int soldiers, float spacing = TroopConstants.LineSpacing) =>
-        (Ranks(soldiers, length, spacing) - 1) * spacing * 0.5f + RankThickness;
+        FrontRankOffset(length, soldiers, spacing) + RankThickness;
+
+    // From the front rank's soldier centres to the rear rank's: rank spacing for every rank after the first.
+    public static float RankDepth(float length, int soldiers, float spacing = TroopConstants.LineSpacing) =>
+        (Ranks(soldiers, length, spacing) - 1) * spacing;
+
+    // SU-161: the battle line (Start to End) is the troop's front rank, and its ranks stand behind it. The middle of the
+    // ranks, where a lone line troop's pivot stands, is this far behind the line: half the rank depth.
+    public static float FrontRankOffset(float length, int soldiers, float spacing = TroopConstants.LineSpacing) =>
+        RankDepth(length, soldiers, spacing) * 0.5f;
 
     // --- Marching column (spec §3.2, SU-120) ---
     // A marching troop forms a column that is longer than it is wide at every size. Shared by the soldier field

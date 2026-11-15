@@ -66,7 +66,8 @@ public sealed class BattleViewTests
     Troop LineTroop(string name, int team, Vector2 position, Vector2 facing)
     {
         Troop troop = CreateTroop(name, team, position);
-        troop.OrderLine(position, facing, troop.NaturalLineLength);
+        // The ordered line is the front rank (SU-161): order it half the rank depth ahead, so the pivot stays at position.
+        troop.OrderLine(troop.LineCenterAhead(position, facing, troop.NaturalLineLength), facing, troop.NaturalLineLength);
         return troop;
     }
 

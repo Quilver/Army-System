@@ -572,19 +572,35 @@ public sealed class Troop : MonoBehaviour
         State = TroopState.Moving;
     }
 
-    // Marches to center, turns to facing and holds a line of the given length (clamped to the stretch envelope).
+    // Turns to facing and holds a line of the given length (clamped to the stretch envelope) whose front rank is centred
+    // on center (SU-161): the pivot marches to the middle of the ranks, PivotBehindLine behind it.
     public void OrderLine(Vector2 center, Vector2 facing, float length)
     {
         if (IsRouted || IsRetreating || IsDisordered) return;
         _lineOrder.Order(center, facing, Mathf.Clamp(length, MinimumLineLength, MaximumLineLength));
-        _mover.MoveTo(center);
+        _mover.MoveTo(PivotBehindLine(_lineOrder.Center, _lineOrder.Facing, _lineOrder.Length));
         State = TroopState.Moving;
     }
+
+    // SU-161: the battle line is the front rank and the pivot stands in the middle of the ranks, half their depth
+    // (LineGeometry.FrontRankOffset for the living soldiers) behind it.
+    public float FrontRankOffset(float lineLength) => LineGeometry.FrontRankOffset(lineLength, LivingSoldierCount);
+
+    // The pivot of a line whose front rank is centred on lineCenter.
+    public Vector2 PivotBehindLine(Vector2 lineCenter, Vector2 facing, float lineLength) =>
+        lineCenter - SafeNormal(facing) * FrontRankOffset(lineLength);
+
+    // The front-rank centre of a line held around this pivot.
+    public Vector2 LineCenterAhead(Vector2 pivot, Vector2 facing, float lineLength) =>
+        pivot + SafeNormal(facing) * FrontRankOffset(lineLength);
+
+    static Vector2 SafeNormal(Vector2 facing) => facing.sqrMagnitude > 1e-6f ? facing.normalized : Vector2.zero;
 
     // Deployment (SU-101): puts the troop straight at center, facing the given way, without marching. Time stands still
     // while deploying, so its soldiers are put straight into the shape it is in, and the troop, its outline and its card
     // all show the same formation:
-    //   holdLine   a right-drag line: it holds a line of the given length, its soldiers standing in that line's ranks.
+    //   holdLine   a right-drag line: it holds a line of the given length, its soldiers standing in that line's ranks, the
+    //              front rank on the line through center and the ranks behind it (SU-161).
     //   otherwise  the spawn and a right-click: it stands Idle, like a troop arriving from a Move, its soldiers in the
     //              blob around the pivot.
     // Ignored once routed or retreating.
@@ -596,18 +612,22 @@ public sealed class Troop : MonoBehaviour
         facing.Normalize();
         _mover.CancelOrders();
         _lineOrder.Cancel();
-        transform.SetPositionAndRotation(new Vector3(center.x, center.y, transform.position.z),
+        float lineLength = Mathf.Clamp(length, MinimumLineLength, MaximumLineLength);
+        // A held line's front rank is centred on center (SU-161); the pivot stands in the middle of the ranks behind it.
+        Vector2 pivot = holdLine ? PivotBehindLine(center, facing, lineLength) : center;
+        transform.SetPositionAndRotation(new Vector3(pivot.x, pivot.y, transform.position.z),
             Quaternion.Euler(0f, 0f, Mathf.Atan2(facing.y, facing.x) * Mathf.Rad2Deg));
         // It stands facing the given way until it marches or is ordered to face elsewhere (SU-154).
         if (_formationState != null) _formationState.SetHeading(facing);
         bool formationOn = _formationState != null && _formationState.enabled;
         if (holdLine)
         {
-            float lineLength = Mathf.Clamp(length, MinimumLineLength, MaximumLineLength);
             _lineOrder.Order(center, facing, lineLength);
             // The line moves with the troop at once: until the combat world rebuilds it next frame, the formation (and
             // the outline drawn from it) would still be where the troop stood before it was placed (SU-92).
-            if (formationOn) Formation = TroopFormationState.Build(center, facing, lineLength, HasThreatWithinSDistance);
+            if (formationOn)
+                Formation = TroopFormationState.Build(pivot, facing, lineLength, HasThreatWithinSDistance,
+                    FrontRankOffset(lineLength));
             _formationMode = IsChained ? FormationMode.Chain : FormationMode.Line;
             _roster.ArrangeInLine(lineLength);
             _soldiersInPlacedLine = true;

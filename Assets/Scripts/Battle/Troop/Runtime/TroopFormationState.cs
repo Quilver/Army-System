@@ -1,7 +1,7 @@
 using UnityEngine;
 
-// The troop's battle line (spec §3.3) and its own facing (SU-154). Each frame it builds the troop's natural line through its
-// pivot when the troop has an enemy within S_Distance or holds a player line order.
+// The troop's battle line (spec §3.3) and its own facing (SU-154). Each frame it builds the troop's natural line (its front
+// rank, half the rank depth ahead of its pivot, SU-161) when the troop has an enemy within S_Distance or holds a player line order.
 // Facing (SU-154): troops no longer turn toward enemies by themselves. The troop's heading is
 //   - the ordered facing while it is in line under a line order;
 //   - otherwise where it is marching (Move, Pursue, or the march to a line order's place);
@@ -94,7 +94,10 @@ public sealed class TroopFormationState : MonoBehaviour
         }
 
         float length = ordered ? order.Length : _troop.NaturalLineLength;
-        _natural = Build(transform.position, _heading, length, _hasThreat);
+        // SU-161: the line is the front rank, half the rank depth ahead of the pivot, so the soldiers' ranks stay centred on
+        // the pivot (no lurch when a lone troop forms or drops its line) and troops of any depth are flush on one line.
+        _natural = Build(transform.position, _heading, length, _hasThreat,
+            LineGeometry.FrontRankOffset(length, _troop.LivingSoldierCount));
     }
 
     // SU-154, SU-155: turns the heading toward the ordered facing (in line under a line order) or the march, wheeling
@@ -126,10 +129,14 @@ public sealed class TroopFormationState : MonoBehaviour
             : target.normalized;
     }
 
-    public static TroopFormationData Build(Vector2 center, Vector2 facing, float length, bool threatFacing)
+    // The line through the troop's front rank (SU-161): its middle stands frontOffset ahead of the pivot along facing
+    // (LineGeometry.FrontRankOffset, half the rank depth), so the pivot is in the middle of the ranks behind it.
+    public static TroopFormationData Build(Vector2 pivot, Vector2 facing, float length, bool threatFacing,
+        float frontOffset = 0f)
     {
         if (facing.sqrMagnitude < MinimumHeadingSquared) facing = Vector2.right;
         facing.Normalize();
+        Vector2 center = pivot + facing * Mathf.Max(0f, frontOffset);
         Vector2 tangent = new(-facing.y, facing.x);
         Vector2 half = tangent * (length * 0.5f);
         return new TroopFormationData

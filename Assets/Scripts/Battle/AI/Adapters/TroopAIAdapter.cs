@@ -163,7 +163,10 @@ namespace LeveragedWars.Battle.AI
         {
             rangedTarget = null;
             if (Troop == null) return;
-            Troop.OrderLine(position, Facing2D(facing), Troop.NaturalLineLength);
+            // The AI plans pivot positions; the ordered line is the front rank, half the rank depth ahead (SU-161).
+            Vector2 lineFacing = Facing2D(facing);
+            Troop.OrderLine(Troop.LineCenterAhead(position, lineFacing, Troop.NaturalLineLength), lineFacing,
+                Troop.NaturalLineLength);
         }
 
         public void OrderMove(Vector3 position, Vector3 facing, bool run)
@@ -242,7 +245,8 @@ namespace LeveragedWars.Battle.AI
             // In range: stop and face the target. Re-order only when moving or facing too far off, so the line is not
             // reset every check.
             if (self.IsMoving || Vector2.Angle(self.Facing, direction) > FacingToleranceDegrees)
-                self.OrderLine(position, direction, self.NaturalLineLength);
+                self.OrderLine(self.LineCenterAhead(position, direction, self.NaturalLineLength), direction,
+                    self.NaturalLineLength);
         }
 
         static Vector2 Facing2D(Vector3 facing)
