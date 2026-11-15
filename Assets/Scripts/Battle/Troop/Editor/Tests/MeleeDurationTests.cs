@@ -107,7 +107,11 @@ public sealed class MeleeDurationTests
         public float EngagedAt, EndedAt;
         public string Result;
         public int AttackerAlive, DefenderAlive, AttackerRetreats, DefenderRetreats, AttackerCharges, DefenderCharges;
+        // Real clashes (duels) and feints that reached contact (SU-164), counted on the left troop (in every one).
+        public int Clashes, Feints;
         public float Duration => EndedAt - EngagedAt;
+        public float ClashesPerSecond => Duration > 0f ? Clashes / Duration : 0f;
+        public float VisiblePerSecond => Duration > 0f ? (Clashes + Feints) / Duration : 0f;
     }
 
     // The left troop attacks the right one (Pursue, so Assault on contact) and keeps attacking, as a player would: after
@@ -137,6 +141,11 @@ public sealed class MeleeDurationTests
             if (fight.EngagedAt < 0f && left != null && left.IsEngaged) fight.EngagedAt = t;
             leftCharges += NewCharges(left, leftCharging);
             rightCharges += NewCharges(right, rightCharging);
+            if (left != null)
+            {
+                fight.Clashes = left.MeleeMetrics.TotalClashes;
+                fight.Feints = left.MeleeMetrics.TotalFeints;
+            }
             if (leftGone || rightGone)
             {
                 fight.EndedAt = t;
@@ -163,14 +172,14 @@ public sealed class MeleeDurationTests
         troop.Pursue(enemy);
     }
 
-    // Charges started this frame: soldiers charging now that were not charging last frame.
+    // Real charges started this frame: soldiers charging (not feinting, SU-164) now that were not charging last frame.
     static int NewCharges(Troop troop, HashSet<SoldierAgentState> charging)
     {
         if (troop == null) return 0;
         int started = 0;
         foreach (var soldier in troop.Soldiers)
         {
-            if (soldier.IsCharging) { if (charging.Add(soldier)) started++; }
+            if (soldier.IsCharging && !soldier.IsFeinting) { if (charging.Add(soldier)) started++; }
             else charging.Remove(soldier);
         }
         return started;
@@ -180,17 +189,28 @@ public sealed class MeleeDurationTests
     {
         var text = new StringBuilder();
         text.AppendLine($"MELEE DURATION {title}");
-        float total = 0f;
+        float total = 0f, clashRate = 0f, visibleRate = 0f;
+        int leftWins = 0, leftAlive = 0, rightAlive = 0;
         for (int seed = 1; seed <= seeds; seed++)
         {
             Fight f = Run(seed * 7919, bothAttack, characters);
             total += f.Duration;
+            clashRate += f.ClashesPerSecond;
+            visibleRate += f.VisiblePerSecond;
+            if (f.Result == "right routed") leftWins++;
+            leftAlive += f.AttackerAlive;
+            rightAlive += f.DefenderAlive;
             text.AppendLine($"  seed {seed}: engaged {f.EngagedAt:F1}s, ended {f.EndedAt:F1}s, melee {f.Duration:F1}s, {f.Result}; " +
                 $"alive L{f.AttackerAlive} R{f.DefenderAlive}, retreats L{f.AttackerRetreats} R{f.DefenderRetreats}, " +
-                $"charges L{f.AttackerCharges} R{f.DefenderCharges}");
+                $"charges L{f.AttackerCharges} R{f.DefenderCharges}; clashes {f.Clashes} ({f.ClashesPerSecond:F3}/s), " +
+                $"feints {f.Feints}, visible {f.VisiblePerSecond:F3}/s");
         }
         average = total / seeds;
         text.AppendLine($"  average melee {average:F1}s ({average / 60f:F2} min)");
+        text.AppendLine($"  left won {leftWins}/{seeds}, average alive L{(float)leftAlive / seeds:F1} R{(float)rightAlive / seeds:F1}, " +
+            $"real clashes {clashRate / seeds:F3}/s, visible clashes {visibleRate / seeds:F3}/s, feints per charge " +
+            $"{TroopTuning.Active.FeintsPerCharge:0.##}, knock-back {TroopTuning.Active.FeintKnockBackScale:0.##}, " +
+            $"timeout {TroopTuning.Active.FeintTimeoutSeconds:0.##} s");
         return text.ToString();
     }
 
@@ -243,6 +263,30 @@ public sealed class MeleeDurationTests
             return;
         }
         Assert.Fail($"No Battle Tuning section has the field {property}");
+    }
+
+    // Feints (SU-164): the same fight with FeintsPerCharge at the given value, to compare melee length, winners and real
+    // clashes per second with and without feints.
+    [Explicit("Tuning sweep: run by name")]
+    [TestCase(0f)]
+    [TestCase(3f)]
+    public void SpearmenMelee_Feints(float feints)
+    {
+        SetFloat("_feintsPerCharge", feints);
+        Levers(true, true, 0, 8, false);
+    }
+
+    // Feint sweep (SU-164): feints per charge, knock-back share and feint timeout.
+    [Explicit("Tuning sweep: run by name")]
+    [TestCase(3f, 0.25f, 1f)]
+    [TestCase(3f, 0.5f, 3f)]
+    [TestCase(1.5f, 0.5f, 1f)]
+    public void SpearmenMelee_FeintSweep(float feints, float knockBack, float timeout)
+    {
+        SetFloat("_feintsPerCharge", feints);
+        SetFloat("_feintKnockBackScale", knockBack);
+        SetFloat("_feintTimeoutSeconds", timeout);
+        Levers(true, true, 0, 8, false);
     }
 
     [Explicit("Tuning sweep: run by name")]

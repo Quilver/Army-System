@@ -41,6 +41,8 @@ public sealed class TroopEditor : Editor
             EditorGUILayout.FloatField("Charges / soldier / window", s.ChargesPerSoldierPerWindow);
             EditorGUILayout.IntField("Followers joined", s.Followers);
             EditorGUILayout.IntField("Clashes", s.Clashes);
+            EditorGUILayout.IntField("Feints started", s.FeintsStarted);
+            EditorGUILayout.IntField("Feints (contact)", s.Feints);
             EditorGUILayout.IntField("Duels won", s.DuelWins);
             EditorGUILayout.FloatField("Duel win rate (%)", s.DuelWinRate * 100f);
             EditorGUILayout.FloatField("Damage done", s.DamageDone);

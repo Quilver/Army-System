@@ -4,6 +4,8 @@ using UnityEngine;
 // Rolling record of one troop's melee over the last Window seconds: charges started by its soldiers, clashes they took
 // part in, duels they won, and damage dealt and taken. Samples older than the window are dropped; Reset starts a fresh
 // record. The charge rate per soldier is the check for spec §4.3 (about Aggression charges per ChargeWindowSeconds, SU-112).
+// Feints (SU-164) are counted apart: Charges, Clashes and DuelWins are real charges and clashes only. The Total* counts
+// run from construction or Reset without a window, for measurements.
 public sealed class MeleeMetrics
 {
     public const float DefaultWindow = 30f;
@@ -20,12 +22,39 @@ public sealed class MeleeMetrics
 
     public float Window => _window;
 
-    public void RecordChargeStarted() => Add(new Sample { Time = Time.time, Charges = 1 });
+    public int TotalCharges { get; private set; }
+    public int TotalClashes { get; private set; }
+    public int TotalFeintsStarted { get; private set; }
+    public int TotalFeints { get; private set; }
+
+    public void RecordChargeStarted()
+    {
+        TotalCharges++;
+        Add(new Sample { Time = Time.time, Charges = 1 });
+    }
+
+    // A feint started by one of the troop's soldiers (SU-164).
+    public void RecordFeintStarted()
+    {
+        TotalFeintsStarted++;
+        Add(new Sample { Time = Time.time, FeintsStarted = 1 });
+    }
+
+    // A feint that reached contact, the troop's soldier on either side (SU-164).
+    public void RecordFeint()
+    {
+        TotalFeints++;
+        Add(new Sample { Time = Time.time, Feints = 1 });
+    }
 
     public void RecordFollowerJoined() => Add(new Sample { Time = Time.time, Followers = 1 });
 
     // A clash the troop took part in (either side).
-    public void RecordClash() => Add(new Sample { Time = Time.time, Clashes = 1 });
+    public void RecordClash()
+    {
+        TotalClashes++;
+        Add(new Sample { Time = Time.time, Clashes = 1 });
+    }
 
     // A duel this troop's soldier won.
     public void RecordDuelWin() => Add(new Sample { Time = Time.time, DuelWins = 1 });
@@ -48,6 +77,7 @@ public sealed class MeleeMetrics
     {
         _samples.Clear();
         _startTime = Time.time;
+        TotalCharges = TotalClashes = TotalFeintsStarted = TotalFeints = 0;
     }
 
     public Summary Snapshot(int livingSoldiers)
@@ -59,6 +89,8 @@ public sealed class MeleeMetrics
             summary.Charges += sample.Charges;
             summary.Followers += sample.Followers;
             summary.Clashes += sample.Clashes;
+            summary.FeintsStarted += sample.FeintsStarted;
+            summary.Feints += sample.Feints;
             summary.DuelWins += sample.DuelWins;
             summary.DamageDone += sample.DamageDone;
             summary.DamageReceived += sample.DamageReceived;
@@ -89,6 +121,8 @@ public sealed class MeleeMetrics
         public int Charges;
         public int Followers;
         public int Clashes;
+        public int FeintsStarted;
+        public int Feints;
         public int DuelWins;
         public float DamageDone;
         public float DamageReceived;
@@ -103,7 +137,9 @@ public sealed class MeleeMetrics
         public int LivingSoldiers;
         public int Charges;
         public int Followers;
-        public int Clashes;
+        public int Clashes;      // real clashes (a duel each)
+        public int FeintsStarted;
+        public int Feints;       // feints that reached contact (SU-164)
         public int DuelWins;
         public float DamageDone;
         public float DamageReceived;

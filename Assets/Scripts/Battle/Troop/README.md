@@ -30,12 +30,14 @@ report, sounds) follows a battle; Troop code never references the campaign.
    moves an engaged troop).
 4. **Charges** (`ChargeCoordinator`): front-rank soldiers (SU-106) of a troop within `EngagementGap` of an enemy troop
    charge at `Aggression / 45 s` (`ChargeWindowSeconds`, Melee Tuning, SU-112), reaching up to `A_Distance` (SU-95); Discipline-nearest friends follow. Stunned
-   soldiers (SU-107) do neither.
+   soldiers (SU-107) do neither. Feints (SU-164): a second roll at `FeintsPerCharge` (3) x that rate, on the troop's
+   own feint stream, sends a soldier at an enemy that recoils on contact with no duel, damage or followers.
 5. **Ranged** (`RangedFireController`, `TroopProjectiles`): stationary, unengaged troops fire: Volley weapons in sync,
    others each on its own timing (SU-105).
 6. **Troop update** (`Troop.Update`): morale decay and healing, break test, retreat (in melee) or disorder (out of melee,
    SU-104), rout, pivot movement, soldier steering.
-7. **Contacts** (`SoldierContactResolver`, `DuelResolver`): bounces, clashes, duels, damage through armour, Shock.
+7. **Contacts** (`SoldierContactResolver`, `DuelResolver`): bounces, clashes, duels, damage through armour, Shock;
+   feints end on contact with a knock-back and nothing else (`DuelResolver.ResolveFeint`).
 
 ## Folders
 
@@ -88,7 +90,8 @@ report, sounds) follows a battle; Troop code never references the campaign.
   waypoint is drawn with arrows (red for an attack, ending at the target, whose footprint is outlined; the ordered
   line's footprint for a line order). Selected troops show it all the time (SU-97).
 - **Combat log**: the arrow tab on the left edge opens and hides a log of every clash and shot, with bonuses and damage
-  (SU-110). Clashes / Shots toggles filter it.
+  (SU-110), and of every feint as a dimmer "Parried" line (SU-164). Clashes / Shots toggles filter it (feints go with
+  Clashes).
 - **F5** toggles the engagement heat map: a red band across the gap between engaged troops' lines, most intense in the
   middle of the gap and fading smoothly toward each troop's line and the ends of the engagement. It covers only the
   stretch of front within `A_Distance` of the enemy (SU-96). Its settings are on

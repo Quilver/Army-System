@@ -72,6 +72,33 @@ public sealed class DuelResolver
         second.Soldier.StartClashCooldown(tuning.ClashCooldownSeconds);
     }
 
+    // A feint in contact (SU-164): both soldiers recoil (FeintKnockBackScale of a clash's knock-back) and flash, and the
+    // feint ends. No duel, damage, Shock, stun or clash cooldown. A is the feinter (the earlier one if both feint).
+    public void ResolveFeint(SoldierContact first, SoldierContact second)
+    {
+        TroopTuning tuning = TroopTuning.Active;
+        Vector2 positionFirst = first.Troop.WorldPosition(first.Soldier);
+        Vector2 positionSecond = second.Troop.WorldPosition(second.Soldier);
+        first.Troop.MeleeMetrics.RecordFeint();
+        second.Troop.MeleeMetrics.RecordFeint();
+        KnockBack(first, second, positionFirst, positionSecond, tuning.FeintKnockBackScale);
+
+        bool firstIsA = FirstIsA(first, second);
+        SoldierContact a = firstIsA ? first : second;
+        SoldierContact b = firstIsA ? second : first;
+        CombatLog.Record(new CombatLogEntry
+        {
+            Kind = CombatLogKind.Feint,
+            Time = CombatLog.Now,
+            Attacker = CombatLogSoldier.Of(a.Troop, a.Soldier),
+            Defender = CombatLogSoldier.Of(b.Troop, b.Soldier),
+        });
+        BattleEvents.RaiseSoldierFeinted(a.Troop, b.Troop, (positionFirst + positionSecond) * 0.5f);
+
+        EndCharge(first.Soldier);
+        EndCharge(second.Soldier);
+    }
+
     static bool FirstIsA(SoldierContact first, SoldierContact second)
     {
         SoldierAgentState x = first.Soldier;
@@ -162,16 +189,16 @@ public sealed class DuelResolver
     }
 
     // Knock-back on both soldiers (magnitudes kept from the earlier clash code, provisional).
-    static void KnockBack(SoldierContact a, SoldierContact b, Vector2 positionA, Vector2 positionB)
+    static void KnockBack(SoldierContact a, SoldierContact b, Vector2 positionA, Vector2 positionB, float scale = 1f)
     {
         Vector2 towardB = positionB - positionA;
         towardB = towardB.sqrMagnitude > 1e-8f ? towardB.normalized : Vector2.right;
         // 0.3 units: what every radius-5 troop had before the frontage (SU-103), so a clash knocks back as before.
-        const float impactDistance = 0.3f;
+        float impactDistance = 0.3f * scale;
         float maxSpeed = Mathf.Max(
             a.Soldier.Character != null ? a.Soldier.Character.MaxSpeed : 0f,
             b.Soldier.Character != null ? b.Soldier.Character.MaxSpeed : 0f);
-        float impactSpeed = Mathf.Max(maxSpeed * 1.7f, 5.5f);
+        float impactSpeed = Mathf.Max(maxSpeed * 1.7f, 5.5f) * scale;
         a.Troop.ResolveContact(a.Soldier, -towardB * impactDistance, -towardB * impactSpeed);
         b.Troop.ResolveContact(b.Soldier, towardB * impactDistance, towardB * impactSpeed);
         a.Troop.PulseMeleeClash(a.Soldier, ClashPulseDuration);

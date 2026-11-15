@@ -4,7 +4,8 @@ namespace AudioSystem
 {
     // Battle sound effects for the troop system. One per battle scene: plays a strike sound for melee hits that deal
     // damage, a shot sound for each volley, a death grunt for each soldier killed and a hit sound for each projectile
-    // that hits. Each sound type is rate limited so a large melee does not restart the same source every frame.
+    // that hits. A feint (SU-164) plays a strike sound as a one-shot at Feint Volume, so it is lighter and never cuts off
+    // a real strike. Each sound type is rate limited so a large melee does not restart the same source every frame.
     public class ModelSoundEffects : MonoBehaviour
     {
         [SerializeField]
@@ -13,12 +14,15 @@ namespace AudioSystem
         AudioSource _attackSource, _shootSource, _deathGruntSource, _projectileHitSource;
         [SerializeField, Min(0f), Tooltip("Shortest time between two sounds of the same type.")]
         float _minimumInterval = 0.08f;
+        [SerializeField, Range(0f, 1f), Tooltip("Volume of a feint's strike sound (SU-164), as a share of a real strike's.")]
+        float _feintVolume = 0.35f;
 
-        float _nextAttack, _nextShot, _nextDeath, _nextHit;
+        float _nextAttack, _nextShot, _nextDeath, _nextHit, _nextFeint;
 
         void OnEnable()
         {
             BattleEvents.SoldierStruck += StrikeSound;
+            BattleEvents.SoldierFeinted += FeintSound;
             BattleEvents.VolleyFired += ShootSound;
             BattleEvents.SoldierKilled += DeathSound;
             BattleEvents.ProjectileLanded += ProjectileSound;
@@ -27,6 +31,7 @@ namespace AudioSystem
         void OnDisable()
         {
             BattleEvents.SoldierStruck -= StrikeSound;
+            BattleEvents.SoldierFeinted -= FeintSound;
             BattleEvents.VolleyFired -= ShootSound;
             BattleEvents.SoldierKilled -= DeathSound;
             BattleEvents.ProjectileLanded -= ProjectileSound;
@@ -34,6 +39,14 @@ namespace AudioSystem
 
         void StrikeSound(Troop attacker, Troop victim, Vector2 position) =>
             Play(_attackSource, _attackSounds, ref _nextAttack, 1f);
+
+        void FeintSound(Troop feinter, Troop other, Vector2 position)
+        {
+            AudioSource source = _attackSource;
+            if (source == null || _attackSounds == null || _attackSounds.Length == 0 || Time.time < _nextFeint) return;
+            _nextFeint = Time.time + _minimumInterval;
+            source.PlayOneShot(_attackSounds[Random.Range(0, _attackSounds.Length)], _feintVolume);
+        }
 
         void ShootSound(Troop shooter) =>
             Play(_shootSource, _shootSounds, ref _nextShot, Random.Range(0.8f, 1f));

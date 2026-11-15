@@ -11,6 +11,47 @@ SU-128 refer to v0.9 and may have moved.
 
 ---
 
+## 2026-11-15: Feints (branch troop-facing-controls)
+
+### SU-164 Soldiers feint three times for every real charge (Decision + Assumptions, spec §4.3, §4.5, §8)
+The designer wants to see more clashes in melee, for feedback and enjoyment, without speeding the fight up.
+- Decision: three feints for every real charge (`FeintsPerCharge`, Melee Tuning, 3). The real charge roll is
+  unchanged. Every soldier that may charge also rolls for a feint at `FeintsPerCharge` x its charge rate, on a seeded
+  random stream of its own (`Troop.FeintRandom`), so the charge stream draws as before. With `FeintsPerCharge` 0 the
+  battle is exactly as before (`FeintTests.FeintsOff_SeededMelee_MatchesThePreFeintResult`, recorded with the old code).
+- Decision: a feint is a charge that ends without a duel. The soldier runs at its target as a charger does; on contact
+  both soldiers recoil and flash as in a clash and the feint ends. No duel, no damage, no Shock, no stun and no clash
+  cooldown on either soldier. A feinting soldier cannot start a real charge.
+- Decision: a feint takes no followers, throws no Fire & Engage volley and spends no ammunition (those volleys come
+  only with a new engagement or a retreat, SU-90, SU-151), and its knock-back is `FeintKnockBackScale` (0.5) of a
+  clash's.
+- Decision: feedback. `BattleEvents.SoldierFeinted` is raised on contact; `ModelSoundEffects` plays a strike clip for it
+  as a one-shot at `Feint Volume` (0.35, a field on the component, not Battle Tuning), with its own rate limit, so it is
+  quieter and never cuts off a real strike. The combat log records it as a dimmer "Parried" line
+  (`CombatLogKind.Feint`), shown and hidden by the Clashes toggle. `MeleeMetrics` counts feints apart (`Feints`,
+  `FeintsStarted`), so its charge, clash and duel figures are real ones; it also keeps running totals for measurements.
+- Assumption: the feint roll is made only when the soldier's charge roll fails, so a soldier never starts both in one
+  frame. Feints still start at three times the charge rate (`FeintTests.Feints_StartAtAboutThreeTimesTheChargeRate`).
+- Assumption: a feint that has not reached an enemy soldier after `FeintTimeoutSeconds` (1 s, Melee Tuning) ends
+  quietly. With the charge's 3 s timeout feinting soldiers were away from the charge roll long enough to cut real
+  clashes per second by 5 to 11% and lengthen melees by 18 to 27%.
+- Assumption: a troop in Assault does not feint, so feints never take the place of its Assault charges. Without this
+  the Huskarl-on-Spearman match-up went from 6/8 Huskarl wins to 2-3/8.
+- Assumption: a feint leaves no rush back (SU-43): the soldier walks back to its place and may charge again at once.
+- Assumption: like a charge, a feint ends on contact with any enemy soldier, not only its target. If that soldier is
+  making a real charge, the feint is dropped and the real charge clashes with it as with any soldier. Two feinting
+  soldiers meeting make one feint contact. After a feint neither soldier has a clash cooldown, so two soldiers still in
+  contact may clash under the ordinary contact rule (spec §4.5 (b)).
+- Assumption: `FeintsPerCharge` is a decimal, so the designer can try values between whole numbers.
+- Assumption: feints are not marked in the debug overlay's clash markers (`TroopDebugSnapshot`); only real clashes are.
+- Measured (8 seeds each, project data; before = `FeintsPerCharge` 0, identical to the old code; after = 3 with a 1 s
+  feint): Spearman mirror melee 255 s -> 259 s, real clashes 0.460 -> 0.483 /s, attacker won 7/8 -> 8/8, visible clashes
+  0.46 -> 1.10 /s. Cav on Spearman 175 s -> 161 s, 0.497 -> 0.463 /s, 8/8 -> 8/8, visible 0.50 -> 1.12 /s. Huskarl on
+  Spearman 58 s -> 59 s, 0.563 -> 0.537 /s, 6/8 -> 3/8, visible 0.56 -> 0.87 /s. Cav on Archer 14 s -> 17 s and
+  Skirmisher on Archer 12 s -> 11 s (a handful of clashes each; noise). Visible clashes are about 1.5 to 2.4x before, not
+  4x: the short timeout makes many feints fizzle before contact. `MeleeDurationTests.SpearmenMelee_Feints`,
+  `SpearmenMelee_FeintSweep`, `ClassMatchupTests.HeadOn_Feints` and `HuskarlSpearman_FeintSweep` (explicit) measure it.
+
 ## 2026-11-15: The assaulting troop wheels to maximise its frontage (branch troop-facing-controls)
 
 ### SU-163 An engaged pursuer wheels square to the face it attacks and holds instead of marching into it (Decision + Assumptions, spec §3.3, §4.1, §8)

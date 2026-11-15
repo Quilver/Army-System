@@ -15,6 +15,10 @@ public static class BattleEvents
     // A melee hit that dealt damage: attacker, victim, and the victim soldier's world position.
     public static event Action<Troop, Troop, Vector2> SoldierStruck;
 
+    // A feint reached contact (SU-164): the feinting troop, the other troop, and the world position between the two
+    // soldiers. No damage was dealt.
+    public static event Action<Troop, Troop, Vector2> SoldierFeinted;
+
     // A troop fired a volley.
     public static event Action<Troop> VolleyFired;
 
@@ -31,6 +35,7 @@ public static class BattleEvents
         TroopDefeated = null;
         SoldierKilled = null;
         SoldierStruck = null;
+        SoldierFeinted = null;
         VolleyFired = null;
         ProjectileLanded = null;
         TroopBroke = null;
@@ -41,6 +46,8 @@ public static class BattleEvents
         SoldierKilled?.Invoke(victim, soldier, attacker);
     internal static void RaiseSoldierStruck(Troop attacker, Troop victim, Vector2 position) =>
         SoldierStruck?.Invoke(attacker, victim, position);
+    internal static void RaiseSoldierFeinted(Troop feinter, Troop other, Vector2 position) =>
+        SoldierFeinted?.Invoke(feinter, other, position);
     internal static void RaiseVolleyFired(Troop shooter) => VolleyFired?.Invoke(shooter);
     internal static void RaiseProjectileLanded(Troop shooter, Troop target, bool hit, Vector2 position) =>
         ProjectileLanded?.Invoke(shooter, target, hit, position);

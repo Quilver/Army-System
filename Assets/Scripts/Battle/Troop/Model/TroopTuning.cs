@@ -189,6 +189,10 @@ public sealed class TroopTuning
     // Window for the charge rate: EffectiveAggression charges per this many seconds (SU-112).
     public float ChargeWindowSeconds => Melee.ChargeWindowSeconds;
     public float ClashCooldownSeconds => Melee.ClashCooldownSeconds;
+    // Feints per real charge, a feint's knock-back share and its timeout (SU-164).
+    public float FeintsPerCharge => Melee.FeintsPerCharge;
+    public float FeintKnockBackScale => Melee.FeintKnockBackScale;
+    public float FeintTimeoutSeconds => Melee.FeintTimeoutSeconds;
     public float SupportRadius => Melee.SupportRadius;
     public float SpearSupportRangeMultiplier => Melee.SpearSupportRangeMultiplier;
     public float SupportBonusPerSupportPoint => Melee.SupportBonusPerSupportPoint;

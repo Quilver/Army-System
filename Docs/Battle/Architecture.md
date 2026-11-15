@@ -15,7 +15,8 @@ see `Troop/README.md`.
   - `Army` (`Controller/Army.cs`) for the army colour and `Troop.Army`.
   - `MovementSystem.NavPathfinder` (`Pathfinding/`) for marching paths.
 - **What uses it:** `Battle`, `Army`, `CapturePoint` and the battle-end conditions (`Battle End/`), and through
-  `BattleEvents` (`Combat/BattleEvents.cs`: soldier kills, troop defeats, morale breaks with their cause, SU-114) the Tween
+  `BattleEvents` (`Combat/BattleEvents.cs`: soldier kills, troop defeats, morale breaks with their cause, SU-114; strikes
+  and feints for sound, SU-164) the Tween
   system: achievements, the battle report and battle flow, and roster deployment (`Assets/Scripts/Tween/`). Troop code never references Tween or Campaign code (SU-57, SU-58).
 - **Character classes:** `CharacterClass`, `StatCaps` and `CharacterStat` sit in `Model/` because `CharacterProfile`
   holds a class. `CampaignCharacter` and `StatGrowths` are campaign data in `Assets/Scripts/Tween/Characters/`.
@@ -132,11 +133,19 @@ in Edit mode at a fixed frame time.
   troop break, or the 3 s timeout; followers return when their charger's charge ends. No cooldown, no contagion.
   Only the front rank starts charges (SU-106, `CollectFrontRank`: one rank's worth of the soldiers furthest toward each
   chargeable enemy troop). Stunned soldiers neither charge nor follow (SU-107).
+- Feints (SU-164): a soldier whose charge roll fails rolls again on `Troop.FeintRandom` (a second seeded stream, so the
+  charge stream is untouched) at `FeintsPerCharge` × the rate; not while its troop is in Assault. A feint is a charge
+  with `SoldierChargeState.IsFeint` set (`SoldierAgentState.IsFeinting`): it runs like one, takes no followers, times
+  out after `FeintTimeoutSeconds` and leaves no rush back. `SoldierContactResolver` sends a feint in contact to
+  `DuelResolver.ResolveFeint` (knock-back × `FeintKnockBackScale`, clash pulse, `CombatLogKind.Feint`,
+  `BattleEvents.SoldierFeinted`, `MeleeMetrics.RecordFeint`; no duel, damage, Shock or cooldown) unless the other soldier
+  is making a real charge, which drops the feint and clashes as usual.
 - Stunned soldiers (SU-107, `SoldierLifeState.Stunned`): 0 HP with Bruise >= Bleed stuns instead of killing; alive,
   cannot charge or support, heal from 0 HP and recover at `StunRecoverHp` (5); killed when the troop retreats or routs
   from melee (`Troop.KillStunnedSoldiers`).
 - Combat log (SU-110): `DuelResolver` and `TroopProjectiles` record every clash and landed shot in `CombatLog`
-  (Combat Power parts, chance and roll, raw damage and the armour roll); `CombatLogHud` shows it.
+  (Combat Power parts, chance and roll, raw damage and the armour roll), and every feint as "Parried" (SU-164);
+  `CombatLogHud` shows it, feints dimmer and under the Clashes toggle.
 - Committed soldiers (chargers and followers) skip separation, density spreading and drive pressure in both directions
   and may leave the radius (`SoldierSteering`, `SoldierMotionConstraints`). They move at ChargeSpeedScale (2×).
 - `SoldierContactResolver`: opposing soldiers closer than 0.85 bounce; `ClashRules` decides a clash — a charger in
@@ -152,7 +161,8 @@ in Edit mode at a fixed frame time.
   (SU-139); the pursuer's retreat, disorder or rout cancels it through `Troop`.
 - `AssaultState`: a troop with an active Move, Pursue or Line order that becomes engaged gets 10 s of +5 Aggression and
   +5 Charge while charging. Re-engaging during a pursuit refreshes it.
-- `MeleeMetrics`: rolling 30 s counts of charges, followers, clashes, duel wins, damage, shots and hits.
+- `MeleeMetrics`: rolling 30 s counts of charges, followers, clashes, duel wins, damage, shots and hits, with feints
+  counted apart (SU-164), and running totals of charges, clashes and feints since the last reset (measurements).
 
 ### 6.3 Footprints, faces and engagement (spec §3.3, §4.1, §4.8)
 

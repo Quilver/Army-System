@@ -5,7 +5,7 @@ using UnityEngine;
 // apart, and starts clashes between opposing soldiers (ClashRules):
 //   (a) a charger in contact with an enemy soldier, or
 //   (b) two soldiers in contact with neither charging, once each is off its clash cooldown (Q-26).
-// Charge followers never start a clash of their own. Engagement is not decided here (see TroopEngagementSystem).
+// Charge followers never start a clash of their own. A feint (SU-164) in contact ends without a duel (DuelResolver.ResolveFeint). Engagement is not decided here (see TroopEngagementSystem).
 public sealed class SoldierContactResolver
 {
     const float ContactDistance = TroopConstants.ContactDistance;
@@ -62,6 +62,21 @@ public sealed class SoldierContactResolver
             : (a.Troop.GetInstanceID() < b.Troop.GetInstanceID() ? Vector2.right : Vector2.left);
         ResolveBounce(a, b, normal, distance);
         if (!opposing) return;
+
+        // Feints (SU-164): a feinting soldier in contact with an enemy ends its feint without a duel, unless the enemy is
+        // making a real charge: then the feint is dropped and the real charge clashes with it as with any soldier.
+        bool aFeint = a.Soldier.IsFeinting, bFeint = b.Soldier.IsFeinting;
+        if (aFeint || bFeint)
+        {
+            bool aReal = a.Soldier.IsCharging && !aFeint, bReal = b.Soldier.IsCharging && !bFeint;
+            if (!aReal && !bReal)
+            {
+                _duel.ResolveFeint(a, b);
+                return;
+            }
+            if (aFeint) a.Soldier.CancelCharge();
+            if (bFeint) b.Soldier.CancelCharge();
+        }
 
         ClashKind kind = ClashRules.Classify(a.Soldier.IsCharging, b.Soldier.IsCharging,
             a.Soldier.IsFollowing, b.Soldier.IsFollowing,

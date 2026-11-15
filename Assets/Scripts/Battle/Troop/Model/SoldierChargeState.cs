@@ -15,6 +15,7 @@ public enum ChargeRole
 // Return: a charge that ends without a rout leaves a pending return. SoldierSteering turns it into a rush back to the
 // troop (charge speed, free of the troop radius) when the soldier is far from its troop or its troop is no longer
 // fighting, and ends it when the soldier is back in its formation or the return times out.
+// Feint (SU-164): a charge that ends without a duel. It runs like a charge; on contact both soldiers recoil and it ends.
 // Runtime state only: the references are not serialized.
 [Serializable]
 public sealed class SoldierChargeState
@@ -26,6 +27,7 @@ public sealed class SoldierChargeState
     [NonSerialized] SoldierAgentState _target;
     [NonSerialized] Troop _targetTroop;
     [NonSerialized] SoldierAgentState _leader;
+    [NonSerialized] bool _feint;
     [NonSerialized] bool _returnPending;
     [NonSerialized] bool _returning;
     [NonSerialized] float _returnRemaining;
@@ -38,10 +40,13 @@ public sealed class SoldierChargeState
     // Time.time when the charge began. Decides which soldier is A when both are charging (Q-28).
     public float StartTime => _startTime;
     public bool IsReturning => _returning;
+    // The charge is a feint (SU-164).
+    public bool IsFeint => _role == ChargeRole.Charger && _feint;
 
-    public void BeginCharge(SoldierAgentState target, Troop targetTroop, float timeout, float startTime)
+    public void BeginCharge(SoldierAgentState target, Troop targetTroop, float timeout, float startTime, bool feint = false)
     {
         _role = ChargeRole.Charger;
+        _feint = feint;
         _target = target;
         _targetTroop = targetTroop;
         _leader = null;
@@ -53,6 +58,7 @@ public sealed class SoldierChargeState
     public void BeginFollow(SoldierAgentState leader, float timeout, float startTime)
     {
         _role = ChargeRole.Follower;
+        _feint = false;
         _leader = leader;
         _target = null;
         _targetTroop = null;
@@ -69,9 +75,11 @@ public sealed class SoldierChargeState
     // Ends the charge. returnToTroop leaves a pending return (see above); a rout passes false.
     public void End(bool returnToTroop = true)
     {
-        if (!returnToTroop) ClearReturn();
+        // A feint leaves no return (SU-164): the soldier walks back to its place and may charge again at once.
+        if (!returnToTroop || IsFeint) ClearReturn();
         else if (_role != ChargeRole.None) _returnPending = true;
         _role = ChargeRole.None;
+        _feint = false;
         _target = null;
         _targetTroop = null;
         _leader = null;

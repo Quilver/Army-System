@@ -90,6 +90,9 @@ public sealed class ClassMatchupTests
         public float EngagedAt, EndedAt;
         public string Result;
         public int AttackerAlive, DefenderAlive, AttackerStart, DefenderStart, AttackerRetreats, DefenderRetreats;
+        // Real clashes and feints that reached contact (SU-164), counted on the attacker (in every one).
+        public int Clashes, Feints;
+        public float Melee => EndedAt - EngagedAt;
         public bool AttackerWon => Result == "defender routed";
     }
 
@@ -115,6 +118,11 @@ public sealed class ClassMatchupTests
             bool attackerGone = attacker == null || attacker.IsRouted || attacker.LivingSoldierCount == 0;
             bool defenderGone = defender == null || defender.IsRouted || defender.LivingSoldierCount == 0;
             if (fight.EngagedAt < 0f && attacker != null && attacker.IsEngaged) fight.EngagedAt = t;
+            if (attacker != null)
+            {
+                fight.Clashes = attacker.MeleeMetrics.TotalClashes;
+                fight.Feints = attacker.MeleeMetrics.TotalFeints;
+            }
             if (attackerGone || defenderGone)
             {
                 fight.EndedAt = t;
@@ -142,18 +150,26 @@ public sealed class ClassMatchupTests
     {
         var text = new StringBuilder();
         text.AppendLine($"MATCHUP {attackerName} attacks {defenderName} head-on");
-        int wins = 0;
-        float melee = 0f;
+        int wins = 0, attackerAlive = 0, defenderAlive = 0;
+        float melee = 0f, clashRate = 0f, visibleRate = 0f;
         for (int seed = 1; seed <= seeds; seed++)
         {
             Fight f = Run(seed * 7919, attackerName, defenderName);
             if (f.AttackerWon) wins++;
             melee += f.EndedAt - f.EngagedAt;
+            attackerAlive += f.AttackerAlive;
+            defenderAlive += f.DefenderAlive;
+            float seconds = Mathf.Max(f.Melee, 0.001f);
+            clashRate += f.Clashes / seconds;
+            visibleRate += (f.Clashes + f.Feints) / seconds;
             text.AppendLine($"  seed {seed}: {f.Result} after {f.EndedAt - f.EngagedAt:F1}s of melee; alive " +
                 $"{attackerName} {f.AttackerAlive}/{f.AttackerStart}, {defenderName} {f.DefenderAlive}/{f.DefenderStart}; " +
-                $"retreats {f.AttackerRetreats} / {f.DefenderRetreats}");
+                $"retreats {f.AttackerRetreats} / {f.DefenderRetreats}; clashes {f.Clashes}, feints {f.Feints}");
         }
-        text.AppendLine($"  {attackerName} won {wins}/{seeds}, average melee {melee / seeds:F1}s");
+        text.AppendLine($"  {attackerName} won {wins}/{seeds}, average melee {melee / seeds:F1}s, average alive " +
+            $"{(float)attackerAlive / seeds:F1} / {(float)defenderAlive / seeds:F1}, real clashes {clashRate / seeds:F3}/s, " +
+            $"visible clashes {visibleRate / seeds:F3}/s, feints per charge {TroopTuning.Active.FeintsPerCharge:0.##}, knock-back " +
+            $"{TroopTuning.Active.FeintKnockBackScale:0.##}, timeout {TroopTuning.Active.FeintTimeoutSeconds:0.##} s");
         return text.ToString();
     }
 
@@ -170,6 +186,49 @@ public sealed class ClassMatchupTests
     [TestCase("Cav", "Archer")]
     [TestCase("Skirmisher", "Archer")]
     public void HeadOn(string attacker, string defender) => Measure(attacker, defender, 8);
+
+    // Feints (SU-164): the head-on match-ups with FeintsPerCharge at the given value.
+    [Explicit("Measurement: run by name")]
+    [TestCase("Cav", "Spearman", 0f)]
+    [TestCase("Cav", "Spearman", 3f)]
+    [TestCase("Huskarl", "Spearman", 0f)]
+    [TestCase("Huskarl", "Spearman", 3f)]
+    [TestCase("Cav", "Archer", 0f)]
+    [TestCase("Cav", "Archer", 3f)]
+    [TestCase("Skirmisher", "Archer", 0f)]
+    [TestCase("Skirmisher", "Archer", 3f)]
+    public void HeadOn_Feints(string attacker, string defender, float feints)
+    {
+        SetFloat("_feintsPerCharge", feints);
+        Measure(attacker, defender, 8);
+    }
+
+    // Feint sweep (SU-164): feints per charge, knock-back share and feint timeout, on the match-up feints moved most.
+    [Explicit("Measurement: run by name")]
+    [TestCase(3f, 0.25f, 1f)]
+    [TestCase(3f, 0.5f, 3f)]
+    [TestCase(1.5f, 0.5f, 1f)]
+    public void HuskarlSpearman_FeintSweep(float feints, float knockBack, float timeout)
+    {
+        SetFloat("_feintsPerCharge", feints);
+        SetFloat("_feintKnockBackScale", knockBack);
+        SetFloat("_feintTimeoutSeconds", timeout);
+        Measure("Huskarl", "Spearman", 8);
+    }
+
+    void SetFloat(string property, float value)
+    {
+        foreach (var section in _tuning.Sections)
+        {
+            var serialized = new SerializedObject(section);
+            SerializedProperty found = serialized.FindProperty(property);
+            if (found == null) continue;
+            found.floatValue = value;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            return;
+        }
+        Assert.Fail($"No Battle Tuning section has the field {property}");
+    }
 
     [Explicit("Measurement: run by name")]
     [TestCase("Cav", "Spearman")]

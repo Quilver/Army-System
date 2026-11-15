@@ -4,7 +4,8 @@ using UnityEngine;
 // The combat log panel (left edge, drawn with IMGUI by TroopPlayerOrders). An arrow tab on the left edge of the screen
 // opens it; the arrow on the panel's edge hides it again. It lists every clash and ranged attack of the battle
 // (CombatLog), newest at the bottom: who fought, each side's Combat Power with its skill, charge and support parts, the
-// chance and the roll, and the damage (raw, the armour roll, the HP lost). Toggles show or hide clashes and shots. It
+// chance and the roll, and the damage (raw, the armour roll, the HP lost). Feints are dimmer "Parried" lines (SU-164).
+// Toggles show or hide clashes (feints with them) and shots. It
 // follows the newest entry while scrolled to the bottom. Entries wrap to the panel's width. Sizes are set for a 1080 px
 // tall screen and scale with it.
 public sealed class CombatLogHud
@@ -32,6 +33,9 @@ public sealed class CombatLogHud
     static readonly Color ToggleOnColor = new(0.22f, 0.48f, 1f, 0.9f);
     static readonly Color ToggleOffColor = new(1f, 1f, 1f, 0.08f);
     static readonly Color DimText = new(1f, 1f, 1f, 0.6f);
+    // Feints ("Parried", SU-164) are drawn dimmer than clashes.
+    static readonly Color FeintText = new(1f, 1f, 1f, 0.45f);
+    const float FeintAlpha = 0.4f;
 
     sealed class Row
     {
@@ -118,7 +122,7 @@ public sealed class CombatLogHud
         for (int i = 0; i < _rows.Count; i++)
         {
             Row row = _rows[i];
-            if (row.Kind == CombatLogKind.Clash ? !_showClashes : !_showShots) continue;
+            if (row.Kind == CombatLogKind.Shot ? !_showShots : !_showClashes) continue;
             _visible.Add(i);
             contentHeight += row.Height + 2f * entryPad + entryGap;
         }
@@ -144,8 +148,14 @@ public sealed class CombatLogHud
             {
                 var rect = new Rect(0f, y, innerWidth, rowHeight);
                 Fill(rect, EntryColor);
-                Fill(new Rect(rect.x, rect.y, ColourBar * s, rect.height), row.Colour);
+                bool dim = row.Kind == CombatLogKind.Feint;
+                Color bar = row.Colour;
+                if (dim) bar.a *= FeintAlpha;
+                Fill(new Rect(rect.x, rect.y, ColourBar * s, rect.height), bar);
+                Color previousContent = GUI.contentColor;
+                if (dim) GUI.contentColor = FeintText;
                 GUI.Label(new Rect(rect.x + textInset, rect.y + entryPad, textWidth, row.Height), row.Text, _text);
+                GUI.contentColor = previousContent;
             }
             y += rowHeight + entryGap;
         }

@@ -31,6 +31,18 @@ public sealed class MeleeTuning : ScriptableObject
     [SerializeField, Min(0f), Tooltip("Per-soldier clash rate limit for contacts that are not charges.")]
     float _clashCooldownSeconds = 1f;
 
+    [Header("Feints (SU-164)")]
+    [SerializeField, Min(0f), Tooltip("Feints per real charge (SU-164): besides its charge roll, every soldier that may charge " +
+        "rolls for a feint at this many times its charge rate, on a random stream of its own. A feint runs at its target " +
+        "like a charge; on contact both soldiers recoil and flash, and it ends: no duel, damage, Shock, stun or clash " +
+        "cooldown, no followers. 0: no feints (the battle is as before).")]
+    float _feintsPerCharge = 3f;
+    [SerializeField, Range(0f, 1f), Tooltip("A feint's knock-back as a share of a clash's (SU-164).")]
+    float _feintKnockBackScale = 0.5f;
+    [SerializeField, Min(0.1f), Tooltip("A feint that has not reached an enemy soldier after this many seconds ends (SU-164). " +
+        "Short, so a feinting soldier, which cannot start a real charge, is soon free to charge again.")]
+    float _feintTimeoutSeconds = 1f;
+
     [Header("Support and duel (spec §4.5)")]
     [SerializeField, Min(0f), Tooltip("Support range (units).")]
     float _supportRadius = 3f;
@@ -68,6 +80,9 @@ public sealed class MeleeTuning : ScriptableObject
     public float ChargeTimeoutSeconds => _chargeTimeoutSeconds;
     public float ChargeFollowProbability => _chargeFollowProbability;
     public float ClashCooldownSeconds => _clashCooldownSeconds;
+    public float FeintsPerCharge => _feintsPerCharge;
+    public float FeintKnockBackScale => _feintKnockBackScale;
+    public float FeintTimeoutSeconds => _feintTimeoutSeconds;
 
     public float SupportRadius => _supportRadius;
     public float SpearSupportRangeMultiplier => _spearSupportRangeMultiplier;

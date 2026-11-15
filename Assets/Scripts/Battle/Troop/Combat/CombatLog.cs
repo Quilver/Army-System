@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 
-public enum CombatLogKind { Clash, Shot }
+// Feint (SU-164): a feint that reached contact, logged as "Parried"; no duel or damage. The Clashes filter shows it.
+public enum CombatLogKind { Clash, Shot, Feint }
 
 // One soldier named in a combat log entry.
 public struct CombatLogSoldier
@@ -62,6 +63,7 @@ public struct CombatLogEntry
     public CombatLogKind Kind;
     public float Time;                 // battle seconds (TroopCombatWorld.BattleTime)
     // Clash: A (the charger, the earlier charger, or the lower id, Q-28) and B. Shot: the shooter and the target.
+    // Feint: A the feinter, B the soldier it ran at.
     public CombatLogSoldier Attacker, Defender;
     // Clash
     public CombatPowerParts AttackerPower, DefenderPower;
@@ -133,6 +135,11 @@ public static class CombatLog
     {
         var text = new StringBuilder(240);
         text.Append(FormatTime(entry.Time)).Append("  ");
+        if (entry.Kind == CombatLogKind.Feint)
+        {
+            text.Append("Parried  ").Append(entry.Attacker).Append(" feints at ").Append(entry.Defender);
+            return text.ToString();
+        }
         if (entry.Kind == CombatLogKind.Clash)
         {
             text.Append("Clash  A ").Append(entry.Attacker).Append(Tags(entry.AttackerPower))

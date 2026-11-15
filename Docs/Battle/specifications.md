@@ -745,6 +745,9 @@ defaults are used when an asset is missing. Values in the rest of this document 
 | `ChargeTimeoutSeconds` | 3 | s | Charge cancel timeout. |
 | `ChargeFollowProbability` | 0.5 | 0–1 | Chance each selected follower joins. |
 | `ClashCooldownSeconds` | 1 | s | Per-soldier clash rate limit for contacts that are not charges. |
+| `FeintsPerCharge` | 3 (*default*) | × | Feints rolled per real charge: a second roll at this × the charge rate; 0 = no feints (SU-164). |
+| `FeintKnockBackScale` | 0.5 (*default*) | 0–1 | A feint's knock-back as a share of a clash's (SU-164). |
+| `FeintTimeoutSeconds` | 1 (*default*) | s | A feint that has not reached an enemy soldier by then ends (SU-164). |
 | `SupportRadius` | 3 | units | Support range. |
 | `SpearSupportRangeMultiplier` | 2 | × | Spear Support range. |
 | `SupportBonusPerSupportPoint` | 0.25 (*default*) | CP per Support point | Each supporter gives its Support × this (SU-149). |

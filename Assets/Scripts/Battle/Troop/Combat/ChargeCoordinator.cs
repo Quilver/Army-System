@@ -17,6 +17,9 @@ using UnityEngine;
 //   soldiers (the line's soldiers per rank, or the troop's frontage outside a line), those standing furthest toward the
 //   enemy troops it may charge. Soldiers out charging still hold their place in that count.
 //   Stunned soldiers (SU-107) neither charge nor follow.
+//   Feints (SU-164): a soldier whose charge roll fails rolls again, on the troop's feint stream, at FeintsPerCharge x
+//   the rate. A feint runs at its target like a charge and ends on contact without a duel (SoldierContactResolver); it
+//   takes no followers. A feinting soldier is committed, so it starts no charge until the feint ends.
 // Candidate search uses the contact index (a spatial query), not a loop over every soldier.
 public sealed class ChargeCoordinator
 {
@@ -97,9 +100,13 @@ public sealed class ChargeCoordinator
                     || soldier.IsStunned) continue;
                 if (frontRankOnly && !_frontRank.Contains(soldier)) continue;
 
-                float chance = ChargeRules.ChargeProbability(troop.EffectiveAggression(soldier.Character),
-                    tuning.ChargeWindowSeconds, deltaTime);
-                if (random.Value() >= chance) continue;
+                float aggression = troop.EffectiveAggression(soldier.Character);
+                float chance = ChargeRules.ChargeProbability(aggression, tuning.ChargeWindowSeconds, deltaTime);
+                if (random.Value() >= chance)
+                {
+                    TryStartFeint(troop, soldier, aggression, tuning, deltaTime, now);
+                    continue;
+                }
 
                 Vector2 position = troop.WorldPosition(soldier);
                 if (!TryPickTarget(troop, position, tuning.ChargeRange, tuning.ChargeCandidateCount, _chargeable, random,
@@ -111,6 +118,24 @@ public sealed class ChargeCoordinator
                 PickFollowers(troop, soldier, position, tuning, random, now);
             }
         }
+    }
+
+    // Feint roll (SU-164): FeintsPerCharge x the charge rate, on the troop's feint stream so the charge stream draws as
+    // before. A feint picks its target like a charge, ends after FeintTimeoutSeconds, takes no followers and counts apart
+    // from charges. A troop in Assault does not feint, so feints never take the place of its Assault charges.
+    void TryStartFeint(Troop troop, SoldierAgentState soldier, float aggression, TroopTuning tuning, float deltaTime,
+        float now)
+    {
+        float feints = tuning.FeintsPerCharge;
+        if (feints <= 0f || troop.IsAssaulting) return;
+        ITroopRandom random = troop.FeintRandom;
+        float chance = ChargeRules.ChargeProbability(aggression * feints, tuning.ChargeWindowSeconds, deltaTime);
+        if (random.Value() >= chance) return;
+        if (!TryPickTarget(troop, troop.WorldPosition(soldier), tuning.ChargeRange, tuning.ChargeCandidateCount,
+                _chargeable, random, out SoldierContact target))
+            return;
+        soldier.BeginFeint(target.Soldier, target.Troop, tuning.FeintTimeoutSeconds, now);
+        troop.MeleeMetrics.RecordFeintStarted();
     }
 
     // Soldiers in one rank: the troop's line's soldiers per rank, or its frontage when it is not in a line (SU-106).

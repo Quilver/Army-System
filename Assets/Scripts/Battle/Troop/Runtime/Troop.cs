@@ -89,6 +89,8 @@ public sealed class Troop : MonoBehaviour
 
     ITroopRandom _random;
     ITroopRandom _unseededRandom;
+    ITroopRandom _feintRandom;
+    ITroopRandom _unseededFeintRandom;
 
     // This troop's seeded stream for the current battle. Before a battle exists (no TroopCombatWorld) it falls back to an
     // unseeded stream, which is not cached so a later battle still gets its seeded stream.
@@ -100,6 +102,18 @@ public sealed class Troop : MonoBehaviour
             var world = TroopCombatWorld.Current;
             if (world == null) return _unseededRandom ??= new SeededTroopRandom(Environment.TickCount);
             return _random = world.RandomFor(StreamId);
+        }
+    }
+
+    // A second seeded stream for feints (SU-164), so rolling feints leaves TroopRandom's draws as they were.
+    public ITroopRandom FeintRandom
+    {
+        get
+        {
+            if (_feintRandom != null) return _feintRandom;
+            var world = TroopCombatWorld.Current;
+            if (world == null) return _unseededFeintRandom ??= new SeededTroopRandom(Environment.TickCount ^ 0x5EED);
+            return _feintRandom = world.RandomFor(unchecked(StreamId * 31 + 0x4F1E7));
         }
     }
 
