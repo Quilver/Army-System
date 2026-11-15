@@ -11,6 +11,7 @@ using UnityEngine;
 //   Ranged Tuning      ranged fire and composite ranks              (RangedTuning)
 //   Input Tuning       player input thresholds                      (InputTuning)
 //   Chain Bonus Tuning Defence and Morale per chain link (SU-152)   (ChainBonusTuning)
+//   Battle End Tuning  slow-down and banner when the battle ends (SU-168)  (BattleEndTuning)
 // This class gathers the sections so code reads every value from one place (TroopTuning.Active.X). It holds only values
 // that are not combat stats: combat stat limits are in CombatStatLimits, and values that never change (soldier radius,
 // line spacing, contact distance) are constants in TroopConstants.
@@ -31,9 +32,10 @@ public sealed class TroopTuning
     public RangedTuning Ranged { get; }
     public InputTuning Input { get; }
     public ChainBonusTuning ChainBonus { get; }
+    public BattleEndTuning BattleEnd { get; }
 
     TroopTuning(SoldierTuning soldier, FormationTuning formation, MoraleTuning morale, MeleeTuning melee, ChainTuning chain,
-        RangedTuning ranged, InputTuning input, ChainBonusTuning chainBonus)
+        RangedTuning ranged, InputTuning input, ChainBonusTuning chainBonus, BattleEndTuning battleEnd)
     {
         Soldier = soldier;
         Formation = formation;
@@ -43,11 +45,12 @@ public sealed class TroopTuning
         Ranged = ranged;
         Input = input;
         ChainBonus = chainBonus;
+        BattleEnd = battleEnd;
     }
 
     // Every section, in Inspector order. Tests use it to find the section that owns a serialized field.
     public IReadOnlyList<ScriptableObject> Sections => new ScriptableObject[]
-        { Soldier, Formation, Morale, Melee, Chain, Ranged, Input, ChainBonus };
+        { Soldier, Formation, Morale, Melee, Chain, Ranged, Input, ChainBonus, BattleEnd };
 
     public static TroopTuning Active
     {
@@ -62,7 +65,8 @@ public sealed class TroopTuning
     // Destroy it with DestroySections when done.
     public static TroopTuning CreateDefaults() => new(
         Fresh<SoldierTuning>(), Fresh<FormationTuning>(), Fresh<MoraleTuning>(), Fresh<MeleeTuning>(),
-        Fresh<ChainTuning>(), Fresh<RangedTuning>(), Fresh<InputTuning>(), Fresh<ChainBonusTuning>());
+        Fresh<ChainTuning>(), Fresh<RangedTuning>(), Fresh<InputTuning>(), Fresh<ChainBonusTuning>(),
+        Fresh<BattleEndTuning>());
 
     // Tests swap in their own instance. Pass null to go back to the assets.
     public static void OverrideForTests(TroopTuning tuning) => _active = tuning;
@@ -82,7 +86,8 @@ public sealed class TroopTuning
         Load<SoldierTuning>(SoldierTuning.AssetName), Load<FormationTuning>(FormationTuning.AssetName),
         Load<MoraleTuning>(MoraleTuning.AssetName), Load<MeleeTuning>(MeleeTuning.AssetName),
         Load<ChainTuning>(ChainTuning.AssetName), Load<RangedTuning>(RangedTuning.AssetName),
-        Load<InputTuning>(InputTuning.AssetName), Load<ChainBonusTuning>(ChainBonusTuning.AssetName));
+        Load<InputTuning>(InputTuning.AssetName), Load<ChainBonusTuning>(ChainBonusTuning.AssetName),
+        Load<BattleEndTuning>(BattleEndTuning.AssetName));
 
     static T Load<T>(string assetName) where T : ScriptableObject
     {
@@ -99,7 +104,7 @@ public sealed class TroopTuning
 
     // A section destroyed under us (a test tearing down, or an asset deleted) makes the cached tuning stale.
     bool IsAlive => Soldier != null && Formation != null && Morale != null && Melee != null && Chain != null
-        && Ranged != null && Input != null && ChainBonus != null;
+        && Ranged != null && Input != null && ChainBonus != null && BattleEnd != null;
 
     // --- Soldier Tuning ---
 
@@ -253,6 +258,11 @@ public sealed class TroopTuning
     public float ClickPickRadiusPixels => Input.ClickPickRadiusPixels;
     public float DoubleClickSeconds => Input.DoubleClickSeconds;
     public float AttackClickSlopPixels => Input.AttackClickSlopPixels;
+
+    // --- Battle End Tuning (SU-168) ---
+
+    public float EndSlowSpeed => BattleEnd.EndSlowSpeed;
+    public float EndBannerSeconds => BattleEnd.EndBannerSeconds;
 
     // --- Derived values used in several places ---
 

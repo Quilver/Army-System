@@ -4,8 +4,10 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 // Bridge from a battle to the campaign (Tween system). While a battle runs it fills the battle report (time, kills,
-// deaths); when the battle ends it loads the next scene: victory goes to Post battle (build index 2), defeat discards
-// the campaign data and returns to the Main menu (index 0). Keep the indices in step with Build Settings.
+// deaths); when the battle ends (Battle.Ended) it records the time taken, and nothing after that moment counts (every
+// handler checks Battle.IsOver). When the battle has shown its end banner (Battle.Leaving, SU-168) it loads the next
+// scene: victory goes to Post battle (build index 2), defeat discards the campaign data and returns to the Main menu
+// (index 0). Keep the indices in step with Build Settings.
 static class BattleFlow
 {
     const int VictorySceneIndex = 2;
@@ -16,6 +18,7 @@ static class BattleFlow
     {
         Battle.Started += OnStarted;
         Battle.Ended += OnEnded;
+        Battle.Leaving += OnLeaving;
         BattleEvents.SoldierKilled += OnSoldierKilled;
         BattleEvents.TroopBroke += OnTroopBroke;
     }
@@ -71,9 +74,16 @@ static class BattleFlow
         else if (info.Troop.Army == battle.enemy) BattleReport.EnemyTroopsRouted++;
     }
 
+    // The battle's result is fixed here: the report's time (kills, deaths and routs stop counting as the battle is over).
     static void OnEnded(Battle battle, bool win)
     {
         if (BattleReport.Exists) BattleReport.timeTaken = battle.ElapsedTime;
+    }
+
+    // After the end banner (SU-168): the scene change.
+    static void OnLeaving(Battle battle, bool win)
+    {
+        if (!Application.isPlaying) return;
         if (win)
         {
             SceneManager.LoadScene(VictorySceneIndex);

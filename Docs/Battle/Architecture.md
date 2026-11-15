@@ -18,6 +18,11 @@ see `Troop/README.md`.
   `BattleEvents` (`Combat/BattleEvents.cs`: soldier kills, troop defeats, morale breaks with their cause, SU-114; strikes
   and feints for sound, SU-164) the Tween
   system: achievements, the battle report and battle flow, and roster deployment (`Assets/Scripts/Tween/`). Troop code never references Tween or Campaign code (SU-57, SU-58).
+- **Battle end (SU-168):** `Battle.EndBattle` fixes the result once (`BattleOver` and `Battle.Ended` fire then;
+  `ElapsedTime` stops), slows the game with `GamePause.Slow` to `EndSlowSpeed` and draws `BattleEndBanner`
+  (`Controller/`) for `EndBannerSeconds` of real time, both from Battle End Tuning; it then ends the slow-down, sets the
+  speed back to normal and raises `Battle.Leaving`, on which `BattleFlow` (Tween) loads the next scene.
+  `TroopPlayerOrders` ignores orders and the pause key once the battle is over.
 - **Character classes:** `CharacterClass`, `StatCaps` and `CharacterStat` sit in `Model/` because `CharacterProfile`
   holds a class. `CampaignCharacter` and `StatGrowths` are campaign data in `Assets/Scripts/Tween/Characters/`.
 
@@ -26,8 +31,8 @@ see `Troop/README.md`.
 1. **Pure rules.** Maths that does not need the engine lives in `Rules/` as static classes and small structs (Unity's
    `Vector2`/`Mathf` value types are allowed). Every rule there has EditMode tests.
 2. **Named tuning.** Every value in spec §8 (Tunable Variables) is a field on one of the Battle Tuning section assets in
-   `Assets/Resources/Battle Tuning/` (Soldier, Formation, Morale, Melee, Chain, Ranged, Input; code defaults when an
-   asset is missing), read through `TroopTuning.Active`, or a constant in `TroopConstants`. Stat ranges are in
+   `Assets/Resources/Battle Tuning/` (Soldier, Formation, Morale, Melee, Chain, Ranged, Input, Chain Bonus, Battle End;
+   code defaults when an asset is missing), read through `TroopTuning.Active`, or a constant in `TroopConstants`. Stat ranges are in
    `CombatStatLimits`.
 3. **Seeded randomness.** All draws use `ITroopRandom`. `TroopCombatWorld` holds the battle seed; each troop derives
    its own stream from its hierarchy path, so update order does not change outcomes.
@@ -307,7 +312,7 @@ in Edit mode at a fixed frame time.
 | `CharacterProfile` | Name, class (`CharacterClass`: stat caps), portrait, soldier sprite, Numbers, Morale, Discipline, `SoldierStats` (integer stats, `MaxHealth`, up to 2 weapon skills) and `CharacterEquipment` (one required melee weapon, an optional ranged weapon, armour). Derived: `MeleeWeaponSkill`, `MeleeWeaponDamage`, `MeleeWeaponChargeBonus`, `HasSpearSupport`, `HasCouchedLance`, `MaxSpeed`. `CampaignCharacter` (Tween) adds growths. `CreateWithGains` makes the runtime copy a roster character fights as (level-up gains added, `Source` = the asset, SU-132). |
 | `MeleeWeaponProfile`, `RangedWeaponProfile` | Separate ScriptableObjects on an abstract `WeaponProfile` (D-52): Damage and a list of special rules; melee adds class and ChargeBonus, ranged adds class, Range, Accuracy, FireRate and Volley. No Provisional flag (SU-134). |
 | `ArmourProfile` | Deflect : Bruise : Bleed ratio and DefenceBonus (SU-89). |
-| `TroopTuning` | Loads the eight Battle Tuning sections (Soldier, Formation, Morale, Melee, Chain, Ranged, Input, Chain Bonus) and exposes every value of spec §8 under its old property name. |
+| `TroopTuning` | Loads the nine Battle Tuning sections (Soldier, Formation, Morale, Melee, Chain, Ranged, Input, Chain Bonus, Battle End) and exposes every value of spec §8 under its old property name. |
 | `SoldierAgentState` | Life, `SoldierHealth`, motion, `SoldierChargeState` (role, target or leader, timeout, start time), clash cooldown, fault motion, pulse, separation. |
 
 ## 8. Tests

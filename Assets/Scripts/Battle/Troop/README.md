@@ -65,6 +65,11 @@ report, sounds) follows a battle; Troop code never references the campaign.
 - **LMB drag from a troop** (8 px): move the selection (that troop, or its chain after a double click) to where the
   button is released, keeping offsets (SU-129).
 - **P** (or gamepad Start), or the speed bar (top right): pause and resume. Selection and orders still work while paused.
+- **Battle end** (SU-168): when the battle is won or lost, a Victory or Defeat banner shows (`BattleEndBanner`, drawn by
+  `Battle`) while the fighting goes on slowed to `EndSlowSpeed` for `EndBannerSeconds` of real time (Battle End Tuning);
+  then the next scene loads (`BattleFlow`, on `Battle.Leaving`). Meanwhile orders and the pause key are ignored and the
+  speed bar is hidden; the slow-down is a `GamePause.Slow`, which pauses and the speed cannot undo. The result, the
+  battle report and the achievements are fixed when the battle ends (`Battle.Ended`), before the banner.
 - **RMB** on an enemy: pursue (Assault on contact). It stays an attack if the mouse moved less than 24 px
   (`AttackClickSlopPixels`), or if the press was on the same enemy, however far it moved; the ghost shows the attack
   (SU-159). **RMB** on ground: move, keeping offsets; troops arrive Idle.
@@ -115,6 +120,7 @@ constant in `TroopConstants` when it never changes:
 | Ranged Tuning | Ranged (limited ammunition, SU-151), composite troops |
 | Input Tuning | Input thresholds (pixels) |
 | Chain Bonus Tuning | Defence and Morale per chain link (SU-152) |
+| Battle End Tuning | Slow-down and banner time when the battle ends (SU-168) |
 
 Code reads them through `TroopTuning.Active` (property names unchanged). A missing asset falls back to the code
 defaults; **Troops > Battle Tuning > Create Missing Assets** recreates it. Characters, troops, classes and equipment are

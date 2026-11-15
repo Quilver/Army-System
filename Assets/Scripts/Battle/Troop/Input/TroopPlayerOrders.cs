@@ -17,6 +17,8 @@ using UnityEngine.InputSystem;
 // Speed bar (BattleSpeedHud, top-right): Pause, ½ speed, Play and 2× speed (GamePause.Speed). It is hidden while
 // deploying and once the battle is over. While paused, the camera, selection and orders all still work; troops carry
 // out their orders when time runs again.
+// Once the battle is over (its end banner, SU-168) orders are ignored: no Move, Line, Face, Attack or drag-move, and the
+// pause key does nothing (a pause the player held is released). Selection, hover and the cards still work.
 // During the deployment phase (Placement set) a Move or Line puts the troops straight there instead of marching them,
 // inside the deployment zone; attack orders are ignored. Clicks on UI (the Start Battle button) are not orders.
 // The first selected troop and the troop under the cursor are shown on troop cards (TroopCardHud), and the soldier under
@@ -133,7 +135,14 @@ public sealed class TroopPlayerOrders : MonoBehaviour
         if (keyboard != null && keyboard.f5Key.wasPressedThisFrame) _engagementView = NextEngagementView(_engagementView);
         _engagementViewMesh.Update(_selection.Troops, _engagementView, EngagementStyle());
 
-        if (PausePressed(keyboard)) SetPaused(!_paused);
+        bool ended = OrdersIgnored;
+        if (ended)
+        {
+            // SU-168: the end banner. A player's pause is let go so the next scene does not start paused.
+            if (_paused) SetPaused(false);
+            _orderStart = null;
+        }
+        else if (PausePressed(keyboard)) SetPaused(!_paused);
         // Selection and orders work while paused too: troops act on them once time runs again.
 
         bool overUi = IsPointerOverUi();
@@ -151,7 +160,7 @@ public sealed class TroopPlayerOrders : MonoBehaviour
             _pressTroop = null;
         }
 
-        if (mouse.rightButton.wasPressedThisFrame && !overHud && !overUi)
+        if (mouse.rightButton.wasPressedThisFrame && !overHud && !overUi && !ended)
             _orderStart = _mousePosition;
         if (mouse.rightButton.wasReleasedThisFrame && _orderStart.HasValue)
         {
@@ -168,11 +177,15 @@ public sealed class TroopPlayerOrders : MonoBehaviour
         _engagementViewMesh.Hide();
     }
 
-    // Pauses or resumes the battle. Does nothing while something else (a cutscene, deployment) has stopped time.
+    // True once the battle is over (SU-168): the player's orders and pause are ignored.
+    public static bool OrdersIgnored => Battle.Instance != null && Battle.Instance.IsOver;
+
+    // Pauses or resumes the battle. Does nothing while something else (a cutscene, deployment) has stopped time, or once
+    // the battle is over.
     public void SetPaused(bool paused)
     {
         if (paused == _paused) return;
-        if (paused && GamePause.IsPaused) return;
+        if (paused && (GamePause.IsPaused || OrdersIgnored)) return;
         _paused = paused;
         GamePause.Set(this, paused);
         if (_pausedIndicator != null) _pausedIndicator.SetActive(paused);
@@ -250,7 +263,7 @@ public sealed class TroopPlayerOrders : MonoBehaviour
     }
 
     bool IsTroopDrag(Vector2 start, Vector2 end) =>
-        _pressTroop != null && !_toggleSelection && _selection.Selected.Count > 0 &&
+        !OrdersIgnored && _pressTroop != null && !_toggleSelection && _selection.Selected.Count > 0 &&
         Vector2.Distance(start, end) >= TroopTuning.Active.OrderDragMinPixels;
 
     void FinishSelection(Vector2 start, Vector2 end)

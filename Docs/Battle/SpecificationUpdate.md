@@ -11,6 +11,36 @@ SU-128 refer to v0.9 and may have moved.
 
 ---
 
+## 2026-11-15: A slowed finish and a banner before leaving the battle (branch troop-facing-controls)
+
+### SU-168 The battle ends with a slow-down and a Victory or Defeat banner (Decision + Assumptions, spec §6, §8)
+The battle cut to the next scene on the frame it was won or lost. The designer: "slow the battle sim, show a victory
+banner for 10s before transitioning."
+- Decision: when the battle ends the simulation slows, a banner shows, and after 10 seconds of real time the scene
+  changes as before (victory: Post battle; defeat: the Main menu, discarding the campaign data).
+- Decision (how it is kept honest): `Battle.EndBattle` still ends the battle once, and `BattleOver` and `Battle.Ended`
+  fire at that moment, once; a second call (another end condition met during the slowed fighting) is ignored. Everything
+  that records the battle fixes it then: the achievements finish on `BattleOver` and stop listening and ticking; the
+  battle report's kills, deaths and routs are counted only while the battle is not over; its time is taken on `Ended`, and
+  `Battle.ElapsedTime` stops at the end. The scene change moves to a new event, `Battle.Leaving`, raised once when the
+  banner closes; `BattleFlow` (Tween) loads the next scene on it.
+- Decision: the slow-down goes through `GamePause` (`Slow` / `EndSlow`): while the battle slows the game,
+  `Time.timeScale` is the slow speed whatever the speed bar or a pause asks for. When the banner closes the slow-down
+  ends and the speed is set back to 1× before `Leaving`. The player's orders (Move, Line, Face, Attack, drag-moves) and
+  the pause key are ignored once the battle is over, and a pause the player held is released; selection and the cards
+  still work. The speed bar is hidden (as it already was once the battle was over).
+- Assumption: a defeat gets the same treatment, with a "Defeat" banner.
+- Assumption: the slow-down is to 0.25× (`EndSlowSpeed`), and the banner shows for 10 s of real time
+  (`EndBannerSeconds`). Both are on a new Battle Tuning section, Battle End Tuning, so they are set once for every
+  mission next to the other battle tunables (spec §8), not per scene.
+- Assumption: the banner reads "Victory" or "Defeat" in the battle HUD's style: a dark panel across the upper middle of
+  the screen (centred 22% down) with a strip along its top, blue for a victory and red for a defeat (the cards' Morale and
+  Shock colours), sized for 1080 px and scaled with the screen. It takes no clicks and is drawn over the HUD.
+- Assumption: the fighting under the banner, and the enemy AI, go on as normal at the slow speed; it changes nothing that
+  is recorded. No win or lose jingle was wired to the battle's end, so none was added.
+
+---
+
 ## 2026-11-15: A plus for boosted morale on the troop card (branch troop-facing-controls)
 
 ### SU-167 The troop card marks boosted morale with a plus (Decision + Assumptions, spec §6.1)

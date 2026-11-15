@@ -1,6 +1,6 @@
 # Assumptions review
 
-Every unconfirmed Assumption in `SpecificationUpdate.md` (SU-01 to SU-167), grouped by system so they can be confirmed in one sitting: 246 assumptions across 102 SU entries. SU-167 (the plus for boosted morale on the troop card) was added on 2026-11-15. SU-166 (the soldier wave) was added on 2026-11-15. SU-165 (the Assault as one charge per soldier) was added on 2026-11-15; it superseded the SU-148 item and SU-164's "a troop in Assault does not feint", which were removed. SU-164 (feints) was added on 2026-11-15. SU-163 (the assault wheel) was added on 2026-11-15. SU-162 (the troop border) was added on 2026-11-15. SU-161 (flush fronts) was added on 2026-11-15. SU-159 (attack clicks) and SU-160 (linked group lines) were added on 2026-11-15; SU-160 superseded SU-157, whose items were removed. SU-158 (engaged soldiers face their enemy) was added on 2026-11-15. SU-154 to SU-157 (troop facing controls and line spacing, on the `troop-facing-controls` branch) and SU-148 to SU-153 (class design rules) were added on 2026-11-14. SU-136 to SU-140 were added on 2026-11-08; the SU-74 and SU-121 items about routed troops never leaving the map were removed (SU-138 replaced them). Rebuilt 2026-11-08 (SU-135): assumptions that later entries overtook were removed, missing ones were added, and the groups were tidied. The spec (v0.10) tags text that rests on one of these as **[A: SU-n]**.
+Every unconfirmed Assumption in `SpecificationUpdate.md` (SU-01 to SU-168), grouped by system so they can be confirmed in one sitting: 250 assumptions across 103 SU entries. SU-168 (the slowed finish and the Victory or Defeat banner) was added on 2026-11-15. SU-167 (the plus for boosted morale on the troop card) was added on 2026-11-15. SU-166 (the soldier wave) was added on 2026-11-15. SU-165 (the Assault as one charge per soldier) was added on 2026-11-15; it superseded the SU-148 item and SU-164's "a troop in Assault does not feint", which were removed. SU-164 (feints) was added on 2026-11-15. SU-163 (the assault wheel) was added on 2026-11-15. SU-162 (the troop border) was added on 2026-11-15. SU-161 (flush fronts) was added on 2026-11-15. SU-159 (attack clicks) and SU-160 (linked group lines) were added on 2026-11-15; SU-160 superseded SU-157, whose items were removed. SU-158 (engaged soldiers face their enemy) was added on 2026-11-15. SU-154 to SU-157 (troop facing controls and line spacing, on the `troop-facing-controls` branch) and SU-148 to SU-153 (class design rules) were added on 2026-11-14. SU-136 to SU-140 were added on 2026-11-08; the SU-74 and SU-121 items about routed troops never leaving the map were removed (SU-138 replaced them). Rebuilt 2026-11-08 (SU-135): assumptions that later entries overtook were removed, missing ones were added, and the groups were tidied. The spec (v0.10) tags text that rests on one of these as **[A: SU-n]**.
 
 ## How to use this
 
@@ -20,7 +20,7 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 - [Formations, movement & geometry](#formations-movement--geometry) (42)
 - [Combat (melee, charges, ranged)](#combat-melee-charges-ranged) (44)
 - [Morale, retreat & rout](#morale-retreat--rout) (16)
-- [Controls, orders & battle UI](#controls-orders--battle-ui) (43)
+- [Controls, orders & battle UI](#controls-orders--battle-ui) (47)
 - [Campaign, tent, missions & deployment](#campaign-tent-missions--deployment) (45)
 - [Enemy AI](#enemy-ai) (13)
 - [Tooling & other](#tooling--other) (4)
@@ -439,6 +439,13 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 
 - [ ] the plus shows while the chain's Morale bonus adds to Effective Morale (`ChainMoraleBonus` × living soldiers above 0), also when losses keep the figure below the initial one, and never otherwise. →
 - [ ] the plus is two light green strokes beside the morale figure (no icon asset); its tooltip reads "Chain +N", N being what the bonus adds to Effective Morale. →
+
+**SU-168** The battle ends with a slow-down and a Victory or Defeat banner
+
+- [ ] a defeat gets the same treatment as a victory, with a "Defeat" banner. →
+- [ ] the fighting slows to 0.25× (`EndSlowSpeed`) and the banner shows for 10 s of real time (`EndBannerSeconds`); both are on a new Battle Tuning section, Battle End Tuning (one value for every mission). →
+- [ ] the banner reads "Victory" or "Defeat" on a dark panel across the upper middle of the screen, with a blue (victory) or red (defeat) strip along its top, in the battle HUD's style; it takes no clicks. →
+- [ ] the fighting and the enemy AI go on at the slow speed under the banner, changing nothing that is recorded; no jingle was added (none was wired to the battle's end). →
 
 ## Campaign, tent, missions & deployment
 

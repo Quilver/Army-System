@@ -788,6 +788,13 @@ defaults are used when an asset is missing. Values in the rest of this document 
 | `DefencePerLink` | 1 | int | Added to every soldier's TotalDefence per active link. |
 | `MoralePerLink` | 1 | int | Added to BaseMorale in EffectiveMorale per active link (not to the initial value). |
 
+**Battle End Tuning** (its own asset, SU-168)
+
+| Variable | Value | Unit | Description |
+|---|---|---|---|
+| `EndSlowSpeed` | 0.25 | × speed | Game speed while the Victory or Defeat banner shows. |
+| `EndBannerSeconds` | 10 | s (real time) | How long the banner shows before the next scene loads. |
+
 **Ranged Tuning**
 
 | Variable | Value | Unit | Description |

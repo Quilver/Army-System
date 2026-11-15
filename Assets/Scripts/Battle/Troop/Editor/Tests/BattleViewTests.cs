@@ -425,7 +425,7 @@ public sealed class BattleViewTests
     {
         TroopTuning.OverrideForTests(null);
         TroopTuning tuning = TroopTuning.Active;
-        Assert.AreEqual(8, tuning.Sections.Count);  // Chain Bonus Tuning is the eighth (SU-152)
+        Assert.AreEqual(9, tuning.Sections.Count);  // Chain Bonus Tuning is the eighth (SU-152), Battle End Tuning the ninth (SU-168)
         foreach (var section in tuning.Sections)
         {
             Assert.IsNotNull(section);
