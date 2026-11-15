@@ -54,6 +54,11 @@ public sealed class MeleeTuning : ScriptableObject
         "charge one after another, spreading out along the line from that first charger at Assault Chain Speed. Off: every " +
         "soldier charges as soon as it comes into reach (SU-165).")]
     bool _assaultChainReaction = true;
+    [SerializeField, Tooltip("Assault in one wave (SU-174, needs Assault Chain Reaction): the first soldier in reach does not " +
+        "charge alone; it holds the whole front until the troop has stood square for Assault Chain Settle Seconds, then " +
+        "every soldier that may charge goes on the same frame. Off: the SU-171 chain reaction (a lone first charger, then " +
+        "the rest one after another at Assault Chain Speed).")]
+    bool _assaultOneWave = true;
     [SerializeField, Min(0.1f), Tooltip("How fast the chain reaction spreads along the line from the first charger, in units " +
         "per second (6: about 0.15 s per file at the 0.9 line spacing, about 1.4 s along a frontage-10 line from one end).")]
     float _assaultChainSpeed = 6f;
@@ -97,6 +102,7 @@ public sealed class MeleeTuning : ScriptableObject
     public float FeintTimeoutSeconds => _feintTimeoutSeconds;
     public bool AssaultCharges => _assaultCharges;
     public bool AssaultChainReaction => _assaultChainReaction;
+    public bool AssaultOneWave => _assaultOneWave;
     public float AssaultChainSpeed => _assaultChainSpeed;
     public float AssaultChainSettleSeconds => _assaultChainSettleSeconds;
     public float AssaultChainMaxWaitSeconds => _assaultChainMaxWaitSeconds;

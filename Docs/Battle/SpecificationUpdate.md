@@ -11,6 +11,28 @@ SU-128 refer to v0.9 and may have moved.
 
 ---
 
+## 2026-11-15 (2): The Assault goes in one wave (branch troop-facing-controls)
+
+### SU-174 The Assault charges in one wave (Decision + Assumptions, spec §4.2, §4.3, §8; amends SU-171)
+The designer: "Assaults should be all the possible soldiers that charging in one wave together, currently that is not
+happening." (Under SU-171 the first soldier in reach charged alone, then the rest of the front rank followed one after
+another over about 0.8 to 1.2 s.)
+- Decision: the first soldier in reach no longer charges alone. It only starts SU-171's wait: until the troop has stood
+  square (its assault wheel stopped) for `AssaultChainSettleSeconds` (0.2 s), or `AssaultChainMaxWaitSeconds` (3 s)
+  have passed, no soldier makes its Assault charge. Then every soldier that may make one (SU-165's eligibility: front
+  rank, charge gap, a target in reach), the first one included, charges on the same frame. The spread along the line
+  (`AssaultChainSpeed`) is not used. `AssaultOneWave` (Melee Tuning, on; needs `AssaultChainReaction`) switches it; off
+  is the SU-171 chain reaction.
+- Assumption: "all the possible soldiers" read as SU-165's eligible soldiers, front rank only under
+  `FrontRankChargesOnly`. Rear ranks still follow (Discipline nearest), and a soldier with no enemy in reach when the
+  wave goes (e.g. past the end of a shorter enemy line) makes its Assault charge later, if it comes into reach.
+- Assumption: during the wait nobody charges (SU-171 let the spark fight alone), and owing soldiers still make no
+  ordinary roll or feint, so a head-on contact has about 0.2 s of stillness before the wave; corner-on, the wave waits
+  for the wheel.
+- Tests: `AssaultChargeTests` gains the one-wave cases (head-on: the whole front rank on one frame; corner-on: nothing
+  while wheeling, then several together). The SU-171 chain tests run with `AssaultOneWave` off, and the "coming into
+  reach later" SU-165 test with the chain off. Not yet run in the Editor.
+
 ## 2026-11-15: Movie_023 changes: hidden enemy orders, stronger borders, the Assault chain reaction, no strafing in line, wheeling on steering circles (branch troop-facing-controls)
 
 ### SU-173 Lines wheel on steering circles instead of turning on the spot (Decision + Assumptions, spec §3.2, §3.3, §8)

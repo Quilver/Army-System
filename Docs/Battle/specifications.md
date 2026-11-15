@@ -773,6 +773,7 @@ defaults are used when an asset is missing. Values in the rest of this document 
 | `EloScale` | 30 (*default*) | CP | Elo duel: this lead wins 10 to 1. |
 | `AssaultCharges` | on (*default*) | bool | An open Assault makes each eligible soldier charge once, without a roll, as it comes into reach (SU-165). Off: no Assault charges. |
 | `AssaultChainReaction` | on (*default*) | bool | The first soldier in reach charges alone; the rest wait until the troop has stopped its assault wheel for `AssaultChainSettleSeconds`, then charge as the reaction spreads along the line from it at `AssaultChainSpeed` (SU-171). Off: each as it comes into reach. |
+| `AssaultOneWave` | on (*default*) | bool | The first soldier in reach does not charge alone; once the troop has stood square for `AssaultChainSettleSeconds`, every soldier that may make its Assault charge goes on the same frame (SU-174). Off: the SU-171 chain reaction. |
 | `AssaultChainSpeed` | 6 (*default*) | units/s | How fast the chain reaction spreads along the line (SU-171). |
 | `AssaultChainSettleSeconds` | 0.2 (*default*) | s | How long the troop must have stopped wheeling before the reaction spreads (SU-171). |
 | `AssaultChainMaxWaitSeconds` | 3 (*default*) | s | The reaction spreads at the latest this long after the first charge (SU-171). |

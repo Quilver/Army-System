@@ -223,6 +223,8 @@ public sealed class TroopTuning
     public bool AssaultCharges => Melee.AssaultCharges;
     // The Assault's chain reaction (SU-171).
     public bool AssaultChainReaction => Melee.AssaultChainReaction;
+    // The Assault goes in one wave once the troop is square (SU-174).
+    public bool AssaultOneWave => Melee.AssaultOneWave;
     public float AssaultChainSpeed => Melee.AssaultChainSpeed;
     public float AssaultChainSettleSeconds => Melee.AssaultChainSettleSeconds;
     public float AssaultChainMaxWaitSeconds => Melee.AssaultChainMaxWaitSeconds;

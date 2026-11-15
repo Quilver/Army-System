@@ -14,6 +14,8 @@ using UnityEngine;
 // spark charged at AssaultChainSpeed: a soldier may make its Assault charge once the reaction has reached its file (its
 // distance from the spark along the troop's line). A soldier the reaction has passed charges as soon as it has a target
 // in reach, as before.
+// One wave (SU-174, Melee Tuning Assault One Wave): the spark does not charge; it only starts the same wait. Once the
+// reaction is released every soldier that may make its Assault charge charges at once (the spread is not used).
 public sealed class AssaultState
 {
     readonly HashSet<SoldierAgentState> _charged = new();
