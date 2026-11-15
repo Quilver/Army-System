@@ -11,6 +11,19 @@ SU-128 refer to v0.9 and may have moved.
 
 ---
 
+## 2026-11-15 (3): The one-wave Assault goes on contact (branch troop-facing-controls)
+
+### SU-175 No wait before the Assault wave (Decision + Assumption, spec §4.2, §4.3, §8; replaces SU-174's wait)
+The designer, after SU-174: "I don't want the hesitation as that make it feel less fluid."
+- Decision: the wave no longer waits for the troop to stand square. On the frame the Assault opens and a soldier is in
+  reach, every soldier that may make its Assault charge goes. `AssaultOneWave` (on) now overrides
+  `AssaultChainReaction`: with it on, the chain's spark, wait and spread are not used at all.
+- Assumption: corner-on, the soldiers in reach at contact go at once and the rest go as the assault wheel brings them
+  into reach (SU-165), so the wave is not perfectly level there. To keep them free for that, followers are not taken
+  from soldiers still owed an Assault charge in the front rank (as SU-171 did).
+- Tests: `AssaultChargeTests.OneWave_HeadOn_TheWholeFrontRankChargesTogetherOnContact` (first charge within a frame of
+  contact, the whole front rank within a frame of it) replaces SU-174's two tests. Not yet run in the Editor.
+
 ## 2026-11-15 (2): The Assault goes in one wave (branch troop-facing-controls)
 
 ### SU-174 The Assault charges in one wave (Decision + Assumptions, spec §4.2, §4.3, §8; amends SU-171)

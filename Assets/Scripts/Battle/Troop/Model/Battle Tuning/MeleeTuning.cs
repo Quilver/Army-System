@@ -54,10 +54,9 @@ public sealed class MeleeTuning : ScriptableObject
         "charge one after another, spreading out along the line from that first charger at Assault Chain Speed. Off: every " +
         "soldier charges as soon as it comes into reach (SU-165).")]
     bool _assaultChainReaction = true;
-    [SerializeField, Tooltip("Assault in one wave (SU-174, needs Assault Chain Reaction): the first soldier in reach does not " +
-        "charge alone; it holds the whole front until the troop has stood square for Assault Chain Settle Seconds, then " +
-        "every soldier that may charge goes on the same frame. Off: the SU-171 chain reaction (a lone first charger, then " +
-        "the rest one after another at Assault Chain Speed).")]
+    [SerializeField, Tooltip("Assault in one wave (SU-174, SU-175): on contact, every soldier that may charge goes on the same " +
+        "frame, with no wait; one that comes into reach later (as the troop wheels in) goes then. Overrides Assault Chain " +
+        "Reaction. Off: Assault Chain Reaction decides (the SU-171 chain, or each soldier as it comes into reach).")]
     bool _assaultOneWave = true;
     [SerializeField, Min(0.1f), Tooltip("How fast the chain reaction spreads along the line from the first charger, in units " +
         "per second (6: about 0.15 s per file at the 0.9 line spacing, about 1.4 s along a frontage-10 line from one end).")]

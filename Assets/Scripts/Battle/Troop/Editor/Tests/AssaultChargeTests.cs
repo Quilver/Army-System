@@ -351,9 +351,9 @@ public sealed class AssaultChargeTests
         return firsts;
     }
 
-    // SU-174: head-on, the whole front rank makes its Assault charge on one frame; nobody goes alone first.
+    // SU-174, SU-175: head-on, the whole front rank makes its Assault charge together, on contact, without a wait.
     [Test]
-    public void OneWave_HeadOn_TheWholeFrontRankChargesTogether()
+    public void OneWave_HeadOn_TheWholeFrontRankChargesTogetherOnContact()
     {
         var (attacker, _) = HeadOn(12, 6);
         var firsts = FirstAssaultCharges(attacker, 6f, out float opened, out _);
@@ -364,33 +364,8 @@ public sealed class AssaultChargeTests
         TestContext.WriteLine($"opened {opened:F2} s; first charges at " +
             string.Join(", ", times.ConvertAll(t => $"{t - opened:F2}")));
         Assert.GreaterOrEqual(times.Count, front, "The whole front rank makes its Assault charge");
-        Assert.AreEqual(times[0], times[front - 1], 1e-4f, "The front rank goes on the same frame");
-        Assert.Less(times[0] - opened, 1f, "The wave goes soon after contact");
-    }
-
-    // SU-174: corner-on, the wave waits for the assault wheel, then goes together.
-    [Test]
-    public void OneWave_WaitsForTheWheelThenGoesTogether()
-    {
-        UseTuning("_feintsPerCharge", 0f);
-        Troop defender = PlacedLine("Defender", 1, Vector2.zero, Vector2.left, Character(12, 0), 10);
-        Vector2 heading = new(Mathf.Cos(-45f * Mathf.Deg2Rad), Mathf.Sin(-45f * Mathf.Deg2Rad));
-        Vector2 tangent = new(-heading.y, heading.x);
-        float length = LineGeometry.NaturalLength(6);
-        Vector2 leadingEnd = new(-1.75f, 1.5f);
-        Troop attacker = PlacedLine("Attacker", 0, leadingEnd - tangent * (length * 0.5f), heading, Character(8, 0), 6);
-        attacker.Pursue(defender);
-
-        var firsts = FirstAssaultCharges(attacker, 8f, out float opened, out int duringWheel);
-        var times = new List<float>(firsts.Values);
-        times.Sort();
-        TestContext.WriteLine($"opened {opened:F2} s; first charges at " +
-            string.Join(", ", times.ConvertAll(t => $"{t - opened:F2}")));
-        Assert.Greater(times.Count, 1, "The troop charges");
-        Assert.AreEqual(0, duringWheel, "No Assault charge while it wheels (before the max wait)");
-        int together = 0;
-        foreach (float t in times) if (Mathf.Abs(t - times[0]) < 1e-4f) together++;
-        Assert.Greater(together, 1, "The first Assault charges go together, not one alone");
+        Assert.LessOrEqual(times[0] - opened, FrameTime * 1.5f, "No wait: the first charges go on contact");
+        Assert.LessOrEqual(times[front - 1] - times[0], FrameTime * 1.5f, "The front rank goes together");
     }
 
     // Two troops engaged without orders (not placed in a line either, which counts as a Line order): charges are the

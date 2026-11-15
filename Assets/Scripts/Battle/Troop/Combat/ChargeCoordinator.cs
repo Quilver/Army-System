@@ -11,8 +11,9 @@ using UnityEngine;
 //   Assault charge is otherwise an ordinary charge. A soldier that owes one makes no ordinary roll and no feint.
 //   Chain reaction (SU-171): the first of them in reach (the one nearest its target) charges alone; the others wait
 //   until the troop has finished its assault wheel, then charge as the reaction spreads to their file (AssaultState).
-//   One wave (SU-174, AssaultOneWave): the first in reach does not charge alone; it only starts the wait. Once the troop
-//   has finished its assault wheel, every soldier that may make its Assault charge charges on the same frame.
+//   One wave (SU-174, SU-175, AssaultOneWave): no spark and no wait; on contact every soldier that may make its Assault
+//   charge charges on the same frame. Followers are not taken from soldiers still owed a charge, so one that comes into
+//   reach a moment later (as the troop wheels in) is there to make it.
 //   Gate (SU-95): the troop's footprint gap to an enemy troop is within EngagementGap (+ ChargeGapTolerance). Being
 //   engaged (A_Distance) is no longer enough: engaged lines that stand off further apart do not charge.
 //   Target: one of the ChargeCandidateCount nearest soldiers within the charge reach, at random, of an enemy troop
@@ -140,19 +141,17 @@ public sealed class ChargeCoordinator
     {
         _assaultChargers.Clear();
         AssaultState state = troop.Assault;
-        bool chain = tuning.AssaultChainReaction;
-        bool oneWave = chain && tuning.AssaultOneWave;
+        bool oneWave = tuning.AssaultOneWave;
+        bool chain = tuning.AssaultChainReaction && !oneWave;
         if (chain)
         {
             state.Tick(deltaTime, troop.IsAssaultWheeling, tuning.AssaultChainSettleSeconds,
                 tuning.AssaultChainMaxWaitSeconds);
             if (!state.HasSpark)
             {
-                StartAssaultSpark(troop, soldiers, frontRankOnly, tuning, random, now, oneWave);
+                StartAssaultSpark(troop, soldiers, frontRankOnly, tuning, random, now);
                 return;
             }
-            // SU-174: nobody charges until the troop is square; then all at once.
-            if (oneWave && !state.IsReleased) return;
         }
         Vector2 facing = troop.Facing;
         Vector2 lineAxis = new(-facing.y, facing.x);
@@ -165,7 +164,7 @@ public sealed class ChargeCoordinator
             if (!troop.OwesAssaultCharge(soldier)) continue;
             Vector2 position = troop.WorldPosition(soldier);
             // SU-171: it waits until the chain reaction has spread to its file.
-            if (chain && !oneWave && !state.HasReached(position, lineAxis, tuning.AssaultChainSpeed)) continue;
+            if (chain && !state.HasReached(position, lineAxis, tuning.AssaultChainSpeed)) continue;
             if (!TryPickTarget(troop, position, tuning.ChargeRange, tuning.ChargeCandidateCount, _chargeable, random,
                     out SoldierContact target))
                 continue;
@@ -175,15 +174,15 @@ public sealed class ChargeCoordinator
             _assaultChargers.Add((soldier, position));
         }
         foreach (var (soldier, position) in _assaultChargers)
-            PickFollowers(troop, soldier, position, tuning, random, now, chain ? frontRankOnly : (bool?)null);
+            PickFollowers(troop, soldier, position, tuning, random, now,
+                chain || oneWave ? frontRankOnly : (bool?)null);
         troop.RefreshAssault();
     }
 
     // SU-171: the spark. Of the soldiers that owe their Assault charge and have a target in reach, the one nearest its
     // target charges now, alone; the chain reaction starts from where it stood.
-    // holdForWave (SU-174): the spark does not charge; it only starts the wait, and charges with the rest in the wave.
     void StartAssaultSpark(Troop troop, IReadOnlyList<SoldierAgentState> soldiers, bool frontRankOnly, TroopTuning tuning,
-        ITroopRandom random, float now, bool holdForWave)
+        ITroopRandom random, float now)
     {
         SoldierAgentState spark = null;
         SoldierContact sparkTarget = default;
@@ -208,11 +207,6 @@ public sealed class ChargeCoordinator
             sparkPosition = position;
         }
         if (spark == null) return;
-        if (holdForWave)
-        {
-            troop.Assault.Spark(sparkPosition);
-            return;
-        }
         spark.BeginAssaultCharge(sparkTarget.Soldier, sparkTarget.Troop, tuning.ChargeTimeoutSeconds, now);
         troop.MarkAssaultCharge(spark);
         troop.Assault.Spark(sparkPosition);
