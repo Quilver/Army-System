@@ -29,14 +29,13 @@ public struct CombatLogSoldier
 public struct CombatPowerParts
 {
     public int Skill;
-    public int Charge;    // ChargeStat + WeaponCharge + AssaultCharge, while charging; 0 otherwise
+    public int Charge;    // ChargeStat + WeaponCharge, while charging; 0 otherwise
     public int ChargeStat;     // the soldier's Charge stat (while charging)
     public int WeaponCharge;   // the melee weapon's charge bonus (while charging)
-    public int AssaultCharge;  // AssaultChargeBonus (while charging during Assault)
     public string Weapon;      // the melee weapon's name
     public int Support;
     public bool Charging;
-    public bool Assault;
+    public bool Assault;  // the soldier's Assault charge (SU-165)
     public bool Flanked;  // fighting an enemy on its troop's flank or rear: no support
     public bool Stunned;  // stunned (SU-107): deals no damage if it wins (SU-111)
     public int Total => Skill + Charge + Support;
@@ -50,7 +49,7 @@ public struct CombatLogDamage
     public int Strength;         // melee only
     public int WeaponDamage;
     public int Domination;       // melee only
-    public bool LanceDoubled;    // Couched Lance while charging during Assault (SU-148)
+    public bool LanceDoubled;    // Couched Lance on its Assault charge (SU-148, SU-165)
     public int Raw;
     public int Deflected, Bruised, Bled, Overflow;
     public int AppliedHp;        // after the HP clamp
@@ -129,7 +128,7 @@ public static class CombatLog
     // --- Text ---
 
     // One short line per step, so it reads down the panel: who fought; each side's Combat Power (A and B) with the charge
-    // bonus broken into the Charge stat, the weapon's charge bonus and Assault; the chance, roll and winner; the damage
+    // bonus broken into the Charge stat and the weapon's charge bonus; the chance, roll and winner; the damage
     // and what it did. A shot: shooter and target, the hit roll, then the damage.
     public static string Format(in CombatLogEntry entry)
     {
@@ -170,14 +169,13 @@ public static class CombatLog
     static string Tags(in CombatPowerParts power)
     {
         string tags = string.Empty;
-        if (power.Charging) tags += power.Assault ? " (charging, Assault)" : " (charging)";
-        else if (power.Assault) tags += " (Assault)";
+        if (power.Charging) tags += power.Assault ? " (Assault charge)" : " (charging)";
         if (power.Flanked) tags += " (flanked)";
         if (power.Stunned) tags += " (stunned)";
         return tags;
     }
 
-    // "9 skill + 24 charge (11 Charge + 8 Lance + 5 Assault) + 6 support = 39"
+    // "9 skill + 19 charge (11 Charge + 8 Lance) + 6 support = 34"
     static string Power(in CombatPowerParts power)
     {
         var text = new StringBuilder();
@@ -187,7 +185,6 @@ public static class CombatLog
             text.Append(" + ").Append(power.Charge).Append(" charge (").Append(power.ChargeStat).Append(" Charge");
             if (power.WeaponCharge != 0)
                 text.Append(" + ").Append(power.WeaponCharge).Append(' ').Append(string.IsNullOrEmpty(power.Weapon) ? "weapon" : power.Weapon);
-            if (power.AssaultCharge != 0) text.Append(" + ").Append(power.AssaultCharge).Append(" Assault");
             text.Append(')');
         }
         if (power.Support != 0) text.Append(" + ").Append(power.Support).Append(" support");

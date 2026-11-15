@@ -1,7 +1,8 @@
 using UnityEngine;
 using UnityEngine.Serialization;
 
-// Battle Tuning: charges, clashes, support, duels and Assault (spec §4.2-§4.5, §7.2).
+// Battle Tuning: charges, feints, clashes, support and duels (spec §4.3-§4.5, §7.2). The Assault has no tunables since
+// SU-165.
 // Asset: Assets/Resources/Battle Tuning/Melee Tuning.asset. Read through TroopTuning.Active.
 [CreateAssetMenu(menuName = "Battle Tuning/Melee Tuning")]
 public sealed class MeleeTuning : ScriptableObject
@@ -43,6 +44,12 @@ public sealed class MeleeTuning : ScriptableObject
         "Short, so a feinting soldier, which cannot start a real charge, is soon free to charge again.")]
     float _feintTimeoutSeconds = 1f;
 
+    [Header("Assault (spec §4.2, SU-165)")]
+    [SerializeField, Tooltip("Assault charges (SU-165): when a troop with an active order becomes engaged, every soldier " +
+        "that may charge makes one charge, without a roll, as it comes into reach. Off: the Assault still opens and " +
+        "closes (achievements read it) but makes no charges, and a Couched Lance never doubles.")]
+    bool _assaultCharges = true;
+
     [Header("Support and duel (spec §4.5)")]
     [SerializeField, Min(0f), Tooltip("Support range (units).")]
     float _supportRadius = 3f;
@@ -64,14 +71,6 @@ public sealed class MeleeTuning : ScriptableObject
         "about 3 to 1 (76%).")]
     float _eloScale = 30f;
 
-    [Header("Assault (spec §4.2)")]
-    [SerializeField, Min(0f), Tooltip("Assault length after an ordered troop engages.")]
-    float _assaultDurationSeconds = 10f;
-    [SerializeField, Min(0), Tooltip("Aggression bonus during Assault.")]
-    int _assaultAggressionBonus = 5;
-    [SerializeField, Min(0), Tooltip("Charge bonus during Assault, while charging.")]
-    int _assaultChargeBonus = 5;
-
     public float ChargeWindowSeconds => _chargeWindowSeconds;
     public float ChargeGapTolerance => _chargeGapTolerance;
     public bool FrontRankChargesOnly => _frontRankChargesOnly;
@@ -83,6 +82,7 @@ public sealed class MeleeTuning : ScriptableObject
     public float FeintsPerCharge => _feintsPerCharge;
     public float FeintKnockBackScale => _feintKnockBackScale;
     public float FeintTimeoutSeconds => _feintTimeoutSeconds;
+    public bool AssaultCharges => _assaultCharges;
 
     public float SupportRadius => _supportRadius;
     public float SpearSupportRangeMultiplier => _spearSupportRangeMultiplier;
@@ -91,8 +91,4 @@ public sealed class MeleeTuning : ScriptableObject
     public float DominationDivisor => _dominationDivisor;
     public bool EloDuel => _eloDuel;
     public float EloScale => _eloScale;
-
-    public float AssaultDurationSeconds => _assaultDurationSeconds;
-    public int AssaultAggressionBonus => _assaultAggressionBonus;
-    public int AssaultChargeBonus => _assaultChargeBonus;
 }

@@ -3,8 +3,12 @@ using UnityEngine;
 
 // Charge scheduler (spec §4.3, §4.4). Each frame every soldier of a troop within the engagement gap of an enemy troop
 // charges with probability 1 - exp(-rate x dt), rate = EffectiveAggression / ChargeWindowSeconds (Melee Tuning, 45 s,
-// SU-112), so it makes about Aggression charges per window (Aggression + 5 during Assault). There is no neighbour contagion and no cooldown after a
+// SU-112), so it makes about Aggression charges per window. There is no neighbour contagion and no cooldown after a
 // charge (Q-29, Q-30).
+//   Assault (SU-165): while the troop's Assault is open, each soldier that may charge (the same gate, front rank and
+//   reach) and has not yet made its Assault charge charges at once, with no roll. All of a frame's Assault charges
+//   start before any of them picks followers, so no soldier is taken as a follower before it can make its own. An
+//   Assault charge is otherwise an ordinary charge. A soldier that owes one makes no ordinary roll and no feint.
 //   Gate (SU-95): the troop's footprint gap to an enemy troop is within EngagementGap (+ ChargeGapTolerance). Being
 //   engaged (A_Distance) is no longer enough: engaged lines that stand off further apart do not charge.
 //   Target: one of the ChargeCandidateCount nearest soldiers within the charge reach, at random, of an enemy troop
@@ -31,6 +35,7 @@ public sealed class ChargeCoordinator
     readonly HashSet<Troop> _chargeable = new();
     readonly HashSet<SoldierAgentState> _frontRank = new();
     readonly List<(SoldierAgentState soldier, float forward)> _ranked = new();
+    readonly List<(SoldierAgentState soldier, Vector2 position)> _assaultChargers = new();
 
     public ChargeCoordinator(SoldierContactIndex index, TroopRegistry registry)
     {
@@ -93,12 +98,16 @@ public sealed class ChargeCoordinator
             if (frontRankOnly) CollectFrontRank(troop, _chargeable, _frontRank, _ranked);
             ITroopRandom random = troop.TroopRandom;
             IReadOnlyList<SoldierAgentState> soldiers = troop.Soldiers;
+            bool assault = troop.RefreshAssault() && tuning.AssaultCharges;
+            if (assault) StartAssaultCharges(troop, soldiers, frontRankOnly, tuning, random, now);
             for (int i = 0; i < soldiers.Count; i++)
             {
                 SoldierAgentState soldier = soldiers[i];
                 if (!soldier.IsAlive || soldier.Character == null || soldier.IsCommitted || soldier.IsReturning
                     || soldier.IsStunned) continue;
                 if (frontRankOnly && !_frontRank.Contains(soldier)) continue;
+                // It owes its Assault charge but has no target in reach yet: it waits for one, without rolling (SU-165).
+                if (assault && troop.OwesAssaultCharge(soldier)) continue;
 
                 float aggression = troop.EffectiveAggression(soldier.Character);
                 float chance = ChargeRules.ChargeProbability(aggression, tuning.ChargeWindowSeconds, deltaTime);
@@ -120,14 +129,41 @@ public sealed class ChargeCoordinator
         }
     }
 
+    // Assault charges (SU-165): every eligible soldier that still owes its charge and has a target in reach charges now.
+    // Followers are picked once every Assault charge of the frame has started.
+    void StartAssaultCharges(Troop troop, IReadOnlyList<SoldierAgentState> soldiers, bool frontRankOnly,
+        TroopTuning tuning, ITroopRandom random, float now)
+    {
+        _assaultChargers.Clear();
+        for (int i = 0; i < soldiers.Count; i++)
+        {
+            SoldierAgentState soldier = soldiers[i];
+            if (!soldier.IsAlive || soldier.Character == null || soldier.IsCommitted || soldier.IsReturning
+                || soldier.IsStunned) continue;
+            if (frontRankOnly && !_frontRank.Contains(soldier)) continue;
+            if (!troop.OwesAssaultCharge(soldier)) continue;
+            Vector2 position = troop.WorldPosition(soldier);
+            if (!TryPickTarget(troop, position, tuning.ChargeRange, tuning.ChargeCandidateCount, _chargeable, random,
+                    out SoldierContact target))
+                continue;
+            soldier.BeginAssaultCharge(target.Soldier, target.Troop, tuning.ChargeTimeoutSeconds, now);
+            troop.MarkAssaultCharge(soldier);
+            troop.MeleeMetrics.RecordChargeStarted();
+            _assaultChargers.Add((soldier, position));
+        }
+        foreach (var (soldier, position) in _assaultChargers)
+            PickFollowers(troop, soldier, position, tuning, random, now);
+        troop.RefreshAssault();
+    }
+
     // Feint roll (SU-164): FeintsPerCharge x the charge rate, on the troop's feint stream so the charge stream draws as
     // before. A feint picks its target like a charge, ends after FeintTimeoutSeconds, takes no followers and counts apart
-    // from charges. A troop in Assault does not feint, so feints never take the place of its Assault charges.
+    // from charges. A soldier that owes its Assault charge never gets here (SU-165), so a feint never takes its place.
     void TryStartFeint(Troop troop, SoldierAgentState soldier, float aggression, TroopTuning tuning, float deltaTime,
         float now)
     {
         float feints = tuning.FeintsPerCharge;
-        if (feints <= 0f || troop.IsAssaulting) return;
+        if (feints <= 0f) return;
         ITroopRandom random = troop.FeintRandom;
         float chance = ChargeRules.ChargeProbability(aggression * feints, tuning.ChargeWindowSeconds, deltaTime);
         if (random.Value() >= chance) return;

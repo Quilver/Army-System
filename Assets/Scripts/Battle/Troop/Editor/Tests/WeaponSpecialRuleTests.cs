@@ -146,7 +146,7 @@ public sealed class WeaponSpecialRuleTests
         Assert.AreEqual(0, character.MeleeWeaponSkill);
         // Charging with support 2: only Charge + weapon charge bonus + support count.
         int power = CombatPower.Compute(character.MeleeWeaponSkill, true, character.Charge,
-            character.MeleeWeaponChargeBonus, false, 0, 2);
+            character.MeleeWeaponChargeBonus, 2);
         Assert.AreEqual(character.Charge + character.MeleeWeaponChargeBonus + 2, power);
     }
 

@@ -454,6 +454,9 @@ public sealed class TroopScenarioTests
     [Test]
     public void PinnedAnchor_EngagedEndDoesNotMove_LinkSnapsWhenOverStretched()
     {
+        // SU-165: the line orders open Assaults on contact; the charging front ranks leave the footprints and the anchor
+        // drops out of engagement for a moment. This test is about the chain, so the Assault makes no charges here.
+        UseRule("_assaultCharges", false);
         Troop anchor = CreateTroop("Anchor", 0, new Vector2(0f, 0f));
         Troop wing = CreateTroop("Wing", 0, new Vector2(0f, 9f));
         Troop enemy = CreateTroop("Enemy", 1, new Vector2(7f, -6f));

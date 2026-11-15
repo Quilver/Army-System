@@ -6,7 +6,7 @@ using UnityEngine;
 //   Soldier Tuning     stats, actions and soldier steering          (SoldierTuning)
 //   Formation Tuning   S_Distance, A_Distance, formation, movement  (FormationTuning)
 //   Morale Tuning      morale, retreat, rout and faces              (MoraleTuning)
-//   Melee Tuning       charges, clashes, support, duels, Assault    (MeleeTuning)
+//   Melee Tuning       charges, feints, clashes, support, duels     (MeleeTuning)
 //   Chain Tuning       chains and link springs                      (ChainTuning)
 //   Ranged Tuning      ranged fire and composite ranks              (RangedTuning)
 //   Input Tuning       player input thresholds                      (InputTuning)
@@ -193,6 +193,8 @@ public sealed class TroopTuning
     public float FeintsPerCharge => Melee.FeintsPerCharge;
     public float FeintKnockBackScale => Melee.FeintKnockBackScale;
     public float FeintTimeoutSeconds => Melee.FeintTimeoutSeconds;
+    // Whether an open Assault makes its soldiers charge (SU-165).
+    public bool AssaultCharges => Melee.AssaultCharges;
     public float SupportRadius => Melee.SupportRadius;
     public float SpearSupportRangeMultiplier => Melee.SpearSupportRangeMultiplier;
     public float SupportBonusPerSupportPoint => Melee.SupportBonusPerSupportPoint;
@@ -200,9 +202,6 @@ public sealed class TroopTuning
     public float DominationDivisor => Melee.DominationDivisor;
     public bool EloDuel => Melee.EloDuel;
     public float EloScale => Melee.EloScale;
-    public float AssaultDurationSeconds => Melee.AssaultDurationSeconds;
-    public int AssaultAggressionBonus => Melee.AssaultAggressionBonus;
-    public int AssaultChargeBonus => Melee.AssaultChargeBonus;
 
     // --- Chain Tuning ---
 

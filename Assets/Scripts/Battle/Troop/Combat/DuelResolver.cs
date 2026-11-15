@@ -4,7 +4,7 @@ using UnityEngine;
 //   knock-back on both, then a duel on Combat Power: P_A = CP_A / (CP_A + CP_B) (or the Elo duel, SU-153), roll R in
 //   [0, 100], A wins when
 //   R <= P_A x 100. The winner deals Strength + weapon damage + Domination, Domination = round(|R - P_A%| / 10),
-//   doubled for a Couched Lance bearer charging during its troop's Assault (SU-148). The damage goes through the
+//   doubled for a Couched Lance bearer on its Assault charge (SU-148, SU-165). The damage goes through the
 //   target's armour (MitigationResolver).
 //   A is the charger; if both charge, the earlier charge; if neither, the lower soldier id (Q-28).
 //   A soldier fighting an enemy on its troop's flank or rear gets no support, and the Shock it takes is x3 (spec §4.8).
@@ -111,14 +111,13 @@ public sealed class DuelResolver
     // Combat Power (CombatPower.Compute) with its parts, for the combat log.
     CombatPowerParts Power(SoldierContact contact, Vector2 position, bool flanked)
     {
-        TroopTuning tuning = TroopTuning.Active;
         CharacterProfile profile = contact.Soldier.Character;
         bool charging = contact.Soldier.IsCharging;
-        bool assault = contact.Troop.IsAssaulting;
+        bool assault = contact.Soldier.IsAssaultCharging;
         if (profile == null) return new CombatPowerParts { Charging = charging, Assault = assault, Flanked = flanked };
         int support = _support.SupportBonus(contact.Troop, contact.Soldier, position, flanked);
         int total = CombatPower.Compute(profile.MeleeWeaponSkill, charging, profile.Charge,
-            profile.MeleeWeaponChargeBonus, assault, tuning.AssaultChargeBonus, support);
+            profile.MeleeWeaponChargeBonus, support);
         return new CombatPowerParts
         {
             Skill = profile.MeleeWeaponSkill,
@@ -126,7 +125,6 @@ public sealed class DuelResolver
             Charge = total - profile.MeleeWeaponSkill - support,
             ChargeStat = charging ? profile.Charge : 0,
             WeaponCharge = charging ? profile.MeleeWeaponChargeBonus : 0,
-            AssaultCharge = charging && assault ? tuning.AssaultChargeBonus : 0,
             Weapon = profile.MeleeWeapon.DisplayName,
             Charging = charging,
             Assault = assault,
@@ -147,7 +145,7 @@ public sealed class DuelResolver
         if (winner.Troop.State == TroopState.Fleeing) { log.NoDamageReason = "winner fleeing"; return log; }
         if (winner.Soldier.IsStunned) { log.NoDamageReason = "winner stunned"; return log; }
         bool lanceDouble = DamageRules.LanceDoubles(profile.HasCouchedLance, winner.Soldier.IsCharging,
-            winner.Troop.IsAssaulting);
+            winner.Soldier.IsAssaultCharging);
         int raw = DamageRules.RawDamage(profile.Strength, profile.MeleeWeaponDamage, domination, lanceDouble);
         log.Strength = profile.Strength;
         log.WeaponDamage = profile.MeleeWeaponDamage;

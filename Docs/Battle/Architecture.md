@@ -84,7 +84,7 @@ in Edit mode at a fixed frame time.
 
 ### 5.2 `Troop.Update` → `Step(dt)`
 
-1. `TroopMorale.Tick` (Shock decay), bruise healing, Assault timer, link-endpoint relaxation, disorder timer.
+1. `TroopMorale.Tick` (Shock decay), bruise healing, Assault close check (`RefreshAssault`), link-endpoint relaxation, disorder timer.
 2. `FaultSlipMotion.TickRecovery` (retreat ends → Idle).
 3. `EvaluateBreak`.
 4. `FaultSlipMotion.Tick` (retreat motion).
@@ -134,7 +134,7 @@ in Edit mode at a fixed frame time.
   Only the front rank starts charges (SU-106, `CollectFrontRank`: one rank's worth of the soldiers furthest toward each
   chargeable enemy troop). Stunned soldiers neither charge nor follow (SU-107).
 - Feints (SU-164): a soldier whose charge roll fails rolls again on `Troop.FeintRandom` (a second seeded stream, so the
-  charge stream is untouched) at `FeintsPerCharge` × the rate; not while its troop is in Assault. A feint is a charge
+  charge stream is untouched) at `FeintsPerCharge` × the rate; not while it owes its Assault charge. A feint is a charge
   with `SoldierChargeState.IsFeint` set (`SoldierAgentState.IsFeinting`): it runs like one, takes no followers, times
   out after `FeintTimeoutSeconds` and leaves no rush back. `SoldierContactResolver` sends a feint in contact to
   `DuelResolver.ResolveFeint` (knock-back × `FeintKnockBackScale`, clash pulse, `CombatLogKind.Feint`,
@@ -153,14 +153,20 @@ in Edit mode at a fixed frame time.
   clash cooldown.
 - `DuelResolver`: knock-back, labels (A = charger, earlier charger, or lower id), Combat Power
   (`CombatPower` with `SupportCalculator`), roll, `DuelRules` (Domination = round(|R − P_A%| / 10)), damage
-  (`DamageRules`: Strength + weapon damage + Domination, ×2 for a charging Lance) through `Troop.ApplyDamage` (armour
+  (`DamageRules`: Strength + weapon damage + Domination, ×2 for a Lance on its Assault charge) through `Troop.ApplyDamage` (armour
   via `MitigationResolver`). A fleeing winner deals no damage (Q-37).
 - `SupportCalculator`: same-team, alive, not fatigued soldiers within 3 units (6 for a Boar Spear), capped by the
   clashing soldier's Support, ×2 Combat Power; 0 against a flanking enemy.
 - `TroopPivotMover.UpdatePursuit`: a Pursue ends when the target is wiped out or has left the field, not when it routs
   (SU-139); the pursuer's retreat, disorder or rout cancels it through `Troop`.
-- `AssaultState`: a troop with an active Move, Pursue or Line order that becomes engaged gets 10 s of +5 Aggression and
-  +5 Charge while charging. Re-engaging during a pursuit refreshes it.
+- `AssaultState` (SU-165): a troop with an active Move, Pursue or Line order (a held line counts) that becomes engaged
+  opens an Assault. Each frame `ChargeCoordinator.StartAssaultCharges` starts a charge, without a roll, for every
+  eligible soldier (gate, front rank, a target in reach) that has not made its Assault charge, then picks the followers
+  of all of them; `SoldierChargeState.IsAssaultCharge` marks it (the Couched Lance doubles on it only). A soldier that
+  owes its charge makes no ordinary roll or feint. `Troop.RefreshAssault` closes it on a retreat or slip, disorder,
+  rout, when every living soldier has charged (`AssaultCharges` off: never), or when the troop is not engaged and none
+  of its soldiers is out charging, following or rushing back; the next engagement then opens a fresh one. No bonus to
+  Aggression or Charge.
 - `MeleeMetrics`: rolling 30 s counts of charges, followers, clashes, duel wins, damage, shots and hits, with feints
   counted apart (SU-164), and running totals of charges, clashes and feints since the last reset (measurements).
 

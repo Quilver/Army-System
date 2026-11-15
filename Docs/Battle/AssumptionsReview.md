@@ -1,6 +1,6 @@
 # Assumptions review
 
-Every unconfirmed Assumption in `SpecificationUpdate.md` (SU-01 to SU-164), grouped by system so they can be confirmed in one sitting: 229 assumptions across 100 SU entries. SU-164 (feints) was added on 2026-11-15. SU-163 (the assault wheel) was added on 2026-11-15. SU-162 (the troop border) was added on 2026-11-15. SU-161 (flush fronts) was added on 2026-11-15. SU-159 (attack clicks) and SU-160 (linked group lines) were added on 2026-11-15; SU-160 superseded SU-157, whose items were removed. SU-158 (engaged soldiers face their enemy) was added on 2026-11-15. SU-154 to SU-157 (troop facing controls and line spacing, on the `troop-facing-controls` branch) and SU-148 to SU-153 (class design rules) were added on 2026-11-14. SU-136 to SU-140 were added on 2026-11-08; the SU-74 and SU-121 items about routed troops never leaving the map were removed (SU-138 replaced them). Rebuilt 2026-11-08 (SU-135): assumptions that later entries overtook were removed, missing ones were added, and the groups were tidied. The spec (v0.10) tags text that rests on one of these as **[A: SU-n]**.
+Every unconfirmed Assumption in `SpecificationUpdate.md` (SU-01 to SU-165), grouped by system so they can be confirmed in one sitting: 238 assumptions across 100 SU entries. SU-165 (the Assault as one charge per soldier) was added on 2026-11-15; it superseded the SU-148 item and SU-164's "a troop in Assault does not feint", which were removed. SU-164 (feints) was added on 2026-11-15. SU-163 (the assault wheel) was added on 2026-11-15. SU-162 (the troop border) was added on 2026-11-15. SU-161 (flush fronts) was added on 2026-11-15. SU-159 (attack clicks) and SU-160 (linked group lines) were added on 2026-11-15; SU-160 superseded SU-157, whose items were removed. SU-158 (engaged soldiers face their enemy) was added on 2026-11-15. SU-154 to SU-157 (troop facing controls and line spacing, on the `troop-facing-controls` branch) and SU-148 to SU-153 (class design rules) were added on 2026-11-14. SU-136 to SU-140 were added on 2026-11-08; the SU-74 and SU-121 items about routed troops never leaving the map were removed (SU-138 replaced them). Rebuilt 2026-11-08 (SU-135): assumptions that later entries overtook were removed, missing ones were added, and the groups were tidied. The spec (v0.10) tags text that rests on one of these as **[A: SU-n]**.
 
 ## How to use this
 
@@ -18,7 +18,7 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 - [Troops, characters, stats & equipment](#troops-characters-stats--equipment) (20)
 - [Soldier simulation & physics](#soldier-simulation--physics) (6)
 - [Formations, movement & geometry](#formations-movement--geometry) (42)
-- [Combat (melee, charges, ranged)](#combat-melee-charges-ranged) (35)
+- [Combat (melee, charges, ranged)](#combat-melee-charges-ranged) (44)
 - [Morale, retreat & rout](#morale-retreat--rout) (16)
 - [Controls, orders & battle UI](#controls-orders--battle-ui) (41)
 - [Campaign, tent, missions & deployment](#campaign-tent-missions--deployment) (45)
@@ -220,10 +220,6 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 - [ ] the player cannot give a new attack order on a routed troop (only a running pursuit continues), and a pursuer chasing a routed troop does not square up to it. →
 - [ ] the AI is unchanged: it never targets routed troops, so AI troops re-target on their next tick. →
 
-**SU-148** Couched Lance doubles only during Assault
-
-- [ ] the bearer must still be charging (charging and Assault); a troop that falls back and attacks again gets a fresh Assault, so its next charges double again. →
-
 **SU-149** Support is given by the supporters
 
 - [ ] each supporter gives its Support × 0.25, at most 8 supporters (eight Support 8 spearmen still give +16). →
@@ -247,11 +243,24 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 
 - [ ] the feint roll is made only when the soldier's charge roll fails, so a soldier never starts both in one frame. →
 - [ ] a feint that has not reached an enemy soldier after `FeintTimeoutSeconds` (1 s) ends quietly; with 3 s, real clashes per second fell 5-11% and melees grew 18-27%. →
-- [ ] a troop in Assault does not feint, so feints never take the place of its Assault charges. →
 - [ ] a feint leaves no rush back: the soldier walks back to its place and may charge again at once. →
 - [ ] a feint ends on contact with any enemy soldier; against a soldier making a real charge the feint is dropped and the charge clashes; two feinters make one feint contact; after a feint, soldiers still in contact may clash under the ordinary contact rule. →
 - [ ] `FeintsPerCharge` is a decimal. →
 - [ ] feints are not shown among the debug overlay's clash markers. →
+
+**SU-165** The Assault makes every soldier that can charge make one charge
+
+- [ ] an Assault charge is an ordinary real charge in every other respect: followers, Charge stat and weapon charge bonus, clash and cooldown; Fire & Engage stays one volley per engagement. →
+- [ ] Couched Lance doubles on the soldier's Assault charge only, not on its later ordinary charges. →
+- [ ] a soldier that owes its Assault charge makes it in preference to a feint, and makes no ordinary roll or feint while it owes one (also while it waits for a target in reach). →
+- [ ] the charge counts as made when it starts; one that times out or loses its target is spent. →
+- [ ] Assault charges ignore Aggression (Aggression 0 still charges). →
+- [ ] all of a frame's Assault charges start before followers are picked, so followers come from the soldiers not charging. →
+- [ ] "no longer engaged" ends the Assault only once none of the troop's soldiers is out charging, following, feinting or rushing back (its own chargers leave the footprint and can take it out of engagement for a moment). →
+- [ ] "retreats" includes slipping with a retreating chain. →
+- [ ] with front-rank charges, rear ranks charge only if they reach the front rank while it is open, so a deep troop usually stays in Assault for the whole engagement (and `IsAssaulting` with it). →
+- [ ] the unchanged trigger includes a troop holding a line, so a held or deployed line that is attacked counter-charges with its whole front rank. →
+- [ ] `AssaultCharges` (on) switches the charges off; five tests of other systems run with it off. →
 
 ## Morale, retreat & rout
 

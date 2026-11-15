@@ -123,6 +123,9 @@ public sealed class AssaultWheelScenarioTests
     [Test]
     public void DiagonalPursuer_WheelsParallelToTheFaceItAttacks_AndBringsItsFrontIntoContact()
     {
+        // SU-165: with Assault charges the soldiers the wheel brings into reach charge at once, so they are not in reach
+        // when counted. This test is about the wheel.
+        UseToggle("_assaultCharges", false);
         var (attacker, defender) = DiagonalAssault();
         Vector2 defenderFacing = defender.Facing;
         float tolerance = TroopTuning.Active.AssaultWheelToleranceDeg;
@@ -277,6 +280,9 @@ public sealed class AssaultWheelScenarioTests
     [Test]
     public void EngagedPursuer_HoldsWithinTheChargeGap_AndResumesWhenTheGapOpens()
     {
+        // SU-165: with Assault charges both front ranks charge on contact and leave the footprints, so the gap opens and
+        // the pursuer marches again for a moment. This test is about the hold.
+        UseToggle("_assaultCharges", false);
         var (flips, quickFlips, maxMarch, marchingInGap, attacker, defender) = HeadOnPursuit();
         TestContext.WriteLine($"Hold on: {flips} sign flips of the pivot velocity ({quickFlips} within 3 frames), " +
                               $"max march while holding {maxMarch:F3}, {marchingInGap} of 90 frames marching within the gap");

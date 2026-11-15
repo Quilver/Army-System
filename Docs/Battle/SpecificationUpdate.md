@@ -11,6 +11,58 @@ SU-128 refer to v0.9 and may have moved.
 
 ---
 
+## 2026-11-15: The Assault becomes one charge from every soldier (branch troop-facing-controls)
+
+### SU-165 The Assault makes every soldier that can charge make one charge (Decision + Assumptions, spec §4.2, §4.3, §4.5, §4.6, §8)
+The designer: "instead of assault giving a 10 second bonus to charge and aggression, I want the assault to just [be]
+that every valid soldier that can charge makes a charge."
+- Decision: the trigger is unchanged: a troop with an active order (Move, Pursue or Line) that becomes engaged opens an
+  Assault. While it is open, every soldier that may charge (the scheduler's eligibility: alive, not committed,
+  returning or stunned, in the front rank under `FrontRankChargesOnly`, its troop within the charge gap, a target within
+  `ChargeRange`) and has not yet made its Assault charge starts a charge at once, with no roll.
+- Decision: each soldier once, as it comes into reach: at first contact everyone who can charge does; soldiers who come
+  into reach later (as the troop wheels in, SU-163) make their one Assault charge then. At most one per soldier per
+  Assault.
+- Decision: the Assault ends when the troop retreats, is disordered or routs, is no longer engaged, or when every living
+  soldier has made its charge. A later engagement with an active order opens a fresh one.
+- Decision: the timed bonus is gone: `AssaultDurationSeconds`, `AssaultAggressionBonus` and `AssaultChargeBonus` are
+  removed from Melee Tuning (and its asset), from `EffectiveAggression` and `CombatPower`, from the combat log (a clash
+  line now tags "(Assault charge)") and from the Troop inspector (now "Assault" and "Assault charges made").
+  `Troop.IsAssaulting` is true while an Assault is open (achievements read it).
+- Assumption: an Assault charge is an ordinary real charge in every other respect: followers (Discipline nearest,
+  `ChargeFollowProbability`), the Charge stat and weapon charge bonus, clash, duel and cooldown. Fire & Engage volleys
+  stay one per engagement (SU-90).
+- Assumption: Couched Lance doubles on the soldier's Assault charge only (it replaces "a charge during Assault",
+  SU-148); a later ordinary charge in the same melee does not double.
+- Assumption: a soldier that owes its Assault charge makes it in preference to a feint, and makes no ordinary roll and
+  no feint while it owes one, also while it waits for a target in reach. This replaces SU-164's "a troop in Assault does
+  not feint": soldiers that have made their Assault charge may feint while the Assault stays open.
+- Assumption: the charge counts as made when it starts; one that times out or loses its target is spent.
+- Assumption: Assault charges ignore Aggression: a soldier with Aggression 0 still makes one.
+- Assumption: all of a frame's Assault charges start before any of them picks followers, so no soldier is taken as a
+  follower before it can make its own charge; followers come from the soldiers not charging (usually the rear ranks).
+- Assumption: soldiers out charging are left out of the footprint (SU-43), so a whole front rank charging at once can
+  take the troop out of engagement for a moment. That does not end the Assault: "no longer engaged" counts only once
+  none of the troop's soldiers is out charging, following, feinting or rushing back. Otherwise every flicker opened a
+  fresh Assault and the front rank charged again and again.
+- Assumption: "retreats" includes slipping with a retreating chain (`IsFaultSlipping`).
+- Assumption: with `FrontRankChargesOnly`, rear-rank soldiers make their Assault charge only if they reach the front
+  rank while it is open, so a troop of several ranks usually keeps its Assault open for the whole engagement.
+  `IsAssaulting` (and the achievement that requires an assault) therefore covers the engagement, not 10 s.
+- Assumption: the unchanged trigger includes a troop holding a line (its Line order stays active while it holds, as
+  before), so a held or deployed line that is attacked opens an Assault and its whole front rank counter-charges.
+- Assumption: a switch, `AssaultCharges` (Melee Tuning, on). Off, the Assault still opens and closes but makes no
+  charges and a Couched Lance never doubles. Five existing tests about other systems (the wheel, the hold, a chain,
+  soldier facing) turn it off; with it on, their troops' front ranks charge on contact and leave the footprints.
+- Measured (8 seeds, project data; old = before SU-164; feints = SU-164; new = SU-165 with feints, then with feints 0):
+  Spearman mirror melee 255 s / 259 s / 187 s (183 s), real clashes 0.460 / 0.483 / 0.638 (0.662) per s, attacker won
+  7/8 / 8/8 / 7/8 (6/8), visible clashes 0.46 / 1.10 / 1.20 per s. Cav on Spearman 175 / 161 / 169 (154) s, 0.497 /
+  0.463 / 0.536 (0.567), 8/8 throughout, visible 0.50 / 1.12 / 1.22. Huskarl on Spearman 58 / 59 / 45 (44) s, 0.563 /
+  0.537 / 0.715 (0.726), Huskarl won 6/8 / 3/8 / 5/8 (4/8), visible 0.56 / 0.87 / 1.08. Cav on Archer 14 / 17 / 14 (12) s;
+  Skirmisher on Archer 12 / 11 / 7 (8) s; the attacker won 8/8 in both throughout. Losses: Spearman mirror survivors
+  L12.0 R10.4 / L13.0 R10.4 / L14.4 R10.4; Huskarl on Spearman 8.4/9.8 / 8.0/11.5 / 8.6/9.9. The new Assault shortens
+  longer melees by about a quarter and raises real clashes by about 15-40%.
+
 ## 2026-11-15: Feints (branch troop-facing-controls)
 
 ### SU-164 Soldiers feint three times for every real charge (Decision + Assumptions, spec §4.3, §4.5, §8)

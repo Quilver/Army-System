@@ -105,17 +105,17 @@ public sealed class CombatPowerTests
     [Test]
     public void BothCharging_BothGetTheChargeBonus()
     {
-        int a = CombatPower.Compute(5, true, 5, 3, false, 5, 4);
-        int b = CombatPower.Compute(6, true, 4, 0, false, 5, 0);
+        int a = CombatPower.Compute(5, true, 5, 3, 4);
+        int b = CombatPower.Compute(6, true, 4, 0, 0);
         Assert.AreEqual(5 + 5 + 3 + 4, a);
         Assert.AreEqual(6 + 4, b);
     }
 
     [Test]
-    public void NotCharging_NoChargeBonus_AssaultOnlyWhileCharging()
+    public void NotCharging_NoChargeBonus()
     {
-        Assert.AreEqual(9, CombatPower.Compute(5, false, 5, 3, true, 5, 4));
-        Assert.AreEqual(5 + 5 + 3 + 5 + 4, CombatPower.Compute(5, true, 5, 3, true, 5, 4));
+        Assert.AreEqual(9, CombatPower.Compute(5, false, 5, 3, 4));
+        Assert.AreEqual(5 + 5 + 3 + 4, CombatPower.Compute(5, true, 5, 3, 4));
     }
 }
 
@@ -133,9 +133,9 @@ public sealed class DamageRulesTests
         Assert.AreEqual(20, DamageRules.RawDamage(5, 3, 2, true));
     }
 
-    // SU-148: only a charge during the bearer's troop's Assault doubles.
+    // SU-148, SU-165: only the bearer's Assault charge doubles.
     [Test]
-    public void CouchedLance_DoublesOnlyOnAChargeDuringAssault()
+    public void CouchedLance_DoublesOnlyOnTheAssaultCharge()
     {
         Assert.IsTrue(DamageRules.LanceDoubles(true, true, true));
         Assert.IsFalse(DamageRules.LanceDoubles(true, true, false));
@@ -152,13 +152,6 @@ public sealed class ChargeRulesTests
         float p = ChargeRules.ChargeProbability(5f, 30f, 1f / 60f);
         Assert.AreEqual(1f - (float)Math.Exp(-5.0 / 30.0 / 60.0), p, 1e-6f);
         Assert.AreEqual(0f, ChargeRules.ChargeProbability(0f, 30f, 0.1f));
-    }
-
-    [Test]
-    public void AssaultAddsFiveAggression()
-    {
-        Assert.AreEqual(10f, ChargeRules.EffectiveAggression(5, true, 5));
-        Assert.AreEqual(5f, ChargeRules.EffectiveAggression(5, false, 5));
     }
 
     // 200 engaged soldiers over 30 s: charges per soldier is about Aggression (within 10%).

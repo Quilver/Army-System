@@ -322,8 +322,32 @@ public sealed class Troop : MonoBehaviour
     // Engaged (with the engagement hold) or carrying an attack order. Chain tension, shared joints, shared retreat and
     // friendly pivot separation never move a committed troop: its friends give way instead (SU-46).
     public bool IsCommitted => !IsRouted && (_engaged || IsPursuing);
+    // An Assault is open (SU-165): its soldiers each make one charge as they come into reach.
     public bool IsAssaulting => _assault.IsActive;
-    public float AssaultTimeRemaining => _assault.TimeRemaining;
+    public int AssaultChargesMade => _assault.ChargesMade;
+    // Whether the soldier still owes its charge to the open Assault.
+    internal bool OwesAssaultCharge(SoldierAgentState soldier) => _assault.Owes(soldier);
+    internal void MarkAssaultCharge(SoldierAgentState soldier) => _assault.MarkCharged(soldier);
+
+    // Closes the Assault when the troop retreats or slips, is disordered or routs, is no longer engaged with all its
+    // soldiers back in the formation, or every living soldier has made its charge (SU-165). Returns whether it is open.
+    // Soldiers out charging are left out of the footprint, so a whole front rank charging at once can take the troop out
+    // of engagement for a moment: that does not end the Assault, or the next contact would open a fresh one.
+    internal bool RefreshAssault()
+    {
+        if (!_assault.IsActive) return false;
+        if (IsFaultSlipping || IsDisordered || IsRouted || (!_engaged && !HasSoldiersAway())) _assault.Clear();
+        else _assault.CloseIfComplete(Soldiers);
+        return _assault.IsActive;
+    }
+
+    // Some living soldier is charging, following, feinting or rushing back to the troop.
+    bool HasSoldiersAway()
+    {
+        foreach (var soldier in Soldiers)
+            if (soldier.IsAlive && (soldier.IsCommitted || soldier.IsReturning)) return true;
+        return false;
+    }
 
     // The nearest engaged enemy troop, or null.
     public Troop EngagedEnemy
@@ -381,7 +405,8 @@ public sealed class Troop : MonoBehaviour
         _border.Update(this, _outline, deltaTime);
     }
 
-    // Replaces this frame's engagement records. Entering engagement with an active order starts Assault (spec §4.2).
+    // Replaces this frame's engagement records. Entering engagement with an active order opens an Assault (spec §4.2,
+    // SU-165), unless one is still open; RefreshAssault closes it.
     internal void SetEngagements(List<EngagementRecord> records)
     {
         _engagements.Clear();
@@ -389,7 +414,7 @@ public sealed class Troop : MonoBehaviour
         bool engaged = false;
         foreach (var record in records)
             if (record.Engaged) engaged = true;
-        if (engaged && !_engaged) _assault.OnEngaged(HasActiveOrder, Tuning.AssaultDurationSeconds);
+        if (engaged && !_engaged) _assault.OnEngaged(HasActiveOrder);
         _engaged = engaged;
     }
 
@@ -548,7 +573,7 @@ public sealed class Troop : MonoBehaviour
 
         if (_morale.enabled) _morale.Tick(deltaTime);
         if (_roster.enabled) _roster.TickHealing(deltaTime, Tuning.BruiseHealPerSecond);
-        _assault.Tick(deltaTime);
+        RefreshAssault();
         if (_disorderRemaining > 0f) _disorderRemaining = Mathf.Max(0f, _disorderRemaining - deltaTime);
         _lineLinks.TickRelax(deltaTime, Tuning.ChainEndpointRelaxSpeed);
         if (_faultSlip.TickRecovery(deltaTime) && !IsRouted) State = TroopState.Idle;
@@ -750,9 +775,8 @@ public sealed class Troop : MonoBehaviour
             armour.Bleed, TroopRandom, piercing, bludgeoning);
     }
 
-    // Charges per troop and Assault bonuses (spec §4.2, §4.3).
-    public int EffectiveAggression(CharacterProfile character) =>
-        character == null ? 0 : (int)ChargeRules.EffectiveAggression(character.Aggression, IsAssaulting, Tuning.AssaultAggressionBonus);
+    // The Aggression that sets a soldier's charge rate (spec §4.3). The Assault no longer adds to it (SU-165).
+    public int EffectiveAggression(CharacterProfile character) => character == null ? 0 : character.Aggression;
 
     // Rolling melee statistics for this troop (charges, clashes, duels won, damage dealt and taken).
     public MeleeMetrics MeleeMetrics => _meleeMetrics ??= new MeleeMetrics(_meleeMetricsWindow);

@@ -28,6 +28,7 @@ public sealed class SoldierChargeState
     [NonSerialized] Troop _targetTroop;
     [NonSerialized] SoldierAgentState _leader;
     [NonSerialized] bool _feint;
+    [NonSerialized] bool _assaultCharge;
     [NonSerialized] bool _returnPending;
     [NonSerialized] bool _returning;
     [NonSerialized] float _returnRemaining;
@@ -42,11 +43,15 @@ public sealed class SoldierChargeState
     public bool IsReturning => _returning;
     // The charge is a feint (SU-164).
     public bool IsFeint => _role == ChargeRole.Charger && _feint;
+    // The charge is the soldier's Assault charge (SU-165).
+    public bool IsAssaultCharge => _role == ChargeRole.Charger && _assaultCharge;
 
-    public void BeginCharge(SoldierAgentState target, Troop targetTroop, float timeout, float startTime, bool feint = false)
+    public void BeginCharge(SoldierAgentState target, Troop targetTroop, float timeout, float startTime, bool feint = false,
+        bool assaultCharge = false)
     {
         _role = ChargeRole.Charger;
         _feint = feint;
+        _assaultCharge = assaultCharge && !feint;
         _target = target;
         _targetTroop = targetTroop;
         _leader = null;
@@ -59,6 +64,7 @@ public sealed class SoldierChargeState
     {
         _role = ChargeRole.Follower;
         _feint = false;
+        _assaultCharge = false;
         _leader = leader;
         _target = null;
         _targetTroop = null;
@@ -80,6 +86,7 @@ public sealed class SoldierChargeState
         else if (_role != ChargeRole.None) _returnPending = true;
         _role = ChargeRole.None;
         _feint = false;
+        _assaultCharge = false;
         _target = null;
         _targetTroop = null;
         _leader = null;

@@ -22,6 +22,3 @@ MonoBehaviour:
   _boarSpearSupportRangeMultiplier: 2
   _supportBonusPerAlly: 2
   _dominationDivisor: 10
-  _assaultDurationSeconds: 10
-  _assaultAggressionBonus: 5
-  _assaultChargeBonus: 5

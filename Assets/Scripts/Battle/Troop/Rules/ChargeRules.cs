@@ -5,11 +5,6 @@ using System;
 // expected Aggression charges per soldier.
 public static class ChargeRules
 {
-    public static float EffectiveAggression(int aggression, bool assault, int assaultAggressionBonus)
-    {
-        return aggression + (assault ? assaultAggressionBonus : 0);
-    }
-
     public static float ChargeProbability(float effectiveAggression, float actionWindowSeconds, float deltaTime)
     {
         if (effectiveAggression <= 0f || deltaTime <= 0f || actionWindowSeconds <= 0f) return 0f;

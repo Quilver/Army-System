@@ -121,6 +121,9 @@ public sealed class SoldierAgentState
     // A charger whose charge is a feint (SU-164): it runs like a charge and ends on contact without a duel.
     public bool IsFeinting => IsCharging && _charge.IsFeint;
 
+    // A charger making its Assault charge (SU-165): the one charge a Couched Lance doubles on.
+    public bool IsAssaultCharging => IsCharging && _charge.IsAssaultCharge;
+
     // A passive follower of a charger (spec §4.4).
     public bool IsFollowing => _charge.Role == ChargeRole.Follower && _charge.Leader != null;
 
@@ -139,6 +142,8 @@ public sealed class SoldierAgentState
         _charge.BeginCharge(target, targetTroop, timeout, startTime);
     public void BeginFeint(SoldierAgentState target, Troop targetTroop, float timeout, float startTime) =>
         _charge.BeginCharge(target, targetTroop, timeout, startTime, feint: true);
+    public void BeginAssaultCharge(SoldierAgentState target, Troop targetTroop, float timeout, float startTime) =>
+        _charge.BeginCharge(target, targetTroop, timeout, startTime, assaultCharge: true);
     public void BeginFollow(SoldierAgentState leader, float timeout, float startTime) =>
         _charge.BeginFollow(leader, timeout, startTime);
     public void TickCharge(float deltaTime) => _charge.Tick(deltaTime);

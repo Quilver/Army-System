@@ -109,6 +109,7 @@ public sealed class SoldierFacingTests
     // within direct reach of the attackers, those at the far end are not.
     Troop RearAttacked(out Troop attacker)
     {
+        NoAssaultCharges();
         Troop defender = CreateTroop("Defender", 0, Vector2.zero);
         defender.OrderLine(Vector2.zero, Vector2.right, defender.NaturalLineLength);
         attacker = CreateTroop("Attacker", 1, new Vector2(-6f, 4f));
@@ -118,6 +119,15 @@ public sealed class SoldierFacingTests
         Assert.AreEqual(1, defender.Engagements.Count);
         Assert.AreEqual(TroopFace.Rear, defender.Engagements[0].Face, "attacked in the rear");
         return defender;
+    }
+
+    // SU-165: the defender's held line opens an Assault when it is attacked, and its whole front rank would charge at
+    // once. This test is about something else, so the Assault makes no charges here.
+    void NoAssaultCharges()
+    {
+        var serialized = new SerializedObject(_tuning.Melee);
+        serialized.FindProperty("_assaultCharges").boolValue = false;
+        serialized.ApplyModifiedPropertiesWithoutUndo();
     }
 
     // Living soldiers of troop clearly within (or clearly beyond) direct reach of enemy.

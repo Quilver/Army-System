@@ -755,9 +755,7 @@ defaults are used when an asset is missing. Values in the rest of this document 
 | `DominationDivisor` | 10 | float | Divisor in the Domination formula. |
 | `EloDuel` | off (*default*) | bool | On: P_A = 1 / (1 + 10^((CP_B − CP_A) / EloScale)) (SU-153). |
 | `EloScale` | 30 (*default*) | CP | Elo duel: this lead wins 10 to 1. |
-| `AssaultDurationSeconds` | 10 | s | Assault length. |
-| `AssaultAggressionBonus` | 5 | int | Aggression during Assault. |
-| `AssaultChargeBonus` | 5 | int | Charge during Assault, while charging. |
+| `AssaultCharges` | on (*default*) | bool | An open Assault makes each eligible soldier charge once, without a roll, as it comes into reach (SU-165). Off: no Assault charges. |
 
 **Chain Tuning**
 

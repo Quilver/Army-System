@@ -60,6 +60,15 @@ public sealed class ChainEngagementScenarioTests
     }
 
     // The project's Formation Tuning: lines form at 5, engage at 2, and the barrier holds them 2 apart.
+    // SU-165: the troops' line and attack orders open Assaults on contact, and their whole front ranks would charge at
+    // once. This test is about something else, so the Assault makes no charges here.
+    void NoAssaultCharges()
+    {
+        var serialized = new SerializedObject(_tuning.Melee);
+        serialized.FindProperty("_assaultCharges").boolValue = false;
+        serialized.ApplyModifiedPropertiesWithoutUndo();
+    }
+
     void UseProjectDistances()
     {
         UseTuning("_sDistance", 5f);
@@ -147,6 +156,7 @@ public sealed class ChainEngagementScenarioTests
     public void ChainedFighter_IsNotDraggedAway_AndAnAttackerPassingTheChainReachesTheEnemy()
     {
         UseProjectDistances();
+        NoAssaultCharges();
         Troop enemy = CreateTroop("Enemy", 1, Vector2.zero, 6, 13);
         Troop fighter = LineTroop("Fighter", new Vector2(5.2f, 0.3f), Vector2.left, frontage: 8, soldiers: 22);
         Troop archers = LineTroop("Archers", new Vector2(4f, -6.5f), new Vector2(-4f, 6.5f).normalized, frontage: 5,

@@ -17,7 +17,8 @@ public sealed class TroopEditor : Editor
             EditorGUILayout.LabelField("State", EditorStyles.boldLabel);
             EditorGUILayout.EnumPopup("Formation Mode", troop.FormationMode);
             EditorGUILayout.Toggle("Engaged", troop.IsEngaged);
-            EditorGUILayout.FloatField("Assault (s)", troop.AssaultTimeRemaining);
+            EditorGUILayout.Toggle("Assault", troop.IsAssaulting);
+            EditorGUILayout.IntField("Assault charges made", troop.AssaultChargesMade);
             EditorGUILayout.Toggle("Chained", troop.IsChained);
             EditorGUILayout.Toggle("Chain Suppressed", troop.ChainSuppressed);
             EditorGUILayout.IntField("Move", troop.Move);

@@ -31,7 +31,9 @@ report, sounds) follows a battle; Troop code never references the campaign.
 4. **Charges** (`ChargeCoordinator`): front-rank soldiers (SU-106) of a troop within `EngagementGap` of an enemy troop
    charge at `Aggression / 45 s` (`ChargeWindowSeconds`, Melee Tuning, SU-112), reaching up to `A_Distance` (SU-95); Discipline-nearest friends follow. Stunned
    soldiers (SU-107) do neither. Feints (SU-164): a second roll at `FeintsPerCharge` (3) x that rate, on the troop's
-   own feint stream, sends a soldier at an enemy that recoils on contact with no duel, damage or followers.
+   own feint stream, sends a soldier at an enemy that recoils on contact with no duel, damage or followers. Assault
+   (SU-165): when a troop with an order becomes engaged, each soldier that may charge makes one charge at once, without a
+   roll, as it comes into reach (`AssaultState`).
 5. **Ranged** (`RangedFireController`, `TroopProjectiles`): stationary, unengaged troops fire: Volley weapons in sync,
    others each on its own timing (SU-105).
 6. **Troop update** (`Troop.Update`): morale decay and healing, break test, retreat (in melee) or disorder (out of melee,
@@ -107,7 +109,7 @@ constant in `TroopConstants` when it never changes:
 | Soldier Tuning | Stats and actions, soldier steering |
 | Formation Tuning | Distances (S_Distance, A_Distance, EngagementGap), formation and movement, troop size, friendly gap, marching in line (SU-150), turning in line (SU-155) |
 | Morale Tuning | Morale and retreat, faces |
-| Melee Tuning | Charges and clashes, support and duel (Elo option, SU-153), Assault |
+| Melee Tuning | Charges, feints and clashes, Assault charges on or off (SU-165), support and duel (Elo option, SU-153) |
 | Chain Tuning | Chains, link spring |
 | Ranged Tuning | Ranged (limited ammunition, SU-151), composite troops |
 | Input Tuning | Input thresholds (pixels) |
