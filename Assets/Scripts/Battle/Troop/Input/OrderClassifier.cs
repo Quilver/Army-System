@@ -8,22 +8,28 @@ public enum OrderKind
     Face
 }
 
-// Classifies a right-button release (spec §6.2). Pure. The drag is measured in screen pixels, so the threshold does not
-// depend on zoom (Q-47).
+// Classifies a right-button release (spec §6.2). Pure. The drag is measured in screen pixels, so the thresholds do not
+// depend on zoom (Q-47). In order:
 //   below OrderDragMinPixels with Ctrl held           -> Face: turn in place toward the point (SU-156)
-//   below OrderDragMinPixels on an enemy troop        -> Pursue
-//   below OrderDragMinPixels on empty ground          -> Move
+//   release on an enemy troop that was also under the press, whatever the drag length
+//                                                     -> Pursue (SU-159)
+//   release on an enemy troop, drag below AttackClickSlopPixels
+//                                                     -> Pursue (SU-159): a click on an enemy stays an attack when the
+//                                                        mouse moves a little during it
 //   at or above OrderDragMinPixels                    -> Line: a battle line along the drag, for one troop or several. The
 //                                                        drag's direction sets the front (SU-156).
+//   otherwise                                         -> Move
 public static class OrderClassifier
 {
+    // enemyUnderRelease: an enemy troop is under the release point. sameEnemyUnderPress: that same enemy troop was also
+    // under the press point.
     public static OrderKind Classify(Vector2 pressScreen, Vector2 releaseScreen, float orderDragMinPixels,
-        bool enemyUnderCursor, bool faceHeld = false)
+        float attackClickSlopPixels, bool enemyUnderRelease, bool sameEnemyUnderPress, bool faceHeld = false)
     {
         float drag = Vector2.Distance(pressScreen, releaseScreen);
-        if (drag >= orderDragMinPixels) return OrderKind.Line;
-        if (faceHeld) return OrderKind.Face;
-        return enemyUnderCursor ? OrderKind.Pursue : OrderKind.Move;
+        if (faceHeld && drag < orderDragMinPixels) return OrderKind.Face;
+        if (enemyUnderRelease && (sameEnemyUnderPress || drag < attackClickSlopPixels)) return OrderKind.Pursue;
+        return drag >= orderDragMinPixels ? OrderKind.Line : OrderKind.Move;
     }
 
     // Box select starts at BoxSelectMinDragPixels (spec §6.1).

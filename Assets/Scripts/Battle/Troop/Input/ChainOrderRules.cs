@@ -1,7 +1,7 @@
 using UnityEngine;
 
 // Player rules for moving a chained troop (spec §6.3). Pure.
-//   Inside the envelope (stretch <= 3.0 x L_nat and inner angle >= 65 degrees) the troop stays chained.
+//   Inside the envelope (stretch <= ChainMaxStretchScale, 2.0, x L_nat and inner angle >= 65 degrees) the troop stays chained.
 //   Outside the envelope, or with Alt held, the link is severed when the order is issued (mouse release).
 public static class ChainOrderRules
 {

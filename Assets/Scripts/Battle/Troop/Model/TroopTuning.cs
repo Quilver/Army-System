@@ -198,8 +198,7 @@ public sealed class TroopTuning
     public float ChainMaxStretchScale => Chain.ChainMaxStretchScale;
     public float ChainMinInnerAngleDeg => Chain.ChainMinInnerAngleDeg;
     public float AttachScale => Chain.AttachScale;
-    public float LineOrderMinSpacingScale => Chain.LineOrderMinSpacingScale;
-    public float LineOrderMaxSpacingScale => Chain.LineOrderMaxSpacingScale;
+    public float LineOrderFacingDeadZone => Chain.LineOrderFacingDeadZone;
     public float AutoLinkMaxFacingDeg => Chain.AutoLinkMaxFacingDeg;
     public float AutoLinkBreakFacingDeg => Chain.AutoLinkBreakFacingDeg;
     public float ChainSuppressCooldownSeconds => Chain.ChainSuppressCooldownSeconds;
@@ -236,6 +235,7 @@ public sealed class TroopTuning
     public float OrderDragMinPixels => Input.OrderDragMinPixels;
     public float ClickPickRadiusPixels => Input.ClickPickRadiusPixels;
     public float DoubleClickSeconds => Input.DoubleClickSeconds;
+    public float AttackClickSlopPixels => Input.AttackClickSlopPixels;
 
     // --- Derived values used in several places ---
 

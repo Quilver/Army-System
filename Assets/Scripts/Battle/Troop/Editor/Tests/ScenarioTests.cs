@@ -466,7 +466,7 @@ public sealed class TroopScenarioTests
         Assert.IsTrue(anchor.IsLinkActive(TroopConstants.LeftEnd));
 
         Vector2 anchorStart = anchor.transform.position;
-        // The wing is pulled far away: the engaged anchor is never dragged, and the link snaps at 3 x L_nat.
+        // The wing is pulled far away: the engaged anchor is never dragged, and the link snaps at ChainMaxStretchScale (2) x L_nat.
         for (int i = 0; i < 60 && anchor.IsLinkActive(TroopConstants.LeftEnd); i++)
         {
             wing.ShiftPivot(new Vector2(0f, 1f));

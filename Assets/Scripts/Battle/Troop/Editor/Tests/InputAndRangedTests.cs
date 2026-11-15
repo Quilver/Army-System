@@ -4,43 +4,77 @@ using UnityEngine;
 // Spec §6.2 order classification and facing, and §4.7 ranged rules.
 public sealed class OrderClassifierTests
 {
-    [Test] public void SevenPixelsOnEnemy_IsPursue() =>
-        Assert.AreEqual(OrderKind.Pursue, OrderClassifier.Classify(Vector2.zero, new Vector2(7f, 0f), 8f, true));
+    const float DragMin = 8f;
+    const float Slop = 24f;
 
-    [Test] public void SevenPixelsOnGround_IsMove() =>
-        Assert.AreEqual(OrderKind.Move, OrderClassifier.Classify(Vector2.zero, new Vector2(7f, 0f), 8f, false));
+    static OrderKind Classify(float dragPixels, bool enemyUnderRelease, bool sameEnemyUnderPress = false,
+        bool faceHeld = false) =>
+        OrderClassifier.Classify(Vector2.zero, new Vector2(dragPixels, 0f), DragMin, Slop, enemyUnderRelease,
+            sameEnemyUnderPress, faceHeld);
+
+    [Test] public void SevenPixelsOnEnemy_IsPursue() => Assert.AreEqual(OrderKind.Pursue, Classify(7f, true));
+
+    [Test] public void SevenPixelsOnGround_IsMove() => Assert.AreEqual(OrderKind.Move, Classify(7f, false));
 
     // SU-156: a drag is a battle line for one troop or several (it used to be a Move for one troop, SU-129), so the player
-    // can give a lone troop a front.
-    [Test] public void NinePixels_IsLine_ForOneTroopOrSeveral()
-    {
-        Assert.AreEqual(OrderKind.Line, OrderClassifier.Classify(Vector2.zero, new Vector2(9f, 0f), 8f, true));
-        Assert.AreEqual(OrderKind.Line, OrderClassifier.Classify(Vector2.zero, new Vector2(9f, 0f), 8f, false));
-    }
+    // can give a lone troop a front. SU-159: only off an enemy; a 9-pixel drag onto an enemy is now an attack.
+    [Test] public void NinePixelsOnGround_IsLine() => Assert.AreEqual(OrderKind.Line, Classify(9f, false));
 
     // SU-156: Ctrl + click turns the selection in place, on the ground or on an enemy; a Ctrl drag is still a line.
     [Test] public void CtrlClick_IsFace()
     {
-        Assert.AreEqual(OrderKind.Face, OrderClassifier.Classify(Vector2.zero, new Vector2(7f, 0f), 8f, false, true));
-        Assert.AreEqual(OrderKind.Face, OrderClassifier.Classify(Vector2.zero, new Vector2(7f, 0f), 8f, true, true));
-        Assert.AreEqual(OrderKind.Line, OrderClassifier.Classify(Vector2.zero, new Vector2(9f, 0f), 8f, false, true));
+        Assert.AreEqual(OrderKind.Face, Classify(7f, false, faceHeld: true));
+        Assert.AreEqual(OrderKind.Face, Classify(7f, true, faceHeld: true));
+        Assert.AreEqual(OrderKind.Face, Classify(7f, true, sameEnemyUnderPress: true, faceHeld: true));
+        Assert.AreEqual(OrderKind.Line, Classify(9f, false, faceHeld: true));
     }
 
-    // SU-157: adjacent troops in a multi-troop line stay 0.5 to 2 x the average of their maximum line lengths apart.
-    [Test] public void LineSpacing_FollowsTheShare_InsideTheRange() =>
-        Assert.AreEqual(5f, TroopOrderPlanner.AdjacentCentreSpacing(5f, 3f, 3f, 0.5f, 2f), 1e-5f);
-
-    [Test] public void LineSpacing_IsAtLeastHalfTheMaximumLength() =>
-        Assert.AreEqual(1.5f, TroopOrderPlanner.AdjacentCentreSpacing(0.2f, 3f, 3f, 0.5f, 2f), 1e-5f);
-
-    [Test] public void LineSpacing_IsAtMostDoubleTheMaximumLength() =>
-        Assert.AreEqual(6f, TroopOrderPlanner.AdjacentCentreSpacing(40f, 3f, 3f, 0.5f, 2f), 1e-5f);
-
-    [Test] public void LineSpacing_UsesTheAverageOfTheTwoTroops()
+    // SU-159: the mouse moving a little during a click on an enemy (past OrderDragMinPixels, short of
+    // AttackClickSlopPixels) does not turn the attack into a battle line on top of the enemy.
+    [Test] public void ShortDragOntoEnemy_BelowTheSlop_IsPursue()
     {
-        // Maximum lengths 2 and 6 average 4: the spacing lies in [2, 8].
-        Assert.AreEqual(2f, TroopOrderPlanner.AdjacentCentreSpacing(0.5f, 2f, 6f, 0.5f, 2f), 1e-5f);
-        Assert.AreEqual(8f, TroopOrderPlanner.AdjacentCentreSpacing(20f, 2f, 6f, 0.5f, 2f), 1e-5f);
+        Assert.AreEqual(OrderKind.Pursue, Classify(9f, true));
+        Assert.AreEqual(OrderKind.Pursue, Classify(23.9f, true));
+        Assert.AreEqual(OrderKind.Line, Classify(24f, true));
+    }
+
+    // SU-159: pressed and released on the same enemy troop: an attack, however far the mouse moved over it.
+    [Test] public void DragFromAndToTheSameEnemy_IsPursue_AtAnyLength()
+    {
+        Assert.AreEqual(OrderKind.Pursue, Classify(30f, true, sameEnemyUnderPress: true));
+        Assert.AreEqual(OrderKind.Pursue, Classify(400f, true, sameEnemyUnderPress: true));
+    }
+
+    // SU-159: a long drag that ends on an enemy but did not start on it is still a battle line.
+    [Test] public void LongDragOntoAnEnemy_FromElsewhere_IsLine() =>
+        Assert.AreEqual(OrderKind.Line, Classify(60f, true, sameEnemyUnderPress: false));
+
+    // SU-159: Ctrl only matters below OrderDragMinPixels; past it the attack rules apply as without Ctrl.
+    [Test] public void CtrlDragOntoEnemy_BelowTheSlop_IsPursue() =>
+        Assert.AreEqual(OrderKind.Pursue, Classify(12f, true, faceHeld: true));
+
+    // SU-160: one stretch for a multi-troop line: the drag over the summed L_nat, clamped to [0.7, 2.0].
+    [Test] public void LineStretch_IsTheDragOverTheNaturalTotal_Clamped()
+    {
+        Assert.AreEqual(1.3f, TroopOrderPlanner.LineStretch(26f, 20f, 0.7f, 2f), 1e-5f);
+        Assert.AreEqual(0.7f, TroopOrderPlanner.LineStretch(1f, 20f, 0.7f, 2f), 1e-5f);
+        Assert.AreEqual(2f, TroopOrderPlanner.LineStretch(500f, 20f, 0.7f, 2f), 1e-5f);
+    }
+
+    // SU-160: the drag sets the front once it reaches a quarter of the minimum total width (0.25 x 0.7 x 20 = 3.5).
+    [Test] public void FacingDeadZone_IsAQuarterOfTheMinimumWidth()
+    {
+        Assert.IsTrue(TroopOrderPlanner.InFacingDeadZone(3.49f, 20f, 0.7f, 0.25f));
+        Assert.IsFalse(TroopOrderPlanner.InFacingDeadZone(3.5f, 20f, 0.7f, 0.25f));
+    }
+
+    // SU-160: inside the dead zone the line runs across the kept facing, on the side of the cursor.
+    [Test] public void DeadZoneDirection_IsAcrossTheFacing_OnTheCursorsSide()
+    {
+        AssertVector(Vector2.down, TroopOrderPlanner.DeadZoneDirection(Vector2.right, new Vector2(0.3f, -1f)));
+        AssertVector(Vector2.up, TroopOrderPlanner.DeadZoneDirection(Vector2.right, new Vector2(0.3f, 1f)));
+        // No drag yet: the facing is the line's left-hand normal, as for a drag (OrderClassifier.LineFacing).
+        AssertVector(Vector2.right, TroopOrderPlanner.DeadZoneDirection(Vector2.up, Vector2.zero));
     }
 
     [Test] public void BoxSelect_StartsAtEightPixels()

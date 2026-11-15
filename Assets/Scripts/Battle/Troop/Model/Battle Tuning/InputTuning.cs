@@ -13,9 +13,12 @@ public sealed class InputTuning : ScriptableObject
     [SerializeField, Min(1f), Tooltip("Click pick radius around a pivot or soldier.")] float _clickPickRadiusPixels = 24f;
     [SerializeField, Min(0.05f), Tooltip("Seconds between two left clicks on a troop for a double click (selects its chain, SU-129).")]
     float _doubleClickSeconds = 0.35f;
+    [SerializeField, Min(0f), Tooltip("A right-button release on an enemy troop is an attack (Pursue) when the mouse moved less than this many screen pixels since the press, even past the drag threshold (SU-159). A release on the same enemy troop as the press is an attack at any drag length.")]
+    float _attackClickSlopPixels = 24f;
 
     public float BoxSelectMinDragPixels => _boxSelectMinDragPixels;
     public float OrderDragMinPixels => _orderDragMinPixels;
     public float ClickPickRadiusPixels => _clickPickRadiusPixels;
     public float DoubleClickSeconds => _doubleClickSeconds;
+    public float AttackClickSlopPixels => _attackClickSlopPixels;
 }

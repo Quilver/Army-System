@@ -8,7 +8,9 @@ using UnityEngine.InputSystem;
 //   LMB drag from a troop press on one of the player's troops, keep the button down and drag: on release the selection
 //                         (that troop, or its chain after a double click) moves to the release point (SU-129)
 //   RMB click / drag      Pursue (on an enemy), Move (on ground); a drag from OrderDragMinPixels is a battle line for
-//                         one troop or several, its front set by the drag's direction: left to right faces up (SU-156)
+//                         one troop or several, its front set by the drag's direction: left to right faces up (SU-156).
+//                         A release on an enemy stays an attack when the press was on the same enemy, or the drag is
+//                         shorter than AttackClickSlopPixels (SU-159); the ghost shows the attack while held.
 //   Ctrl + RMB click      Face: the selection turns in place to face the point (SU-156)
 //   Alt                   force unlink of chained troops / keep reserves from linking (spec §6.3)
 //   P / gamepad Start     pause and resume (GamePause), keeping the game speed
@@ -360,18 +362,24 @@ public sealed class TroopPlayerOrders : MonoBehaviour
     }
 
     // Ghost preview while the right button is held: each troop's projected footprint with an arrow on its front (or a
-    // marker for a point order, and an arrow for a Face), the joints a multi-troop line will link (SU-157), and the tether to any
-    // chain neighbour outside the order. The player sets the front (SU-156), so the arrow is back (it was removed in
-    // SU-33 while troops chose their own front).
+    // marker for a point order, and an arrow for a Face), the joints a multi-troop line will link (every adjacent pair,
+    // SU-160), and the tether to any chain neighbour outside the order. The player sets the front (SU-156), so the arrow
+    // is back (it was removed in SU-33 while troops chose their own front). A release that would attack shows the attack
+    // instead (SU-159): a line in the attack colour from each selected troop to the enemy, and a marker on it.
     void DrawOrderPreview(Vector2 screenStart, Vector2 screenEnd)
     {
         bool alt = IsAltHeld();
-        OrderKind kind = _planner.Preview(screenStart, screenEnd, _camera, alt, IsCtrlHeld());
+        OrderKind kind = _planner.Preview(screenStart, screenEnd, _camera, alt, IsCtrlHeld(), deploying: Placement != null);
+        if (kind == OrderKind.Pursue)
+        {
+            DrawAttackPreview(_planner.PreviewTarget);
+            return;
+        }
         if (kind == OrderKind.Line)
             TroopOrderOverlay.DrawPlainLine(TroopScreenSpace.ToGui(screenStart), TroopScreenSpace.ToGui(screenEnd));
 
         var placements = _planner.Placements;
-        Vector2 drag = ScreenToWorld(screenEnd) - ScreenToWorld(screenStart);
+        Vector2 lineDirection = _planner.LineDirection;
         for (int i = 0; i < placements.Count; i++)
         {
             var placement = placements[i];
@@ -386,7 +394,7 @@ public sealed class TroopPlayerOrders : MonoBehaviour
                 TroopOrderOverlay.DrawFacingArrow(_camera, placement.Center, placement.Facing, placement.Troop.ArmyColor);
                 if (i + 1 < placements.Count && _planner.JoinsNext(i))
                 {
-                    TroopOrderPlanner.AdjacentEnds(placement, drag, out int end, out _);
+                    TroopOrderPlanner.AdjacentEnds(placement, lineDirection, out int end, out _);
                     TroopOrderOverlay.DrawJoint(TroopScreenSpace.WorldToGui(_camera, TroopOrderPlanner.PlannedLinePoint(placement, end)));
                 }
             }
@@ -403,5 +411,20 @@ public sealed class TroopPlayerOrders : MonoBehaviour
         foreach (var tether in _planner.Tethers)
             TroopOrderOverlay.DrawTether(TroopScreenSpace.WorldToGui(_camera, tether.From),
                 TroopScreenSpace.WorldToGui(_camera, tether.To), tether.StaysLinked && !alt);
+    }
+
+    // The attack a right-button release would give (SU-159): a line in the attack colour from each selected troop to the
+    // enemy troop, and a marker on it.
+    void DrawAttackPreview(Troop target)
+    {
+        if (target == null) return;
+        Vector2 targetGui = TroopScreenSpace.WorldToGui(_camera, target.transform.position);
+        foreach (var troop in _selection.Selected)
+        {
+            if (troop == null || troop.IsRouted) continue;
+            TroopOrderOverlay.DrawGuiLine(TroopScreenSpace.WorldToGui(_camera, troop.transform.position), targetGui,
+                _orderPathAttackColor, 2f);
+        }
+        TroopOrderOverlay.DrawMarker(targetGui, _orderPathAttackColor);
     }
 }

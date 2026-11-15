@@ -193,7 +193,7 @@ in Edit mode at a fixed frame time.
   - **Validate:** links need a reciprocal, the same team, no rout, and both troops in Line. Pending links (created by a
     multi-troop line order) activate when both troops have arrived; they drop if either gets a new order.
   - **Joints:** J = weighted average of the two natural line points (an engaged side is pinned, weight 1). Break on
-    required length > 3.0 × L_nat, inner hinge angle < 65°, or terrain between the pivots through J or at J. Then J is
+    required length > 2.0 × L_nat (`ChainMaxStretchScale`, SU-160), inner hinge angle < 65°, or terrain between the pivots through J or at J. Then J is
     pushed out so neither line is shorter than 0.7 × L_nat.
   - **Attach:** free line points of different wings, facing the same way, within 0.25 × L_nat, clear line of sight, not
     ChainSuppressed, not closing a loop (`ChainTopology`), sorted by (distance, lower instance id). Linked points are
@@ -216,10 +216,14 @@ in Edit mode at a fixed frame time.
 - `TroopPlayerOrders`: a left press on one of the player's troops selects it at once; dragging from it and releasing
   moves the selection (`TroopOrderPlanner.FinishMove`, or `FinishPlacementMove` while deploying) (SU-129).
 - `OrderClassifier`: right button: Pursue / Move / Line (a drag, one troop or several) / Face (Ctrl + click), and the
-  line facing: the drag's left-hand normal, so left to right faces up (SU-156).
-- `TroopOrderPlanner`: plans placements (shared by the ghost preview), applies chain rules (`ChainOrderRules`
-  envelope; outside or Alt → unlink + ChainSuppressed; Alt on reserves → ChainSuppressed), issues orders, and creates
-  pending links between adjacent troops of a multi-troop line.
+  line facing: the drag's left-hand normal, so left to right faces up (SU-156). A release on an enemy is a Pursue when
+  the same enemy was under the press, or the drag is under `AttackClickSlopPixels` (SU-159).
+- `TroopOrderPlanner`: plans placements (shared by the ghost preview, which also reports the enemy a release would
+  attack, `PreviewTarget`), applies chain rules (`ChainOrderRules` envelope; outside or Alt → unlink +
+  ChainSuppressed; Alt on reserves → ChainSuppressed), issues orders, and creates pending links between every adjacent
+  pair of a multi-troop line. A multi-troop line (SU-160) runs end to end from the press point with one stretch,
+  `LineStretch` (drag ÷ sum of L_nat, clamped to 0.7–2.0), and keeps the selection's facing inside the facing dead
+  zone (`InFacingDeadZone`, `DeadZoneDirection`).
 - `TroopOrderOverlay`: selection box, ghost footprints with a facing arrow (SU-156) and move markers, joints, ghost
   tether (no help panel, SU-18).
 

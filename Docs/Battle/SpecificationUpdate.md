@@ -11,6 +11,66 @@ SU-128 refer to v0.9 and may have moved.
 
 ---
 
+## 2026-11-15: Attack clicks and linked group lines (branch troop-facing-controls)
+
+### SU-160 A multi-troop line stays linked end to end, 0.7–2 × frontage wide (Decision + Assumptions, spec §6.2, §3.4)
+Supersedes SU-157's spacing rule: adjacent troops are no longer held 0.5–2 × their maximum line length apart, and the
+order no longer leaves troops with a gap between them unlinked. `LineOrderMinSpacingScale` and
+`LineOrderMaxSpacingScale` are removed.
+- Decision: troops in a multi-troop line order are always placed end to end and are always linked by the order.
+- Decision: a troop's line is at least 0.7 × and at most 2 × its frontage wide (L_nat = frontage × LineSpacing): a troop
+  with a frontage of 10 stands at least 7 and at most 20 soldiers wide.
+- Decision: one stretch for the whole line, `clamp(drag length ÷ sum of the troops' L_nat, 0.7, 2.0)`; each troop's
+  length is that stretch × its own L_nat, so the troops share the drag in proportion to their frontage.
+- Decision: the line starts at the press point and grows along the drag. A drag shorter than the minimum shows the
+  minimum line running past the cursor; a drag longer than the maximum stops short of it.
+- Decision: facing dead zone for two or more troops: the drag's direction sets the front only once the drag is at least
+  a quarter of the line's minimum total width (0.25 × 0.7 × sum of L_nat). Before that the selection keeps its current
+  facing and the line runs across it from the press point, on the side the cursor is on, so the ghost does not spin
+  on the first pixels.
+- Decision: the ghost draws a joint between every adjacent pair.
+- Assumption: the 2 × maximum is `ChainMaxStretchScale`, lowered from 3.0 to 2.0 (code and Chain Tuning asset). It is
+  shared with the chain stretch envelope, so a link now breaks when a line must stretch past 2 × L_nat (was 3 ×), a
+  chained troop's move keeps its link only within 2 × (the ghost tether turns red sooner), and a lone troop's
+  right-drag line, `OrderLine` and deployment placement clamp to 2 × L_nat. No test showed chain behaviour breaking.
+- Assumption: the dead zone is a Chain Tuning value, `LineOrderFacingDeadZone` (0.25 of the minimum total width).
+- Assumption: the selection's current facing is the mean of the troops' facings (each troop's natural line facing, else
+  its troop facing); the first troop's if they cancel out. Inside the dead zone the facing is the line's left-hand
+  normal or its right-hand one, whichever puts the line on the cursor's side; with no drag at all it runs as a left to
+  right drag would.
+- Assumption: the troops keep their order along the line by where they stand along its direction (as before, Q-18).
+- Assumption: one troop's right-drag line is unchanged apart from the new maximum: it spans the drag, centred on the
+  drag's midpoint (it does not start at the press point).
+- Assumption: deployment placement uses the same plan and now also links the ordered troops end to end (pending order
+  links, as in battle; before, deployment only broke their links). If the deployment zone pushes a troop back inside
+  it, a link that would over-stretch breaks as usual.
+- Assumption: Alt is unchanged: with Alt held, links to troops outside the order break and the ordered troops become
+  ChainSuppressed, but the order still links them to each other (as SU-157).
+- Code: `TroopOrderPlanner` (`PlanLine`, `LineStretch`, `InFacingDeadZone`, `DeadZoneDirection`, `LineDirection`;
+  `AdjacentCentreSpacing` and `PlacementsMeet` removed), `TroopPlayerOrders` preview, `ChainTuning` / `TroopTuning`,
+  `Chain Tuning.asset`. Tests: `LineOrderPlanTests`, `OrderClassifierTests.LineStretch_*`, `FacingDeadZone_*`,
+  `DeadZoneDirection_*` (the SU-157 `LineSpacing_*` tests are removed).
+
+### SU-159 A right-click on an enemy is always an attack (Decision + Assumptions, spec §6.2)
+- Decision: a right-button release is a Pursue when an enemy troop is under the release point and the same enemy troop
+  was under the press point, whatever the drag length; or when an enemy troop is under the release point and the drag
+  is shorter than `AttackClickSlopPixels` (24 px, Input Tuning). Otherwise as before. In a playtest a click on an enemy
+  whose mouse moved 8 px or more became a battle line on top of the enemy.
+- Decision: the ghost while the button is held shows what the release will do: the attack, not a line ghost, when it
+  would be a Pursue. Deployment is unchanged (attack orders do nothing while deploying).
+- Assumption: Ctrl (Face) keeps its place: it wins only below `OrderDragMinPixels`, as before. A Ctrl drag past that
+  onto an enemy within the slop, or from the same enemy, is an attack.
+- Assumption: the press point is tested like the release point (`TroopSelection.TroopAtPoint` within
+  `ClickPickRadiusPixels`), both at release time, with the troops where they stand then.
+- Assumption: the attack ghost is a line in the order-path attack colour from each selected troop to the enemy troop,
+  and a marker on it. No tethers are drawn (a Pursue breaks links to troops outside the order, as before).
+- Assumption: while deploying, enemies play no part in the classification, as before, so a drag onto an enemy there is
+  still a line and its ghost a line.
+- Code: `OrderClassifier.Classify` (new parameters), `TroopOrderPlanner` (`ClassifyRelease`, `EnemyAt`,
+  `Preview` with `PreviewTarget`), `TroopPlayerOrders` (`DrawAttackPreview`), `InputTuning` / `TroopTuning`. Tests:
+  `OrderClassifierTests` (`NinePixels_IsLine_ForOneTroopOrSeveral` became `NinePixelsOnGround_IsLine`: a 9 px drag onto
+  an enemy is now a Pursue).
+
 ## 2026-11-15: Engaged soldiers face their enemy (branch troop-facing-controls)
 
 ### SU-158 Soldiers directly engaged face their enemy (Decision + Assumptions, spec §3.3, §4.4)

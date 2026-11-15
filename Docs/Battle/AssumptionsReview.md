@@ -1,6 +1,6 @@
 # Assumptions review
 
-Every unconfirmed Assumption in `SpecificationUpdate.md` (SU-01 to SU-158), grouped by system so they can be confirmed in one sitting: 194 assumptions across 95 SU entries. SU-158 (engaged soldiers face their enemy) was added on 2026-11-15. SU-154 to SU-157 (troop facing controls and line spacing, on the `troop-facing-controls` branch) and SU-148 to SU-153 (class design rules) were added on 2026-11-14. SU-136 to SU-140 were added on 2026-11-08; the SU-74 and SU-121 items about routed troops never leaving the map were removed (SU-138 replaced them). Rebuilt 2026-11-08 (SU-135): assumptions that later entries overtook were removed, missing ones were added, and the groups were tidied. The spec (v0.10) tags text that rests on one of these as **[A: SU-n]**.
+Every unconfirmed Assumption in `SpecificationUpdate.md` (SU-01 to SU-160), grouped by system so they can be confirmed in one sitting: 201 assumptions across 96 SU entries. SU-159 (attack clicks) and SU-160 (linked group lines) were added on 2026-11-15; SU-160 superseded SU-157, whose items were removed. SU-158 (engaged soldiers face their enemy) was added on 2026-11-15. SU-154 to SU-157 (troop facing controls and line spacing, on the `troop-facing-controls` branch) and SU-148 to SU-153 (class design rules) were added on 2026-11-14. SU-136 to SU-140 were added on 2026-11-08; the SU-74 and SU-121 items about routed troops never leaving the map were removed (SU-138 replaced them). Rebuilt 2026-11-08 (SU-135): assumptions that later entries overtook were removed, missing ones were added, and the groups were tidied. The spec (v0.10) tags text that rests on one of these as **[A: SU-n]**.
 
 ## How to use this
 
@@ -360,12 +360,22 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 - [ ] Ctrl + right click is Face: the selection turns in place toward the point (all the same way, from the selection's centre) and holds its line; on an enemy it faces rather than attacks; while deploying it places them facing that way. →
 - [ ] the ghost preview draws a facing arrow on each planned line, and on each troop for a Face. →
 
-**SU-157** Troops in a multi-troop line keep their distance
+**SU-159** A right-click on an enemy is always an attack
 
-- [ ] the spacing is each troop's share of the drag clamped to 0.5–2 × the pair's average maximum line length; line lengths are still the share clamped to 0.7–3.0 × L_nat, so mid-length drags still sit end to end and chain. →
-- [ ] the line starts at the press point and grows along the drag (a short drag runs past the release point; a long one stops short). →
-- [ ] one troop's line is unchanged; deployment placement uses the same spacing. →
-- [ ] the ghost preview draws a joint only where the order will link. →
+- [ ] Ctrl (Face) wins only below `OrderDragMinPixels` (8 px), as before; a Ctrl drag past that onto an enemy within `AttackClickSlopPixels`, or from the same enemy, is an attack. →
+- [ ] the press point is tested like the release point (`TroopAtPoint` within `ClickPickRadiusPixels`), both at release time with the troops where they stand then. →
+- [ ] the attack ghost is a line in the order-path attack colour from each selected troop to the enemy, and a marker on it; no tethers are drawn. →
+- [ ] while deploying, enemies play no part in the classification (as before), so a drag onto an enemy there is still a line. →
+
+**SU-160** A multi-troop line stays linked end to end, 0.7–2 × frontage wide (supersedes SU-157's spacing)
+
+- [ ] the 2 × maximum is `ChainMaxStretchScale`, lowered from 3.0 to 2.0 and shared with the chain envelope: links now break past 2 × L_nat stretch, a chained troop's move keeps its link only within 2 ×, and a lone troop's line, `OrderLine` and deployment clamp to 2 × L_nat. →
+- [ ] the facing dead zone is a Chain Tuning value, `LineOrderFacingDeadZone` (0.25 of the minimum total width). →
+- [ ] the selection's current facing is the mean of the troops' facings (the first troop's if they cancel out); inside the dead zone the line runs across it on the cursor's side, and with no drag at all as a left to right drag would. →
+- [ ] the troops keep their order along the line by where they stand along its direction (Q-18). →
+- [ ] one troop's right-drag line is unchanged apart from the new maximum: it spans the drag, centred on its midpoint. →
+- [ ] deployment uses the same plan and now also links the ordered troops end to end (before, it only broke their links); a link the deployment zone over-stretches breaks as usual. →
+- [ ] Alt is unchanged: links to troops outside the order break and the ordered troops become ChainSuppressed, but the order still links them to each other. →
 
 ## Campaign, tent, missions & deployment
 

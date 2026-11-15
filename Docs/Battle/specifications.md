@@ -752,8 +752,8 @@ defaults are used when an asset is missing. Values in the rest of this document 
 
 | Variable | Value | Unit | Description |
 |---|---|---|---|
-| `ChainMinStretchScale` | 0.7 | × L_nat | Shortest linked line. |
-| `ChainMaxStretchScale` | 3.0 | × L_nat | Longest linked line; break threshold. |
+| `ChainMinStretchScale` | 0.7 | × L_nat | Shortest linked line; narrowest line a line order gives (SU-160). |
+| `ChainMaxStretchScale` | 2.0 | × L_nat | Longest linked line; break threshold; widest line a line order gives **[A: SU-160]** (was 3.0). |
 | `ChainMinInnerAngleDeg` | 65 | deg | Smallest inner hinge angle; break threshold. |
 | `AttachScale` | 0.25 | × L_nat | Endpoint attach distance. |
 | `AutoLinkMaxFacingDeg` | 45 | deg | Automatic links need facings within this. |
@@ -763,8 +763,7 @@ defaults are used when an asset is missing. Values in the rest of this document 
 | `ChainRetreatHingeBendDeg` | 30 | deg | Bend (180° − inner) that triggers a sympathetic retreat. |
 | `ChainRetreatFalloff` | 0.3 | 0–1 | Retreat distance lost per hop. |
 | `ChainEndpointRelaxSpeed` | 2 | units/s | Relax rate of a broken, stretched line point. |
-| `LineOrderMinSpacingScale` | 0.5 | × max line length | Closest centre spacing of adjacent troops in a multi-troop line order (pair average of 3.0 × L_nat) **[A: SU-157]**. |
-| `LineOrderMaxSpacingScale` | 2.0 | × max line length | Widest centre spacing of adjacent troops in a multi-troop line order **[A: SU-157]**. |
+| `LineOrderFacingDeadZone` | 0.25 (*default*) | × minimum line width | A multi-troop line drag shorter than this fraction of the line's minimum total width keeps the selection's facing (SU-160) **[A: SU-160]**. |
 | `LinkSlack` / `LinkStiffness` / `LinkMaxForce` | 0.1 / 5 / 10.4 | units / gain / force | Link tension spring. |
 
 **Chain Bonus Tuning** (its own asset, SU-152)
@@ -796,6 +795,7 @@ defaults are used when an asset is missing. Values in the rest of this document 
 | `OrderDragMinPixels` | 8 | px | Minimum drag for a drag order (line, or LMB drag move). |
 | `ClickPickRadiusPixels` | 24 | px | Pick radius around a soldier or pivot. |
 | `DoubleClickSeconds` | 0.35 (*default*) | s | Two clicks on a troop within this select its chain. |
+| `AttackClickSlopPixels` | 24 (*default*) | px | A right release on an enemy after a drag shorter than this is an attack, not a line (SU-159). |
 
 **Constants (`TroopConstants`, not tunable):** `SoldierRadius` 0.3, `SeparationRadius` 0.9 (3 × soldier radius),
 `LineSpacing` 0.9, `SpreadRadius` 1.2, `PressureMassPerDrive` 3, `ContactDistance` 0.85, `NeighborRadius` 2.5,

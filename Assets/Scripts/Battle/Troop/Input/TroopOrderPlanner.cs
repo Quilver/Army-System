@@ -6,13 +6,16 @@ using UnityEngine;
 //   Move    click on ground: the troops keep their relative offsets and translate to the release point; they arrive
 //           Idle, facing the way they marched (SU-154).
 //           A left-drag that starts on one of the player's troops is also a Move of the selection (FinishMove, SU-129).
+//   Pursue  also a release on an enemy troop that was under the press too (any drag), or a release on an enemy after a
+//           drag shorter than AttackClickSlopPixels (SU-159, OrderClassifier).
 //   Line    drag with one or more troops: a battle line along the drag, its front set by the drag's direction (SU-156).
-//           The troops split the span in order along the drag; adjacent troops' centres stay between 0.5 and 2 x the
-//           average of their maximum line lengths apart (SU-157). Adjacent troops whose line points meet (within the
-//           attach distance) are linked by the order (Q-19); troops with a gap between them are not.
+//           Several troops (SU-160) stand end to end from the press point, in order along the drag, and the order links
+//           every adjacent pair (Q-19). One stretch for the whole line: clamp(drag / sum of L_nat, 0.7, 2.0), each
+//           troop's length that stretch x its own L_nat, so they share the drag in proportion to their frontage. A
+//           drag shorter than a quarter of the minimum total width keeps the selection's facing (no spinning ghost).
 //   Face    Ctrl + click: every selected troop turns in place to face the point (from the selection's centre), and holds
 //           its line there (a line order at its own position, SU-156).
-// Chain rules for a troop linked to a troop that is not part of the order: inside the envelope (stretch <= 3.0 x L_nat,
+// Chain rules for a troop linked to a troop that is not part of the order: inside the envelope (stretch <= 2.0 x L_nat,
 // inner angle >= 65 degrees) the link stays; outside it, or with Alt held, the link is severed when the order is issued
 // and the troop is ChainSuppressed. Alt on an unlinked troop suppresses auto-linking the same way: until it has been outside every attach radius for
 // ChainSuppressCooldownSeconds (SU-130).
@@ -38,6 +41,7 @@ public sealed class TroopOrderPlanner
     readonly List<Placement> _placements = new();
     readonly List<Tether> _tethers = new();
     readonly List<bool> _joinsNext = new();
+    Vector2 _lineDirection = Vector2.right;
 
     public TroopOrderPlanner(TroopSelection selection)
     {
@@ -47,8 +51,16 @@ public sealed class TroopOrderPlanner
     public IReadOnlyList<Placement> Placements => _placements;
     public IReadOnlyList<Tether> Tethers => _tethers;
 
-    // Whether placement i of the last planned line meets placement i + 1 at a joint, so the order links them (SU-157).
+    // Whether placement i of the last planned line meets placement i + 1 at a joint, so the order links them. In a
+    // multi-troop line every adjacent pair does (SU-160).
     public bool JoinsNext(int index) => index >= 0 && index < _joinsNext.Count && _joinsNext[index];
+
+    // The direction the last planned line runs in, from the press point (the drag's direction, or across the selection's
+    // facing inside the facing dead zone, SU-160). AdjacentEnds takes it.
+    public Vector2 LineDirection => _lineDirection;
+
+    // The enemy troop the last Preview would attack on release (SU-159), or null.
+    public Troop PreviewTarget { get; private set; }
 
     static TroopTuning Tuning => TroopTuning.Active;
 
@@ -60,10 +72,8 @@ public sealed class TroopOrderPlanner
         if (selected.Count == 0) return;
         Vector2 worldStart = TroopScreenSpace.ScreenToWorld(camera, pressScreen);
         Vector2 worldEnd = TroopScreenSpace.ScreenToWorld(camera, releaseScreen);
-        float pickRadius = TroopScreenSpace.PixelsToWorld(camera, releaseScreen, Tuning.ClickPickRadiusPixels);
-        Troop enemy = _selection.TroopAtPoint(worldEnd, pickRadius, _selection.PlayerTeamId, sameTeam: false);
 
-        switch (OrderClassifier.Classify(pressScreen, releaseScreen, Tuning.OrderDragMinPixels, enemy != null, faceHeld))
+        switch (ClassifyRelease(pressScreen, releaseScreen, camera, faceHeld, out Troop enemy))
         {
             case OrderKind.Pursue:
                 foreach (Troop troop in selected)
@@ -88,7 +98,7 @@ public sealed class TroopOrderPlanner
                     ApplyChainRules(placement.Troop, placement, selected, altHeld, forceUnlinkOutside: false);
                     placement.Troop.OrderLine(placement.Center, placement.Facing, placement.Length);
                 }
-                LinkAdjacent(worldEnd - worldStart);
+                LinkAdjacent();
                 break;
             case OrderKind.Face:
                 PlanFace(selected, worldEnd);
@@ -136,8 +146,8 @@ public sealed class TroopOrderPlanner
             CollectTethers(placement, selected, altHeld);
     }
 
-    // Deployment: the same Move and Line plans as FinishOrder, but each troop is put straight at its planned spot.
-    // Attack orders do nothing while deploying.
+    // Deployment: the same Move and Line plans as FinishOrder, but each troop is put straight at its planned spot, and a
+    // multi-troop line is linked as in battle (SU-160). Attack orders do nothing while deploying.
     public void FinishPlacement(Vector2 pressScreen, Vector2 releaseScreen, Camera camera, ITroopPlacement placement,
         bool faceHeld = false)
     {
@@ -145,7 +155,9 @@ public sealed class TroopOrderPlanner
         if (selected.Count == 0 || placement == null) return;
         Vector2 worldStart = TroopScreenSpace.ScreenToWorld(camera, pressScreen);
         Vector2 worldEnd = TroopScreenSpace.ScreenToWorld(camera, releaseScreen);
-        OrderKind kind = OrderClassifier.Classify(pressScreen, releaseScreen, Tuning.OrderDragMinPixels, false, faceHeld);
+        // Attack orders do nothing while deploying, so the enemy troops play no part here.
+        OrderKind kind = OrderClassifier.Classify(pressScreen, releaseScreen, Tuning.OrderDragMinPixels,
+            Tuning.AttackClickSlopPixels, false, false, faceHeld);
         if (kind == OrderKind.Line) PlanLine(selected, worldStart, worldEnd);
         else if (kind == OrderKind.Face) PlanFace(selected, worldEnd);
         else PlanMove(selected, worldEnd);
@@ -155,16 +167,50 @@ public sealed class TroopOrderPlanner
         bool holdLine = kind == OrderKind.Line || kind == OrderKind.Face;
         foreach (var planned in _placements)
             placement.Place(planned.Troop, planned.Center, planned.Facing, planned.Length, holdLine);
+        // A multi-troop line is linked end to end, as in battle (SU-160).
+        if (kind == OrderKind.Line && _placements.Count > 1) LinkAdjacent();
+    }
+
+    // Classifies a right-button release in battle (SU-159): the enemy troop under the release point (within
+    // ClickPickRadiusPixels, as TroopSelection.TroopAtPoint picks it) and whether the same troop was under the press.
+    OrderKind ClassifyRelease(Vector2 pressScreen, Vector2 releaseScreen, Camera camera, bool faceHeld, out Troop enemy)
+    {
+        enemy = EnemyAt(releaseScreen, camera);
+        bool sameUnderPress = enemy != null && EnemyAt(pressScreen, camera) == enemy;
+        return OrderClassifier.Classify(pressScreen, releaseScreen, Tuning.OrderDragMinPixels, Tuning.AttackClickSlopPixels,
+            enemy != null, sameUnderPress, faceHeld);
+    }
+
+    Troop EnemyAt(Vector2 screen, Camera camera)
+    {
+        float pickRadius = TroopScreenSpace.PixelsToWorld(camera, screen, Tuning.ClickPickRadiusPixels);
+        return _selection.TroopAtPoint(TroopScreenSpace.ScreenToWorld(camera, screen), pickRadius,
+            _selection.PlayerTeamId, sameTeam: false);
     }
 
     // --- Planning (shared with the ghost preview) ---
 
-    public OrderKind Preview(Vector2 pressScreen, Vector2 currentScreen, Camera camera, bool altHeld, bool faceHeld = false)
+    // The ghost shows what a release here would do (SU-159): a Pursue (PreviewTarget set, no placements), or the planned
+    // Move, Line or Face. While deploying (deploying = true) attack orders do nothing, so enemies play no part, as in
+    // FinishPlacement.
+    public OrderKind Preview(Vector2 pressScreen, Vector2 currentScreen, Camera camera, bool altHeld, bool faceHeld = false,
+        bool deploying = false)
     {
         var selected = LiveSelection();
         Vector2 worldStart = TroopScreenSpace.ScreenToWorld(camera, pressScreen);
         Vector2 worldEnd = TroopScreenSpace.ScreenToWorld(camera, currentScreen);
-        OrderKind kind = OrderClassifier.Classify(pressScreen, currentScreen, Tuning.OrderDragMinPixels, false, faceHeld);
+        Troop enemy = null;
+        OrderKind kind = deploying
+            ? OrderClassifier.Classify(pressScreen, currentScreen, Tuning.OrderDragMinPixels, Tuning.AttackClickSlopPixels,
+                false, false, faceHeld)
+            : ClassifyRelease(pressScreen, currentScreen, camera, faceHeld, out enemy);
+        PreviewTarget = kind == OrderKind.Pursue ? enemy : null;
+        if (kind == OrderKind.Pursue)
+        {
+            _placements.Clear();
+            _tethers.Clear();
+            return kind;
+        }
         if (kind == OrderKind.Line) PlanLine(selected, worldStart, worldEnd);
         else if (kind == OrderKind.Face) PlanFace(selected, worldEnd);
         else PlanMove(selected, worldEnd);
@@ -197,11 +243,13 @@ public sealed class TroopOrderPlanner
         }
     }
 
-    // The troops split the span in order along the drag (Q-18); each length is its share, clamped to [0.7, 3.0] x L_nat.
-    // One troop takes the whole span (SU-156). The drag's direction sets the front (OrderClassifier.LineFacing).
-    // Several troops (SU-157): adjacent centres are the share apart, clamped to [LineOrderMinSpacingScale,
-    // LineOrderMaxSpacingScale] (0.5, 2) x the average of the two troops' maximum line lengths, so a short drag spreads
-    // the line out past the release point and a long one stops short of it. The line starts at the press point.
+    // One troop (SU-156): its line spans the drag, centred on the drag's midpoint, clamped to [0.7, 2.0] x L_nat; the drag's
+    // direction sets the front (OrderClassifier.LineFacing).
+    // Several troops (SU-160): they stand end to end from the press point, in order along the drag (Q-18), and every
+    // adjacent pair is linked. One stretch for the whole line, LineStretch(drag, sum of L_nat), and each troop's length is
+    // that stretch x its own L_nat, so a short drag lays the minimum line out past the cursor and a long one stops short
+    // of it. Inside the facing dead zone (InFacingDeadZone) the selection keeps its facing and the line runs across it
+    // from the press point, on the cursor's side.
     public void PlanLine(List<Troop> selected, Vector2 start, Vector2 end)
     {
         _placements.Clear();
@@ -209,57 +257,94 @@ public sealed class TroopOrderPlanner
         if (selected.Count == 0) return;
         Vector2 drag = end - start;
         float span = drag.magnitude;
-        Vector2 tangent = span > 1e-4f ? drag / span : Vector2.up;
+        Vector2 tangent = span > 1e-4f ? drag / span : Vector2.right;
         Vector2 facing = OrderClassifier.LineFacing(start, end);
 
+        if (selected.Count == 1)
+        {
+            Troop troop = selected[0];
+            _lineDirection = tangent;
+            _placements.Add(new Placement
+            {
+                Troop = troop,
+                Center = start + tangent * (0.5f * span),
+                Facing = facing,
+                Length = Mathf.Clamp(span, troop.MinimumLineLength, troop.MaximumLineLength)
+            });
+            return;
+        }
+
+        float naturalTotal = 0f;
+        foreach (var troop in selected) naturalTotal += troop.NaturalLineLength;
+        if (InFacingDeadZone(span, naturalTotal, Tuning.ChainMinStretchScale, Tuning.LineOrderFacingDeadZone))
+        {
+            facing = SelectionFacing(selected);
+            tangent = DeadZoneDirection(facing, drag);
+        }
+        _lineDirection = tangent;
+
+        Vector2 sortTangent = tangent;
         selected.Sort((a, b) =>
         {
-            float aPosition = Vector2.Dot((Vector2)a.transform.position - start, tangent);
-            float bPosition = Vector2.Dot((Vector2)b.transform.position - start, tangent);
+            float aPosition = Vector2.Dot((Vector2)a.transform.position - start, sortTangent);
+            float bPosition = Vector2.Dot((Vector2)b.transform.position - start, sortTangent);
             int alongLine = aPosition.CompareTo(bPosition);
             return alongLine != 0 ? alongLine : a.GetInstanceID().CompareTo(b.GetInstanceID());
         });
 
-        float share = span / selected.Count;
-        float along = selected.Count > 1 ? 0.5f * PairSpacing(share, selected[0], selected[1]) : 0.5f * share;
-        for (int i = 0; i < selected.Count; i++)
+        float stretch = LineStretch(span, naturalTotal, Tuning.ChainMinStretchScale, Tuning.ChainMaxStretchScale);
+        float along = 0f;
+        foreach (var troop in selected)
         {
-            Troop troop = selected[i];
-            if (i > 0) along += PairSpacing(share, selected[i - 1], troop);
+            float length = stretch * troop.NaturalLineLength;
             _placements.Add(new Placement
             {
                 Troop = troop,
-                Center = start + tangent * along,
+                Center = start + tangent * (along + 0.5f * length),
                 Facing = facing,
-                Length = Mathf.Clamp(share, troop.MinimumLineLength, troop.MaximumLineLength)
+                Length = length
             });
+            along += length;
         }
 
-        for (int i = 0; i + 1 < _placements.Count; i++)
-            _joinsNext.Add(PlacementsMeet(_placements[i], _placements[i + 1], tangent));
+        for (int i = 0; i + 1 < _placements.Count; i++) _joinsNext.Add(true);
     }
 
-    static float PairSpacing(float share, Troop a, Troop b) =>
-        AdjacentCentreSpacing(share, a.MaximumLineLength, b.MaximumLineLength,
-            Tuning.LineOrderMinSpacingScale, Tuning.LineOrderMaxSpacingScale);
-
-    // Centre-to-centre spacing of two adjacent troops in a multi-troop line (SU-157): their share of the drag, clamped to
-    // [minScale, maxScale] x the average of their maximum line lengths.
-    public static float AdjacentCentreSpacing(float share, float maxLengthA, float maxLengthB, float minScale, float maxScale)
+    // Stretch of a multi-troop line (SU-160): the drag over the troops' total natural length, clamped to
+    // [minScale, maxScale] (ChainMinStretchScale, ChainMaxStretchScale).
+    public static float LineStretch(float dragLength, float naturalTotal, float minScale, float maxScale)
     {
-        float reference = (maxLengthA + maxLengthB) * 0.5f;
-        float min = reference * minScale;
-        return Mathf.Clamp(share, min, Mathf.Max(min, reference * maxScale));
+        if (naturalTotal <= 1e-6f) return minScale;
+        return Mathf.Clamp(dragLength / naturalTotal, minScale, Mathf.Max(minScale, maxScale));
     }
 
-    // Two adjacent planned lines meet when their facing line points are within the attach distance (spec §3.4).
-    static bool PlacementsMeet(Placement a, Placement b, Vector2 dragDirection)
+    // Facing dead zone of a multi-troop line (SU-160): until the drag reaches deadZone (a quarter) of the line's minimum
+    // total width, its direction does not set the front.
+    public static bool InFacingDeadZone(float dragLength, float naturalTotal, float minScale, float deadZone) =>
+        dragLength < naturalTotal * minScale * deadZone;
+
+    // The line's direction inside the dead zone: across the facing (the facing is its left-hand normal, as for a drag),
+    // flipped to the side the cursor is on.
+    public static Vector2 DeadZoneDirection(Vector2 facing, Vector2 drag)
     {
-        AdjacentEnds(a, dragDirection, out int endA, out _);
-        AdjacentEnds(b, dragDirection, out _, out int endB);
-        float gap = Vector2.Distance(PlannedLinePoint(a, endA), PlannedLinePoint(b, endB));
-        float attach = ChainLinkRules.AttachDistance(a.Troop.NaturalLineLength, b.Troop.NaturalLineLength, Tuning.AttachScale);
-        return gap <= attach + 1e-3f;
+        Vector2 across = new(facing.y, -facing.x);
+        return Vector2.Dot(across, drag) < 0f ? -across : across;
+    }
+
+    // The selection's current facing: the mean of the troops' facings, or the first troop's when they cancel out.
+    static Vector2 SelectionFacing(List<Troop> selected)
+    {
+        Vector2 sum = Vector2.zero;
+        foreach (var troop in selected) sum += CurrentFacing(troop);
+        if (sum.sqrMagnitude > 1e-6f) return sum.normalized;
+        Vector2 first = CurrentFacing(selected[0]);
+        return first.sqrMagnitude > 1e-6f ? first.normalized : Vector2.up;
+    }
+
+    static Vector2 CurrentFacing(Troop troop)
+    {
+        Vector2 facing = troop.NaturalFormation != null ? troop.NaturalFormation.Facing : troop.Facing;
+        return facing.sqrMagnitude > 1e-6f ? facing.normalized : Vector2.zero;
     }
 
     // Face (SU-156): each troop stays where it is and turns to face the point, all of them the same way (from the
@@ -303,19 +388,19 @@ public sealed class TroopOrderPlanner
 
     // --- Chain rules ---
 
-    void LinkAdjacent(Vector2 dragDirection)
+    void LinkAdjacent()
     {
         for (int i = 0; i + 1 < _placements.Count; i++)
         {
             if (!JoinsNext(i)) continue;
-            AdjacentEnds(_placements[i], dragDirection, out int endA, out _);
-            AdjacentEnds(_placements[i + 1], dragDirection, out _, out int endB);
+            AdjacentEnds(_placements[i], _lineDirection, out int endA, out _);
+            AdjacentEnds(_placements[i + 1], _lineDirection, out _, out int endB);
             ChainLinker.LinkFromOrder(_placements[i].Troop, endA, _placements[i + 1].Troop, endB);
         }
     }
 
-    // A multi-troop line order rebuilds the chain among the selected troops from scratch; only troops whose planned lines
-    // meet are linked again (SU-157).
+    // A multi-troop line order rebuilds the chain among the selected troops from scratch and links every adjacent pair
+    // again (SU-160).
     static void BreakLinksWithin(List<Troop> selected)
     {
         foreach (var troop in selected)

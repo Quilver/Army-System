@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Chain Tuning
   m_EditorClassIdentifier: 
   _chainMinStretchScale: 0.7
-  _chainMaxStretchScale: 3
+  _chainMaxStretchScale: 2
   _chainMinInnerAngleDeg: 65
   _attachScale: 0.25
   _autoLinkMaxFacingDeg: 45

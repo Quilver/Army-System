@@ -8,10 +8,10 @@ public sealed class ChainTuning : ScriptableObject
     public const string AssetName = "Chain Tuning";
 
     [Header("Chains (spec §3.4)")]
-    [SerializeField, Min(0.1f), Tooltip("Minimum line length of a linked troop, x L_nat.")]
+    [SerializeField, Min(0.1f), Tooltip("Minimum line length of a linked troop, x L_nat. Also the narrowest line a line order gives (SU-160).")]
     float _chainMinStretchScale = 0.7f;
-    [SerializeField, Min(1f), Tooltip("Maximum line length of a linked troop, x L_nat. Longer breaks the link.")]
-    float _chainMaxStretchScale = 3f;
+    [SerializeField, Min(1f), Tooltip("Maximum line length of a linked troop, x L_nat. Longer breaks the link. Also the widest line a line order gives (SU-160).")]
+    float _chainMaxStretchScale = 2f;
     [SerializeField, Range(0f, 180f), Tooltip("Minimum inner hinge angle at a joint. Sharper breaks the link.")]
     float _chainMinInnerAngleDeg = 65f;
     [SerializeField, Min(0f), Tooltip("Endpoint-to-endpoint attach distance, x L_nat.")]
@@ -31,11 +31,9 @@ public sealed class ChainTuning : ScriptableObject
     [SerializeField, Min(0.01f), Tooltip("Speed at which a stretched endpoint relaxes to L_nat after its link breaks.")]
     float _chainEndpointRelaxSpeed = 2f;
 
-    [Header("Multi-troop line orders (spec §6.2, SU-157)")]
-    [SerializeField, Min(0f), Tooltip("Closest centre-to-centre spacing of two adjacent troops in a multi-troop line order, x the average of their maximum line lengths (ChainMaxStretchScale x L_nat).")]
-    float _lineOrderMinSpacingScale = 0.5f;
-    [SerializeField, Min(0f), Tooltip("Widest centre-to-centre spacing of two adjacent troops in a multi-troop line order, x the average of their maximum line lengths.")]
-    float _lineOrderMaxSpacingScale = 2f;
+    [Header("Multi-troop line orders (spec §6.2, SU-160)")]
+    [SerializeField, Range(0f, 1f), Tooltip("Facing dead zone of a multi-troop line drag, as a fraction of the line's minimum total width (ChainMinStretchScale x the troops' summed L_nat). A shorter drag keeps the selection's facing instead of taking it from the drag's direction.")]
+    float _lineOrderFacingDeadZone = 0.25f;
 
     [Header("Link spring")]
     [SerializeField, Min(0f), Tooltip("Link spring: gap allowed before the spring pulls.")]
@@ -56,8 +54,7 @@ public sealed class ChainTuning : ScriptableObject
     public float ChainRetreatHingeBendDeg => _chainRetreatHingeBendDeg;
     public float ChainRetreatFalloff => _chainRetreatFalloff;
     public float ChainEndpointRelaxSpeed => _chainEndpointRelaxSpeed;
-    public float LineOrderMinSpacingScale => _lineOrderMinSpacingScale;
-    public float LineOrderMaxSpacingScale => _lineOrderMaxSpacingScale;
+    public float LineOrderFacingDeadZone => _lineOrderFacingDeadZone;
     public float LinkSlack => _linkSlack;
     public float LinkStiffness => _linkStiffness;
     public float LinkMaxForce => _linkMaxForce;

@@ -55,17 +55,22 @@ report, sounds) follows a battle; Troop code never references the campaign.
 - **LMB drag from a troop** (8 px): move the selection (that troop, or its chain after a double click) to where the
   button is released, keeping offsets (SU-129).
 - **P** (or gamepad Start), or the speed bar (top right): pause and resume. Selection and orders still work while paused.
-- **RMB** on an enemy: pursue (Assault on contact). **RMB** on ground: move, keeping offsets; troops arrive Idle.
-- **RMB drag** (8 px): a battle line, for one troop or several: the troops split the line in order along the drag and are
-  linked into a chain. The drag's direction sets the front: left to right faces up the screen, right to left faces
-  down (SU-156). The ghost shows an arrow on each line's front.
+- **RMB** on an enemy: pursue (Assault on contact). It stays an attack if the mouse moved less than 24 px
+  (`AttackClickSlopPixels`), or if the press was on the same enemy, however far it moved; the ghost shows the attack
+  (SU-159). **RMB** on ground: move, keeping offsets; troops arrive Idle.
+- **RMB drag** (8 px): a battle line, for one troop or several. The drag's direction sets the front: left to right faces
+  up the screen, right to left faces down (SU-156). The ghost shows an arrow on each line's front. Several troops stand
+  end to end from the press point, in order along the drag, all linked into a chain; one stretch for the whole line
+  (drag ÷ sum of L_nat, clamped to 0.7–2.0), so each troop's width is in proportion to its frontage. Until the drag is a
+  quarter of the minimum line width the selection keeps its facing (SU-160). One troop's line spans the drag, 0.7–2.0 ×
+  L_nat.
 - **Ctrl + RMB click**: Face. The selection turns in place toward the point and holds its line (SU-156).
 - Troops face where they march, or where they were ordered to face, and keep that facing when they stop (SU-154). A
   troop in line wheels to turn (60°/s), and marches as slowly as moving back while more than 45° off its front (SU-155).
 - Soldiers of an engaged troop that have an enemy soldier within direct reach (the heat band's reach) turn to the nearest
   one; the rest face the troop's front. Chargers face their charge target (SU-158). This is display only: the troop's
   faces still decide flank and rear attacks.
-- Moving one chained troop: inside the envelope (3.0 x L_nat stretch, 65 degree hinge) it stays linked; outside it the
+- Moving one chained troop: inside the envelope (2.0 x L_nat stretch, 65 degree hinge) it stays linked; outside it the
   link breaks on release. The ghost tether shows which (green = stays, dashed red = breaks).
 - **Alt** + order: unlink a chained troop, or keep an unlinked reserve from snapping onto a line.
 - **Selected** troops, and the troop under the cursor (any team), with a Move, Line or Attack order: the path to the
