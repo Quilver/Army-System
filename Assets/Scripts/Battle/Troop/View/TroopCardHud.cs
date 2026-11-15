@@ -11,7 +11,9 @@ using UnityEngine;
 //   - title: every character's name joined with " + ", then (living soldiers / starting soldiers); wraps when long;
 //   - the characters' portraits side by side; clicking a portrait shows or hides that character's side panel;
 //   - Morale bar (blue, Effective Morale / initial, led by the Morale icon) and Shock bar (red) below it, on the same
-//     scale, so the troop breaks when the red bar passes the blue one (spec §5.3); a white tick on the Shock bar marks
+//     scale, so the troop breaks when the red bar passes the blue one (spec §5.3). While a bonus (the chain's Morale,
+//     SU-152) lifts Effective Morale, a small green plus follows the morale figure; its tooltip names the bonus and what
+//     it adds ("Chain +20", SU-167). A white tick on the Shock bar marks
 //     the current break point. The Shock label is drawn after the tick, at the bar's left end, or at its right end when
 //     the tick would fall on the label (low morale puts the tick at the left);
 //   - formation state.
@@ -52,6 +54,9 @@ public sealed class TroopCardHud
     const float BreakTickWidth = 2f;
     const float LabelTickClearance = 6f;         // the tick must be this far past the label for the label to stay left
     const float NoTick = -1f;
+    const float BonusIconFraction = 0.55f;       // the morale bonus plus, as a fraction of the bar height
+    const float BonusStrokeFraction = 0.3f;      // thickness of the plus's strokes, as a fraction of its size
+    const float BonusIconGap = 4f;               // between the morale figure and the plus
     const float LegacySearchInterval = 1f;
     const string LegacyCardObjectName = "SelectedUnit";
 
@@ -63,6 +68,7 @@ public sealed class TroopCardHud
     static readonly Color MoraleColor = new(0.22f, 0.48f, 1f);
     static readonly Color ShockColor = new(0.9f, 0.18f, 0.18f);
     static readonly Color BreakTickColor = new(1f, 1f, 1f, 0.9f);
+    static readonly Color BonusColor = new(0.55f, 1f, 0.55f, 1f);
     static readonly Color TooltipColor = new(0.04f, 0.04f, 0.05f, 0.95f);
     static readonly Color TooltipBorderColor = new(1f, 1f, 1f, 0.25f);
 
@@ -217,8 +223,10 @@ public sealed class TroopCardHud
         var moraleBar = new Rect(x, y, inner, barHeight);
         string moraleText = troop.EffectiveMorale.ToString("0") + " / " + troop.InitialEffectiveMorale.ToString("0");
         Sprite moraleIcon = GameIcons.For(CharacterStat.Morale);
-        DrawBar(moraleBar, morale / initial, MoraleColor, moraleIcon != null ? moraleText : "Morale  " + moraleText,
-            moraleIcon, GameIcons.NameOf(CharacterStat.Morale));
+        float moraleTextEnd = DrawBar(moraleBar, morale / initial, MoraleColor,
+            moraleIcon != null ? moraleText : "Morale  " + moraleText, moraleIcon, GameIcons.NameOf(CharacterStat.Morale));
+        int chainLift = MoraleBonusLift(troop.ChainMoraleBonus, troop.LivingSoldierCount);
+        if (chainLift > 0) DrawBonusPlus(moraleBar, moraleTextEnd, ChainMoraleTip(chainLift));
         y += barHeight + BarGap * s;
         var shockBar = new Rect(x, y, inner, barHeight);
         DrawBar(shockBar, troop.Shock / initial, ShockColor, "Shock  " + troop.Shock.ToString("0"),
@@ -507,8 +515,9 @@ public sealed class TroopCardHud
 
     // A track with a filled part (fraction 0-1 of its width) and a label over it, led by an icon when one is given.
     // With a tick (tickFraction 0-1 of the width; NoTick for none) a white tick is drawn there, then the label: at the
-    // left end, or at the right end when the tick would fall on it (LabelAtRightEnd).
-    void DrawBar(Rect rect, float fraction, Color color, string label, Sprite icon = null, string iconName = null,
+    // left end, or at the right end when the tick would fall on it (LabelAtRightEnd). Returns the x of the label's right
+    // edge.
+    float DrawBar(Rect rect, float fraction, Color color, string label, Sprite icon = null, string iconName = null,
         float tickFraction = NoTick)
     {
         Fill(rect, CellColor);
@@ -522,18 +531,39 @@ public sealed class TroopCardHud
             labelRect.xMin = iconRect.xMax;
         }
         GUIStyle labelStyle = _barText;
+        _content.text = label;
+        float labelWidth = _barText.CalcSize(_content).x;   // includes the left padding
         if (tickFraction >= 0f)
         {
             float tickX = rect.x + rect.width * Mathf.Clamp01(tickFraction);
             float tickWidth = BreakTickWidth * _scale;
             Fill(new Rect(tickX - 0.5f * tickWidth, rect.y, tickWidth, rect.height), BreakTickColor);
-            _content.text = label;
-            float labelWidth = _barText.CalcSize(_content).x;   // includes the left padding
             if (LabelAtRightEnd(tickX - labelRect.xMin, labelWidth, LabelTickClearance * _scale))
                 labelStyle = _barTextRight;
         }
         GUI.Label(labelRect, label, labelStyle);
+        return labelStyle == _barTextRight ? labelRect.xMax - BarTextPadding * _scale : labelRect.xMin + labelWidth;
     }
+
+    // SU-167: a small plus just right of a bar's label (its right edge at labelEnd), drawn with two strokes. While the
+    // cursor is over it, tip becomes the tooltip.
+    void DrawBonusPlus(Rect bar, float labelEnd, string tip)
+    {
+        float size = bar.height * BonusIconFraction;
+        float stroke = Mathf.Max(1f, size * BonusStrokeFraction);
+        var plus = new Rect(labelEnd + BonusIconGap * _scale, bar.y + (bar.height - size) * 0.5f, size, size);
+        Fill(new Rect(plus.x, plus.center.y - 0.5f * stroke, size, stroke), BonusColor);
+        Fill(new Rect(plus.center.x - 0.5f * stroke, plus.y, stroke, size), BonusColor);
+        if (plus.Contains(Event.current.mousePosition)) _tooltip = tip;
+    }
+
+    // SU-167: how much the chain's Morale bonus adds to Effective Morale: the bonus per soldier x living soldiers
+    // (MoraleRules.EffectiveMorale). The card shows the plus while this is above 0. Internal for tests.
+    internal static int MoraleBonusLift(int bonusPerSoldier, int livingSoldiers) =>
+        Mathf.Max(0, bonusPerSoldier) * Mathf.Max(0, livingSoldiers);
+
+    // The plus's tooltip: "Chain +20". Internal for tests.
+    internal static string ChainMoraleTip(int lift) => "Chain +" + lift;
 
     // True when a bar's label, normally at its left end and labelWidth wide, would be covered by a tick tickOffset from
     // the label's left edge (within clearance past the label), so the label goes to the bar's right end. Internal for

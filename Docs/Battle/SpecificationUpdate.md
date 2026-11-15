@@ -11,6 +11,23 @@ SU-128 refer to v0.9 and may have moved.
 
 ---
 
+## 2026-11-15: A plus for boosted morale on the troop card (branch troop-facing-controls)
+
+### SU-167 The troop card marks boosted morale with a plus (Decision + Assumptions, spec §6.1)
+A chained troop's morale read "140 / 120" (Effective Morale including the chain's Morale bonus, SU-152, over the
+initial Effective Morale), which looked like an error. The designer: "Just add a little plus icon."
+- Decision: a small plus is drawn just right of the morale figure on the troop card's Morale bar while a bonus lifts the
+  troop's Effective Morale; the figures are unchanged.
+- Assumption: "a bonus lifts it" means the chain's Morale bonus adds something now: `ChainMoraleBonus` × living soldiers
+  is above 0. The plus shows whenever the troop is chained with the bonus on, also when losses keep the figure below the
+  initial one (it then explains why the troop holds better than its figure suggests), and never otherwise. The chain is
+  the only morale bonus today; a later one would join it here.
+- Assumption: the plus is drawn with two light green strokes (no new icon asset), about half the bar's height; the card's
+  tooltip (as for its icons) reads "Chain +N" over it, N being what the bonus adds to Effective Morale (`ChainMoraleBonus`
+  × living soldiers, so "Chain +20" on a 20-soldier troop with one link).
+
+---
+
 ## 2026-11-15: A front-to-back ripple when a troop moves (branch troop-facing-controls)
 
 ### SU-166 The soldier wave: ranks step off, stop and turn one after another (Decision + Assumptions, spec §2, §3.2, §8)
