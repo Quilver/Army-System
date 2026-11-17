@@ -11,7 +11,35 @@ SU-128 refer to v0.9 and may have moved.
 
 ---
 
-## 2026-11-17: The AI's Chain Line (branch troop-facing-controls)
+## 2026-11-17: The AI vs AI test level and the AI's Chain Line (branch troop-facing-controls)
+
+### SU-177 The AI vs AI test level (Decision + Assumptions, AI README §6)
+The designer: "Can you create a new level that is fought between two AI opponents. Use mission 1 map with the armies on
+opposite sides. They should both have 4 spearmen, 2 huskarls, and 2 skirmish troops. They should approach each other and
+fight."
+- Decision: `Assets/Resources/Levels/Test/AI vs AI.unity`, built from Mission 1's battle scene by **Leveraged Wars > AI >
+  Create AI vs AI Level** (`AIBattleSetup`; run again, it rebuilds the troops and the AI and keeps the rest of the
+  scene). The south army is the battle's player army and the north its enemy army. Each has 4 Spearman, 2 Huskarl and 2
+  Skirmisher troops (the generic characters) and its own AI: an `AIDirector` with AI team Player (south) or Enemy
+  (north), both under one `BattleAIBattlefield`.
+- Assumption: a test level beside Level 1 Troop Test, not a mission: it is not in the Mission Catalog or Build Settings.
+  It has no deployment phase, no briefing cutscene and no Mission 1 AI.
+- Assumption: the player only watches. `TroopPlayerOrders` uses team -1, which no troop has, so nothing can be selected
+  or ordered; hover, the troop cards, the combat log, the speed bar and pause still work. Both armies get the enemy fill.
+- Assumption: layout: the spear lines stand at y = -16 and +16 (32 apart, within S_Distance from the start, so the troops
+  are in line throughout), centred on x = 3 between the river and the north-east wood, each army facing the other; the
+  skirmishers stand 3 units beyond the chain's ends; the huskarls 7 behind it.
+- Assumption: roles (the designer named only the spearmen's): the Spears keep a chain (Chain Line, SU-176). The
+  Skirmishers keep pace on the chain's wings without looking for a fight (Hold anchored on the spears, aggro 0) and go
+  round the enemy's flanks once the spears are engaged (trigger SkirmishersWrap: Flank the opponent engaged with the
+  spears). The Huskarls follow 7 behind the chain as a reserve (Hold, aggro 9, leash 14) and go in, each on its nearest
+  opponent, 15 s after the wrap or as soon as the spears are broken (trigger HuskarlsCommit: Advance).
+- Assumption: the battle ends when every troop of one army is out (both Rout Shares 1). The Victory or Defeat banner is
+  the south army's, and the usual battle flow follows it (Post battle on a south win, the Main menu otherwise).
+- Tests: `LevelAIvsAITests` checks the tool on Mission 1's scene and the saved level; `LevelAIvsAITests.PlayedBattle`
+  (explicit) plays the saved level for 150 s. In it both chains stood fully linked before contact, met at about 6 s
+  with all three links in force and kept them through the first 15 s of melee; the side that won the fight kept two or
+  three of its three links for most of it. About half the soldiers had fallen by 150 s.
 
 ### SU-176 Chain Line: the AI keeps troops in one chain (Decision + Assumptions, spec §3.4, AI README; amends SU-71)
 The designer: "The spearman should try to stay in chain formation."

@@ -12,6 +12,7 @@ Implements the Basic tier of the *Enemy AI Specification & Plan* (Missions 1 and
 | Formations | Hold, Guard, Skirmish, Support fire, Advance, Flank, Capture, Fall back, Chain Line |
 | Triggers | Conditions, actions, `TriggerDefinition` |
 | Mission | `AIMission`, the Basic-tier commander you configure per mission |
+| Editor | Setup tools: Mission 1 (§3), the AI vs AI test level (§6) |
 | Adapters | `TroopAIAdapter`, `CapturePointAIObjective`, `BattleAIBattlefield`: the only code that knows the troop system |
 | Debug | `AIDebugOverlay` |
 
@@ -145,7 +146,9 @@ wall gap.
   0.5, a two-troop detachment with one troop routed is not yet broken.
 - Tick rates and reflex settings (brace radius, hold arrival radius) are on `AIDirector`.
 
-## 6. Chain Line (SU-176)
+## 6. Chain Line and the AI vs AI test level
+
+### Chain Line (SU-176)
 
 Keeps a detachment in one chain of linked battle lines (spec §3.4): the troops stand end to end, left to right in the
 order they started in, each pair of neighbours joined by the same pending order link as a multi-troop line order, so the
@@ -165,3 +168,30 @@ troop system activates, holds and breaks the links by its own rules. Its troops 
 
 The troop system only keeps a link between troops in line. Within S_Distance of an enemy that holds while the chain
 marches; further off the links lapse on each bound and are made again when the chain halts.
+
+### The AI vs AI test level (SU-177)
+
+`Assets/Resources/Levels/Test/AI vs AI.unity` is Mission 1's map with two AI armies and nobody else's orders: the player
+only watches (the controls' team is -1, so no troop can be selected or ordered; hover, cards, the combat log and the
+speed bar work). Open it and press Play. **Leveraged Wars > AI > Create AI vs AI Level** (`Editor/AIBattleSetup.cs`)
+builds it from Mission 1's battle scene, and run again rebuilds its troops and AI (the rest of the scene is kept).
+
+Each army (south: the battle's player army, AI team Player; north: the enemy army, AI team Enemy) has 4 Spearman, 2
+Huskarl and 2 Skirmisher troops and its own `South AI` / `North AI` director under the `AI vs AI` object (one
+`BattleAIBattlefield`). The spear lines start 32 apart (y = -16 and +16, x = 3), each army facing the other.
+Detachment and trigger ids carry the side (`South Spears`).
+
+| Detachment | Troops | Starting formation | Settings |
+| --- | --- | --- | --- |
+| Spears | 4 spearmen | Chain Line | defaults (Target: Opponent Centre) |
+| Skirmishers | 2 skirmishers | Hold | Anchor: Detachment → Spears · Line Gap = the chain's width + 6 (one beyond each end) · Aggro 0 · Leash 20 |
+| Huskarls | 2 huskarls | Hold | Anchor: Detachment → Spears, Forward Offset −7 · Aggro 9 · Leash 14 · Line Gap 3.5 |
+
+| Trigger | Condition | Actions |
+| --- | --- | --- |
+| SkirmishersWrap | Detachment Status: Spears, Engaged | Set Formation: Skirmishers → Flank (Target: Opponent Engaged With Detachment, Spears · Flank Distance 6 · Charge Distance 10 · Approach Timeout 15) |
+| HuskarlsCommit | Logic / Any Of: Detachment Status (Spears, Broken); Time Elapsed (15 s since SkirmishersWrap) | Set Formation: Huskarls → Advance (Nearest Opponent, Keep Line off) |
+
+The battle ends when every troop of one army is out; the banner is the south army's. Gate check
+(`LevelAIvsAITests.PlayedBattle`, run explicitly): both chains stand fully linked before the fight, meet with their links
+in force, and a real fight follows.

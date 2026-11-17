@@ -1,6 +1,6 @@
 # Assumptions review
 
-Every unconfirmed Assumption in `SpecificationUpdate.md` (SU-01 to SU-176), grouped by system so they can be confirmed in one sitting: 272 assumptions across 108 SU entries. SU-176 (the AI's Chain Line) was added on 2026-11-17. SU-174 and SU-175 (the Assault in one wave, on contact) were added on 2026-11-15. SU-173 (wheeling on steering circles) and SU-169 to SU-172 (Movie_023: hidden enemy orders, stronger borders, the Assault chain reaction, no strafing in line) were added on 2026-11-15. SU-168 (the slowed finish and the Victory or Defeat banner) was added on 2026-11-15. SU-167 (the plus for boosted morale on the troop card) was added on 2026-11-15. SU-166 (the soldier wave) was added on 2026-11-15. SU-165 (the Assault as one charge per soldier) was added on 2026-11-15; it superseded the SU-148 item and SU-164's "a troop in Assault does not feint", which were removed. SU-164 (feints) was added on 2026-11-15. SU-163 (the assault wheel) was added on 2026-11-15. SU-162 (the troop border) was added on 2026-11-15. SU-161 (flush fronts) was added on 2026-11-15. SU-159 (attack clicks) and SU-160 (linked group lines) were added on 2026-11-15; SU-160 superseded SU-157, whose items were removed. SU-158 (engaged soldiers face their enemy) was added on 2026-11-15. SU-154 to SU-157 (troop facing controls and line spacing, on the `troop-facing-controls` branch) and SU-148 to SU-153 (class design rules) were added on 2026-11-14. SU-136 to SU-140 were added on 2026-11-08; the SU-74 and SU-121 items about routed troops never leaving the map were removed (SU-138 replaced them). Rebuilt 2026-11-08 (SU-135): assumptions that later entries overtook were removed, missing ones were added, and the groups were tidied. The spec (v0.10) tags text that rests on one of these as **[A: SU-n]**.
+Every unconfirmed Assumption in `SpecificationUpdate.md` (SU-01 to SU-177), grouped by system so they can be confirmed in one sitting: 277 assumptions across 109 SU entries. SU-176 and SU-177 (the AI's Chain Line and the AI vs AI test level) were added on 2026-11-17. SU-174 and SU-175 (the Assault in one wave, on contact) were added on 2026-11-15. SU-173 (wheeling on steering circles) and SU-169 to SU-172 (Movie_023: hidden enemy orders, stronger borders, the Assault chain reaction, no strafing in line) were added on 2026-11-15. SU-168 (the slowed finish and the Victory or Defeat banner) was added on 2026-11-15. SU-167 (the plus for boosted morale on the troop card) was added on 2026-11-15. SU-166 (the soldier wave) was added on 2026-11-15. SU-165 (the Assault as one charge per soldier) was added on 2026-11-15; it superseded the SU-148 item and SU-164's "a troop in Assault does not feint", which were removed. SU-164 (feints) was added on 2026-11-15. SU-163 (the assault wheel) was added on 2026-11-15. SU-162 (the troop border) was added on 2026-11-15. SU-161 (flush fronts) was added on 2026-11-15. SU-159 (attack clicks) and SU-160 (linked group lines) were added on 2026-11-15; SU-160 superseded SU-157, whose items were removed. SU-158 (engaged soldiers face their enemy) was added on 2026-11-15. SU-154 to SU-157 (troop facing controls and line spacing, on the `troop-facing-controls` branch) and SU-148 to SU-153 (class design rules) were added on 2026-11-14. SU-136 to SU-140 were added on 2026-11-08; the SU-74 and SU-121 items about routed troops never leaving the map were removed (SU-138 replaced them). Rebuilt 2026-11-08 (SU-135): assumptions that later entries overtook were removed, missing ones were added, and the groups were tidied. The spec (v0.10) tags text that rests on one of these as **[A: SU-n]**.
 
 ## How to use this
 
@@ -22,7 +22,7 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 - [Morale, retreat & rout](#morale-retreat--rout) (16)
 - [Controls, orders & battle UI](#controls-orders--battle-ui) (49)
 - [Campaign, tent, missions & deployment](#campaign-tent-missions--deployment) (45)
-- [Enemy AI](#enemy-ai) (19)
+- [Enemy AI](#enemy-ai) (24)
 - [Tooling & other](#tooling--other) (4)
 
 ## Troops, characters, stats & equipment
@@ -631,6 +631,14 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 - [ ] the troops not fighting move up **level with the fight** and hold their places; 2 s after the last opponent was in reach the chain re-forms where it stands and goes on. →
 - [ ] a link broken while both troops attack is remade only once both hold a line order; a troop that drops out closes up the chain; one back from a retreat or disorder takes its place by where it stands. →
 - [ ] a place in a chain (the AI's Line order) gets **no troop-layer reflex**, not even fighting back in melee (amends SU-71). →
+
+**SU-177** The AI vs AI test level
+
+- [ ] a **test level** beside Level 1 Troop Test (`Resources/Levels/Test/AI vs AI.unity`), not a mission: not in the Mission Catalog or Build Settings; no deployment, briefing or Mission 1 AI. →
+- [ ] the player **only watches**: the controls use team -1, so nothing can be selected or ordered (hover, cards, combat log, speed and pause still work). →
+- [ ] **layout** on the Level 1 map: spear lines at y = -16 and +16 (32 apart, within S_Distance), centred on x = 3; skirmishers 3 beyond the chain's ends; huskarls 7 behind it. →
+- [ ] **roles**: skirmishers keep pace on the chain's wings and go round the enemy's flanks once the spears are engaged; huskarls follow as a reserve (aggro 9) and go in 15 s after that, or when the spears break. →
+- [ ] the battle ends when **every troop** of one army is out; the banner and the battle flow after it are the south army's (the battle's player army). →
 
 ## Tooling & other
 

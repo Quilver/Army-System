@@ -368,6 +368,9 @@ run (Troop and Tween tests) is about 500 tests; the main files:
   gains (SU-132). Each has `TroopCombatWorld`, `TroopPlayerOrders`, the enemy AI and the battle sounds.
 - `Level 1 Troop Test.unity`: Level 1 with seven placed troops (no roster needed), `TroopDebugOverlay` and the CLI smoke
   test scene. Not in Build Settings.
+- `AI vs AI.unity` (SU-177): Level 1's map with two AI armies of 4 spearmen, 2 huskarls and 2 skirmishers, one AI
+  director each and the player only watching. Built by **Leveraged Wars > AI > Create AI vs AI Level** (AI README §6).
+  Not in Build Settings.
 - All scenes are text-serialized (Force Text).
 
 ## 11. Known Issues and Limits
