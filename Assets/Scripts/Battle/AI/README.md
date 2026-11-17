@@ -6,10 +6,10 @@ Implements the Basic tier of the *Enemy AI Specification & Plan* (Missions 1 and
 
 | Folder | Contents |
 | --- | --- |
-| Core | `IAITroop`, `IAIObjective`, `IAIBattlefield`, `IAICommander`, orders, 2D geometry helpers |
+| Core | `IAITroop`, `IAIChainTroop`, `IAIObjective`, `IAIBattlefield`, `IAICommander`, orders, 2D geometry helpers |
 | Runtime | `AIDirector` (runs the AI), `AIBlackboard` (shared facts), `AITroopAgent` (troop layer and reflexes) |
 | Detachments | `Detachment` |
-| Formations | Hold, Guard, Skirmish, Support fire, Advance, Flank, Capture, Fall back |
+| Formations | Hold, Guard, Skirmish, Support fire, Advance, Flank, Capture, Fall back, Chain Line |
 | Triggers | Conditions, actions, `TriggerDefinition` |
 | Mission | `AIMission`, the Basic-tier commander you configure per mission |
 | Adapters | `TroopAIAdapter`, `CapturePointAIObjective`, `BattleAIBattlefield`: the only code that knows the troop system |
@@ -39,6 +39,7 @@ Orders map onto the troop's own orders:
 | Move, Fall back | `MoveTo` (there is no run/walk: troops have one speed) |
 | Attack, Charge (melee troop) | `Pursue` (the soldiers charge by themselves on contact) |
 | Attack (ranged troop) | walk to 85% of range if beyond 105% of it, then stand facing the target; `RangedFireController` picks what to shoot |
+| Line (a place in a chain) | `OrderLine`, as Hold. The neighbours are joined with `ChainLinker.LinkFromOrder` (`IAIChainTroop.LinkRightTo`), the multi-troop line order's pending link |
 
 A troop is on the AI team when it is under `Battle.enemy`; troops under neither army use their team id (0 = player).
 
@@ -53,7 +54,8 @@ A troop is on the AI team when it is under `Battle.enemy`; troops under neither 
 4. On `AIDebugOverlay`, set **Director**. Turn Gizmos on in the Game view to see detachment labels, states and order lines.
 
 Overlay colours: cyan = waiting/holding, green = moving, red = attacking or engaged, magenta = charging,
-yellow = falling back or returning, black = broken.
+yellow = falling back or returning, black = broken; a troop's Line order (its place in a chain) is a blue line to the
+place, and Chain Line draws its line and places in blue.
 
 ## 3. Mission 1 — rout (Level 1)
 
@@ -142,3 +144,24 @@ wall gap.
 - **Detachment broken threshold**: a detachment is broken when the share still fighting is *below* the threshold. At
   0.5, a two-troop detachment with one troop routed is not yet broken.
 - Tick rates and reflex settings (brace radius, hold arrival radius) are on `AIDirector`.
+
+## 6. Chain Line (SU-176)
+
+Keeps a detachment in one chain of linked battle lines (spec §3.4): the troops stand end to end, left to right in the
+order they started in, each pair of neighbours joined by the same pending order link as a multi-troop line order, so the
+troop system activates, holds and breaks the links by its own rules. Its troops must offer `IAIChainTroop` (every
+`TroopAIAdapter` does).
+
+- **Advancing.** The chain moves in bounds of **Bound Distance** towards its **Target** (the centre of the opposing army,
+  the nearest opponent, or a point). The next bound waits until every troop is within **Place Tolerance** of its place
+  and every link is in force, or **Wait Timeout** has passed. It turns towards the target when more than **Reface
+  Threshold** off, at most **Max Turn Per Bound** a bound, and stops **Stop Distance** short of it. Untick **Advance** to
+  hold the chain where it forms.
+- **Fighting.** A troop attacks an opponent in front of it within **Attack Range** (pivot to pivot, no further to the side
+  than half its width + **Attack Side Reach**); its Assault opens on contact. In melee with that opponent it stands its
+  ground under a line order (the Line order, which gets no troop-layer reflex), so it keeps its links and can link again;
+  an opponent at its flank or rear it turns on. The others move up level with the fight and hold their places. After
+  **Regroup Seconds** with nobody in reach, the chain re-forms where it stands and goes on.
+
+The troop system only keeps a link between troops in line. Within S_Distance of an enemy that holds while the chain
+marches; further off the links lapse on each bound and are made again when the chain halts.

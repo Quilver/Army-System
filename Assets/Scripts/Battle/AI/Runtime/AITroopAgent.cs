@@ -40,6 +40,8 @@ namespace LeveragedWars.Battle.AI
         public Vector3 Position => Troop.Position;
 
         public void Hold(Vector3 position, Vector3 facing) => Requested = AIOrder.Hold(position, facing);
+        /// <summary>Hold a place in a chain (AIOrder.Line): like Hold, with no reflexes at all (no fighting back, brace or shooting).</summary>
+        public void HoldInLine(Vector3 position, Vector3 facing) => Requested = AIOrder.Line(position, facing);
         public void MoveTo(Vector3 position, Vector3 facing, bool run) => Requested = AIOrder.Move(position, facing, run);
         public void Attack(IAITroop target) { if (target != null) Requested = AIOrder.Attack(target); }
         public void Charge(IAITroop target) { if (target != null) Requested = AIOrder.Charge(target); }
@@ -67,8 +69,10 @@ namespace LeveragedWars.Battle.AI
             Reflex = null;
             AIOrder requested = Requested;
 
-            // Fall back is never interrupted.
-            if (requested.Kind == AIOrderKind.None || requested.Kind == AIOrderKind.FallBack) return requested;
+            // Fall back is never interrupted. A place in a chain (Line) is the chain formation's call, in melee too: it holds
+            // the line where a troop fighting back would wheel out of it.
+            if (requested.Kind == AIOrderKind.None || requested.Kind == AIOrderKind.FallBack || requested.Kind == AIOrderKind.Line)
+                return requested;
 
             // Fight back against whatever is engaging this troop in melee.
             IAITroop opponent = Troop.IsInMelee ? Troop.MeleeOpponent : null;

@@ -63,6 +63,11 @@ namespace LeveragedWars.Battle.AI
                     Gizmos.color = Color.cyan;
                     Gizmos.DrawLine(from, from + order.Facing * 2f);
                     break;
+                case AIOrderKind.Line:
+                    Gizmos.color = Color.blue;
+                    Gizmos.DrawLine(from, order.Position);
+                    Gizmos.DrawLine(order.Position, order.Position + order.Facing * 2f);
+                    break;
             }
 #if UNITY_EDITOR
             if (labels && agent.Reflex != null) UnityEditor.Handles.Label(from + Vector3.up * (labelHeight * 0.5f), agent.Reflex);

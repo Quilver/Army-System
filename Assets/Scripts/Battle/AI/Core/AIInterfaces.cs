@@ -42,6 +42,35 @@ namespace LeveragedWars.Battle.AI
         void OrderFallBack(Vector3 position);
     }
 
+    /// <summary>
+    /// Optional, on the same object as an IAITroop: a troop that can stand in a chain of linked battle lines (spec §3.4).
+    /// Formations that build chains (Chain Line) look for it with <c>troop as IAIChainTroop</c>. A chain runs left to
+    /// right: each troop's right wing joins its right-hand neighbour's left wing.
+    /// </summary>
+    public interface IAIChainTroop
+    {
+        /// <summary>Length of the troop's battle line at its natural width (units).</summary>
+        float NaturalLineLength { get; }
+
+        /// <summary>True while the troop holds, or marches to, a line order (an order link needs one on both troops).</summary>
+        bool HasLineOrder { get; }
+
+        /// <summary>
+        /// The link from this troop's right wing to the other troop's left wing: Linked (in force), Pending (made by an
+        /// order, waiting for both troops to stand in place) or None.
+        /// </summary>
+        AIChainLink RightLinkTo(IAIChainTroop other);
+
+        /// <summary>
+        /// Joins this troop's right wing to the other's left wing, as a multi-troop line order does: the link is pending
+        /// until both troops stand in their places, and lasts while both keep a line order. Replaces any link on either
+        /// wing. Returns false if it cannot be made (no line order, other team, or it would close a loop).
+        /// </summary>
+        bool LinkRightTo(IAIChainTroop other);
+    }
+
+    public enum AIChainLink { None, Pending, Linked }
+
     /// <summary>A capturable objective.</summary>
     public interface IAIObjective
     {

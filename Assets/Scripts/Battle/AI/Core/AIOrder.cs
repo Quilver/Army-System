@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace LeveragedWars.Battle.AI
 {
-    public enum AIOrderKind { None, Hold, Move, Attack, Charge, FallBack }
+    public enum AIOrderKind { None, Hold, Move, Attack, Charge, FallBack, Line }
 
     /// <summary>
     /// An order the AI wants a troop to carry out. Orders are compared before issuing,
@@ -40,6 +40,13 @@ namespace LeveragedWars.Battle.AI
         public static AIOrder Charge(IAITroop target) =>
             new AIOrder(AIOrderKind.Charge, Vector3.zero, Vector3.zero, target, true);
 
+        /// <summary>
+        /// Hold a place in a chain of linked battle lines (Chain Line): the troop gets the same line order as Hold, but
+        /// keeps the chain's facing. The agent adds no reflexes: the chain formation decides, in melee too.
+        /// </summary>
+        public static AIOrder Line(Vector3 position, Vector3 facing) =>
+            new AIOrder(AIOrderKind.Line, position, AIGeometry.FlatForward(facing), null, false);
+
         /// <summary>Withdraw to a point without routing. Facing is set by the Hold that follows.</summary>
         public static AIOrder FallBack(Vector3 position) =>
             new AIOrder(AIOrderKind.FallBack, position, Vector3.zero, null, true);
@@ -69,7 +76,8 @@ namespace LeveragedWars.Battle.AI
         {
             switch (Kind)
             {
-                case AIOrderKind.Hold: troop.OrderHold(Position, Facing); break;
+                case AIOrderKind.Hold:
+                case AIOrderKind.Line: troop.OrderHold(Position, Facing); break;
                 case AIOrderKind.Move: troop.OrderMove(Position, Facing, Run); break;
                 case AIOrderKind.Attack: troop.OrderAttack(Target); break;
                 case AIOrderKind.Charge: troop.OrderCharge(Target); break;

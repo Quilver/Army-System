@@ -11,6 +11,40 @@ SU-128 refer to v0.9 and may have moved.
 
 ---
 
+## 2026-11-17: The AI's Chain Line (branch troop-facing-controls)
+
+### SU-176 Chain Line: the AI keeps troops in one chain (Decision + Assumptions, spec §3.4, AI README; amends SU-71)
+The designer: "The spearman should try to stay in chain formation."
+- Decision: a new AI formation, Chain Line (`ChainLineDefinition`, `AI/Formations/ChainFormations.cs`). The
+  detachment's troops stand end to end, each its natural line length wide, left to right in the order they started in,
+  and every pair of neighbours is joined by the same pending order link as a multi-troop line order. The troop system
+  activates, holds and breaks the links by its own rules (§3.4).
+- Decision: the AI reaches chains through a new optional interface, `IAIChainTroop` (natural line length, line order,
+  the link to the right-hand neighbour, `LinkRightTo` = `ChainLinker.LinkFromOrder`), implemented by `TroopAIAdapter`.
+  A new AI order, Line (`AIOrder.Line`, blue in the debug overlay), holds a place in a chain: the troop gets the same
+  line order as Hold, and the troop layer adds no reflex to it, not even fighting back in melee: the formation decides
+  (amends SU-71's "fighting back in melee overrides everything else").
+- Assumption: the chain advances in bounds: each bound moves the whole line Bound Distance (6 units) towards its target
+  (by default the centre of the opposing army; when more than Reface Threshold, 10°, off it turns towards it, at most
+  Max Turn Per Bound, 25°, a bound). The next bound waits until every troop is within Place Tolerance (2) of its place
+  and every link is in force, or for Wait Timeout (8 s). The chain stops Stop Distance (4) short of its target.
+- Assumption: a troop attacks (pursues) an opponent in front of it within Attack Range (8, pivot to pivot): no further
+  to the side than half its width + Attack Side Reach (4), and no further out beyond its own width than it is ahead.
+  The one most nearly straight ahead is preferred, so the chain does not bend to reach one. Its Assault opens on contact
+  as usual.
+- Assumption: once in melee with an opponent in front, the troop stands its ground where it met it, under a line order,
+  so it keeps its order links and can link again with a neighbour that does the same. An opponent at its flank or rear
+  it turns on (attacks), giving up its place in the line. The others move up level with the troops that are fighting
+  and hold their places on that line. Once nobody has had an opponent in reach for Regroup Seconds (2 s) the chain
+  re-forms where it stands, facing its target, and goes on.
+- Assumption: a link the troop system breaks while both troops attack is made again only once both hold a line order.
+  A troop that drops out (routed, wiped out) closes up: the rest stand end to end again and the troops either side
+  link. A troop back from a retreat or disorder takes its place by where it stands.
+- Tests: `ChainLineTests` (small fakes of the AI interfaces): end to end left to right facing the enemy; links only once
+  both line orders are out; a bound only when formed and linked; a straggler waited for until the timeout; stopping
+  short of the target; attacking only the opponent in front; standing its ground in melee, still linked; turning on a
+  flank attacker and re-forming after the fight; closing the gap left by a lost troop.
+
 ## 2026-11-15 (3): The one-wave Assault goes on contact (branch troop-facing-controls)
 
 ### SU-175 No wait before the Assault wave (Decision + Assumption, spec §4.2, §4.3, §8; replaces SU-174's wait)

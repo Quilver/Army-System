@@ -1,6 +1,6 @@
 # Assumptions review
 
-Every unconfirmed Assumption in `SpecificationUpdate.md` (SU-01 to SU-175), grouped by system so they can be confirmed in one sitting: 266 assumptions across 107 SU entries. SU-174 and SU-175 (the Assault in one wave, on contact) were added on 2026-11-15. SU-173 (wheeling on steering circles) and SU-169 to SU-172 (Movie_023: hidden enemy orders, stronger borders, the Assault chain reaction, no strafing in line) were added on 2026-11-15. SU-168 (the slowed finish and the Victory or Defeat banner) was added on 2026-11-15. SU-167 (the plus for boosted morale on the troop card) was added on 2026-11-15. SU-166 (the soldier wave) was added on 2026-11-15. SU-165 (the Assault as one charge per soldier) was added on 2026-11-15; it superseded the SU-148 item and SU-164's "a troop in Assault does not feint", which were removed. SU-164 (feints) was added on 2026-11-15. SU-163 (the assault wheel) was added on 2026-11-15. SU-162 (the troop border) was added on 2026-11-15. SU-161 (flush fronts) was added on 2026-11-15. SU-159 (attack clicks) and SU-160 (linked group lines) were added on 2026-11-15; SU-160 superseded SU-157, whose items were removed. SU-158 (engaged soldiers face their enemy) was added on 2026-11-15. SU-154 to SU-157 (troop facing controls and line spacing, on the `troop-facing-controls` branch) and SU-148 to SU-153 (class design rules) were added on 2026-11-14. SU-136 to SU-140 were added on 2026-11-08; the SU-74 and SU-121 items about routed troops never leaving the map were removed (SU-138 replaced them). Rebuilt 2026-11-08 (SU-135): assumptions that later entries overtook were removed, missing ones were added, and the groups were tidied. The spec (v0.10) tags text that rests on one of these as **[A: SU-n]**.
+Every unconfirmed Assumption in `SpecificationUpdate.md` (SU-01 to SU-176), grouped by system so they can be confirmed in one sitting: 272 assumptions across 108 SU entries. SU-176 (the AI's Chain Line) was added on 2026-11-17. SU-174 and SU-175 (the Assault in one wave, on contact) were added on 2026-11-15. SU-173 (wheeling on steering circles) and SU-169 to SU-172 (Movie_023: hidden enemy orders, stronger borders, the Assault chain reaction, no strafing in line) were added on 2026-11-15. SU-168 (the slowed finish and the Victory or Defeat banner) was added on 2026-11-15. SU-167 (the plus for boosted morale on the troop card) was added on 2026-11-15. SU-166 (the soldier wave) was added on 2026-11-15. SU-165 (the Assault as one charge per soldier) was added on 2026-11-15; it superseded the SU-148 item and SU-164's "a troop in Assault does not feint", which were removed. SU-164 (feints) was added on 2026-11-15. SU-163 (the assault wheel) was added on 2026-11-15. SU-162 (the troop border) was added on 2026-11-15. SU-161 (flush fronts) was added on 2026-11-15. SU-159 (attack clicks) and SU-160 (linked group lines) were added on 2026-11-15; SU-160 superseded SU-157, whose items were removed. SU-158 (engaged soldiers face their enemy) was added on 2026-11-15. SU-154 to SU-157 (troop facing controls and line spacing, on the `troop-facing-controls` branch) and SU-148 to SU-153 (class design rules) were added on 2026-11-14. SU-136 to SU-140 were added on 2026-11-08; the SU-74 and SU-121 items about routed troops never leaving the map were removed (SU-138 replaced them). Rebuilt 2026-11-08 (SU-135): assumptions that later entries overtook were removed, missing ones were added, and the groups were tidied. The spec (v0.10) tags text that rests on one of these as **[A: SU-n]**.
 
 ## How to use this
 
@@ -22,7 +22,7 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 - [Morale, retreat & rout](#morale-retreat--rout) (16)
 - [Controls, orders & battle UI](#controls-orders--battle-ui) (49)
 - [Campaign, tent, missions & deployment](#campaign-tent-missions--deployment) (45)
-- [Enemy AI](#enemy-ai) (13)
+- [Enemy AI](#enemy-ai) (19)
 - [Tooling & other](#tooling--other) (4)
 
 ## Troops, characters, stats & equipment
@@ -622,6 +622,15 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 - [ ] a fall-back route is blocked when the straight line to the fallback point passes within half of each troop's frontage + Route Clearance Margin (default 2) of the nearest enemy and comes closer to it than the troop stands now. →
 - [ ] a blocked route sends the troop Escape Distance (default 8) away from the enemy first, inside the leash, from headings 0 / ±45 / ±90° (preferring one from which the way on is clear); a cornered troop holds facing the enemy; it resumes the fall-back once the route clears by 1 more unit. →
 - [ ] a troop walking out to firing range whose path would pass through the nearest enemy holds and shoots instead. →
+
+**SU-176** Chain Line: the AI keeps troops in one chain
+
+- [ ] the chain advances in **bounds** of 6 units towards the centre of the opposing army (turning when more than 10° off, at most 25° a bound); the next bound waits until every troop is within 2 units of its place and every link is in force, or 8 s; it stops 4 short of its target. →
+- [ ] a troop attacks an opponent **in front** of it within 8 (pivot to pivot): no further to the side than half its width + 4, and no further out beyond its own width than it is ahead; the one most nearly straight ahead first. →
+- [ ] in melee with an opponent in front, the troop **stands its ground** under a line order where it met it (keeping and remaking its links); an opponent at its flank or rear it turns on, giving up its place in the line. →
+- [ ] the troops not fighting move up **level with the fight** and hold their places; 2 s after the last opponent was in reach the chain re-forms where it stands and goes on. →
+- [ ] a link broken while both troops attack is remade only once both hold a line order; a troop that drops out closes up the chain; one back from a retreat or disorder takes its place by where it stands. →
+- [ ] a place in a chain (the AI's Line order) gets **no troop-layer reflex**, not even fighting back in melee (amends SU-71). →
 
 ## Tooling & other
 

@@ -9,9 +9,11 @@ namespace LeveragedWars.Battle.AI
     /// Orders map onto the troop's own orders (spec §6): Hold = a line order at the position and facing, Move and
     /// Fall back = Move, Attack and Charge = Pursue (charges are the troop's own, ChargeCoordinator). A ranged troop
     /// told to Attack walks into range of the target, then stands facing it; its RangedFireController picks what to shoot.
+    /// Chains (IAIChainTroop): LinkRightTo makes the same pending order link as a multi-troop line order (ChainLinker),
+    /// so the troop system activates, holds and breaks it by its own rules (spec §3.4).
     /// </summary>
     [DisallowMultipleComponent, RequireComponent(typeof(Troop))]
-    public sealed class TroopAIAdapter : MonoBehaviour, IAITroop
+    public sealed class TroopAIAdapter : MonoBehaviour, IAITroop, IAIChainTroop
     {
         /// <summary>Team id of the player's troops, used when the troop is under neither of the battle's armies.</summary>
         public static int PlayerTeamId = 0;
@@ -208,6 +210,30 @@ namespace LeveragedWars.Battle.AI
         {
             Troop other = (target as TroopAIAdapter)?.Troop;
             if (other != null) Troop.Pursue(other);
+        }
+
+        // ---- IAIChainTroop: chains of linked battle lines (spec §3.4) ----
+
+        public float NaturalLineLength => Troop != null ? Troop.NaturalLineLength : 0f;
+
+        public bool HasLineOrder => Troop != null && Troop.HasManualLineOrder;
+
+        public AIChainLink RightLinkTo(IAIChainTroop other)
+        {
+            Troop self = Troop;
+            Troop neighbour = (other as TroopAIAdapter)?.Troop;
+            if (self == null || neighbour == null) return AIChainLink.None;
+            TroopEndpointLink link = self.GetLineLink(TroopConstants.RightEnd);
+            if (link == null || link.Other != neighbour || link.OtherEnd != TroopConstants.LeftEnd) return AIChainLink.None;
+            return link.Pending ? AIChainLink.Pending : AIChainLink.Linked;
+        }
+
+        public bool LinkRightTo(IAIChainTroop other)
+        {
+            Troop self = Troop;
+            Troop neighbour = (other as TroopAIAdapter)?.Troop;
+            if (self == null || neighbour == null || !self.HasManualLineOrder || !neighbour.HasManualLineOrder) return false;
+            return ChainLinker.LinkFromOrder(self, TroopConstants.RightEnd, neighbour, TroopConstants.LeftEnd);
         }
 
         // ---- Ranged attack: close to range, then stand facing the target ----
