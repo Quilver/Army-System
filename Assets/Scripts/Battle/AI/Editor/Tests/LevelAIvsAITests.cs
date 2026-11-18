@@ -120,7 +120,9 @@ public sealed class LevelAIvsAITests
         }
     }
 
-    // Plays the saved level: both AIs form their spear chains, advance on each other and fight. Logs a timeline.
+    // Plays the saved level: both AIs form their spear chains, advance on each other and fight. Logs a timeline. Since
+    // Movie_024 it also checks that each chain stands as one line (SU-178) and that the huskarls never stand inside their
+    // own spearmen (SU-179).
     // Run explicitly: -testFilter LevelAIvsAITests.PlayedBattle
     [UnityTest, Explicit]
     public IEnumerator PlayedBattle()
@@ -154,6 +156,8 @@ public sealed class LevelAIvsAITests
         var linksAfterContact = new[] { -1, -1 };
         var contactTime = new[] { -1f, -1f };
         float closest = float.PositiveInfinity;
+        float widestJointBeforeContact = 0f; // SU-178: gap between neighbouring spearmen's end files before the fight
+        int reserveInsideOwnSpears = 0;      // SU-179: seconds a huskarl's pivot stood inside its own side's spearmen
         int startSoldiers = Object.FindObjectsByType<Troop>(FindObjectsSortMode.None).Sum(t => t.LivingSoldierCount);
         Side[] both = { Side.South, Side.North };
 
@@ -189,13 +193,41 @@ public sealed class LevelAIvsAITests
                             $" | husk {husk.Formation?.Name} {husk.State} {husk.ActiveAgents.Count}");
             }
             closest = Mathf.Min(closest, AIGeometry.FlatDistance(centres[0], centres[1]));
+            Troop[] all = Object.FindObjectsByType<Troop>(FindObjectsSortMode.None);
+            foreach (Side side in both)
+            {
+                int team = side == Side.South ? 0 : 1;
+                var spearsOfSide = new List<Troop>();
+                foreach (Troop tr in all)
+                    if (tr.TeamId == team && !tr.IsRouted && tr.FirstCharacter.name == "Spearman") spearsOfSide.Add(tr);
+                spearsOfSide.Sort(CompareX);
+                if (!engaged[(int)side] && now >= 3f)
+                    for (int i = 0; i + 1 < spearsOfSide.Count; i++)
+                    {
+                        Extent(spearsOfSide[i], out _, out float maxX, out _, out _);
+                        Extent(spearsOfSide[i + 1], out float minX, out _, out _, out _);
+                        widestJointBeforeContact = Mathf.Max(widestJointBeforeContact, minX - maxX);
+                    }
+                foreach (Troop h in all)
+                {
+                    if (h.TeamId != team || h.IsRouted || h.FirstCharacter.name != "Huskarl") continue;
+                    foreach (Troop sp in spearsOfSide)
+                        if (AIApproach.Contains(TroopAIAdapter.For(sp).Footprint, h.transform.position, 0f))
+                        {
+                            reserveInsideOwnSpears++;
+                            line.Append($" | {h.name} inside {sp.name}");
+                            break;
+                        }
+                }
+            }
             timeline.AppendLine(line.ToString());
         }
 
         int endSoldiers = Object.FindObjectsByType<Troop>(FindObjectsSortMode.None).Sum(t => t.LivingSoldierCount);
         Debug.Log("[AIvsAI] timeline\n" + timeline);
         var summary = new StringBuilder($"[AIvsAI] over {battle.IsOver} won(south) {battle.Won}; soldiers {startSoldiers} -> {endSoldiers}; " +
-                                        $"closest spear centres {closest:0.0}");
+                                        $"closest spear centres {closest:0.0}; widest joint before contact " +
+                                        $"{widestJointBeforeContact:0.00}; huskarl inside own spearmen {reserveInsideOwnSpears} s");
         foreach (Side side in both)
             summary.Append($"; {side}: formed {formedBeforeContact[(int)side]}, contact {contactTime[(int)side]}s, " +
                            $"links at contact {linksAtContact[(int)side]}, 5 s later {linksAfterContact[(int)side]}");
@@ -209,9 +241,159 @@ public sealed class LevelAIvsAITests
             Assert.GreaterOrEqual(linksAtContact[(int)side], 2, $"{side} spears met the enemy still chained");
         }
         Assert.Less(closest, 12f, "the armies met");
+        Assert.Less(widestJointBeforeContact, 2f * TroopConstants.LineSpacing,
+            "each chain read as one line: its joints no wider than two files (SU-178)");
+        Assert.AreEqual(0, reserveInsideOwnSpears, "the huskarls went round their own spearmen, not through them (SU-179)");
         Assert.Less(endSoldiers, startSoldiers * 0.8f, "a real fight");
 
         yield return new ExitPlayMode();
+    }
+
+    // Diagnostics (Movie_024): plays 150 s of the saved level and logs, every half second, each spearman's line,
+    // links and soldier extent (and the gaps between neighbours), and each huskarl's order, whether its pivot stands inside
+    // a friend's footprint and how many of its soldiers stand inside a friendly spearman troop; and every soldier's place at
+    // 4, 12 and 24 s. DiagnosticsWithoutFixes runs the same with Chain Fill To Joints (SU-178) and Go Round Friends
+    // (SU-179) off, for comparison. Run explicitly: -testFilter LevelAIvsAITests.Diagnostics
+    [UnityTest, Explicit]
+    public IEnumerator DiagnosticsWithFixes()
+    {
+        SessionState.SetBool("AIvsAI.GoRound", true);
+        SessionState.SetFloat("AIvsAI.DiagSeconds", 150f);
+        return RunDiagnostics();
+    }
+
+    [UnityTest, Explicit]
+    public IEnumerator DiagnosticsWithoutFixes()
+    {
+        SessionState.SetBool("AIvsAI.GoRound", false);
+        SessionState.SetFloat("AIvsAI.DiagSeconds", 150f);
+        return RunDiagnostics();
+    }
+
+    IEnumerator RunDiagnostics()
+    {
+        EditorSceneManager.OpenScene(AIBattleSetup.ScenePath, OpenSceneMode.Single);
+        yield return new EnterPlayMode();
+        Time.captureDeltaTime = 1f / 30f;
+        yield return null;
+        var log = new StringBuilder();
+        AIDirector[] directors = Object.FindObjectsByType<AIDirector>(FindObjectsSortMode.None);
+        bool goRound = SessionState.GetBool("AIvsAI.GoRound", true);
+        foreach (AIDirector dir in directors)
+        {
+            var field = typeof(AIDirector).GetField("reflexes",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            ((TroopReflexSettings)field.GetValue(dir)).goRoundFriends = goRound;
+        }
+        var formationTuning = new SerializedObject(TroopTuning.Active.Formation);
+        bool fillWas = formationTuning.FindProperty("_chainFillToJoints").boolValue;
+        formationTuning.FindProperty("_chainFillToJoints").boolValue = goRound;
+        formationTuning.ApplyModifiedPropertiesWithoutUndo();
+        var positions = new StringBuilder();
+        int pivotInsideFriend = 0;
+        float until = SessionState.GetFloat("AIvsAI.DiagSeconds", 40f);
+        for (float t = 0f; t < until; t += 0.5f)
+        {
+            yield return Seconds(0.5f);
+            log.AppendLine($"t={t + 0.5f:0.0}");
+            Troop[] all = Object.FindObjectsByType<Troop>(FindObjectsSortMode.None);
+            float now = t + 0.5f;
+            if (Mathf.Abs(now - 4f) < 0.01f || Mathf.Abs(now - 12f) < 0.01f || Mathf.Abs(now - 24f) < 0.01f)
+                foreach (Troop tr in all)
+                    foreach (SoldierAgentState sa in tr.Soldiers)
+                    {
+                        if (!sa.IsAlive) continue;
+                        Vector2 sp = tr.WorldPosition(sa);
+                        positions.AppendLine($"{now:0},{tr.TeamId},{tr.name},{sp.x:0.000},{sp.y:0.000}");
+                    }
+            foreach (int team in new[] { 0, 1 })
+            {
+                var spears = new List<Troop>();
+                var husk = new List<Troop>();
+                foreach (Troop tr in all)
+                {
+                    if (tr.TeamId != team) continue;
+                    if (tr.FirstCharacter.name == "Spearman") spears.Add(tr);
+                    else if (tr.FirstCharacter.name == "Huskarl") husk.Add(tr);
+                }
+                spears.Sort(CompareX);
+                float prevMax = float.NaN;
+                foreach (Troop tr in spears)
+                {
+                    Extent(tr, out float minX, out float maxX, out float minY, out float maxY);
+                    TroopFormationData f = tr.Formation;
+                    string len = f != null ? $"{Vector2.Distance(f.Start, f.End):0.00}" : "-";
+                    string order = tr.HasManualLineOrder ? $"{tr.LineOrder.Length:0.00}" : "-";
+                    string gap = float.IsNaN(prevMax) ? "" : $" gap {minX - prevMax:0.00}";
+                    log.AppendLine($"  T{team} {tr.name} pos ({tr.transform.position.x:0.00},{tr.transform.position.y:0.00}) " +
+                                   $"{tr.FormationMode} line {len} order {order} L0 {Link(tr, 0)} L1 {Link(tr, 1)} " +
+                                   $"soldiers x[{minX:0.00},{maxX:0.00}] y[{minY:0.00},{maxY:0.00}] alive {tr.LivingSoldierCount}" +
+                                   $" moving {tr.IsMoving} melee {tr.IsEngaged}{gap}");
+                    prevMax = maxX;
+                }
+                foreach (Troop h in husk)
+                {
+                    int inside = 0;
+                    foreach (SoldierAgentState s in h.Soldiers)
+                    {
+                        if (!s.IsAlive) continue;
+                        Vector2 p = h.WorldPosition(s);
+                        foreach (Troop sp in spears)
+                        {
+                            Extent(sp, out float a, out float b, out float c, out float d);
+                            if (p.x > a && p.x < b && p.y > c && p.y < d) { inside++; break; }
+                        }
+                    }
+                    string agentOrder = "";
+                    foreach (AIDirector dir in directors)
+                    {
+                        if (dir.Blackboard == null) continue;
+                        foreach (AITroopAgent ag in dir.Blackboard.Agents)
+                            if (ag.Troop is TroopAIAdapter ad && ad.Troop == h) agentOrder = $"{ag.Issued} reflex {ag.Reflex}";
+                    }
+                    string insideOf = "";
+                    foreach (Troop friend in all)
+                    {
+                        if (friend == h || friend.TeamId != team || friend.IsRouted) continue;
+                        AIFootprint fp = TroopAIAdapter.For(friend).Footprint;
+                        if (AIApproach.Contains(fp, h.transform.position, 0f)) insideOf += " " + friend.name;
+                    }
+                    if (insideOf.Length > 0) pivotInsideFriend++;
+                    log.AppendLine($"  T{team} {h.name} pos ({h.transform.position.x:0.00},{h.transform.position.y:0.00}) " +
+                                   $"pivot inside friend [{insideOf}] " +
+                                   $"pursuing {h.IsPursuing} -> {(h.PursuitTarget != null ? h.PursuitTarget.name : "-")} " +
+                                   $"order [{agentOrder}] soldiers inside friendly spears {inside}");
+                }
+            }
+        }
+        Debug.Log($"[AIvsAI diag] go round {goRound}: huskarl pivot inside a friend's footprint in {pivotInsideFriend} samples\n" + log);
+        Debug.Log($"[AIvsAI positions] fixes {goRound}\n" + positions + "[AIvsAI positions end]");
+        formationTuning.FindProperty("_chainFillToJoints").boolValue = fillWas;
+        formationTuning.ApplyModifiedPropertiesWithoutUndo();
+        Time.captureDeltaTime = 0f;
+        yield return new ExitPlayMode();
+    }
+
+    static int CompareX(Troop a, Troop b) => a.transform.position.x.CompareTo(b.transform.position.x);
+
+    static string Link(Troop troop, int end)
+    {
+        TroopEndpointLink link = troop.GetLineLink(end);
+        if (link == null) return "-";
+        return $"{(link.Pending ? "P" : "A")}:{(link.Other != null ? link.Other.name : "?")}/{link.OtherEnd}";
+    }
+
+    static void Extent(Troop troop, out float minX, out float maxX, out float minY, out float maxY)
+    {
+        minX = minY = float.PositiveInfinity;
+        maxX = maxY = float.NegativeInfinity;
+        foreach (SoldierAgentState s in troop.Soldiers)
+        {
+            if (!s.IsAlive) continue;
+            Vector2 p = troop.WorldPosition(s);
+            minX = Mathf.Min(minX, p.x); maxX = Mathf.Max(maxX, p.x);
+            minY = Mathf.Min(minY, p.y); maxY = Mathf.Max(maxY, p.y);
+        }
     }
 
     static int Links(ChainLineFormation chain)

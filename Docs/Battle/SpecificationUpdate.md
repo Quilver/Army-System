@@ -11,10 +11,44 @@ SU-128 refer to v0.9 and may have moved.
 
 ---
 
-## 2026-11-18: Movie_024: chains read as one line (branch troop-facing-controls)
+## 2026-11-18: Movie_024: chains read as one line, the AI goes round its friends (branch troop-facing-controls)
 
-Movie_024 is the AI vs AI level (SU-177) played for 50 s. Checked against the level played in the Editor with the
-same seed.
+Movie_024 is the AI vs AI level (SU-177) played for 50 s. Both points were checked against the level played in the
+Editor with the same seed (`LevelAIvsAITests.DiagnosticsWithFixes` / `DiagnosticsWithoutFixes`).
+
+### SU-179 Melee troops go round friends, not through them (Decision + Assumptions, AI README §1, §5; AI only)
+The designer: "The huskarls should not be trying to push through friendly troops to engage in melee."
+- Found: about 15 s after the skirmishers' wrap, HuskarlsCommit sets the huskarls to Advance (nearest opponent, Keep Line
+  off). Each huskarl's nearest opponent was an enemy spearman fighting its own chain's front, so it pursued straight
+  through its own spearmen. A pursuing troop has the same right of way as an engaged one (SU-46), so the two shoved each
+  other: in the replay the huskarls' pivots stood inside their own spearmen for 19 troop-seconds of the first 150 s and
+  the lines broke into a scrum.
+- Decision: a new troop-layer reflex, **Go Round Friends** (`AITroopAgent`, on): a melee troop told to Attack or Charge
+  whose straight way to its target crosses a friendly troop moves first to the corner on the shortest way round its
+  friends, and attacks once the way is clear. It serves every formation that attacks (Advance, Hold and Guard's aggro,
+  Flank, Chain Line). Settings on `AIDirector`'s reflexes: `goRoundFriends` (on), `friendClearance` (1.5).
+- Assumption: a friend is its outline (the formation its soldiers are steered into, steady in melee), offered through a
+  new optional interface `IAIFootprintTroop` that `TroopAIAdapter` implements; a troop without it is taken as a box its
+  frontage wide and a quarter of that deep. The way keeps Friend Clearance from every outline, so friends closer together
+  than twice that (a chain) leave no way between them and are gone round as one, by the nearer end. The way is the
+  shortest path from corner to corner of the grown outlines (`AIApproach`).
+- Assumption: a troop already closing on its target turns aside only when its way passes within half the clearance, so
+  it does not flick between going round and closing in.
+- Assumption: a friend whose outline holds the troop or its target is left out (it is already against it); fighting
+  back in melee comes first; ranged troops are not affected.
+- Assumption: target choice stays with the formation (Advance still picks the nearest opponent each tick), so a huskarl
+  going round an end usually ends up attacking whatever is nearest at that end.
+- Assumption: only the AI changes. A player's troop ordered to attack through friends still pushes through.
+- Measured (AI vs AI level, same seed): with it off a huskarl's pivot stood inside a friend's outline in 24 half-second
+  samples of the first 40 s, with it on in none; all four huskarls go round the ends of their chains and fight on the wings.
+  The battle is much slower: 25 of 208 soldiers fell in 150 s (119 with neither SU-178 nor SU-179; 61 with this alone),
+  because the huskarls no longer break into the middle of the lines. `LevelAIvsAITests.PlayedBattle` therefore now fails
+  its "a real fight" check (fewer than 80% left after 150 s); left as it is for the designer to judge.
+- Tests: `GoRoundFriendsTests` (8): behind the middle of a chain the way goes round an end (rear corner, then front
+  corner), never through it; behind one half, round that end; a clear way needs no detour; a gap wider than twice the
+  clearance is used, a narrower one is not; a bent chain is gone round as a whole; the agent moves a reserve round its
+  chain ("go round"), attacks straight with the reflex off, and attacks straight when the way is clear.
+  `LevelAIvsAITests.PlayedBattle` checks that no huskarl stands inside its own spearmen.
 
 ### SU-178 Chained troops fill their lines to the joints (Decision + Assumptions, spec §3.3, §8; amends SU-2)
 The designer: "The spearmen troops do not appear to be chaining with each other."
@@ -44,6 +78,7 @@ The designer: "The spearmen troops do not appear to be chaining with each other.
   soldier's radius): with its files at `LineSpacing` the four-rank troop's front rank stands 0.085 to 0.11 ahead of the
   line (0.06 before). `ChainEngagementScenarioTests.ChainedFighter_IsNotDraggedAway_...`, failing
   since SU-173, passes with this on (it still fails with it off).
+  `LevelAIvsAITests.PlayedBattle` checks that no joint is wider than two files before contact.
 
 ## 2026-11-17: The AI vs AI test level and the AI's Chain Line (branch troop-facing-controls)
 

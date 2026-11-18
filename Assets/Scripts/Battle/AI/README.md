@@ -6,7 +6,7 @@ Implements the Basic tier of the *Enemy AI Specification & Plan* (Missions 1 and
 
 | Folder | Contents |
 | --- | --- |
-| Core | `IAITroop`, `IAIChainTroop`, `IAIObjective`, `IAIBattlefield`, `IAICommander`, orders, 2D geometry helpers |
+| Core | `IAITroop`, `IAIChainTroop`, `IAIFootprintTroop`, `IAIObjective`, `IAIBattlefield`, `IAICommander`, orders, 2D geometry helpers, `AIApproach` (going round friends) |
 | Runtime | `AIDirector` (runs the AI), `AIBlackboard` (shared facts), `AITroopAgent` (troop layer and reflexes) |
 | Detachments | `Detachment` |
 | Formations | Hold, Guard, Skirmish, Support fire, Advance, Flank, Capture, Fall back, Chain Line |
@@ -38,7 +38,7 @@ Orders map onto the troop's own orders:
 | --- | --- |
 | Hold (position, facing) | `OrderLine` at the position, facing, natural line length |
 | Move, Fall back | `MoveTo` (there is no run/walk: troops have one speed) |
-| Attack, Charge (melee troop) | `Pursue` (the soldiers charge by themselves on contact) |
+| Attack, Charge (melee troop) | `Pursue` (the soldiers charge by themselves on contact). If the straight way to the target crosses a friendly troop, the troop first moves round its friends (`MoveTo`, see §5 Go Round Friends) |
 | Attack (ranged troop) | walk to 85% of range if beyond 105% of it, then stand facing the target; `RangedFireController` picks what to shoot |
 | Line (a place in a chain) | `OrderLine`, as Hold. The neighbours are joined with `ChainLinker.LinkFromOrder` (`IAIChainTroop.LinkRightTo`), the multi-troop line order's pending link |
 
@@ -144,7 +144,15 @@ wall gap.
   Gizmos.
 - **Detachment broken threshold**: a detachment is broken when the share still fighting is *below* the threshold. At
   0.5, a two-troop detachment with one troop routed is not yet broken.
-- Tick rates and reflex settings (brace radius, hold arrival radius) are on `AIDirector`.
+- **Go Round Friends (SU-179).** A melee troop told to attack or charge never pushes through its own side's troops to
+  reach its target. If the straight way crosses a friend's outline (`IAIFootprintTroop`, which `TroopAIAdapter` offers)
+  grown by **Friend Clearance** (default 1.5), the troop heads for the corner on the shortest way round its friends, then
+  attacks once the way is clear. Friends standing closer together than twice the clearance, such as a chain, are gone
+  round as one, by the nearer end. A troop already closing on its target turns aside only when its way passes within
+  half the clearance. In melee, fighting back comes first; ranged troops are not affected. The overlay shows the reflex
+  as "go round" on a green Move line. Untick **Go Round Friends** to let melee troops attack straight (as before).
+- Tick rates and reflex settings (brace radius, hold arrival radius, Go Round Friends, Friend Clearance) are on
+  `AIDirector`.
 
 ## 6. Chain Line and the AI vs AI test level
 
@@ -193,5 +201,7 @@ Detachment and trigger ids carry the side (`South Spears`).
 | HuskarlsCommit | Logic / Any Of: Detachment Status (Spears, Broken); Time Elapsed (15 s since SkirmishersWrap) | Set Formation: Huskarls → Advance (Nearest Opponent, Keep Line off) |
 
 The battle ends when every troop of one army is out; the banner is the south army's. Gate check
-(`LevelAIvsAITests.PlayedBattle`, run explicitly): both chains stand fully linked before the fight, meet with their links
-in force, and a real fight follows.
+(`LevelAIvsAITests.PlayedBattle`, run explicitly): both chains stand fully linked before the fight, read as one line (no
+joint wider than two files, SU-178), meet with their links in force, the huskarls never stand inside their own spearmen
+(SU-179), and a real fight follows. `LevelAIvsAITests.DiagnosticsWithFixes` and `DiagnosticsWithoutFixes` (explicit) log
+150 s of every spearman's line and every huskarl's order, with and without SU-178 and SU-179, for comparing playtests.

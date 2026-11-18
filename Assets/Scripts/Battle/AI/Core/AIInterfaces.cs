@@ -71,6 +71,16 @@ namespace LeveragedWars.Battle.AI
 
     public enum AIChainLink { None, Pending, Linked }
 
+    /// <summary>
+    /// Optional, on the same object as an IAITroop: the ground the troop's soldiers cover. Melee troops go round their
+    /// friends' footprints rather than pushing through them (SU-179, AIApproach); a troop without one is taken as a box
+    /// its frontage wide (AIFootprint.Of).
+    /// </summary>
+    public interface IAIFootprintTroop
+    {
+        AIFootprint Footprint { get; }
+    }
+
     /// <summary>A capturable objective.</summary>
     public interface IAIObjective
     {

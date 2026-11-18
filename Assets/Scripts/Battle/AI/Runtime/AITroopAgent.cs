@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace LeveragedWars.Battle.AI
@@ -17,15 +18,26 @@ namespace LeveragedWars.Battle.AI
 
         [Tooltip("A ranged troop keeps its current target while it stays within this multiple of its range.")]
         public float targetStickiness = 1.05f;
+
+        [Tooltip("A melee troop sent at an enemy goes round friendly troops in its way rather than pushing through them " +
+                 "(SU-179).")]
+        public bool goRoundFriends = true;
+
+        [Tooltip("How far a troop going round friends keeps its pivot from their soldiers (units). A troop already closing " +
+                 "on its target only turns aside when its way passes within half of this.")]
+        public float friendClearance = 1.5f;
     }
 
     /// <summary>
     /// Troop layer. Carries out the order its formation requests and adds reflexes:
-    /// fight back in melee, shoot while holding, face a charge. Makes no tactical choices.
+    /// fight back in melee, go round friends on the way to a melee target, shoot while holding, face a charge.
+    /// Makes no tactical choices.
     /// </summary>
     public sealed class AITroopAgent
     {
         public AITroopAgent(IAITroop troop) => Troop = troop;
+
+        static readonly List<AIFootprint> friendFootprints = new List<AIFootprint>();
 
         public IAITroop Troop { get; }
         public Detachment Detachment { get; internal set; }
@@ -83,6 +95,15 @@ namespace LeveragedWars.Battle.AI
                 return AIOrder.Attack(opponent);
             }
 
+            // Go round friends (SU-179): a melee troop whose straight way to its target crosses a friendly troop heads for
+            // the corner on the shortest way round first, instead of pushing through.
+            if ((requested.Kind == AIOrderKind.Attack || requested.Kind == AIOrderKind.Charge) && settings.goRoundFriends &&
+                !Troop.IsRanged && TryGoRound(blackboard, requested.Target, settings, out AIOrder detour))
+            {
+                Reflex = "go round";
+                return detour;
+            }
+
             if (requested.Kind != AIOrderKind.Hold) return requested;
             if (AIGeometry.FlatDistance(Troop.Position, requested.Position) > settings.holdArrivalRadius) return requested;
 
@@ -107,6 +128,25 @@ namespace LeveragedWars.Battle.AI
             }
 
             return requested;
+        }
+
+        bool TryGoRound(AIBlackboard blackboard, IAITroop target, TroopReflexSettings settings, out AIOrder detour)
+        {
+            detour = default;
+            if (target == null || !target.IsAlive) return false;
+            friendFootprints.Clear();
+            IReadOnlyList<IAITroop> friends = blackboard.ActiveAiTroops;
+            for (int i = 0; i < friends.Count; i++)
+                if (!ReferenceEquals(friends[i], Troop)) friendFootprints.Add(AIFootprint.Of(friends[i]));
+            // A troop already closing on this target turns aside only when its way passes well inside the clearance, so it
+            // does not flick between going round and closing in at the edge.
+            bool closing = (Issued.Kind == AIOrderKind.Attack || Issued.Kind == AIOrderKind.Charge) &&
+                           ReferenceEquals(Issued.Target, target);
+            float clearance = closing ? settings.friendClearance * 0.5f : settings.friendClearance;
+            if (!AIApproach.TryFindDetour(Troop.Position, target.Position, friendFootprints, clearance, out Vector3 waypoint))
+                return false;
+            detour = AIOrder.Move(waypoint, AIGeometry.Direction(waypoint, target.Position, Troop.Forward), true);
+            return true;
         }
 
         IAITroop CurrentTargetIfStillGood(TroopReflexSettings settings)

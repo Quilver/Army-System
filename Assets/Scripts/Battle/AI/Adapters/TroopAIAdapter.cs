@@ -11,9 +11,10 @@ namespace LeveragedWars.Battle.AI
     /// told to Attack walks into range of the target, then stands facing it; its RangedFireController picks what to shoot.
     /// Chains (IAIChainTroop): LinkRightTo makes the same pending order link as a multi-troop line order (ChainLinker),
     /// so the troop system activates, holds and breaks it by its own rules (spec §3.4).
+    /// Footprint (IAIFootprintTroop) is the troop's outline (spec §3.3), so the AI can steer melee troops round friends.
     /// </summary>
     [DisallowMultipleComponent, RequireComponent(typeof(Troop))]
-    public sealed class TroopAIAdapter : MonoBehaviour, IAITroop, IAIChainTroop
+    public sealed class TroopAIAdapter : MonoBehaviour, IAITroop, IAIChainTroop, IAIFootprintTroop
     {
         /// <summary>Team id of the player's troops, used when the troop is under neither of the battle's armies.</summary>
         public static int PlayerTeamId = 0;
@@ -234,6 +235,21 @@ namespace LeveragedWars.Battle.AI
             Troop neighbour = (other as TroopAIAdapter)?.Troop;
             if (self == null || neighbour == null || !self.HasManualLineOrder || !neighbour.HasManualLineOrder) return false;
             return ChainLinker.LinkFromOrder(self, TroopConstants.RightEnd, neighbour, TroopConstants.LeftEnd);
+        }
+
+        // ---- IAIFootprintTroop: the ground the troop stands on (SU-179) ----
+
+        public AIFootprint Footprint
+        {
+            get
+            {
+                Troop t = Troop;
+                if (t == null) return new AIFootprint(Position, Forward, 0f, 0f);
+                // The outline (the formation the soldiers are steered into) rather than the footprint fitted to the soldiers:
+                // it is steady in melee, where one soldier knocked out of place would stretch the footprint.
+                TroopFootprint f = t.Outline;
+                return new AIFootprint(f.Center, f.Facing, f.OuterHalfLength, f.OuterHalfWidth);
+            }
         }
 
         // ---- Ranged attack: close to range, then stand facing the target ----
