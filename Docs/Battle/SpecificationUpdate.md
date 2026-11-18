@@ -11,6 +11,18 @@ SU-128 refer to v0.9 and may have moved.
 
 ---
 
+## 2026-11-18 (2): Bigger bars, retreats through friends, the daze (branch troop-facing-controls)
+
+### SU-180 Floating morale and HP bars twice the size (Decision + Assumption, spec §6.4)
+The designer: "Double the size of hp and morale bars over troops."
+- Decision: the floating Effective Morale bar over each troop (`TroopMoraleBar`) is 128 x 12 px at full morale (was 64 x
+  6) with a 2 px border (was 1); the HP bar over the hovered soldier (`SoldierHealthBar`) is at least 60 px wide (was
+  30), 3.2 soldier diameters otherwise (was 1.6), 14 px tall (was 7) with a 2 px border. Sizes are at a 1080 px screen,
+  scaled as before.
+- Assumption: the HP bar meant is the one over the hovered soldier (there is no other HP bar over troops). The gaps
+  between the bars and the troop or soldier, and the shortest sliver of morale bar (doubled to 4 px), keep the bars
+  where they were.
+
 ## 2026-11-18: Movie_024: chains read as one line, the AI goes round its friends (branch troop-facing-controls)
 
 Movie_024 is the AI vs AI level (SU-177) played for 50 s. Both points were checked against the level played in the

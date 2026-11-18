@@ -9,11 +9,12 @@ using UnityEngine;
 public sealed class TroopMoraleBar
 {
     const float ReferenceHeight = 1080f;
-    const float FullWidth = 64f;              // pixels at a 1080 px screen, at the troop's initial Effective Morale
-    const float BarHeight = 6f;               // pixels at a 1080 px screen
+    // Twice the first size (SU-180): 128 x 12 px with a 2 px border.
+    const float FullWidth = 128f;             // pixels at a 1080 px screen, at the troop's initial Effective Morale
+    const float BarHeight = 12f;              // pixels at a 1080 px screen
     const float Gap = 6f;                     // pixels between the top of the troop's outline and the bar
-    const float Border = 1f;
-    const float MinInnerWidth = 2f;           // a troop with almost no morale left still shows a sliver
+    const float Border = 2f;
+    const float MinInnerWidth = 4f;           // a troop with almost no morale left still shows a sliver
 
     static readonly Color MoraleColor = new(0.22f, 0.48f, 1f, 0.9f);     // the morale left before a break
     static readonly Color ShockColor = new(0.9f, 0.18f, 0.18f, 1f);

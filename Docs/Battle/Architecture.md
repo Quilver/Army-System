@@ -51,7 +51,7 @@ see `Troop/README.md`.
 | `Pressure/` | `TroopSegmentPressureRules`, `FriendlyOverlapResolver`, `AlliedLinkTension`, `SegmentGeometry`. |
 | `Soldiers/` | `SoldierSteering`, `SoldierFieldPlanner` (+ `FieldShape`), `SoldierSpatialGrid`, `SoldierMotionConstraints`, `SoldierWave` (SU-166). |
 | `Input/` | `TroopPlayerOrders`, `TroopSelection`, `TroopOrderPlanner`, `TroopOrderOverlay`, `TroopScreenSpace`, `OrderClassifier` (+ `OrderKind`), `ChainOrderRules`. |
-| `View/` | `TroopSoldierViews`, `SoldierView`, `ProjectileView`, `TroopVisualiser`, `SoldierFacingAnimator`, `SoldierFacingTarget`, `ClashPulseView`, `SoldierSpriteLibrary`, `TroopSoldierShowcase`, `TroopCardHud`, `BattleSpeedHud`, `CombatLogHud`, `SoldierHealthBar`, `TroopRangeMask`, `TroopOrderPathView`, `TroopEngagementView`. |
+| `View/` | `TroopSoldierViews`, `SoldierView`, `ProjectileView`, `TroopVisualiser`, `SoldierFacingAnimator`, `SoldierFacingTarget`, `ClashPulseView`, `SoldierSpriteLibrary`, `TroopSoldierShowcase`, `TroopCardHud`, `BattleSpeedHud`, `CombatLogHud`, `SoldierHealthBar`, `TroopMoraleBar`, `TroopRangeMask`, `TroopOrderPathView`, `TroopEngagementView`. |
 | `Diagnostics/` | `TroopDebugOverlay`, `TroopDebugSnapshot` (now in its own file, D-40). |
 | `Editor/` | `TroopEditor`, `TroopModuleEditors` (roster, formation, morale), `SoldierEditors`, `BattleTuningAssets`, `Phase01DataGenerator`, `WeaponProfileMigration`, `TroopCliSmoke`, `Tests/`. |
 

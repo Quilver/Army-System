@@ -10,12 +10,13 @@ using UnityEngine;
 public sealed class SoldierHealthBar
 {
     const float PickRadiusScale = 1.25f;      // the cursor picks a soldier within this many soldier radii of its centre
-    const float MinWidth = 30f;               // pixels; the bar is never narrower than this when zoomed out
-    const float WidthPerDiameter = 1.6f;      // otherwise the bar is this many soldier diameters wide on screen
+    // Twice the first size (SU-180): at least 60 px wide, 14 px tall, with a 2 px border.
+    const float MinWidth = 60f;               // pixels; the bar is never narrower than this when zoomed out
+    const float WidthPerDiameter = 3.2f;      // otherwise the bar is this many soldier diameters wide on screen
     const float ReferenceHeight = 1080f;
-    const float BarHeight = 7f;               // pixels at a 1080 px screen
+    const float BarHeight = 14f;              // pixels at a 1080 px screen
     const float HeadGap = 3f;                 // pixels between the top of the soldier and the bar
-    const float Border = 1f;
+    const float Border = 2f;
 
     static readonly Color HealthColor = new(0.2f, 0.85f, 0.25f);
     static readonly Color BruiseColor = new(0.9f, 0.15f, 0.15f);
