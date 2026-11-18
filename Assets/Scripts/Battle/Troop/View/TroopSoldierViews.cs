@@ -11,6 +11,7 @@ using UnityEngine;
 //   Dead soldiers    stay where they fell for CorpseSeconds: no emission (black mask), drawn behind the living, army
 //                    colour at half saturation, opacity fading from 1 to CorpseEndAlpha; then hidden. Corpses have no
 //                    collider and no physics body.
+//   Dazed troop      stars circle each living soldier while the troop is dazed (SoldierDazeView, SU-182).
 public sealed class TroopSoldierViews
 {
     const float CorpseSeconds = 10f;
@@ -34,6 +35,7 @@ public sealed class TroopSoldierViews
     readonly List<SoldierFacingTarget> _facingTargets = new();   // the enemy each soldier faces while engaged (SU-158)
     readonly MaterialPropertyBlock _hitBlock = new();
     readonly ClashPulseView _pulse = new();
+    readonly SoldierDazeView _daze = new();
 
     public TroopSoldierViews(Troop troop)
     {
@@ -78,7 +80,11 @@ public sealed class TroopSoldierViews
             renderer.transform.position = _troop.transform.TransformPoint(soldier.Position);
             renderer.transform.rotation = Quaternion.Euler(0f, 0f, SoldierFacingAnimator.Update(_troop, soldier, _facingTargets[i], deltaTime));
         }
+        _daze.Refresh(_troop, soldiers, deltaTime);
     }
+
+    // Read by tests: the dazed stars (SU-182).
+    internal SoldierDazeView Daze => _daze;
 
     public void PulseClash(SoldierAgentState soldier, float duration)
     {
@@ -98,6 +104,7 @@ public sealed class TroopSoldierViews
     {
         for (int i = 0; i < _renderers.Count; i++)
             if (_renderers[i] != null) _renderers[i].enabled = visible && _deadAge[i] < CorpseSeconds;
+        if (!visible) _daze.Hide();
     }
 
     public void DestroyAll()
@@ -109,6 +116,7 @@ public sealed class TroopSoldierViews
         _deadAge.Clear();
         _hitAge.Clear();
         _facingTargets.Clear();
+        _daze.Destroy();
     }
 
     // Clash flash; fatigued soldiers glow grey at a third of the luminosity. The property block is only rewritten while

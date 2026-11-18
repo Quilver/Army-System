@@ -90,11 +90,13 @@ public sealed class FeintTests
     }
 
     // With FeintsPerCharge 0 a seeded melee between two troops without orders (so no Assault) is exactly what it was
-    // before feints existed. The expected text was recorded with the code before SU-164.
+    // before feints existed. The expected text was recorded with the code before SU-164, so the later daze (SU-182) is
+    // switched off too.
     [Test]
     public void FeintsOff_SeededMelee_MatchesThePreFeintResult()
     {
         SetFloat("_feintsPerCharge", 0f);
+        SetFloat("_dazedSeconds", 0f);
         CharacterProfile keen = Character(aggression: 8, maxHealth: 30, morale: 12);
         // A troop's random streams come from its place in the hierarchy, so each is put in a fixed place before it is
         // configured: objects other tests leave in the scene cannot change its streams.

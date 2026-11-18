@@ -25,7 +25,8 @@ using UnityEngine;
 //   Front rank (SU-106, Melee Tuning FrontRankChargesOnly): only the front rank may start charges: one rank's worth of
 //   soldiers (the line's soldiers per rank, or the troop's frontage outside a line), those standing furthest toward the
 //   enemy troops it may charge. Soldiers out charging still hold their place in that count.
-//   Stunned soldiers (SU-107) neither charge nor follow.
+//   Stunned soldiers (SU-107) neither charge nor follow. A dazed troop's soldiers (SU-182) start no charges, Assault
+//   charges or feints; charges already in flight finish.
 //   Feints (SU-164): a soldier whose charge roll fails rolls again, on the troop's feint stream, at FeintsPerCharge x
 //   the rate. A feint runs at its target like a charge and ends on contact without a duel (SoldierContactResolver); it
 //   takes no followers. A feinting soldier is committed, so it starts no charge until the feint ends.
@@ -269,7 +270,8 @@ public sealed class ChargeCoordinator
     public static bool CollectChargeable(Troop troop, float chargeGap, HashSet<Troop> chargeable)
     {
         chargeable?.Clear();
-        if (troop == null || troop.IsRouted || troop.IsFaultSlipping) return false;
+        // A dazed troop's soldiers start no charges (SU-182).
+        if (troop == null || troop.IsRouted || troop.IsFaultSlipping || troop.IsDazed) return false;
         bool any = false;
         foreach (var record in troop.Engagements)
         {

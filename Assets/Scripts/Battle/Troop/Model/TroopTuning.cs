@@ -204,6 +204,7 @@ public sealed class TroopTuning
     public float RetreatSlowestMoveSeconds => Mathf.Max(RetreatRearMoveSeconds, RetreatFrontMoveSeconds);
     public float FlankShockMultiplier => Morale.FlankShockMultiplier;
     public float DisorderSeconds => Morale.DisorderSeconds;
+    public float DazedSeconds => Morale.DazedSeconds;
     public float FrontFaceHalfAngleDeg => Morale.FrontFaceHalfAngleDeg;
     public float RearFaceAngleDeg => Morale.RearFaceAngleDeg;
 

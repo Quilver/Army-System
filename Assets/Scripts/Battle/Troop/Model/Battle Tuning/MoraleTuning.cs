@@ -35,6 +35,9 @@ public sealed class MoraleTuning : ScriptableObject
     [SerializeField, Min(0f), Tooltip("A troop that breaks while not engaged in melee is disordered instead of retreating: " +
         "it cannot move for this many seconds (SU-104).")]
     float _disorderSeconds = 10f;
+    [SerializeField, Min(0f), Tooltip("A troop that retreats, has a surrounded break or is disordered is dazed for this many " +
+        "seconds: its soldiers cannot charge, it takes no orders and a clash it wins does no damage (SU-182).")]
+    float _dazedSeconds = 10f;
 
     [Header("Faces (spec §4.8, Q-31)")]
     [SerializeField, Range(0f, 90f), Tooltip("Attacks within this angle of the facing hit the Front face.")]
@@ -54,6 +57,7 @@ public sealed class MoraleTuning : ScriptableObject
     public bool RetreatThroughFriends => _retreatThroughFriends;
     public float FlankShockMultiplier => _flankShockMultiplier;
     public float DisorderSeconds => _disorderSeconds;
+    public float DazedSeconds => _dazedSeconds;
 
     public float FrontFaceHalfAngleDeg => _frontFaceHalfAngleDeg;
     public float RearFaceAngleDeg => _rearFaceAngleDeg;

@@ -465,10 +465,17 @@ public sealed class TroopOrderPlanner
 
     // --- Helpers ---
 
+    readonly List<Troop> _ordered = new();
+
+    // The selected troops that take orders now (Troop.AcceptsOrders). Routed troops leave the selection; a retreating,
+    // disordered or dazed troop stays selected but has no part in the order, its ghost or its chain rules (SU-182).
     List<Troop> LiveSelection()
     {
         var selected = _selection.Selected;
         selected.RemoveAll(troop => troop == null || troop.IsRouted);
-        return selected;
+        _ordered.Clear();
+        foreach (var troop in selected)
+            if (troop.AcceptsOrders) _ordered.Add(troop);
+        return _ordered;
     }
 }

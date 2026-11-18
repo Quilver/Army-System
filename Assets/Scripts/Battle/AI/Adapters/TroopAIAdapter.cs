@@ -79,14 +79,14 @@ namespace LeveragedWars.Battle.AI
             }
         }
 
-        // Routed troops never recover (spec §5.4). A retreating troop (fault slip) or a disordered one (SU-104) ignores
-        // orders until it recovers, so the AI treats it as routing and re-issues its order afterwards.
+        // Routed troops never recover (spec §5.4). A retreating troop (fault slip), a disordered one (SU-104) or a dazed one
+        // (SU-182) ignores orders until it recovers, so the AI treats it as routing and re-issues its order afterwards.
         public bool IsRouting
         {
             get
             {
                 Troop t = Troop;
-                return t != null && (t.IsRouted || t.IsRetreating || t.IsDisordered);
+                return t != null && (t.IsRouted || t.IsRetreating || t.IsDisordered || t.IsDazed);
             }
         }
 

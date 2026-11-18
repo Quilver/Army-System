@@ -235,11 +235,15 @@ public sealed class TroopCardHud
 
         var formationRow = new Rect(x, y, inner, LineHeight * s);
         GUI.Label(formationRow, "Formation", _caption);
-        // A disordered troop (SU-104) shows the seconds left before it can move again.
+        // A disordered troop (SU-104) shows the seconds left before it can move again, a dazed one (SU-182) the seconds
+        // before it can charge and take orders again.
         string formation = troop.IsDisordered
             ? "Disordered " + Mathf.CeilToInt(troop.DisorderRemaining) + "s"
-            : troop.FormationMode.ToString();
-        DrawValue(formationRow, formation, _bodyValue, troop.FormationMode == FormationMode.Rout || troop.IsDisordered);
+            : troop.IsDazed
+                ? "Dazed " + Mathf.CeilToInt(troop.DazedRemaining) + "s"
+                : troop.FormationMode.ToString();
+        DrawValue(formationRow, formation, _bodyValue,
+            troop.FormationMode == FormationMode.Rout || troop.IsDisordered || troop.IsDazed);
     }
 
     // One cell per character, side by side. Clicking a cell shows or hides that character's side panel.

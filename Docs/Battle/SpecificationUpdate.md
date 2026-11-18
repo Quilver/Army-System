@@ -13,6 +13,48 @@ SU-128 refer to v0.9 and may have moved.
 
 ## 2026-11-18 (2): Bigger bars, retreats through friends, the daze (branch troop-facing-controls)
 
+### SU-182 Retreats, surrounded breaks and disorders daze the troop (Decision + Assumptions, spec §4.3, §4.5, §5.3, §5.5, §6.2, §6.4, §8)
+The designer: "For retreats, Surrounded, and disordered the troop should not be dazed. The soldiers should have a visual
+effect showing this, they cannot charge, receive orders, or do damage after winning a clash for 10 seconds."
+- Decision: a retreat (Case B in melee), a surrounded break (Case C) and a disorder (Case B out of melee) leave the troop
+  **Dazed** for **`DazedSeconds`** (Morale Tuning, new, 10 s). While dazed its soldiers start no charges (no Assault
+  charges, no feints either: the troop fails the charge gate), it refuses Move, Pursue and Line orders, and a clash one
+  of its soldiers wins does no damage (combat log: "winner dazed"). Stars circle each of its living soldiers
+  (`SoldierDazeView`), and the troop card shows "Dazed Ns" where it shows "Disordered Ns".
+- Assumption: "should not be dazed" is read as "should now be dazed", since the rest of the request describes the dazed
+  state.
+- Assumption: the 10 s run from the break, not from the end of the retreat (a retreat uses about 3.3 s of them).
+  Breaking again restarts them. `DazedSeconds` 0 switches the daze off. A rout ends it. A chain's shared retreat is not a
+  break and does not daze.
+- Assumption: only the three things named are stopped. A dazed troop still shoots, gives support, fights back (a clash
+  it loses hurts it as usual) and carries on with an order it already had where the break did not cancel it: a
+  surrounded break keeps its line order or attack, while a retreat and a disorder cancel orders as before.
+- Assumption: charges already in flight finish (as for a retreat, §5.5); a surrounded break still cancels them. The
+  Assault closes while the troop is dazed.
+- Assumption: the AI treats a dazed troop like a retreating one (`TroopAIAdapter.IsRouting`) and gives its order again
+  once the daze is over.
+- Assumption: a retreating, disordered or dazed troop in the player's selection stays selected but has no part in an
+  order: no ghost, no attack line, and the order's chain rules leave its links alone (`Troop.AcceptsOrders`,
+  `TroopOrderPlanner`). Before, such a troop refused the order but the chain rules were still applied to its links.
+- Assumption: the look: three yellow four-pointed stars per living soldier, circling it 0.42 units from its centre at
+  0.75 turns a second (each soldier starting at its own angle), twinkling and turning on themselves, fading out over
+  the last second of the daze; one mesh per troop on the Unit sorting layer above the soldiers; still while paused.
+  "Disordered Ns" is shown on the card when a troop is both.
+- Measured: in `RetreatAndDazeTests` a dazed troop in melee started no charges or feints in 9 s while the enemy charged
+  7 times, and won 9 clashes with no damage. AI vs AI level (the designer's current, uncommitted tuning, including
+  `RetreatDistance` 3): 73 to 96 of the 208 soldiers fell in 150 s over five runs with SU-181 and SU-182 on, against 29
+  and 59 in two runs with both off. A broken troop cannot hit back for 10 s, so fights snowball.
+  `LevelAIvsAITests.PlayedBattle` now passes "a real fight", but still fails the SU-179 check on 1 to 3 one-second samples
+  per run: a spearman crossing an attacking huskarl while walking back to its place in the chain, with neither
+  retreating nor dazed. One of the two runs with both features off had such a sample too. The level is not exactly
+  repeatable from run to run. Left for the designer to judge.
+- Tests: `RetreatAndDazeTests`: a retreat dazes the troop, which still refuses orders after the retreat until
+  `DazedSeconds` have passed; a disorder dazes; a surrounded break dazes, keeps its line order and refuses a new one; a
+  dazed troop starts no charges or feints and its wins do no damage, then charges again; the stars circle every living
+  soldier only while dazed; `DazedSeconds` 0 switches it off. `FeintTests.FeintsOff_SeededMelee_MatchesThePreFeintResult`
+  switches the daze off, since its fingerprint was recorded before it. `TroopScenarioTests.ChargeRate_...` is unchanged:
+  a dazed troop fails the charge gate, so it is no longer counted as able to charge.
+
 ### SU-181 Retreats pass through friendly troops (Decision + Assumptions, spec §2.4, §3.4, §5.5, §8)
 The designer: "Allow troops to be able to retreat through friendly troops. However the troop must end on the other side
 of the troop they retreated through, they cannot be stuck inside of another troop."

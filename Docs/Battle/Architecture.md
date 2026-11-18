@@ -51,7 +51,7 @@ see `Troop/README.md`.
 | `Pressure/` | `TroopSegmentPressureRules`, `FriendlyOverlapResolver`, `AlliedLinkTension`, `SegmentGeometry`. |
 | `Soldiers/` | `SoldierSteering`, `SoldierFieldPlanner` (+ `FieldShape`), `SoldierSpatialGrid`, `SoldierMotionConstraints`, `SoldierWave` (SU-166). |
 | `Input/` | `TroopPlayerOrders`, `TroopSelection`, `TroopOrderPlanner`, `TroopOrderOverlay`, `TroopScreenSpace`, `OrderClassifier` (+ `OrderKind`), `ChainOrderRules`. |
-| `View/` | `TroopSoldierViews`, `SoldierView`, `ProjectileView`, `TroopVisualiser`, `SoldierFacingAnimator`, `SoldierFacingTarget`, `ClashPulseView`, `SoldierSpriteLibrary`, `TroopSoldierShowcase`, `TroopCardHud`, `BattleSpeedHud`, `CombatLogHud`, `SoldierHealthBar`, `TroopMoraleBar`, `TroopRangeMask`, `TroopOrderPathView`, `TroopEngagementView`. |
+| `View/` | `TroopSoldierViews`, `SoldierView`, `ProjectileView`, `TroopVisualiser`, `SoldierFacingAnimator`, `SoldierFacingTarget`, `ClashPulseView`, `SoldierSpriteLibrary`, `TroopSoldierShowcase`, `TroopCardHud`, `BattleSpeedHud`, `CombatLogHud`, `SoldierHealthBar`, `TroopMoraleBar`, `SoldierDazeView` (SU-182), `TroopRangeMask`, `TroopOrderPathView`, `TroopEngagementView`. |
 | `Diagnostics/` | `TroopDebugOverlay`, `TroopDebugSnapshot` (now in its own file, D-40). |
 | `Editor/` | `TroopEditor`, `TroopModuleEditors` (roster, formation, morale), `SoldierEditors`, `BattleTuningAssets`, `Phase01DataGenerator`, `WeaponProfileMigration`, `TroopCliSmoke`, `Tests/`. |
 
@@ -131,7 +131,9 @@ in Edit mode at a fixed frame time.
   (`FriendlyOverlapResolver.PassingThrough`). **B out of melee: Disorder**
   (SU-104): Shock 0, penalty, orders cancelled and refused, no movement for `DisorderSeconds` (Morale Tuning).
   **C Surrounded break** (`IsSurrounded`): Shock 0, penalty, no motion. A retreating or routed troop does not break
-  again (Q-34).
+  again (Q-34). A retreat, a disorder and a surrounded break leave the troop **dazed** for `DazedSeconds` (SU-182):
+  it fails the charge gate (`ChargeCoordinator.CollectChargeable`), refuses orders (`Troop.AcceptsOrders`) and its
+  clash wins do no damage (`DuelResolver`); `SoldierDazeView` draws the stars.
 - `Troop.IsSurrounded`: a living enemy soldier (not charging, following or rushing back; routed troops excluded)
   stands in `SurroundTest.RetreatPath` (box behind the rear face, RetreatDistance long), or `Physics2D.OverlapBox` hits
   the obstacle mask (SU-122). Friendly troops never block.

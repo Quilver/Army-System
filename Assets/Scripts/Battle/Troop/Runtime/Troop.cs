@@ -62,6 +62,8 @@ public sealed class Troop : MonoBehaviour
     bool _soldiersInPlacedLine;
     // Disordered (SU-104): seconds left during which the troop cannot move.
     float _disorderRemaining;
+    // Dazed (SU-182): seconds left during which the troop cannot charge, take orders or do damage with a clash it wins.
+    float _dazedRemaining;
     // The enemy troop whose hit last damaged this troop (SU-114): credited with this troop's breaks.
     Troop _lastAttacker;
     bool _lastAttackRanged;
@@ -248,6 +250,12 @@ public sealed class Troop : MonoBehaviour
     // DisorderSeconds. It can still fight and shoot.
     public bool IsDisordered => _disorderRemaining > 0f && !IsRouted;
     public float DisorderRemaining => IsDisordered ? _disorderRemaining : 0f;
+    // Dazed (SU-182): for DazedSeconds after a retreat, a surrounded break or a disorder, its soldiers start no charges
+    // (nor feints), it refuses orders, and a clash one of them wins does no damage. Its soldiers show circling stars.
+    public bool IsDazed => _dazedRemaining > 0f && !IsRouted;
+    public float DazedRemaining => IsDazed ? _dazedRemaining : 0f;
+    // Whether the troop takes a Move, Pursue or Line order now: not while routed, retreating, disordered or dazed.
+    public bool AcceptsOrders => !IsRouted && !IsRetreating && !IsDisordered && !IsDazed;
     // While routed: the way the troop runs (along its NavMesh flee path, else away from the nearest enemy).
     public Vector2 RoutFleeDirection => _rout != null ? _rout.MoveDirection : Vector2.zero;
     // The rout's flee goal on the NavMesh (RoutFleePlanner); false without a NavMesh, when the flight is a straight line.
@@ -352,14 +360,14 @@ public sealed class Troop : MonoBehaviour
     // The Assault's chain reaction (SU-171): the spark, the wait for the wheel and the spread along the line.
     internal AssaultState Assault => _assault;
 
-    // Closes the Assault when the troop retreats or slips, is disordered or routs, is no longer engaged with all its
+    // Closes the Assault when the troop retreats or slips, is disordered or dazed or routs, is no longer engaged with all its
     // soldiers back in the formation, or every living soldier has made its charge (SU-165). Returns whether it is open.
     // Soldiers out charging are left out of the footprint, so a whole front rank charging at once can take the troop out
     // of engagement for a moment: that does not end the Assault, or the next contact would open a fresh one.
     internal bool RefreshAssault()
     {
         if (!_assault.IsActive) return false;
-        if (IsFaultSlipping || IsDisordered || IsRouted || (!_engaged && !HasSoldiersAway())) _assault.Clear();
+        if (IsFaultSlipping || IsDisordered || IsDazed || IsRouted || (!_engaged && !HasSoldiersAway())) _assault.Clear();
         else _assault.CloseIfComplete(Soldiers);
         return _assault.IsActive;
     }
@@ -598,6 +606,7 @@ public sealed class Troop : MonoBehaviour
         if (_roster.enabled) _roster.TickHealing(deltaTime, Tuning.BruiseHealPerSecond);
         RefreshAssault();
         if (_disorderRemaining > 0f) _disorderRemaining = Mathf.Max(0f, _disorderRemaining - deltaTime);
+        if (_dazedRemaining > 0f) _dazedRemaining = Mathf.Max(0f, _dazedRemaining - deltaTime);
         _lineLinks.TickRelax(deltaTime, Tuning.ChainEndpointRelaxSpeed);
         if (_faultSlip.TickRecovery(deltaTime) && !IsRouted) State = TroopState.Idle;
         EvaluateBreak();
@@ -670,11 +679,12 @@ public sealed class Troop : MonoBehaviour
     int DetermineFrontage() =>
         _frontageOverride > 0 ? _frontageOverride : TroopFrontageRule.ForSoldierCount(Resolved.InitialSoldierCount);
 
-    // --- Orders (spec §6). A routed troop ignores every order (spec §5.4). ---
+    // --- Orders (spec §6). A routed troop ignores every order (spec §5.4); so does one retreating, disordered or dazed
+    // (AcceptsOrders). ---
 
     public void MoveTo(Vector2 worldPosition)
     {
-        if (IsRouted || IsRetreating || IsDisordered) return;
+        if (!AcceptsOrders) return;
         _lineOrder.Cancel();
         _mover.MoveTo(worldPosition);
         State = TroopState.Moving;
@@ -682,7 +692,7 @@ public sealed class Troop : MonoBehaviour
 
     public void Pursue(Troop target)
     {
-        if (IsRouted || IsRetreating || IsDisordered || target == null || target == this || target.TeamId == TeamId) return;
+        if (!AcceptsOrders || target == null || target == this || target.TeamId == TeamId) return;
         _lineOrder.Cancel();
         _mover.Pursue(target);
         State = TroopState.Moving;
@@ -692,7 +702,7 @@ public sealed class Troop : MonoBehaviour
     // on center (SU-161): the pivot marches to the middle of the ranks, PivotBehindLine behind it.
     public void OrderLine(Vector2 center, Vector2 facing, float length)
     {
-        if (IsRouted || IsRetreating || IsDisordered) return;
+        if (!AcceptsOrders) return;
         _lineOrder.Order(center, facing, Mathf.Clamp(length, MinimumLineLength, MaximumLineLength));
         _mover.MoveTo(PivotBehindLine(_lineOrder.Center, _lineOrder.Facing, _lineOrder.Length));
         State = TroopState.Moving;
@@ -832,6 +842,8 @@ public sealed class Troop : MonoBehaviour
 
     // Test clean-up (TestScene): Edit mode never calls OnDestroy, so the soldier sprites are destroyed explicitly.
     internal void DestroyViewsForTests() => _views?.DestroyAll();
+    // The dazed stars over this troop's soldiers (SU-182), for tests.
+    internal SoldierDazeView DazeViewForTests => _views?.Daze;
 
     internal void PulseMeleeClash(SoldierAgentState soldier, float duration) => _views.PulseClash(soldier, duration);
     // Squash and stretch on a soldier that took damage and was pushed back (worldPushDirection points away from the hit).
@@ -878,9 +890,14 @@ public sealed class Troop : MonoBehaviour
                 _morale.RecordSurroundedBreak();
                 RaiseBroke(TroopBreakKind.SurroundedBreak);
                 CancelCharges();
+                BecomeDazed();
                 break;
         }
     }
+
+    // Retreats, surrounded breaks and disorders leave the troop dazed for DazedSeconds (SU-182). Breaking again restarts
+    // the time.
+    void BecomeDazed() => _dazedRemaining = Mathf.Max(_dazedRemaining, Tuning.DazedSeconds);
 
     void RaiseBroke(TroopBreakKind kind) =>
         BattleEvents.RaiseTroopBroke(new TroopBreakInfo(this, kind, _lastAttacker, _lastAttackRanged));
@@ -895,17 +912,19 @@ public sealed class Troop : MonoBehaviour
         _mover.CancelOrders();
         _lineOrder.Cancel();
         _disorderRemaining = Tuning.DisorderSeconds;
+        BecomeDazed();
         if (!IsRouted) State = TroopState.Idle;
     }
 
     // Case B: accordion retreat away from the attacker, Shock resets, EffectiveMorale drops by the retreat penalty.
-    // Only a troop engaged in melee retreats (SU-104). A retreat ends any disorder.
+    // Only a troop engaged in melee retreats (SU-104). A retreat ends any disorder, and leaves the troop dazed (SU-182).
     // Stunned soldiers are left behind and die (SU-107). A retreat that would end inside a friendly troop goes on through
     // it (SU-181).
     void BeginRetreat()
     {
         _disorderRemaining = 0f;
         _morale.RecordRetreat();
+        BecomeDazed();
         RaiseBroke(TroopBreakKind.Retreat);
         if (KillStunnedSoldiers()) return;
         // Charges in flight are completed; the chargers then rush back to the retreating troop (SU-43).
@@ -920,7 +939,7 @@ public sealed class Troop : MonoBehaviour
     }
 
     // Shared retreat of a chain (spec §3.4): pulled back with a neighbour, at no morale cost. Engaged or attacking troops
-    // never move (SU-46). It passes through friends as a retreat does (SU-181).
+    // never move (SU-46). It passes through friends as a retreat does (SU-181). It does not daze the troop.
     internal bool BeginSympatheticRetreat(Vector2 direction, float distance)
     {
         if (IsRouted || IsFaultSlipping || IsCommitted || IsDisordered || distance <= 0f) return false;

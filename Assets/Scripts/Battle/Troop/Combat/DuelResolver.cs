@@ -9,7 +9,7 @@ using UnityEngine;
 //   A is the charger; if both charge, the earlier charge; if neither, the lower soldier id (Q-28).
 //   A soldier fighting an enemy on its troop's flank or rear gets no support, and the Shock it takes is x3 (spec §4.8).
 //   A clash ends any charge of either soldier, and both soldiers start their clash cooldown.
-//   A stunned soldier (SU-107) that wins its clash deals no damage (SU-111).
+//   A stunned soldier (SU-107) that wins its clash deals no damage (SU-111), nor does a soldier of a dazed troop (SU-182).
 public sealed class DuelResolver
 {
     const float ClashPulseDuration = 0.2f;
@@ -133,7 +133,8 @@ public sealed class DuelResolver
         };
     }
 
-    // A fleeing troop (retreating or routed) that wins a clash deals no damage (Q-37), nor does a stunned winner (SU-111).
+    // A fleeing troop (retreating or routed) that wins a clash deals no damage (Q-37), nor does a stunned winner (SU-111)
+    // or one whose troop is dazed (SU-182).
     // A loser that takes damage plays its squash and stretch along pushDirection (from the winner toward the loser).
     // Returns what happened, for the log.
     static CombatLogDamage ApplyDamage(SoldierContact winner, SoldierContact loser, int domination, bool loserFlanked,
@@ -144,6 +145,7 @@ public sealed class DuelResolver
         if (profile == null) { log.NoDamageReason = "no character"; return log; }
         if (winner.Troop.State == TroopState.Fleeing) { log.NoDamageReason = "winner fleeing"; return log; }
         if (winner.Soldier.IsStunned) { log.NoDamageReason = "winner stunned"; return log; }
+        if (winner.Troop.IsDazed) { log.NoDamageReason = "winner dazed"; return log; }
         bool lanceDouble = DamageRules.LanceDoubles(profile.HasCouchedLance, winner.Soldier.IsCharging,
             winner.Soldier.IsAssaultCharging);
         int raw = DamageRules.RawDamage(profile.Strength, profile.MeleeWeaponDamage, domination, lanceDouble);

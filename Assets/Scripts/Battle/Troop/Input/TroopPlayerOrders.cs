@@ -430,15 +430,15 @@ public sealed class TroopPlayerOrders : MonoBehaviour
                 TroopScreenSpace.WorldToGui(_camera, tether.To), tether.StaysLinked && !alt);
     }
 
-    // The attack a right-button release would give (SU-159): a line in the attack colour from each selected troop to the
-    // enemy troop, and a marker on it.
+    // The attack a right-button release would give (SU-159): a line in the attack colour from each selected troop that
+    // takes orders (not one retreating, disordered or dazed, SU-182) to the enemy troop, and a marker on it.
     void DrawAttackPreview(Troop target)
     {
         if (target == null) return;
         Vector2 targetGui = TroopScreenSpace.WorldToGui(_camera, target.transform.position);
         foreach (var troop in _selection.Selected)
         {
-            if (troop == null || troop.IsRouted) continue;
+            if (troop == null || !troop.AcceptsOrders) continue;
             TroopOrderOverlay.DrawGuiLine(TroopScreenSpace.WorldToGui(_camera, troop.transform.position), targetGui,
                 _orderPathAttackColor, 2f);
         }
