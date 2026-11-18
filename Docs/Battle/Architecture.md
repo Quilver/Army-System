@@ -243,7 +243,8 @@ in Edit mode at a fixed frame time.
   (`Troop.Radius`: blob, soldier clamp, pivot spacing) is derived: L_nat / `NaturalLineRadiusScale`, or more when its soldiers need
   room, times `TroopSizeScale` (both Formation Tuning, SU-131). Frontage comes from the soldier count (`TroopFrontageRule`, SU-117).
 - `FormationModeResolver`: Rout > Chain > Line > Column > Idle. `SoldierFieldPlanner.Shape` switches on the mode
-  (line capsule with joint clearance, a column longer than wide with at most `LineGeometry.MaxColumnLanes` (a constant, 3)
+  (line capsule filled up to the joints in a chain, or pulled in by the joint clearance with `ChainFillToJoints` off
+  (SU-178), a column longer than wide with at most `LineGeometry.MaxColumnLanes` (a constant, 3)
   lanes (SU-120), blob of `BlobRadiusScale` (Formation Tuning) × radius,
   wide rout scatter).
 - Line spacing `TroopConstants.LineSpacing` (a constant, 0.9), ranks from `LineGeometry`.

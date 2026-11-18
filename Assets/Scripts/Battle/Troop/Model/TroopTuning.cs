@@ -150,6 +150,7 @@ public sealed class TroopTuning
     public float PathRebuildIntervalSeconds => Formation.PathRebuildIntervalSeconds;
     public float JointClearance => Formation.JointClearance;
     public float JointClearanceFraction => Formation.JointClearanceFraction;
+    public bool ChainFillToJoints => Formation.ChainFillToJoints;
     public float RoutScatterRadiusScale => Formation.RoutScatterRadiusScale;
     public float OutlinePadding => Formation.OutlinePadding;
     public bool LineMarchSlowdown => Formation.LineMarchSlowdown;

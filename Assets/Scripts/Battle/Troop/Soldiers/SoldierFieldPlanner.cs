@@ -4,8 +4,9 @@ using UnityEngine;
 // nearest point of the troop's shape (a capsule in troop-local space) and spreads out from crowded neighbours (see
 // SoldierSteering). The shape follows the troop's FormationMode:
 //   Line / Chain  the battle line's ranks: the line is the front rank and the core runs along the middle of the ranks,
-//                 half their depth behind it (SU-161). Linked ends are pulled in by the joint clearance so soldiers stay
-//                 off the joint.
+//                 half their depth behind it (SU-161). With Chain Fill To Joints on (SU-178) the soldiers fill the line
+//                 right up to a linked end, so a chain reads as one line; off, linked ends are pulled in by the joint
+//                 clearance so soldiers stay off the joint.
 //                 Soldiers are also spread evenly along the line so it fills its length (SoldierSteering line fill).
 //   Column        a column trailing the pivot while marching: up to LineGeometry.MaxColumnLanes lanes, as many rows as
 //                 the soldiers need, always longer than wide (LineGeometry column helpers, SU-120). Soldiers are spread
@@ -111,7 +112,11 @@ public sealed class SoldierFieldPlanner
         Vector2 delta = end - start;
         float length = delta.magnitude;
         Vector2 tangent = length > 0.0001f ? delta / length : Vector2.up;
-        float clearance = LineGeometry.JointClearance(length, tuning.JointClearance, tuning.JointClearanceFraction);
+        // SU-178: the ranks are planned for the whole line, so pulling the linked ends in squeezed the files below
+        // LineSpacing and the soldiers bunched into a narrower, deeper block, leaving about two files' gap at each joint.
+        float clearance = tuning.ChainFillToJoints
+            ? 0f
+            : LineGeometry.JointClearance(length, tuning.JointClearance, tuning.JointClearanceFraction);
         float startGap = _troop.IsLinkActive(0) ? clearance : 0f;
         float endGap = _troop.IsLinkActive(1) ? clearance : 0f;
         return new FieldShape(start + tangent * startGap, end - tangent * endGap, LineGeometry.RankHalfWidth(length, livingCount),

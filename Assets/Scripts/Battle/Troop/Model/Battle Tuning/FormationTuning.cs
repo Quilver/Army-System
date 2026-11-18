@@ -42,6 +42,10 @@ public sealed class FormationTuning : ScriptableObject
     float _jointClearance = 0.45f;
     [SerializeField, Range(0f, 0.5f), Tooltip("Joint clearance as a fraction of the line length.")]
     float _jointClearanceFraction = 0.15f;
+    [SerializeField, Tooltip("On: a chained troop's soldiers fill its line right up to each joint, so the end files of " +
+        "neighbouring troops stand one file apart, as inside a troop, and the chain reads as one line (SU-178). Off: linked " +
+        "ends are pulled in by the joint clearance, leaving a gap of about two files at every joint.")]
+    bool _chainFillToJoints = true;
     [SerializeField, Min(0.5f), Tooltip("A routed troop's soldiers scatter in a disc this many times its radius.")]
     float _routScatterRadiusScale = 1.6f;
     [SerializeField, Min(0f), Tooltip("Margin of the troop border (the shape shown under a hovered or selected troop and " +
@@ -157,6 +161,7 @@ public sealed class FormationTuning : ScriptableObject
     public float PathRebuildIntervalSeconds => _pathRebuildIntervalSeconds;
     public float JointClearance => _jointClearance;
     public float JointClearanceFraction => _jointClearanceFraction;
+    public bool ChainFillToJoints => _chainFillToJoints;
     public float RoutScatterRadiusScale => _routScatterRadiusScale;
     public float OutlinePadding => _outlinePadding;
 

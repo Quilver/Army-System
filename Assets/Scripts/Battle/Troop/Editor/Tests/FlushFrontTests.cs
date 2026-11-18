@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using NUnit.Framework;
+using UnityEditor;
 using UnityEngine;
 
 // Flush fronts (SU-161): the battle line is a troop's front rank and its ranks stand behind it, so troops of different
@@ -37,7 +38,7 @@ public sealed class FlushFrontTests
         _tuning = null;
     }
 
-    Troop CreateTroop(string name, int team, Vector2 position, int soldiers)
+    Troop CreateTroop(string name, int team, Vector2 position, int soldiers, int frontage = Frontage)
     {
         var weapon = MeleeWeaponProfile.CreateRuntimeProfile("Test Sword", MeleeWeaponClass.Sword, 0, 0, null);
         _created.Add(weapon);
@@ -48,7 +49,7 @@ public sealed class FlushFrontTests
         root.transform.position = position;
         _created.Add(root);
         var troop = root.AddComponent<Troop>();
-        troop.Configure(team, new List<CharacterProfile> { character }, Frontage);
+        troop.Configure(team, new List<CharacterProfile> { character }, frontage);
         return troop;
     }
 
@@ -132,7 +133,9 @@ public sealed class FlushFrontTests
             List<Vector2> rank = FrontRank(troop, front);
             float mean = MeanAcross(rank, press, front);
             TestContext.WriteLine($"{troop.name}: front rank mean {mean:F3}");
-            Assert.AreEqual(0f, mean, FrontTolerance, $"{troop.name} front rank on the ordered line");
+            // Within its rank band (RankThickness either side of the line). Since SU-178 a chained troop's files stand at
+            // LineSpacing up to the joint instead of squeezed, and a four-rank file fills the band's depth: about 0.1 ahead.
+            Assert.AreEqual(0f, mean, LineGeometry.RankThickness, $"{troop.name} front rank on the ordered line");
 
             // Footprint front edge: the front rank's furthest soldier plus SoldierRadius; ranks behind the line.
             TroopFootprint footprint = troop.Footprint;
@@ -140,14 +143,19 @@ public sealed class FlushFrontTests
             float furthest = -float.MaxValue;
             foreach (var point in rank) furthest = Mathf.Max(furthest, Vector2.Dot(point - press, front));
             Assert.AreEqual(furthest + TroopConstants.SoldierRadius, footprintFront, 1e-3f, $"{troop.name} footprint front");
-            Assert.Greater(footprint.RearHalfWidth, footprint.FrontHalfWidth, $"{troop.name} footprint lies behind its line");
+            // A single rank stands on the line itself (since SU-178 its files are no longer squeezed back off it at a
+            // linked end), so its footprint reaches as far behind the line as ahead of it.
+            if (i == 0)
+                Assert.AreEqual(footprint.FrontHalfWidth, footprint.RearHalfWidth, 0.05f, $"{troop.name} footprint on its line");
+            else
+                Assert.Greater(footprint.RearHalfWidth, footprint.FrontHalfWidth, $"{troop.name} footprint lies behind its line");
 
             // Outline front edge: the front rank's band (RankThickness) plus one soldier radius of padding.
             TroopFootprint outline = TroopOutline.Line(troop.Formation.Start, troop.Formation.End, troop.Formation.Facing,
                 troop.LivingSoldierCount);
             float outlineFront = Vector2.Dot(outline.Center - press, front) + outline.HalfWidth;
-            Assert.AreEqual(mean + LineGeometry.RankThickness + TroopConstants.SoldierRadius, outlineFront, FrontTolerance,
-                $"{troop.name} outline front");
+            Assert.AreEqual(mean + LineGeometry.RankThickness + TroopConstants.SoldierRadius, outlineFront,
+                LineGeometry.RankThickness, $"{troop.name} outline front");
             float outlineRear = Vector2.Dot(outline.Center - press, front) - outline.HalfWidth;
             float rearmost = float.MaxValue;
             foreach (var soldier in troop.Soldiers)
@@ -165,6 +173,75 @@ public sealed class FlushFrontTests
             Assert.AreEqual(0f, Vector2.Distance(troops[i].SegmentEndpoint(endA), troops[i + 1].SegmentEndpoint(endB)), 1e-4f,
                 $"joint {i} coincides");
         }
+    }
+
+    // SU-178 (Movie_024: the AI's spear chain read as four separate blocks). Four 16-soldier troops (frontage 6: three
+    // ranks of six) on one line order, linked. With Chain Fill To Joints on, once settled the end files of neighbouring
+    // troops stand about one file apart, as the files inside a troop do, and each troop stands three ranks deep across its
+    // line. Off (the joint clearance), the files were squeezed below LineSpacing, the soldiers bunched four or five deep
+    // and about two files' gap opened at each joint.
+    [TestCase(true)]
+    [TestCase(false)]
+    public void Chain_OfFourSixteenSoldierTroops_FillsItsLinesToTheJoints(bool fillToJoints)
+    {
+        const int Soldiers = 16;
+        const int TroopFrontage = 6;
+        var serialized = new SerializedObject(_tuning.Formation);
+        serialized.FindProperty("_chainFillToJoints").boolValue = fillToJoints;
+        serialized.ApplyModifiedPropertiesWithoutUndo();
+        TroopTuning.OverrideForTests(_tuning);
+
+        var troops = new List<Troop>();
+        for (int i = 0; i < 4; i++)
+            troops.Add(CreateTroop("Spears " + i, 0, new Vector2(i * 6f, -10f), Soldiers, TroopFrontage));
+        float natural = 0f;
+        foreach (var troop in troops) natural += troop.NaturalLineLength;
+        Vector2 press = Vector2.zero;
+        var planner = new TroopOrderPlanner(new TroopSelection { PlayerTeamId = 0 });
+        planner.PlanLine(new List<Troop>(troops), press, press + Vector2.right * natural);
+        var placements = planner.Placements;
+        foreach (var placement in placements)
+            placement.Troop.OrderLine(placement.Center, placement.Facing, placement.Length);
+        for (int i = 0; i + 1 < placements.Count; i++)
+        {
+            TroopOrderPlanner.AdjacentEnds(placements[i], planner.LineDirection, out int endA, out _);
+            TroopOrderPlanner.AdjacentEnds(placements[i + 1], planner.LineDirection, out _, out int endB);
+            Assert.IsTrue(ChainLinker.LinkFromOrder(placements[i].Troop, endA, placements[i + 1].Troop, endB));
+        }
+
+        Simulate(20f);
+
+        var spans = new List<(float min, float max)>();
+        foreach (var troop in troops)
+        {
+            Assert.IsTrue(troop.IsChained, $"{troop.name} chained");
+            float minX = float.MaxValue, maxX = float.MinValue, minY = float.MaxValue, maxY = float.MinValue;
+            foreach (var soldier in troop.Soldiers)
+            {
+                if (!soldier.IsAlive) continue;
+                Vector2 p = troop.WorldPosition(soldier);
+                minX = Mathf.Min(minX, p.x); maxX = Mathf.Max(maxX, p.x);
+                minY = Mathf.Min(minY, p.y); maxY = Mathf.Max(maxY, p.y);
+            }
+            spans.Add((minX, maxX));
+            TestContext.WriteLine($"{troop.name}: x [{minX:F2}, {maxX:F2}] width {maxX - minX:F2}, depth {maxY - minY:F2}");
+            if (!fillToJoints) continue;
+            Assert.Greater(maxX - minX, 5f * TroopConstants.LineSpacing * 0.85f, $"{troop.name} spans its six files");
+            Assert.Less(maxY - minY, 2f * TroopConstants.LineSpacing + 0.6f, $"{troop.name} stands three ranks deep");
+        }
+        spans.Sort((a, b) => a.min.CompareTo(b.min));
+        float widestGap = 0f;
+        for (int i = 0; i + 1 < spans.Count; i++)
+        {
+            float gap = spans[i + 1].min - spans[i].max;
+            TestContext.WriteLine($"joint {i}: gap between end files {gap:F2}");
+            widestGap = Mathf.Max(widestGap, gap);
+            Assert.Greater(gap, 0.3f, $"joint {i}: the troops' soldiers do not mix");
+        }
+        if (fillToJoints)
+            Assert.Less(widestGap, 1.4f * TroopConstants.LineSpacing, "the end files at each joint stand about one file apart");
+        else
+            Assert.Greater(widestGap, 1.4f * TroopConstants.LineSpacing, "the joint clearance leaves a wider gap");
     }
 
     // A lone four-rank troop that forms a line because an enemy comes within S_Distance, and drops it again, keeps its

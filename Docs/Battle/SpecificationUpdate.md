@@ -11,6 +11,40 @@ SU-128 refer to v0.9 and may have moved.
 
 ---
 
+## 2026-11-18: Movie_024: chains read as one line (branch troop-facing-controls)
+
+Movie_024 is the AI vs AI level (SU-177) played for 50 s. Checked against the level played in the Editor with the
+same seed.
+
+### SU-178 Chained troops fill their lines to the joints (Decision + Assumptions, spec §3.3, §8; amends SU-2)
+The designer: "The spearmen troops do not appear to be chaining with each other."
+- Found: the four spearmen were linked the whole time (all three links in force, "Chain" on the card), but each stood
+  as its own block, about 2 units between neighbouring troops' end files against 0.75 to 0.9 between files inside a
+  troop. The joint clearance (0.45) pulled the soldier field in at each linked end, while the ranks were still planned
+  for the whole line: a 16-soldier troop's six files were squeezed into 4.5 to 4.95 units (0.75 to 0.83 apart, below
+  `LineSpacing`), and separation pushed the soldiers into a block about 3.8 wide and four or five deep instead of 5.4
+  wide and three deep.
+- Decision: a chain reads as one line. With **`ChainFillToJoints`** (Formation Tuning, on) a linked end is no longer
+  pulled in: the soldiers fill the line right up to the joint, so the end files of neighbouring troops stand about one
+  file apart, as inside a troop. Off restores the joint clearance (`JointClearance` and `JointClearanceFraction` are
+  used only then).
+- Assumption: only the soldiers' fill changes. Links, joints, stretch and break rules, footprints and outlines are as
+  before, and it applies to every chain (player line orders and automatic links too). The two troops' soldiers stay apart
+  at the joint through the existing cross-troop separation and each file's place in its own share of the line.
+- Assumption: this replaces the last sentence of SU-2's assumption ("Linked ends keep the joint clearance: the fill
+  spans the core after clearance").
+- Measured: four 16-soldier troops on one line order: 0.84 between end files at every joint, each troop 4.56 wide and
+  2.1 deep (off: 1.36 to 1.52, 4.0 wide, 2.4 deep). AI vs AI level: widest joint before contact 1.37 (2.08 off); the
+  joints are wider on the march than at a halt (about 0.8), as the files ripple.
+- Tests: `FlushFrontTests.Chain_OfFourSixteenSoldierTroops_FillsItsLinesToTheJoints` (on and off).
+  `FlushFrontTests.LineOrder_OfOneTwoAndFourRanks_StandsFlushOnTheOrderedLine` changes in two places, both for the
+  designer to confirm: a one-rank troop's footprint now lies on its line rather than behind it (its rank is no longer
+  squeezed back at the joint), and a front rank may stand anywhere within its rank band (`RankThickness`, 0.15) of the
+  ordered line instead of within 0.1 (and the outline's front edge within the same of the front rank plus the band and a
+  soldier's radius): with its files at `LineSpacing` the four-rank troop's front rank stands 0.085 to 0.11 ahead of the
+  line (0.06 before). `ChainEngagementScenarioTests.ChainedFighter_IsNotDraggedAway_...`, failing
+  since SU-173, passes with this on (it still fails with it off).
+
 ## 2026-11-17: The AI vs AI test level and the AI's Chain Line (branch troop-facing-controls)
 
 ### SU-177 The AI vs AI test level (Decision + Assumptions, AI README §6)

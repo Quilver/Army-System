@@ -1,6 +1,6 @@
 # Assumptions review
 
-Every unconfirmed Assumption in `SpecificationUpdate.md` (SU-01 to SU-177), grouped by system so they can be confirmed in one sitting: 277 assumptions across 109 SU entries. SU-176 and SU-177 (the AI's Chain Line and the AI vs AI test level) were added on 2026-11-17. SU-174 and SU-175 (the Assault in one wave, on contact) were added on 2026-11-15. SU-173 (wheeling on steering circles) and SU-169 to SU-172 (Movie_023: hidden enemy orders, stronger borders, the Assault chain reaction, no strafing in line) were added on 2026-11-15. SU-168 (the slowed finish and the Victory or Defeat banner) was added on 2026-11-15. SU-167 (the plus for boosted morale on the troop card) was added on 2026-11-15. SU-166 (the soldier wave) was added on 2026-11-15. SU-165 (the Assault as one charge per soldier) was added on 2026-11-15; it superseded the SU-148 item and SU-164's "a troop in Assault does not feint", which were removed. SU-164 (feints) was added on 2026-11-15. SU-163 (the assault wheel) was added on 2026-11-15. SU-162 (the troop border) was added on 2026-11-15. SU-161 (flush fronts) was added on 2026-11-15. SU-159 (attack clicks) and SU-160 (linked group lines) were added on 2026-11-15; SU-160 superseded SU-157, whose items were removed. SU-158 (engaged soldiers face their enemy) was added on 2026-11-15. SU-154 to SU-157 (troop facing controls and line spacing, on the `troop-facing-controls` branch) and SU-148 to SU-153 (class design rules) were added on 2026-11-14. SU-136 to SU-140 were added on 2026-11-08; the SU-74 and SU-121 items about routed troops never leaving the map were removed (SU-138 replaced them). Rebuilt 2026-11-08 (SU-135): assumptions that later entries overtook were removed, missing ones were added, and the groups were tidied. The spec (v0.10) tags text that rests on one of these as **[A: SU-n]**.
+Every unconfirmed Assumption in `SpecificationUpdate.md` (SU-01 to SU-178), grouped by system so they can be confirmed in one sitting: 279 assumptions across 110 SU entries. SU-178 (Movie_024: chains filled to the joints) was added on 2026-11-18; it replaced the last sentence of the SU-2 item. SU-176 and SU-177 (the AI's Chain Line and the AI vs AI test level) were added on 2026-11-17. SU-174 and SU-175 (the Assault in one wave, on contact) were added on 2026-11-15. SU-173 (wheeling on steering circles) and SU-169 to SU-172 (Movie_023: hidden enemy orders, stronger borders, the Assault chain reaction, no strafing in line) were added on 2026-11-15. SU-168 (the slowed finish and the Victory or Defeat banner) was added on 2026-11-15. SU-167 (the plus for boosted morale on the troop card) was added on 2026-11-15. SU-166 (the soldier wave) was added on 2026-11-15. SU-165 (the Assault as one charge per soldier) was added on 2026-11-15; it superseded the SU-148 item and SU-164's "a troop in Assault does not feint", which were removed. SU-164 (feints) was added on 2026-11-15. SU-163 (the assault wheel) was added on 2026-11-15. SU-162 (the troop border) was added on 2026-11-15. SU-161 (flush fronts) was added on 2026-11-15. SU-159 (attack clicks) and SU-160 (linked group lines) were added on 2026-11-15; SU-160 superseded SU-157, whose items were removed. SU-158 (engaged soldiers face their enemy) was added on 2026-11-15. SU-154 to SU-157 (troop facing controls and line spacing, on the `troop-facing-controls` branch) and SU-148 to SU-153 (class design rules) were added on 2026-11-14. SU-136 to SU-140 were added on 2026-11-08; the SU-74 and SU-121 items about routed troops never leaving the map were removed (SU-138 replaced them). Rebuilt 2026-11-08 (SU-135): assumptions that later entries overtook were removed, missing ones were added, and the groups were tidied. The spec (v0.10) tags text that rests on one of these as **[A: SU-n]**.
 
 ## How to use this
 
@@ -17,7 +17,7 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 
 - [Troops, characters, stats & equipment](#troops-characters-stats--equipment) (20)
 - [Soldier simulation & physics](#soldier-simulation--physics) (12)
-- [Formations, movement & geometry](#formations-movement--geometry) (51)
+- [Formations, movement & geometry](#formations-movement--geometry) (53)
 - [Combat (melee, charges, ranged)](#combat-melee-charges-ranged) (49)
 - [Morale, retreat & rout](#morale-retreat--rout) (16)
 - [Controls, orders & battle UI](#controls-orders--battle-ui) (49)
@@ -200,6 +200,11 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 - [ ] moving back further than the small-move distance is strafing too: the line wheels about (SU-173) and advances. →
 - [ ] the enemy AI's troops follow the same rule. →
 - [ ] the values: `LineAdvanceAngleDeg` 15°, `LineStrafeMaxDistance` 4 units (from where the troop stood; destination not within A_Distance of an enemy), on Formation Tuning. →
+
+**SU-178** Chained troops fill their lines to the joints
+
+- [ ] only the soldiers' **fill** changes: links, joints, stretch and break rules, footprints and outlines are as before; it applies to every chain (player line orders and automatic links too), and the troops' soldiers stay apart at the joint by cross-troop separation. →
+- [ ] it replaces SU-2's "linked ends keep the joint clearance"; `ChainFillToJoints` off brings the clearance back. →
 
 ## Combat (melee, charges, ranged)
 
@@ -644,7 +649,7 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 
 **SU-2** Line fill details
 
-- [ ] Pull strength is `LineFillGain = 0.8` × the field attraction strength (constant in `SoldierSteering`). Chargers, followers and retreating soldiers keep their place in the sort (the line does not reshuffle while they are away) but are not pulled. Columns, blobs and routs are unchanged. Linked ends keep the joint clearance: the fill spans the core after clearance. →
+- [ ] Pull strength is `LineFillGain = 0.8` × the field attraction strength (constant in `SoldierSteering`). Chargers, followers and retreating soldiers keep their place in the sort (the line does not reshuffle while they are away) but are not pulled. Columns, blobs and routs are unchanged. (SU-178: chained troops now fill their lines to the joints.) →
 
 **SU-64** Battle sounds from troop events
 

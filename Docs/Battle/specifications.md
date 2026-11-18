@@ -700,7 +700,8 @@ defaults are used when an asset is missing. Values in the rest of this document 
 | `FriendlyGap` | 0.5 | units | Minimum gap between friendly outlines. |
 | `FriendlyGiveWaySpeedScale` | 0.5 | × march speed | Fastest a troop giving way moves. |
 | `PathRebuildIntervalSeconds` | 0.5 | s | Path rebuild interval. |
-| `JointClearance` / `JointClearanceFraction` | 0.45 / 0.15 | units / × length | Pull-in at a linked end: min(of the two). |
+| `JointClearance` / `JointClearanceFraction` | 0.45 / 0.15 | units / × length | Pull-in at a linked end: min(of the two). Used only with `ChainFillToJoints` off. |
+| `ChainFillToJoints` | on (*default*) | bool | A chained troop's soldiers fill its line up to each joint, so a chain reads as one line (SU-178). Off: the joint clearance. |
 | `RoutScatterRadiusScale` | 1.6 | × radius | Routed troop scatter disc. |
 | `OutlinePadding` | 0.65 (*default*) | units | Margin of the troop border (shown and clicked) beyond its soldiers, every side (SU-162). Display and picking only. |
 | `LineMarchSlowdown` | on (*default*) | bool | A troop in Line or Chain marches at `LineMarchSpeedScale` (SU-150). Charges are not slowed. |
