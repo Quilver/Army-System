@@ -374,6 +374,99 @@ public sealed class LevelAIvsAITests
         yield return new ExitPlayMode();
     }
 
+    // Records the saved level for a replay video (Tools/Replay/render_replay.py): plays up to 150 s (or to the end) at
+    // 30 frames a second and writes, every second frame, every living soldier's place, facing and state, plus the map's
+    // sprites, as CSV files beside the test results. Nothing is asserted. Run explicitly:
+    // -testFilter LevelAIvsAITests.RecordReplay
+    [UnityTest, Explicit]
+    public IEnumerator RecordReplay()
+    {
+        EditorSceneManager.OpenScene(AIBattleSetup.ScenePath, OpenSceneMode.Single);
+        string folder = ReplayFolder();
+        System.IO.Directory.CreateDirectory(folder);
+        WriteMapLayout(System.IO.Path.Combine(folder, "replay_map.csv"));
+        yield return new EnterPlayMode();
+
+        Time.captureDeltaTime = 1f / 30f;
+        yield return null;
+        var battle = Battle.Instance;
+        Troop[] troops = Object.FindObjectsByType<Troop>(FindObjectsSortMode.None);
+        System.Array.Sort(troops, CompareName);
+        var table = new StringBuilder("index,name,team,kind\n");
+        for (int i = 0; i < troops.Length; i++)
+            table.AppendLine($"{i},{troops[i].name},{troops[i].TeamId},{troops[i].FirstCharacter.name}");
+        System.IO.File.WriteAllText(System.IO.Path.Combine(ReplayFolder(), "replay_troops.csv"), table.ToString());
+
+        var frames = new StringBuilder("frame,time,troop,x,y,fx,fy,flags\n");
+        var troopFrames = new StringBuilder("frame,time,troop,x,y,routed,engaged,alive\n");
+        int frame = 0;
+        int endFrames = -1;
+        while (frame < 150 * 15 && endFrames != 0)
+        {
+            yield return null;
+            yield return null;
+            float time = frame / 15f;
+            for (int i = 0; i < troops.Length; i++)
+            {
+                Troop tr = troops[i];
+                if (tr == null) continue;
+                troopFrames.AppendLine(string.Format(System.Globalization.CultureInfo.InvariantCulture,
+                    "{0},{1:0.000},{2},{3:0.000},{4:0.000},{5},{6},{7}", frame, time, i, tr.transform.position.x,
+                    tr.transform.position.y, tr.IsRouted ? 1 : 0, tr.IsEngaged ? 1 : 0, tr.LivingSoldierCount));
+                foreach (SoldierAgentState s in tr.Soldiers)
+                {
+                    if (!s.IsAlive) continue;
+                    Vector2 p = tr.WorldPosition(s);
+                    Vector2 f = s.Facing;
+                    int flags = (s.IsCharging ? 1 : 0) | (s.IsClashColorPulsing ? 2 : 0) | (s.IsStunned ? 4 : 0) |
+                                (s.IsFeinting ? 8 : 0);
+                    frames.AppendLine(string.Format(System.Globalization.CultureInfo.InvariantCulture,
+                        "{0},{1:0.000},{2},{3:0.000},{4:0.000},{5:0.000},{6:0.000},{7}", frame, time, i, p.x, p.y, f.x, f.y,
+                        flags));
+                }
+            }
+            frame++;
+            if (endFrames > 0) endFrames--;
+            else if (endFrames < 0 && battle != null && battle.IsOver) endFrames = 15 * 4; // four more seconds
+        }
+        System.IO.File.WriteAllText(System.IO.Path.Combine(ReplayFolder(), "replay_soldiers.csv"), frames.ToString());
+        System.IO.File.WriteAllText(System.IO.Path.Combine(ReplayFolder(), "replay_troop_states.csv"), troopFrames.ToString());
+        Debug.Log($"[AIvsAI replay] {frame} frames written to {ReplayFolder()}; over {battle != null && battle.IsOver}");
+        Time.captureDeltaTime = 0f;
+        yield return new ExitPlayMode();
+    }
+
+    // Beside the test results when run by the CLI runner (-testResults), otherwise the project's Temp folder.
+    static string ReplayFolder()
+    {
+        string[] args = System.Environment.GetCommandLineArgs();
+        for (int i = 0; i + 1 < args.Length; i++)
+            if (args[i] == "-testResults") return System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(args[i + 1]));
+        return System.IO.Path.GetFullPath("Temp/Replay");
+    }
+
+    static int CompareName(Troop a, Troop b) => string.CompareOrdinal(a.name, b.name);
+
+    // Every sprite in the open scene that does not belong to a troop: its texture, the part of it drawn, where it stands.
+    static void WriteMapLayout(string path)
+    {
+        var map = new StringBuilder("texture,rx,ry,rw,rh,ppu,pivotx,pivoty,x,y,z,rotation,scalex,scaley,flipx,flipy,r,g,b,a,layer,order,enabled\n");
+        foreach (SpriteRenderer sr in Object.FindObjectsByType<SpriteRenderer>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+        {
+            if (sr.sprite == null || sr.GetComponentInParent<Troop>() != null) continue;
+            Sprite sp = sr.sprite;
+            Transform t = sr.transform;
+            map.AppendLine(string.Format(System.Globalization.CultureInfo.InvariantCulture,
+                "\"{0}\",{1},{2},{3},{4},{5},{6},{7},{8:0.0000},{9:0.0000},{10:0.0000},{11:0.000},{12:0.00000},{13:0.00000},{14},{15},{16:0.000},{17:0.000},{18:0.000},{19:0.000},{20},{21},{22}",
+                AssetDatabase.GetAssetPath(sp.texture), sp.rect.x, sp.rect.y, sp.rect.width, sp.rect.height,
+                sp.pixelsPerUnit, sp.pivot.x, sp.pivot.y, t.position.x, t.position.y, t.position.z, t.eulerAngles.z,
+                t.lossyScale.x, t.lossyScale.y, sr.flipX ? 1 : 0, sr.flipY ? 1 : 0, sr.color.r, sr.color.g, sr.color.b,
+                sr.color.a, SortingLayer.GetLayerValueFromID(sr.sortingLayerID), sr.sortingOrder,
+                sr.enabled && sr.gameObject.activeInHierarchy ? 1 : 0));
+        }
+        System.IO.File.WriteAllText(path, map.ToString());
+    }
+
     static int CompareX(Troop a, Troop b) => a.transform.position.x.CompareTo(b.transform.position.x);
 
     static string Link(Troop troop, int end)
