@@ -1,6 +1,7 @@
 using UnityEngine;
 
 // Pushes soldiers of different troops (and allied threat-facing lines) apart through each soldier's external separation.
+// A troop falling back passes through its friends' soldiers (SU-181).
 public static class CrossTroopSeparation
 {
     const float CellSize = TroopConstants.NeighborRadius;
@@ -32,8 +33,8 @@ public static class CrossTroopSeparation
     {
         if (a.Troop == b.Troop) return;
         if (a.Troop.TeamId == b.Troop.TeamId
-            && !a.Troop.HasThreatFacingFormation
-            && !b.Troop.HasThreatFacingFormation)
+            && ((!a.Troop.HasThreatFacingFormation && !b.Troop.HasThreatFacingFormation)
+                || FriendlyOverlapResolver.PassingThrough(a.Troop, b.Troop)))
             return;
         Vector2 difference = a.Position - b.Position;
         float distance = difference.magnitude;

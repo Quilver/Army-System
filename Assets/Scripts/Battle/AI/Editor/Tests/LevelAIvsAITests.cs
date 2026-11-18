@@ -158,6 +158,7 @@ public sealed class LevelAIvsAITests
         float closest = float.PositiveInfinity;
         float widestJointBeforeContact = 0f; // SU-178: gap between neighbouring spearmen's end files before the fight
         int reserveInsideOwnSpears = 0;      // SU-179: seconds a huskarl's pivot stood inside its own side's spearmen
+                                             // (not counting one falling back through the other, SU-181)
         int startSoldiers = Object.FindObjectsByType<Troop>(FindObjectsSortMode.None).Sum(t => t.LivingSoldierCount);
         Side[] both = { Side.South, Side.North };
 
@@ -212,7 +213,8 @@ public sealed class LevelAIvsAITests
                 {
                     if (h.TeamId != team || h.IsRouted || h.FirstCharacter.name != "Huskarl") continue;
                     foreach (Troop sp in spearsOfSide)
-                        if (AIApproach.Contains(TroopAIAdapter.For(sp).Footprint, h.transform.position, 0f))
+                        if (!FriendlyOverlapResolver.PassingThrough(h, sp)
+                            && AIApproach.Contains(TroopAIAdapter.For(sp).Footprint, h.transform.position, 0f))
                         {
                             reserveInsideOwnSpears++;
                             line.Append($" | {h.name} inside {sp.name}");

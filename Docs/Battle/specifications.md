@@ -745,6 +745,7 @@ defaults are used when an asset is missing. Values in the rest of this document 
 | `RetreatWaveDelaySeconds` | 1.0 | s | Delay between the rearmost and the frontmost soldier starting to fall back. |
 | `RetreatRearMoveSeconds` | 0.8 | s | Rearmost soldier's move time (fastest). |
 | `RetreatFrontMoveSeconds` | 1.8 | s | Frontmost soldier's move time (slowest). |
+| `RetreatThroughFriends` | on (*default*) | bool | A retreat that would end inside a friendly troop goes on to its far side, and a troop falling back passes through its friends (SU-181). Off: the retreat keeps its length and friends shove each other apart. |
 | `DisorderSeconds` | 10 (*default*) | s | Time a disordered troop cannot move. |
 | `FlankShockMultiplier` | 3 | × | Shock multiplier on flank and rear hits. |
 | `FrontFaceHalfAngleDeg` | 45 | deg | Front face half-angle. |

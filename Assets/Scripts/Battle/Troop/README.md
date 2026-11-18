@@ -36,8 +36,8 @@ report, sounds) follows a battle; Troop code never references the campaign.
    roll, as it comes into reach (`AssaultState`).
 5. **Ranged** (`RangedFireController`, `TroopProjectiles`): stationary, unengaged troops fire: Volley weapons in sync,
    others each on its own timing (SU-105).
-6. **Troop update** (`Troop.Update`): morale decay and healing, break test, retreat (in melee) or disorder (out of melee,
-   SU-104), rout, pivot movement, the soldier wave (`SoldierWave`, SU-166: on setting off, stopping or turning the
+6. **Troop update** (`Troop.Update`): morale decay and healing, break test, retreat (in melee; through friends to their
+   far side, SU-181) or disorder (out of melee, SU-104), rout, pivot movement, the soldier wave (`SoldierWave`, SU-166: on setting off, stopping or turning the
    soldiers nearest the direction of travel respond first and each rank behind a moment later), soldier steering.
 7. **Contacts** (`SoldierContactResolver`, `DuelResolver`): bounces, clashes, duels, damage through armour, Shock;
    feints end on contact with a knock-back and nothing else (`DuelResolver.ResolveFeint`).

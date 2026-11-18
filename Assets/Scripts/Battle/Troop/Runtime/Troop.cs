@@ -899,8 +899,9 @@ public sealed class Troop : MonoBehaviour
     }
 
     // Case B: accordion retreat away from the attacker, Shock resets, EffectiveMorale drops by the retreat penalty.
-    // Only a troop engaged in melee retreats (SU-104). A retreat ends any disorder. Stunned soldiers are left behind and
-    // die (SU-107).
+    // Only a troop engaged in melee retreats (SU-104). A retreat ends any disorder.
+    // Stunned soldiers are left behind and die (SU-107). A retreat that would end inside a friendly troop goes on through
+    // it (SU-181).
     void BeginRetreat()
     {
         _disorderRemaining = 0f;
@@ -911,18 +912,70 @@ public sealed class Troop : MonoBehaviour
         _mover.CancelOrders();
         _lineOrder.Cancel();
         Vector2 away = RetreatDirection();
-        float distance = Tuning.RetreatDistance;
-        _faultSlip.Begin(away, distance);
+        float baseDistance = Tuning.RetreatDistance;
+        float distance = RetreatDistanceThroughFriends(away, baseDistance);
+        _faultSlip.Begin(away, distance, moveTimeScale: RetreatMoveTimeScale(distance, baseDistance));
         State = TroopState.Fleeing;
         ChainLinker.OnTroopRetreat(this, away, distance);
     }
 
     // Shared retreat of a chain (spec §3.4): pulled back with a neighbour, at no morale cost. Engaged or attacking troops
-    // never move (SU-46).
+    // never move (SU-46). It passes through friends as a retreat does (SU-181).
     internal bool BeginSympatheticRetreat(Vector2 direction, float distance)
     {
         if (IsRouted || IsFaultSlipping || IsCommitted || IsDisordered || distance <= 0f) return false;
-        _faultSlip.Begin(direction, distance, sympathetic: true);
+        float through = RetreatDistanceThroughFriends(direction, distance);
+        _faultSlip.Begin(direction, through, sympathetic: true, moveTimeScale: RetreatMoveTimeScale(through, distance));
+        return true;
+    }
+
+    // A retreat lengthened to pass through friends keeps the soldiers' usual speed: their move times grow with it.
+    static float RetreatMoveTimeScale(float distance, float baseDistance) =>
+        baseDistance > 1e-4f ? Mathf.Max(1f, distance / baseDistance) : 1f;
+
+    static readonly List<RetreatPassage.Friend> PassageFriends = new();
+
+    // Retreat through friends (SU-181, RetreatPassage): how far a retreat of distance along direction goes so that it
+    // does not end inside a friendly troop. The friends are the other living, unrouted troops of the same army that are not
+    // linked to this one (chained neighbours fall back with it); their outlines are kept FriendlyGap clear and their
+    // pivots the friendly pivot spacing apart (spec §2.4), so neither rule moves either troop when it arrives. The far side
+    // counts as reachable when the pivot can get there (terrain and the field edge) and the troop's outline there is clear
+    // of every enemy troop; otherwise the retreat stops short of the friends.
+    float RetreatDistanceThroughFriends(Vector2 direction, float distance)
+    {
+        var world = TroopCombatWorld.Current;
+        if (!Tuning.RetreatThroughFriends || world == null || distance <= 0f || direction.sqrMagnitude < 1e-8f)
+            return distance;
+        PassageFriends.Clear();
+        foreach (var other in world.Troops)
+        {
+            if (other == null || other == this || other.TeamId != TeamId || other.IsRouted || other.HasLeftField) continue;
+            if (other.LivingSoldierCount == 0 || FriendlyOverlapResolver.AreLinked(this, other)) continue;
+            PassageFriends.Add(new RetreatPassage.Friend(other.Outline, other.transform.position,
+                FriendlyOverlapResolver.MinimumSpacing(this, other)));
+        }
+        if (PassageFriends.Count == 0) return distance;
+        Vector2 way = direction.normalized;
+        float result = RetreatPassage.Distance(Outline, transform.position, way, distance, PassageFriends,
+            Tuning.FriendlyGap, d => RetreatEndReachable(way, d, world.Troops));
+        PassageFriends.Clear();
+        return result;
+    }
+
+    // Whether a retreat of distance along direction can end there: the pivot is not stopped short by terrain or the field
+    // edge, and the outline there does not overlap an enemy troop's.
+    bool RetreatEndReachable(Vector2 direction, float distance, IReadOnlyList<Troop> troops)
+    {
+        const float Tolerance = 0.1f;
+        Vector2 wanted = direction * distance;
+        if ((ConstrainPivotStep(wanted) - wanted).sqrMagnitude > Tolerance * Tolerance) return false;
+        TroopFootprint end = Outline.Translated(wanted);
+        foreach (var other in troops)
+        {
+            if (other == null || other.TeamId == TeamId || other.IsRouted || other.HasLeftField) continue;
+            if (other.LivingSoldierCount == 0) continue;
+            if (FootprintGap.Gap(end, other.Outline) < 0f) return false;
+        }
         return true;
     }
 

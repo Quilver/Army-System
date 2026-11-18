@@ -112,6 +112,10 @@ public readonly struct TroopFootprint
         return new TroopFootprint(FootprintKind.Capsule, (start + end) * 0.5f, normal, length * 0.5f, 0f, radius);
     }
 
+    // The same footprint moved by delta (a retreat's end, SU-181).
+    public TroopFootprint Translated(Vector2 delta) =>
+        new(Kind, Center + delta, Facing, HalfLength, HalfWidth, Rounding, LineOffset);
+
     // Overall extents including the rounding.
     public float OuterHalfLength => HalfLength + Rounding;
     public float OuterHalfWidth => HalfWidth + Rounding;

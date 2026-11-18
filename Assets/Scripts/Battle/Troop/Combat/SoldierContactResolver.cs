@@ -45,10 +45,12 @@ public sealed class SoldierContactResolver
 
     void ResolvePair(SoldierContact a, SoldierContact b)
     {
-        // Soldiers of the same troop pass through each other; allies of different troops only bounce in a battle line.
+        // Soldiers of the same troop pass through each other; allies of different troops only bounce in a battle line, and
+        // never while one of the two troops falls back through the other (SU-181).
         if (b.Troop == null || a.Troop == b.Troop || !a.Soldier.IsAlive || !b.Soldier.IsAlive) return;
         bool opposing = a.Troop.TeamId != b.Troop.TeamId;
         if (!opposing && !a.Troop.HasThreatFacingFormation && !b.Troop.HasThreatFacingFormation) return;
+        if (!opposing && FriendlyOverlapResolver.PassingThrough(a.Troop, b.Troop)) return;
 
         Vector2 positionA = a.Troop.WorldPosition(a.Soldier);
         Vector2 positionB = b.Troop.WorldPosition(b.Soldier);

@@ -7,6 +7,8 @@ using UnityEngine;
 // attacker) to the front: the rearmost soldier moves at once and the frontmost one RetreatWaveDelaySeconds later. Move
 // time also grows toward the front: the rear runs back in RetreatRearMoveSeconds, the front takes RetreatFrontMoveSeconds,
 // so the troop stretches out and then closes up again (accordion, SU-133).
+// A retreat lengthened to carry the troop through friends (SU-181) gives each soldier proportionally more time, so the
+// soldiers fall back at their usual speed and the retreat lasts longer (moveTimeScale).
 // The same motion carries a sympathetic retreat of a chained neighbour (spec §3.4 shared retreat), which costs no morale.
 public sealed class FaultSlipMotion
 {
@@ -18,9 +20,12 @@ public sealed class FaultSlipMotion
 
     static TroopTuning Tuning => TroopTuning.Active;
 
-    // Length of the retreat motion: the wave delay, the slowest soldier's move, then the settle time.
-    public static float SlipDuration =>
-        Tuning.RetreatWaveDelaySeconds + Tuning.RetreatSlowestMoveSeconds + SettleDuration;
+    // Length of a retreat motion of the usual distance: the wave delay, the slowest soldier's move, then the settle time.
+    public static float SlipDuration => DurationFor(1f);
+
+    // Length of a retreat whose move times are scaled by moveTimeScale (SU-181).
+    public static float DurationFor(float moveTimeScale) =>
+        Tuning.RetreatWaveDelaySeconds + Tuning.RetreatSlowestMoveSeconds * Mathf.Max(1f, moveTimeScale) + SettleDuration;
 
     readonly Troop _troop;
     readonly List<SoldierAgentState> _living = new();
@@ -29,6 +34,8 @@ public sealed class FaultSlipMotion
     float _pivotDistance;
     float _pivotDisplacement;
     float _recoveryRemaining;
+    float _moveTimeScale = 1f;
+    float _duration;
     Vector2 _axis;
 
     public FaultSlipMotion(Troop troop)
@@ -43,10 +50,15 @@ public sealed class FaultSlipMotion
     public Vector2 Axis => _axis;
     // Distance the pivot travels in the current retreat.
     public float Distance => _pivotDistance;
+    // Length of the current retreat (SlipDuration, longer for a retreat through friends).
+    public float Duration => _duration;
 
-    // Starts a retreat of distance units along retreatDirection (away from the attacker).
-    public void Begin(Vector2 retreatDirection, float distance, bool sympathetic = false)
+    // Starts a retreat of distance units along retreatDirection (away from the attacker). moveTimeScale (at least 1)
+    // stretches every soldier's move time: a retreat through friends (SU-181) goes further at the same speed.
+    public void Begin(Vector2 retreatDirection, float distance, bool sympathetic = false, float moveTimeScale = 1f)
     {
+        _moveTimeScale = Mathf.Max(1f, moveTimeScale);
+        _duration = DurationFor(_moveTimeScale);
         Transform transform = _troop.transform;
         if (retreatDirection.sqrMagnitude < 0.001f) retreatDirection = -(Vector2)transform.right;
         _axis = -retreatDirection.normalized;
@@ -64,7 +76,7 @@ public sealed class FaultSlipMotion
         _pivotDistance = _distance;
         _pivotDisplacement = 0f;
         _age = 0f;
-        _recoveryRemaining = SlipDuration;
+        _recoveryRemaining = _duration;
     }
 
     // Counts down the recovery period; true on the frame it finishes.
@@ -98,7 +110,7 @@ public sealed class FaultSlipMotion
 
         // Finish once every soldier has arrived. The grace period stops a soldier that cannot reach its place from
         // holding the troop in the retreat state.
-        if (_age <= SlipDuration || (!arrived && _age <= SlipDuration + ArrivalGrace)) return;
+        if (_age <= _duration || (!arrived && _age <= _duration + ArrivalGrace)) return;
         _age = -1f;
         IsSympathetic = false;
         foreach (var soldier in _troop.Roster.SoldierList)
@@ -131,7 +143,7 @@ public sealed class FaultSlipMotion
             float frontness = frontDepth - rearDepth > 0.0001f
                 ? Mathf.InverseLerp(rearDepth, frontDepth, depth)
                 : 0f;
-            soldier.SetFaultMotion(frontness * waveDelay, Tuning.RetreatMoveSecondsAt(frontness));
+            soldier.SetFaultMotion(frontness * waveDelay, Tuning.RetreatMoveSecondsAt(frontness) * _moveTimeScale);
             soldier.FaultRetreatScale = 1f;
             soldier.BeginFaultTracking();
         }

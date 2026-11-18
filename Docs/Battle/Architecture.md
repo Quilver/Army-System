@@ -43,7 +43,7 @@ see `Troop/README.md`.
 
 | Folder | Contents |
 |---|---|
-| `Rules/` | `MoraleRules`, `DuelRules`, `CombatPower`, `SupportRules`, `DamageRules`, `MitigationResolver`, `ChargeRules`, `ClashRules`, `TroopFootprint` (+ `TroopFace`, `FootprintKind`), `FootprintGap`, `FaceClassifier`, `SurroundTest`, `LineGeometry` (line, radius and column sizes), `TroopFrontageRule`, `TroopOutline`, `TroopBorder` (SU-162), `TroopOutlinePolygon`, `FormationModeResolver`, `ChainGeometry`, `ChainLinkRules` (+ `ChainLinkCandidate`, `ChainBreakReason`), `ChainTopology`, `RangedRules`, `LineMarchRules` (SU-150), `AssaultWheelRules` (SU-163), `EngagementHeatStrip`, `CompositeTroopResolver`, `ITroopRandom`, `SeededTroopRandom`. |
+| `Rules/` | `MoraleRules`, `DuelRules`, `CombatPower`, `SupportRules`, `DamageRules`, `MitigationResolver`, `ChargeRules`, `ClashRules`, `TroopFootprint` (+ `TroopFace`, `FootprintKind`), `FootprintGap`, `FaceClassifier`, `SurroundTest`, `LineGeometry` (line, radius and column sizes), `TroopFrontageRule`, `TroopOutline`, `TroopBorder` (SU-162), `TroopOutlinePolygon`, `FormationModeResolver`, `ChainGeometry`, `ChainLinkRules` (+ `ChainLinkCandidate`, `ChainBreakReason`), `ChainTopology`, `RangedRules`, `LineMarchRules` (SU-150), `AssaultWheelRules` (SU-163), `RetreatPassage` (SU-181), `EngagementHeatStrip`, `CompositeTroopResolver`, `ITroopRandom`, `SeededTroopRandom`. |
 | `Model/` | `CharacterProfile` (+ `CreateWithGains`, `Source`), `CharacterEquipment`, `SoldierStats`, `CharacterClass`, `StatCaps`, `CharacterStat`, `WeaponProfile` (abstract) with `MeleeWeaponProfile` and `RangedWeaponProfile` (D-52), `WeaponSpecialRuleEntry`, `ArmourProfile`, `WeaponSkill`, `WeaponTypes`, `CombatStatLimits`, `TroopTuning` and the nine `Battle Tuning/` sections, `FormationMode`, `SoldierAgentState`, `SoldierHealth`, `SoldierChargeState` (+ `ChargeRole`), `SoldierFaultMotionState`, `SoldierClashPulseState`, `SoldierSeparationState`, `MitigationResult` (+ `AppliedDamage`), `TroopFormationData`, `TroopEndpointLink`. |
 | `Runtime/` | `Troop`, `TroopState`, `TroopOrderKind`, `TroopRoster`, `TroopFormationState`, `TroopMorale`, `TroopLineOrder`, `TroopLineLinks`, `TroopPivotMover`, `TroopAssaultWheel`, `TroopPathFollower`, `BattlefieldBounds`, `FaultSlipMotion`, `TroopRout`, `RoutFleePlanner`, `AssaultState`, `EngagementRecord`, `TroopDamageReceiver`, `MeleeMetrics`, `TroopConstants`, `TroopObjects`, `TroopAssemblyInfo`. |
 | `Combat/` | `TroopCombatWorld`, `TroopRegistry`, `TroopEngagementSystem`, `EngagementFrontage`, `SoldierContactIndex`, `SoldierContact`, `SoldierContactResolver`, `DuelResolver`, `SupportCalculator`, `ChargeCoordinator`, `CrossTroopSeparation`, `RangedFireController`, `TroopProjectiles`, `CombatLog`, `BattleEvents`, `TroopCombatGizmos`. |
@@ -125,7 +125,10 @@ in Edit mode at a fixed frame time.
 - `Troop.EvaluateBreak`: when Shock > EM, `MoraleRules.Evaluate` picks the case. **A Rout** (EM < `RoutMoraleThresholdFraction` of initial, Morale Tuning):
   `EnterRout`. **B Retreat** (only in melee, SU-104): Shock 0, penalty, `FaultSlipMotion` for `RetreatDistance` away
   from the last attacker (rear first and fastest: wave delay `RetreatWaveDelaySeconds`, move `RetreatRearMoveSeconds` at the rear to
-  `RetreatFrontMoveSeconds` at the front, all Morale Tuning, SU-133), shared retreat along the chain; its stunned soldiers die (SU-107). **B out of melee: Disorder**
+  `RetreatFrontMoveSeconds` at the front, all Morale Tuning, SU-133), shared retreat along the chain; its stunned soldiers die (SU-107).
+  A retreat that would end inside a friendly troop is lengthened to its far side (`RetreatPassage`, `RetreatThroughFriends`,
+  SU-181), its move times scaled to keep the soldiers' speed; friends are not kept apart while one falls back
+  (`FriendlyOverlapResolver.PassingThrough`). **B out of melee: Disorder**
   (SU-104): Shock 0, penalty, orders cancelled and refused, no movement for `DisorderSeconds` (Morale Tuning).
   **C Surrounded break** (`IsSurrounded`): Shock 0, penalty, no motion. A retreating or routed troop does not break
   again (Q-34).

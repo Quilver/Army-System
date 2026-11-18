@@ -13,6 +13,9 @@ using UnityEngine;
 //               move. The troop giving way moves at FriendlyGiveWaySpeedScale x its march speed at most, so its soldiers
 //               keep up and a marching troop slows while it passes a friend but is never held up for good. Nothing moves
 //               while time stands still (paused or deploying).
+// A troop falling back (a retreat or a chain's shared retreat) passes through its friends (SU-181): neither rule moves
+// it or them while it falls back. The retreat itself is lengthened so that it never ends inside a friend
+// (RetreatPassage).
 public static class FriendlyOverlapResolver
 {
     const int FriendlyOverlapPasses = 3;
@@ -24,6 +27,10 @@ public static class FriendlyOverlapResolver
         if (troop.IsMoving || troop.IsFaultSlipping) return 1;
         return 0;
     }
+
+    // Friends are not kept apart while either of them falls back through the other (SU-181, RetreatThroughFriends).
+    public static bool PassingThrough(Troop a, Troop b) =>
+        (a.IsFaultSlipping || b.IsFaultSlipping) && TroopTuning.Active.RetreatThroughFriends;
 
     // Whether the two troops are joined (or about to be joined) at a line point.
     public static bool AreLinked(Troop a, Troop b)
@@ -51,6 +58,7 @@ public static class FriendlyOverlapResolver
             Troop second = troops[j];
             if (first == null || second == null || first.TeamId != second.TeamId) continue;
             if (first.IsRouted || second.IsRouted) continue;
+            if (PassingThrough(first, second)) continue;
             if (first.LivingSoldierCount == 0 || second.LivingSoldierCount == 0) continue;
             if (AreLinked(first, second)) continue;
 
@@ -90,6 +98,7 @@ public static class FriendlyOverlapResolver
                 Troop second = troops[j];
                 if (first == null || second == null || first.TeamId != second.TeamId) continue;
                 if (first.IsRouted || second.IsRouted) continue;
+                if (PassingThrough(first, second)) continue;
 
                 float minimumDistance = MinimumSpacing(first, second);
                 Vector2 offset = (Vector2)first.transform.position - (Vector2)second.transform.position;

@@ -26,6 +26,10 @@ public sealed class MoraleTuning : ScriptableObject
     float _retreatRearMoveSeconds = 0.8f;
     [SerializeField, Min(0.05f), Tooltip("Time the frontmost soldier takes to fall back to its new place in a retreat (slowest, SU-133).")]
     float _retreatFrontMoveSeconds = 1.8f;
+    [SerializeField, Tooltip("A retreat that would end inside a friendly troop goes on through it to its far side, and a troop " +
+        "falling back passes through its friends without pushing them (SU-181). Off: retreats stop where they end and push " +
+        "friends aside.")]
+    bool _retreatThroughFriends = true;
     [SerializeField, Min(1f), Tooltip("Shock multiplier on flanked hits (spec §4.8).")]
     float _flankShockMultiplier = 3f;
     [SerializeField, Min(0f), Tooltip("A troop that breaks while not engaged in melee is disordered instead of retreating: " +
@@ -47,6 +51,7 @@ public sealed class MoraleTuning : ScriptableObject
     public float RetreatWaveDelaySeconds => _retreatWaveDelaySeconds;
     public float RetreatRearMoveSeconds => _retreatRearMoveSeconds;
     public float RetreatFrontMoveSeconds => _retreatFrontMoveSeconds;
+    public bool RetreatThroughFriends => _retreatThroughFriends;
     public float FlankShockMultiplier => _flankShockMultiplier;
     public float DisorderSeconds => _disorderSeconds;
 

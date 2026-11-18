@@ -196,6 +196,7 @@ public sealed class TroopTuning
     public float RetreatWaveDelaySeconds => Morale.RetreatWaveDelaySeconds;
     public float RetreatRearMoveSeconds => Morale.RetreatRearMoveSeconds;
     public float RetreatFrontMoveSeconds => Morale.RetreatFrontMoveSeconds;
+    public bool RetreatThroughFriends => Morale.RetreatThroughFriends;
     // Move time for a soldier at frontness 0 (rear) to 1 (front) of a retreat (SU-133).
     public float RetreatMoveSecondsAt(float frontness) =>
         Mathf.Lerp(RetreatRearMoveSeconds, RetreatFrontMoveSeconds, Mathf.Clamp01(frontness));

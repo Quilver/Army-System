@@ -13,6 +13,40 @@ SU-128 refer to v0.9 and may have moved.
 
 ## 2026-11-18 (2): Bigger bars, retreats through friends, the daze (branch troop-facing-controls)
 
+### SU-181 Retreats pass through friendly troops (Decision + Assumptions, spec §2.4, §3.4, §5.5, §8)
+The designer: "Allow troops to be able to retreat through friendly troops. However the troop must end on the other side
+of the troop they retreated through, they cannot be stuck inside of another troop."
+- Decision: a retreat that would end inside a friendly troop goes on the same way to its far side (`RetreatPassage`),
+  ending `FriendlyGap` clear of its outline and the friendly pivot spacing (§2.4) from its pivot, so neither rule moves
+  either troop when it arrives. While a troop falls back, it and its friends pass through each other: friendly outline
+  separation, pivot separation, and the soldiers' cross-troop separation and contact bounce are off for any pair in
+  which one is falling back. New tuning **`RetreatThroughFriends`** (Morale Tuning, on). Off restores the old behaviour:
+  the retreat keeps its length and the two troops shove each other apart.
+- Assumption: inside means its outline would end overlapping a friend's more than it does now, or either pivot would
+  end inside the other's outline (also for a friend that was already pressed into it). A retreat that would only end too
+  close (less than `FriendlyGap` or the pivot spacing, without going in) stops short by that much instead. A friend
+  standing close beside it does not count as in the way of a retreat that keeps that gap.
+- Assumption: the friends are the other living, unrouted troops of the same army that are not linked to it; chained
+  neighbours fall back with it (§3.4).
+- Assumption: the far side must be reachable: the pivot is not stopped short by terrain or the field edge, the outline
+  there overlaps no enemy troop, and it lies at most 40 units beyond the plain retreat. Otherwise the troop stops short of
+  the friends (where it stands, at worst).
+- Assumption: a longer retreat keeps the soldiers' speed: their move times grow by distance / `RetreatDistance`, so the
+  retreat lasts longer (a 5 unit retreat lengthened to 7.5 takes 4.2 s instead of 3.3), and the troop cannot break again
+  until it ends (D-30).
+- Assumption: the end is worked out from where the friends stand when the troop breaks. A friend that moves into the
+  spot during the retreat is not avoided; the usual separation sorts it out afterwards.
+- Assumption: a chain's shared retreat starts from the lengthened distance (with the usual falloff per hop) and also
+  passes through friends. It applies to player and AI troops alike.
+- Tests: `RetreatPassageTests` (geometry): a clear end is unchanged; a friend where the retreat ends is passed, ending
+  `FriendlyGap` beyond it; two friends with no room between are passed together; room between them is used; a friend
+  close beside is not in the way; ending merely too close stops short; an unreachable or too distant far side stops
+  short; a friend already pressed in is not left inside; a thin friend the retreat clears is jumped; the pivot spacing
+  is kept. `RetreatAndDazeTests`: a front line breaking onto its reserve ends on the reserve's far side, clear of it,
+  pivots apart, no soldier left inside it and the reserve not pushed; a friend well behind leaves the retreat as it was;
+  with the switch off the retreat stays this side of the reserve and shoves it. `LevelAIvsAITests.PlayedBattle` no
+  longer counts a huskarl inside its own spearmen while either is falling back.
+
 ### SU-180 Floating morale and HP bars twice the size (Decision + Assumption, spec §6.4)
 The designer: "Double the size of hp and morale bars over troops."
 - Decision: the floating Effective Morale bar over each troop (`TroopMoraleBar`) is 128 x 12 px at full morale (was 64 x
