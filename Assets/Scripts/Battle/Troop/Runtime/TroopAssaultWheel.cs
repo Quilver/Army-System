@@ -15,6 +15,8 @@ public sealed class TroopAssaultWheel
     TroopFace _face;
     bool _hasAxis;
     Vector2 _axis;
+    bool _hasHeading;
+    Vector2 _heading;
 
     public Troop Target => _target;
     public bool HasFace => _hasFace;
@@ -25,6 +27,15 @@ public sealed class TroopAssaultWheel
         _target = null;
         _hasFace = false;
         _hasAxis = false;
+        _hasHeading = false;
+    }
+
+    // The heading this troop last wheeled to against target (this frame's, set by TargetHeading before the charges run),
+    // if it is wheeling against that target (SU-183).
+    public bool TryGetHeadingAgainst(Troop target, out Vector2 heading)
+    {
+        heading = _heading;
+        return _hasHeading && target != null && _target == target;
     }
 
     // The pair's axis this troop squares to while it and target pursue each other, if it has taken one.
@@ -36,6 +47,13 @@ public sealed class TroopAssaultWheel
 
     // The heading self (a pursuer engaged with target) wheels to this frame.
     public Vector2 TargetHeading(Troop self, Troop target, TroopTuning tuning)
+    {
+        _heading = ComputeHeading(self, target, tuning);
+        _hasHeading = true;
+        return _heading;
+    }
+
+    Vector2 ComputeHeading(Troop self, Troop target, TroopTuning tuning)
     {
         if (target != _target)
         {

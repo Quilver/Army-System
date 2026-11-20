@@ -15,6 +15,7 @@ using UnityEngine;
 // distance from the spark along the troop's line). A soldier the reaction has passed charges as soon as it has a target
 // in reach, as before.
 // One wave (SU-174, SU-175, Melee Tuning Assault One Wave) overrides the chain reaction: none of this state is used.
+// Predicted wave (SU-183): the wave from predicted places is sent once per Assault (WaveSent).
 public sealed class AssaultState
 {
     readonly HashSet<SoldierAgentState> _charged = new();
@@ -25,6 +26,7 @@ public sealed class AssaultState
     float _settled;
     bool _released;
     float _sinceRelease;
+    bool _waveSent;
 
     public bool IsActive => _open;
     // Soldiers that have made their Assault charge in the open (or last) Assault.
@@ -41,6 +43,14 @@ public sealed class AssaultState
         _sinceSpark = 0f;
         _settled = 0f;
         _sinceRelease = 0f;
+        _waveSent = false;
+    }
+
+    // The predicted wave (SU-183) has been sent for this Assault.
+    public bool WaveSent => _open && _waveSent;
+    public void MarkWaveSent()
+    {
+        if (_open) _waveSent = true;
     }
 
     // The spark has charged (SU-171).

@@ -228,6 +228,8 @@ public sealed class TroopTuning
     public bool AssaultChainReaction => Melee.AssaultChainReaction;
     // The Assault goes in one wave once the troop is square (SU-174).
     public bool AssaultOneWave => Melee.AssaultOneWave;
+    // The one wave is judged from each soldier's predicted place once the troop has closed and wheeled square (SU-183).
+    public bool AssaultPredictAlignment => Melee.AssaultPredictAlignment;
     public float AssaultChainSpeed => Melee.AssaultChainSpeed;
     public float AssaultChainSettleSeconds => Melee.AssaultChainSettleSeconds;
     public float AssaultChainMaxWaitSeconds => Melee.AssaultChainMaxWaitSeconds;

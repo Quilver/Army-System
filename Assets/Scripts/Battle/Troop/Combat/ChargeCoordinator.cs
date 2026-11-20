@@ -14,6 +14,13 @@ using UnityEngine;
 //   One wave (SU-174, SU-175, AssaultOneWave): no spark and no wait; on contact every soldier that may make its Assault
 //   charge charges on the same frame. Followers are not taken from soldiers still owed a charge, so one that comes into
 //   reach a moment later (as the troop wheels in) is there to make it.
+//   Predicted wave (SU-183, AssaultPredictAlignment, with One wave): on the frame the Assault opens, each soldier's
+//   place is predicted as if the troop had closed to EngagementGap and finished its assault wheel square to the enemy
+//   (AssaultAlignmentRules). The front rank of that predicted line (every rank without FrontRankChargesOnly), each with
+//   an enemy soldier within the charge reach of its predicted place, charges on that frame at a target picked from
+//   there. Against its pursuit target the gate is being engaged with it (A_Distance), since a pursuer keeps closing and
+//   the prediction closes the rest; against any other enemy it is the charge gap (SU-95), and nothing is closed.
+//   The wave is sent once per Assault; a soldier it left out still makes its Assault charge if it comes into reach.
 //   Gate (SU-95): the troop's footprint gap to an enemy troop is within EngagementGap (+ ChargeGapTolerance). Being
 //   engaged (A_Distance) is no longer enough: engaged lines that stand off further apart do not charge.
 //   Target: one of the ChargeCandidateCount nearest soldiers within the charge reach, at random, of an enemy troop
@@ -42,6 +49,10 @@ public sealed class ChargeCoordinator
     readonly HashSet<SoldierAgentState> _frontRank = new();
     readonly List<(SoldierAgentState soldier, float forward)> _ranked = new();
     readonly List<(SoldierAgentState soldier, Vector2 position)> _assaultChargers = new();
+    readonly List<SoldierAgentState> _waveSoldiers = new();
+    readonly List<Vector2> _wavePositions = new();
+    readonly List<Vector2> _wavePlaces = new();
+    readonly List<int> _waveRanks = new();
 
     public ChargeCoordinator(SoldierContactIndex index, TroopRegistry registry)
     {
@@ -99,6 +110,8 @@ public sealed class ChargeCoordinator
         foreach (var troop in _registry.Troops)
         {
             if (troop == null || troop.IsRouted || troop.IsFaultSlipping) continue;
+            if (tuning.AssaultCharges && tuning.AssaultOneWave && tuning.AssaultPredictAlignment)
+                TrySendPredictedWave(troop, tuning, now);
             if (!CollectChargeable(troop, tuning.ChargeGap, _chargeable)) continue;
             bool frontRankOnly = tuning.FrontRankChargesOnly;
             if (frontRankOnly) CollectFrontRank(troop, _chargeable, _frontRank, _ranked);
@@ -177,6 +190,92 @@ public sealed class ChargeCoordinator
         foreach (var (soldier, position) in _assaultChargers)
             PickFollowers(troop, soldier, position, tuning, random, now,
                 chain || oneWave ? frontRankOnly : (bool?)null);
+        troop.RefreshAssault();
+    }
+
+    // SU-183: the one wave from predicted places, on the frame the Assault opens (once per Assault). Needs a line to
+    // predict from; a troop without one keeps the SU-175 wave (each soldier once an enemy is within reach of it).
+    void TrySendPredictedWave(Troop troop, TroopTuning tuning, float now)
+    {
+        if (troop.IsDazed || !troop.RefreshAssault()) return;
+        AssaultState state = troop.Assault;
+        if (state.WaveSent) return;
+        TroopFormationData line = troop.NaturalFormation;
+        if (line == null) return;
+
+        // The gate: the pursuit target once engaged with it (a pursuer keeps closing, so the prediction closes the rest
+        // of the gap), and any enemy troop within the charge gap (SU-95; a troop holding a line or a move stays where it
+        // is, so nothing is closed). The wheel squares to the pursuit target; otherwise the nearest sets the facing.
+        _chargeable.Clear();
+        Troop pursuit = troop.PursuitTarget;
+        Troop alignTarget = null;
+        bool alignIsPursuit = false;
+        float alignGap = float.PositiveInfinity;
+        float chargeGap = tuning.ChargeGap;
+        foreach (var record in troop.Engagements)
+        {
+            if (record.Opponent == null) continue;
+            bool closing = record.Engaged && record.Opponent == pursuit;
+            if (!closing && record.Gap > chargeGap) continue;
+            _chargeable.Add(record.Opponent);
+            if (closing)
+            {
+                alignTarget = pursuit;
+                alignIsPursuit = true;
+                alignGap = record.Gap;
+            }
+            else if (!alignIsPursuit && record.Gap < alignGap)
+            {
+                alignTarget = record.Opponent;
+                alignGap = record.Gap;
+            }
+        }
+        if (alignTarget == null) return;
+
+        Vector2 heading = line.Facing.sqrMagnitude > 1e-8f ? line.Facing.normalized : troop.Facing;
+        float length = Vector2.Distance(line.Start, line.End);
+        Vector2 aligned = heading;
+        if (alignIsPursuit && tuning.AssaultWheel && troop.AssaultWheel.TryGetHeadingAgainst(pursuit, out Vector2 wheelTo)
+            && (troop.IsAssaultWheeling || Vector2.Angle(heading, wheelTo) > tuning.AssaultWheelToleranceDeg))
+            aligned = wheelTo;
+
+        _waveSoldiers.Clear();
+        _wavePositions.Clear();
+        foreach (var soldier in troop.Soldiers)
+        {
+            if (!soldier.IsAlive) continue;
+            _waveSoldiers.Add(soldier);
+            _wavePositions.Add(troop.WorldPosition(soldier));
+        }
+        AssaultAlignmentRules.Predict(troop.transform.position, heading, length,
+            LineGeometry.FrontRankOffset(length, _waveSoldiers.Count), aligned, tuning.AssaultWheelAboutEngagedEnd,
+            alignIsPursuit ? alignGap - tuning.EngagementGap : 0f, FrontRankSize(troop), TroopConstants.LineSpacing,
+            _wavePositions,
+            _wavePlaces, _waveRanks);
+        state.MarkWaveSent();
+
+        bool frontRankOnly = tuning.FrontRankChargesOnly;
+        _frontRank.Clear();
+        for (int i = 0; i < _waveSoldiers.Count; i++)
+            if (_waveRanks[i] == 0) _frontRank.Add(_waveSoldiers[i]);
+        ITroopRandom random = troop.TroopRandom;
+        _assaultChargers.Clear();
+        for (int i = 0; i < _waveSoldiers.Count; i++)
+        {
+            SoldierAgentState soldier = _waveSoldiers[i];
+            if (soldier.Character == null || soldier.IsCommitted || soldier.IsReturning || soldier.IsStunned) continue;
+            if (frontRankOnly && _waveRanks[i] != 0) continue;
+            if (!troop.OwesAssaultCharge(soldier)) continue;
+            if (!TryPickTarget(troop, _wavePlaces[i], tuning.ChargeRange, tuning.ChargeCandidateCount, _chargeable,
+                    random, out SoldierContact target))
+                continue;
+            soldier.BeginAssaultCharge(target.Soldier, target.Troop, tuning.ChargeTimeoutSeconds, now);
+            troop.MarkAssaultCharge(soldier);
+            troop.MeleeMetrics.RecordChargeStarted();
+            _assaultChargers.Add((soldier, _wavePositions[i]));
+        }
+        foreach (var (soldier, position) in _assaultChargers)
+            PickFollowers(troop, soldier, position, tuning, random, now, frontRankOnly);
         troop.RefreshAssault();
     }
 

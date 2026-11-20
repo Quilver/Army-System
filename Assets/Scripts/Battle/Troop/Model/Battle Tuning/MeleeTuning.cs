@@ -58,6 +58,13 @@ public sealed class MeleeTuning : ScriptableObject
         "frame, with no wait; one that comes into reach later (as the troop wheels in) goes then. Overrides Assault Chain " +
         "Reaction. Off: Assault Chain Reaction decides (the SU-171 chain, or each soldier as it comes into reach).")]
     bool _assaultOneWave = true;
+    [SerializeField, Tooltip("Assault wave from predicted places (SU-183, needs Assault One Wave): on the frame the troop " +
+        "engages, each soldier's place is predicted as if the troop had already closed to Engagement Gap (a pursuer engaged " +
+        "with its target; any other troop waits for the charge gap and is not closed) and finished its assault wheel square " +
+        "to the enemy. The front rank of that predicted line, each with an enemy soldier within the " +
+        "charge reach of its predicted place, charges on that frame, at a target picked from there. Off: each soldier " +
+        "goes only once an enemy is within reach of where it stands (SU-175).")]
+    bool _assaultPredictAlignment = true;
     [SerializeField, Min(0.1f), Tooltip("How fast the chain reaction spreads along the line from the first charger, in units " +
         "per second (6: about 0.15 s per file at the 0.9 line spacing, about 1.4 s along a frontage-10 line from one end).")]
     float _assaultChainSpeed = 6f;
@@ -102,6 +109,7 @@ public sealed class MeleeTuning : ScriptableObject
     public bool AssaultCharges => _assaultCharges;
     public bool AssaultChainReaction => _assaultChainReaction;
     public bool AssaultOneWave => _assaultOneWave;
+    public bool AssaultPredictAlignment => _assaultPredictAlignment;
     public float AssaultChainSpeed => _assaultChainSpeed;
     public float AssaultChainSettleSeconds => _assaultChainSettleSeconds;
     public float AssaultChainMaxWaitSeconds => _assaultChainMaxWaitSeconds;

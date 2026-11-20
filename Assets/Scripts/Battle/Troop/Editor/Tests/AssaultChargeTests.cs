@@ -225,6 +225,7 @@ public sealed class AssaultChargeTests
     public void SoldiersComingIntoReachLater_MakeTheirAssaultChargeThen()
     {
         UseTuning("_assaultChainReaction", false);
+        UseTuning("_assaultPredictAlignment", false);
         UseTuning("_feintsPerCharge", 0f);
         Troop defender = PlacedLine("Defender", 1, Vector2.zero, Vector2.left, Character(12, 0), 10);
         Vector2 heading = new(Mathf.Cos(-45f * Mathf.Deg2Rad), Mathf.Sin(-45f * Mathf.Deg2Rad));
@@ -351,7 +352,7 @@ public sealed class AssaultChargeTests
         return firsts;
     }
 
-    // SU-174, SU-175: head-on, the whole front rank makes its Assault charge together, on contact, without a wait.
+    // SU-174, SU-175, SU-183: head-on, the whole front rank makes its Assault charge together, on contact, without a wait.
     [Test]
     public void OneWave_HeadOn_TheWholeFrontRankChargesTogetherOnContact()
     {
@@ -366,6 +367,51 @@ public sealed class AssaultChargeTests
         Assert.GreaterOrEqual(times.Count, front, "The whole front rank makes its Assault charge");
         Assert.LessOrEqual(times[0] - opened, FrameTime * 1.5f, "No wait: the first charges go on contact");
         Assert.LessOrEqual(times[front - 1] - times[0], FrameTime * 1.5f, "The front rank goes together");
+    }
+
+    // SU-183 (Movie_025): a 3 x 2 troop marches into a wider line and halts on contact. The whole front rank of its
+    // predicted line, including a soldier that stands a little behind its rank's line, charges on the contact frame.
+    [Test]
+    public void PredictedWave_NarrowTroopHeadOn_TheWholeFrontRankChargesOnContact()
+    {
+        UseTuning("_feintsPerCharge", 0f);
+        Troop defender = PlacedLine("Defender", 1, Vector2.zero, Vector2.left, Character(16, 0), 6);
+        Troop attacker = Unplaced("Attacker", 0, new Vector2(-14f, 0f), Character(6, 0), 3);
+        attacker.Pursue(defender);
+        var firsts = FirstAssaultCharges(attacker, 10f, out float opened, out _);
+        Assert.IsFalse(float.IsNaN(opened), "The pursuer's Assault opens on contact");
+        var times = new List<float>(firsts.Values);
+        times.Sort();
+        int front = ChargeCoordinator.FrontRankSize(attacker);
+        TestContext.WriteLine($"front rank {front}; opened {opened:F2} s; first charges at " +
+            string.Join(", ", times.ConvertAll(t => $"{t - opened:F2}")));
+        Assert.AreEqual(3, front);
+        Assert.GreaterOrEqual(times.Count, front, "The whole front rank makes its Assault charge");
+        Assert.LessOrEqual(times[front - 1] - opened, FrameTime * 0.5f, "All of them on the frame the Assault opens");
+    }
+
+    // SU-183: corner-on, the soldiers do not wait for the wheel. Every front-rank soldier whose place on the squared-up
+    // line faces the enemy charges on the contact frame, while the troop has only begun to wheel.
+    [Test]
+    public void PredictedWave_CornerOn_TheFrontRankChargesOnContactWithoutWaitingForTheWheel()
+    {
+        UseTuning("_feintsPerCharge", 0f);
+        Troop defender = PlacedLine("Defender", 1, Vector2.zero, Vector2.left, Character(12, 0), 10);
+        Vector2 heading = new(Mathf.Cos(-45f * Mathf.Deg2Rad), Mathf.Sin(-45f * Mathf.Deg2Rad));
+        Vector2 tangent = new(-heading.y, heading.x);
+        float length = LineGeometry.NaturalLength(6);
+        Vector2 leadingEnd = new(-1.75f, 1.5f);
+        Troop attacker = PlacedLine("Attacker", 0, leadingEnd - tangent * (length * 0.5f), heading, Character(8, 0), 6);
+        attacker.Pursue(defender);
+        var firsts = FirstAssaultCharges(attacker, 8f, out float opened, out int duringWheel);
+        int onContact = 0;
+        foreach (float t in firsts.Values) if (t - opened <= FrameTime * 0.5f) onContact++;
+        int front = ChargeCoordinator.FrontRankSize(attacker);
+        TestContext.WriteLine($"front rank {front}; {onContact} charged on contact, {firsts.Count} in all, " +
+            $"{duringWheel} while wheeling");
+        Assert.IsFalse(float.IsNaN(opened), "The pursuer's Assault opens on contact");
+        Assert.AreEqual(front, onContact, "The whole front rank goes on contact");
+        Assert.Greater(duringWheel, 0, "It goes while the troop is still wheeling");
     }
 
     // Two troops engaged without orders (not placed in a line either, which counts as a Line order): charges are the

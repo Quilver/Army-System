@@ -11,6 +11,55 @@ SU-128 refer to v0.9 and may have moved.
 
 ---
 
+## 2026-11-20: Movie_025, the Assault wave from predicted places (branch troop-facing-controls)
+
+### SU-183 The Assault wave is judged from where the soldiers will stand once square (Decision + Assumptions, spec §4.2, §4.3, §8; amends SU-175)
+Movie_025: Prince Julian (6 cavalry, 3 x 2) attacked the Spearmen head-on with the enemy AI paused. The troop halted at
+about 8.3 s, the centre front trooper charged at 8.4 s, the two outer front troopers at about 8.9 s, and the rear rank
+never charged. Cause: SU-175's wave sent only the soldiers with an enemy within `ChargeRange` (2.6 units, centre to
+centre) of where they stood. A troop halts at the engagement gap, so a soldier a few tenths behind its rank's line (the
+middle of a line sags about 0.3 units) had no target, and while it owed its Assault charge it made no ordinary roll
+either: it stood idle until it happened to come into reach. The designer: "An assault should have had all the cavalry
+soldiers charging simultaneously in this instance"; asked which soldiers, "every soldier that should be able to charge
+once the troop had engaged+wheeled to align fully. They should then select their charge target based on that predicted
+position"; and for the rear rank, front rank only.
+- Decision: on the frame the Assault opens, each soldier's place is predicted as if the troop had already closed to
+  `EngagementGap` and finished its assault wheel square to the face it attacks. Every soldier that may make its Assault
+  charge from its predicted place (the predicted front rank under `FrontRankChargesOnly`, with an enemy soldier within
+  `ChargeRange` of that place) charges on that frame, at a target picked from the predicted place (one of the
+  `ChargeCandidateCount` nearest, as before), and runs at it from where it actually stands. `AssaultPredictAlignment`
+  (Melee Tuning, on; needs `AssaultOneWave`) switches it; off is SU-175.
+- Decision: the rear ranks stay out of the wave (front rank only, SU-106). Julian sends 3 of his 6; the rear 3 still
+  only follow.
+- Assumption: the predicted line (`AssaultAlignmentRules`). Ranks go by how far forward each soldier stands along the
+  troop's facing now, one rank's worth (`FrontRankSize`) to a rank, so a soldier sagging or lagging a little behind its
+  rank keeps its rank. Each keeps its place along the line. The line wheels about its leading end (as the assault wheel
+  does, `AssaultWheelAboutEngagedEnd`) to the heading the wheel turns to, then closes by the gap still above
+  `EngagementGap`. The enemy is taken where it stands.
+- Assumption: against its pursuit target the wave's gate is being engaged with it (A_Distance, the Assault's own
+  trigger), not the charge gap (SU-95), since a pursuer keeps closing and the prediction closes the rest. That wave goes
+  on the contact frame, about 0.13 s (0.25 units) earlier than SU-175's, and its chargers run a little further. Any
+  other Assault (a Move or Line order engaging, or a pursuer engaging another enemy) keeps SU-95's charge gap, and its
+  prediction keeps the troop's facing and closes nothing, since such a troop holds where it is: lines that stand off
+  beyond the charge gap still make no charges.
+- Assumption: a troop with no line when it engages (a blob or column) keeps SU-175's wave.
+- Assumption: the wave is sent once per Assault. A soldier it leaves out (no enemy within reach of its predicted place,
+  e.g. past the end of a shorter enemy line) still makes its Assault charge later if it comes into reach (SU-165), and
+  followers are still not taken from front-rank soldiers that owe theirs. This replaces SU-175's corner-on assumption.
+- Measured (`AssaultWaveMeasurementTests`: Julian against the generic Spearmen on the project's tuning, first Assault
+  charge after contact). Head-on: before, 0.13, 0.13 and 2.60 s for the front rank; now 0.00 for all three. Corner-on:
+  before, 4.50, 5.37 and 5.90 s; now 0.00 for two of them, while the third had no Spearman within reach of its predicted
+  place and did not charge within 6 s. In both runs one rear trooper made an Assault charge later (head-on 4.87 s,
+  corner-on 1.63 s), once SU-106's front rank (counted from the pivot toward the enemy) took it in, as before.
+- Tests: `AssaultAlignmentRulesTests` (head-on, a sagging soldier keeps its front-rank place and the line closes
+  forward; a wheel about the leading end keeps that end). `AssaultChargeTests.PredictedWave_NarrowTroopHeadOn_...` (a
+  3 x 2 troop marching into a wider line: the whole front rank on the contact frame) and `PredictedWave_CornerOn_...` (all
+  6 of the front rank on the contact frame, while the troop wheels); with the switch off both fail (head-on, the last
+  front soldier 0.23 s late; corner-on, 1 of 6 on contact). `OneWave_HeadOn_TheWholeFrontRankChargesTogetherOnContact`,
+  failing since SU-175 (first charges 0.13 s after contact), now passes (0.00). `SoldiersComingIntoReachLater_...` runs
+  with the switch off, since it describes SU-165's later charges. `ChainEngagementScenarioTests.Charges_StartOnly...`
+  (a line order holding beyond the charge gap makes no charges) guards the non-pursuit gate.
+
 ## 2026-11-18 (2): Bigger bars, retreats through friends, the daze (branch troop-facing-controls)
 
 ### SU-182 Retreats, surrounded breaks and disorders daze the troop (Decision + Assumptions, spec §4.3, §4.5, §5.3, §5.5, §6.2, §6.4, §8)
