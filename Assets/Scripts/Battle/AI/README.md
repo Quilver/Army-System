@@ -12,7 +12,7 @@ Implements the Basic tier of the *Enemy AI Specification & Plan* (Missions 1 and
 | Formations | Hold, Guard, Skirmish, Support fire, Advance, Flank, Capture, Fall back, Chain Line |
 | Triggers | Conditions, actions, `TriggerDefinition` |
 | Mission | `AIMission`, the Basic-tier commander you configure per mission |
-| Editor | Setup tools: Mission 1 (§3), the AI vs AI test level (§6) |
+| Editor | Setup tools: Mission 1 (§3), Mission 2 (§4), the AI vs AI test level (§6) |
 | Adapters | `TroopAIAdapter`, `CapturePointAIObjective`, `BattleAIBattlefield`: the only code that knows the troop system |
 | Debug | `AIDebugOverlay` |
 
@@ -97,22 +97,47 @@ line sends the cavalry round the river onto the rearmost player troop.
 
 ## 4. Mission 2 — capture (Level 2)
 
-Scene markers:
+`M02 Battle` is saved with it set up. To rebuild it, open Level 2 and run **Leveraged Wars > AI > Set Up Mission 2
+(Level 2)**, then save the scene. The tool
+(`Editor/Mission2Setup.cs`) builds the designer's plan (SU-186): the enemy army, both objectives, the marker and the AI.
+Run it again to reset the AI settings: troops, the marker and the secondary objective that already exist stay where you
+put them; enemy troops whose names are not in the plan are removed (it asks first). The battle is won by capturing the
+primary objective (`CapturedPoint` on it); the player loses if their army routs.
 
-- **WallGap** — in the opening of the walls, red arrow facing the player.
-- Objective ids must match: `Primary` (inside the walls) and `Secondary` (add `CapturePointAIObjective` to each point).
+The map is "Twin Villages": the walled village in the north-west (its only gap faces north, away from the player), the
+wood east of the middle, the river with its bridge to the south-east and the second village beyond it. The player deploys
+south of the middle (zone top at y = -5). Every enemy troop faces the player (south) except the village guard (north).
+
+| Troop (GameObject) | Character | Detachment | Default position |
+| --- | --- | --- | --- |
+| First Line Spearmen 1, 2 | Spearman | FirstLine | (-11.7, 6), (-4.3, 6) |
+| First Line Cavalry | Cav | FirstCavalry | (-18, 6) |
+| Archers 1, 2, 3 | Archer | Archers | (-11.6, 17), (-6, 17), (-0.4, 17) |
+| Second Line Spearmen 1, 2 | Spearman | SecondLine | (-9.7, 22), (-2.3, 22) |
+| Second Line Cavalry | Cav | SecondCavalry | (9, 23) |
+| Bandit | Skirmisher | Bandit | (9, 9) |
+| Village Guard | Huskarl | VillageGuard | (-29, 25), in the wall gap |
+
+Objectives (`CapturePointAIObjective` ids):
+
+- **Primary** — the capture point inside the walls (-31.6, 14.8). Capturing it wins the battle.
+- **Secondary** — a capture point in the south-east village (44, -30.5), radius 3.5 like the primary. Holding it at the end
+  earns the *Secondary objective* achievement (70 gold, on the scene's Achievement Controller). `DestroyedOnCapture`
+  destroys it when the enemy takes it: it stays the enemy's and can never be taken again (SU-184).
+
+Marker (under `EnemyAI/Markers`): **WallGap** (-29, 32), just outside the gap in the walls, red arrow facing out (north).
 
 Detachments:
 
-| Id | Troops | Starting formation | Settings |
-| --- | --- | --- | --- |
-| FirstLine | 2 infantry | Advance | Target: Nearest Opponent |
-| FirstCavalry | 1 cavalry | Hold | Anchor: Detachment → FirstLine, Side Offset −10 (left of the line) · Aggro 5 · Leash 8 |
-| SecondLine | 2 infantry | Hold | Anchor: Start Position · Aggro 8 · Leash 13 |
-| Archers | 3 archers | Support Fire | Supported: SecondLine · Stand Off −5 (in front, as on the plan) |
-| SecondCavalry | 1 cavalry | Hold | Anchor: Start Position · Aggro 5 · Leash 8 |
-| Bandit | 1 infantry | Capture | Objective: Secondary |
-| Boss | 1 infantry | Guard | Guarded: Objective → Primary · Guard Position: Start Position · Aggro 6 · Leash 8 |
+| Id | Starting formation | Settings |
+| --- | --- | --- |
+| FirstLine | Advance | Target: Nearest Opponent |
+| FirstCavalry | Hold | Anchor: Detachment → FirstLine, Side Offset +10 (the line's right: west, the plan's left) · Aggro 5 · Leash 8 |
+| Archers | Skirmish | Fallback Point: Detachment → SecondLine, Forward Offset 5 (in front of it) · Minimum Range 7 · Max Distance From Fallback 15 · Line Gap 2 |
+| SecondLine | Hold | Anchor: Start Position · Aggro 8 · Leash 13 |
+| SecondCavalry | Hold | Anchor: Start Position · Aggro 5 · Leash 8 |
+| Bandit | Capture | Objective: Secondary · Aggro 6 |
+| VillageGuard | Guard | Guarded: Objective → Primary · Guard Position: Start Position · Aggro 6 · Leash 16 |
 
 Triggers:
 
@@ -122,11 +147,19 @@ Triggers:
 | SecondLineGo | Logic / Any Of: Opponent / Near Detachment (SecondLine, 13); Detachment Status (FirstLine, Broken) | Set Formation: SecondLine → Advance · Set Formation: SecondCavalry → Flank (Target: Nearest Opponent To Detachment, SecondLine) |
 | Bypass | Logic / All Of: Opponent / Near Point (WallGap, 13); Detachment Status (SecondLine, Waiting) | Set Formation: SecondLine → Hold (Anchor: Transform → WallGap · Aggro 8 · Leash 12) · Enable Trigger: SecondLineGo, unticked |
 
-The archers follow SecondLine automatically, including to the wall gap. Win and loss conditions stay in the battle
-mechanics.
+How it plays: the first line marches on the player, its cavalry keeping pace on the west wing and going round once the
+line engages. The archers walk out from in front of the second line to shoot at the player while the first line fights,
+and fall back to the second line if the player comes for them (their fallback point moves with the second line, to the
+wall gap too). The second line holds until the player comes within 13 of it or the first line breaks, then attacks with
+its cavalry. The bandit sets off at once, round the wood and over the bridge, to take and destroy the village: the player
+has to send fast troops straight away to save the gold. The village guard holds the wall gap; a player who gets round to
+the gap without meeting the second line finds it there too.
 
-Gate check: both win paths work, and a player who rushes past the first line finds the second line and archers at the
-wall gap.
+Gate check (`Mission2SetupTests.PlayedBattle`, run explicitly): with the player standing in the deployment zone, the
+first line marches on it and engages, its cavalry goes round, the archers shoot while the first line fights, the bandit
+destroys the village and the guard keeps to the gap. `Mission2SetupTests.SetUpBuildsThePlan` checks the tool's result
+and `TheSavedSceneIsSetUp` the saved scene. Measured: the first line engages at 2 s, the archers fire from about y = 3,
+and the bandit reaches the village at 17 s and destroys it at 21 s (SU-186).
 
 ## 5. Tuning
 

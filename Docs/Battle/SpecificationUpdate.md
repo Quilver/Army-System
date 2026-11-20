@@ -40,6 +40,52 @@ they would have crowded onto one spot.
   The leash (Max Distance From Fallback) and the choice of target are still measured from the point. A single troop's
   place is the point itself, so Mission 1's archer is unchanged.
 
+### SU-186 Mission 2 enemy AI built from the plan (Decision + Assumptions, AI README §4)
+- Decision: **Leveraged Wars > AI > Set Up Mission 2 (Level 2)** (`Mission2Setup`) builds the plan in `M02 Battle`: the
+  enemy army (11 troops), the WallGap marker, the objectives (Primary, the existing point inside the walls, wins the
+  battle; Secondary, new, destroyed by the enemy) and the EnemyAI with seven detachments (FirstLine, FirstCavalry,
+  Archers, SecondLine, SecondCavalry, Bandit, VillageGuard) and three triggers (FirstCavalryFlank, SecondLineGo, Bypass),
+  as README §4, and `M02 Battle` is saved with it. Run again, it keeps existing troops, the marker and the secondary
+  objective where they stand, removes enemy troops not in the plan (asking first) and rebuilds the AI and the secondary
+  objective's achievement.
+- Assumption: **troop types** are the generic characters: Spearman for the four infantry of the two lines, Cav, Archer,
+  Skirmisher for the bandit (a light raider, speed 7) and Huskarl for the village guard. The four placeholder Skirmisher
+  troops (`BattleReadyUnit`) are removed.
+- Assumption: **placement** on the Twin Villages map (README §4). The plan is a sketch, so the troops keep its order of
+  features rather than its distances: the first line at y = 6, 11 north of the deployment zone's top edge; the archers 5
+  in front of the second line (y = 17 and 22), between the walls and the wood; the second line's cavalry north-west of
+  the wood; the bandit west of the wood; the village guard inside the wall gap (the gap faces north, away from the player),
+  facing out.
+- Assumption (amends SU-68): the archers **skirmish** from in front of the second line (Fallback Point: Detachment →
+  SecondLine, Forward Offset 5 · Minimum Range 7 · Max Distance From Fallback 15) instead of Support fire at stand-off −5.
+  Support fire shoots only from its slot (range 15), and the first line meets the player more than 20 further south, so
+  the archers would have been silent while the player "is battling the first line". The fallback point still moves with
+  the second line, to the wall gap too.
+- Assumption (amends SU-68): the first line's cavalry holds on the line's **right**, Side Offset **+10**: the line faces
+  south, so its right is west, the plan's left. SU-68's −10 put it on the east.
+- Assumption: the **village guard** guards the primary objective from the gap, 11 inside it, so its Leash is **16** (README
+  §4 had 8, which would not reach the objective) with Aggro 6.
+- Assumption: **WallGap** (-29, 32) is just outside the gap, facing north. Since the gap faces away from the player, Bypass
+  mostly catches a player who goes round the walls' west side; one coming up the east side meets the second line first.
+- Assumption: the **secondary objective** is a new capture point in the south-east village (44, -30.5), scale 7 like the
+  primary (radius 3.5), neutral at the start. Its gold is a custom global achievement, *Secondary objective*
+  (`CapturedVictoryPoint`, **70 gold**, as Level 1's reclaimed farm), on the scene's Achievement Controller.
+- Assumption: Level 2 had **no Achievement Controller**, so the tool adds one to Controllers. Level 2 therefore now also
+  tracks the every-battle and mission-sheet achievements (Mission Complete, 200 gold) and the characters' achievements.
+- Assumption: the bandit sets off as the battle starts and, once the village is destroyed, holds there (Capture holds a
+  taken objective, SU-71), fighting what comes within 6. The player has to send fast troops at once to save the gold.
+- Measured (`Mission2SetupTests.PlayedBattle`, the player's five default troops standing in the deployment zone, 120 s):
+  the first line engages at 2 s and fights around y = -4; FirstCavalryFlank fires at 2 s and the cavalry goes round the
+  west side. The archers walk out to y = 2 to 4 (the end of their leash) and fire 17 volleys, all while the first line
+  fights (few, since the player troops in melee are not shot at). The bandit reaches the village at 17 s (about 2.7 units
+  a second) and destroys it at 21 s, so a player who wants the gold must send a fast troop over the bridge at once. The
+  second line and the village guard never move.
+- Tests: `Mission2SetupTests.SetUpBuildsThePlan` (troops, objectives, achievement, detachments, triggers) and
+  `TheSavedSceneIsSetUp` (the same checks on the saved `M02 Battle`); `Mission2SetupTests.PlayedBattle` (explicit: with
+  the player standing in the deployment zone, the first line marches and engages, its cavalry goes round, the archers
+  shoot while it fights, the bandit destroys the village, the guard keeps to the gap). The played test removes the
+  briefing cutscene first, since it holds the game paused until it is read.
+
 ---
 
 ## 2026-11-20: Movie_025, the Assault wave from predicted places (branch troop-facing-controls)

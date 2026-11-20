@@ -270,7 +270,7 @@ namespace LeveragedWars.Battle.AI.EditorTools
         }
 
         /// <summary>Removes director.BeginBattle from Battle's Deploy event (an earlier version of this tool added it).</summary>
-        static bool UnwireDeploy(global::Battle battle, AIDirector director)
+        internal static bool UnwireDeploy(global::Battle battle, AIDirector director)
         {
             FieldInfo info = typeof(global::Battle).GetField("_Deploy", BindingFlags.Instance | BindingFlags.NonPublic);
             if (!(info?.GetValue(battle) is UnityEvent deploy)) return false;
@@ -301,16 +301,16 @@ namespace LeveragedWars.Battle.AI.EditorTools
 
         static string Names(IEnumerable<Troop> troops) => string.Join(", ", troops.Select(t => t.name));
 
-        static T GetOrAdd<T>(GameObject go) where T : Component =>
+        internal static T GetOrAdd<T>(GameObject go) where T : Component =>
             go.TryGetComponent(out T existing) ? existing : Undo.AddComponent<T>(go);
 
-        static IEnumerable<T> FindInScene<T>(Scene scene) where T : Component =>
+        internal static IEnumerable<T> FindInScene<T>(Scene scene) where T : Component =>
             scene.GetRootGameObjects().SelectMany(g => g.GetComponentsInChildren<T>(true));
 
-        static Transform FindByName(Scene scene, string name) =>
+        internal static Transform FindByName(Scene scene, string name) =>
             scene.GetRootGameObjects().SelectMany(g => g.GetComponentsInChildren<Transform>(true)).FirstOrDefault(t => t.name == name);
 
-        static void SetIcon(GameObject go)
+        internal static void SetIcon(GameObject go)
         {
             if (EditorGUIUtility.IconContent("sv_icon_dot13_pix16_gizmo")?.image is Texture2D icon)
                 EditorGUIUtility.SetIconForObject(go, icon);
