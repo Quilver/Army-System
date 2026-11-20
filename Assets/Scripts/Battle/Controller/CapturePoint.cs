@@ -2,6 +2,7 @@ using UnityEngine;
 
 // A point the armies fight over. Every living soldier inside the point's 2D collider pulls control toward its army;
 // control moves at a rate set by the difference in soldiers (capped at 30) and is captured past triggerThreshold.
+// A destroyed point (DestroyPoint, SU-184) keeps its controller, stops counting soldiers and never changes hands again.
 public class CapturePoint : MonoBehaviour
 {
     public enum PointController
@@ -26,11 +27,15 @@ public class CapturePoint : MonoBehaviour
     [SerializeField, Range(-1, 1)] float holder;
     [SerializeField, Range(0, 1)] float triggerThreshold = 0.8f;
     [SerializeField, Tooltip("Used when the point has no Collider2D.")] float _radius = 5f;
+    [SerializeField, Tooltip("Colour of the point once destroyed (DestroyedOnCapture).")]
+    Color DestroyedColour = new Color(0.2f, 0.2f, 0.2f, 0.7f);
 
     // Raised when an army takes the point (Battle.player or Battle.enemy).
     public static System.Action<CapturePoint, Army> CapturedBy;
     public static event System.Action<CapturePoint, bool> PointCaptured;
     public event System.Action<bool> capturedBy;
+    // Raised once, when the point is destroyed (SU-184).
+    public event System.Action destroyed;
 
     SpriteRenderer _sprite;
     Collider2D _area;
@@ -40,6 +45,8 @@ public class CapturePoint : MonoBehaviour
     PointController _controller;
 
     public PointController Controller => _controller;
+    // True once destroyed: the point no longer counts soldiers and can never change hands again (SU-184).
+    public bool IsDestroyed { get; private set; }
     // Both armies have living soldiers inside the point (as of the last count).
     public bool IsContested => _playerSoldiers > 0 && _enemySoldiers > 0;
     // Rough radius of the point: the 2D collider's larger half-extent, or the fallback radius without one.
@@ -63,6 +70,7 @@ public class CapturePoint : MonoBehaviour
 
     void Update()
     {
+        if (IsDestroyed) return;
         if (Time.time >= _nextCount)
         {
             _nextCount = Time.time + CountInterval;
@@ -80,6 +88,18 @@ public class CapturePoint : MonoBehaviour
         capturedBy?.Invoke(player);
         PointCaptured?.Invoke(this, player);
         if (Battle.Instance != null) CapturedBy?.Invoke(this, player ? Battle.Instance.player : Battle.Instance.enemy);
+    }
+
+    // Destroys the point (SU-184), e.g. a village razed by the army that took it: it keeps its controller, stops counting
+    // soldiers (so it is no longer contested), never changes hands again and is drawn in the destroyed colour.
+    public void DestroyPoint()
+    {
+        if (IsDestroyed) return;
+        IsDestroyed = true;
+        _soldierDifference = _playerSoldiers = _enemySoldiers = 0;
+        if (_sprite == null) _sprite = GetComponent<SpriteRenderer>();
+        if (_sprite != null) _sprite.color = DestroyedColour;
+        destroyed?.Invoke();
     }
 
     PointController ControllerFor(float value)

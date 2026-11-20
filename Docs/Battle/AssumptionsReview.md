@@ -1,6 +1,6 @@
 # Assumptions review
 
-Every unconfirmed Assumption in `SpecificationUpdate.md` (SU-01 to SU-183), grouped by system so they can be confirmed in one sitting: 302 assumptions across 115 SU entries. SU-183 (Movie_025: the Assault wave judged from predicted places) was added on 2026-11-20; it replaced SU-175's corner-on item. SU-180 to SU-182 (bigger floating bars, retreats through friends, the daze) were added on 2026-11-18 (2). SU-178 and SU-179 (Movie_024: chains filled to the joints, the AI going round its friends) were added on 2026-11-18; SU-178 replaced the last sentence of the SU-2 item. SU-176 and SU-177 (the AI's Chain Line and the AI vs AI test level) were added on 2026-11-17. SU-174 and SU-175 (the Assault in one wave, on contact) were added on 2026-11-15. SU-173 (wheeling on steering circles) and SU-169 to SU-172 (Movie_023: hidden enemy orders, stronger borders, the Assault chain reaction, no strafing in line) were added on 2026-11-15. SU-168 (the slowed finish and the Victory or Defeat banner) was added on 2026-11-15. SU-167 (the plus for boosted morale on the troop card) was added on 2026-11-15. SU-166 (the soldier wave) was added on 2026-11-15. SU-165 (the Assault as one charge per soldier) was added on 2026-11-15; it superseded the SU-148 item and SU-164's "a troop in Assault does not feint", which were removed. SU-164 (feints) was added on 2026-11-15. SU-163 (the assault wheel) was added on 2026-11-15. SU-162 (the troop border) was added on 2026-11-15. SU-161 (flush fronts) was added on 2026-11-15. SU-159 (attack clicks) and SU-160 (linked group lines) were added on 2026-11-15; SU-160 superseded SU-157, whose items were removed. SU-158 (engaged soldiers face their enemy) was added on 2026-11-15. SU-154 to SU-157 (troop facing controls and line spacing, on the `troop-facing-controls` branch) and SU-148 to SU-153 (class design rules) were added on 2026-11-14. SU-136 to SU-140 were added on 2026-11-08; the SU-74 and SU-121 items about routed troops never leaving the map were removed (SU-138 replaced them). Rebuilt 2026-11-08 (SU-135): assumptions that later entries overtook were removed, missing ones were added, and the groups were tidied. The spec (v0.10) tags text that rests on one of these as **[A: SU-n]**.
+Every unconfirmed Assumption in `SpecificationUpdate.md` (SU-01 to SU-184), grouped by system so they can be confirmed in one sitting: 306 assumptions across 118 SU entries. SU-184 (destroyed capture points) was added on 2026-11-20 (2). SU-183 (Movie_025: the Assault wave judged from predicted places) was added on 2026-11-20; it replaced SU-175's corner-on item. SU-180 to SU-182 (bigger floating bars, retreats through friends, the daze) were added on 2026-11-18 (2). SU-178 and SU-179 (Movie_024: chains filled to the joints, the AI going round its friends) were added on 2026-11-18; SU-178 replaced the last sentence of the SU-2 item. SU-176 and SU-177 (the AI's Chain Line and the AI vs AI test level) were added on 2026-11-17. SU-174 and SU-175 (the Assault in one wave, on contact) were added on 2026-11-15. SU-173 (wheeling on steering circles) and SU-169 to SU-172 (Movie_023: hidden enemy orders, stronger borders, the Assault chain reaction, no strafing in line) were added on 2026-11-15. SU-168 (the slowed finish and the Victory or Defeat banner) was added on 2026-11-15. SU-167 (the plus for boosted morale on the troop card) was added on 2026-11-15. SU-166 (the soldier wave) was added on 2026-11-15. SU-165 (the Assault as one charge per soldier) was added on 2026-11-15; it superseded the SU-148 item and SU-164's "a troop in Assault does not feint", which were removed. SU-164 (feints) was added on 2026-11-15. SU-163 (the assault wheel) was added on 2026-11-15. SU-162 (the troop border) was added on 2026-11-15. SU-161 (flush fronts) was added on 2026-11-15. SU-159 (attack clicks) and SU-160 (linked group lines) were added on 2026-11-15; SU-160 superseded SU-157, whose items were removed. SU-158 (engaged soldiers face their enemy) was added on 2026-11-15. SU-154 to SU-157 (troop facing controls and line spacing, on the `troop-facing-controls` branch) and SU-148 to SU-153 (class design rules) were added on 2026-11-14. SU-136 to SU-140 were added on 2026-11-08; the SU-74 and SU-121 items about routed troops never leaving the map were removed (SU-138 replaced them). Rebuilt 2026-11-08 (SU-135): assumptions that later entries overtook were removed, missing ones were added, and the groups were tidied. The spec (v0.10) tags text that rests on one of these as **[A: SU-n]**.
 
 ## How to use this
 
@@ -18,10 +18,10 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 - [Troops, characters, stats & equipment](#troops-characters-stats--equipment) (20)
 - [Soldier simulation & physics](#soldier-simulation--physics) (12)
 - [Formations, movement & geometry](#formations-movement--geometry) (53)
-- [Combat (melee, charges, ranged)](#combat-melee-charges-ranged) (49)
+- [Combat (melee, charges, ranged)](#combat-melee-charges-ranged) (55)
 - [Morale, retreat & rout](#morale-retreat--rout) (29)
-- [Controls, orders & battle UI](#controls-orders--battle-ui) (50)
-- [Campaign, tent, missions & deployment](#campaign-tent-missions--deployment) (45)
+- [Controls, orders & battle UI](#controls-orders--battle-ui) (57)
+- [Campaign, tent, missions & deployment](#campaign-tent-missions--deployment) (47)
 - [Enemy AI](#enemy-ai) (29)
 - [Tooling & other](#tooling--other) (4)
 
@@ -627,6 +627,11 @@ When a group is done, ask Claude to fold it into `specifications.md` (and remove
 - [ ] A note is a loan when it has a Gold property; the title is the file name unless a Title property is set →
 - [ ] Old loans were converted with Cost = Gold × (1 + interest rate): Seed Loan, hard repays 105, Promissory note 121 →
 - [ ] M01 offers the designer's Loan, easy note instead of the old Seed Loan, easy →
+
+**SU-184** A capture point can be destroyed by the army that takes it
+
+- [ ] a destroyed point is only drawn in a **Destroyed Colour** (dark grey at 70%); no other effect yet (no fire, floating text or combat-log line). →
+- [ ] the player's side objective on a destroyed point is **lost for good** (the enemy is recorded as its owner and it cannot be retaken); the player taking it does not destroy it. →
 
 ## Enemy AI
 

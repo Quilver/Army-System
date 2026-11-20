@@ -11,6 +11,29 @@ SU-128 refer to v0.9 and may have moved.
 
 ---
 
+## 2026-11-20 (2): Mission 2 enemy AI from the plan (branch troop-facing-controls)
+
+The designer: "Here is the plan for mission 2. Can you implement the ai". The plan (Mission_2_plan.png): a first line of
+cavalry and 2 infantry "to fight player. Cavalry to flank"; 3 archers "shooting while player army is battling first
+line"; a second line of 2 infantry and a cavalry; "Enemy infantry. Guards objective" at the walls; an "Enemy Bandit,
+moves to capture objective and destroy it"; the primary objective inside the walls ("capture to win battle"), the
+secondary objective across the river ("capture to get additional gold"); walls and forest block movement and shooting,
+the river blocks movement.
+
+### SU-184 A capture point can be destroyed by the army that takes it (Decision + Assumptions, AI README §4)
+- Decision: the bandit destroys the secondary objective by capturing it. This settles SU-71's open point on what the
+  bandit does with it. `DestroyedOnCapture` (on a capture point, `Battle/Controller/`) destroys its point when its
+  **Destroyed By** army (default Enemy) takes it. `CapturePoint.DestroyPoint()`: the point keeps its controller, stops
+  counting soldiers (so it is no longer contested), never changes hands again, and raises `destroyed` once.
+- Assumption: a destroyed point is only drawn in a **Destroyed Colour** (on `CapturePoint`, dark grey at 70%); there is no
+  other effect yet (no fire, floating text or combat-log line).
+- Assumption: the player's side objective on a destroyed point is lost for good: `CapturedVictoryPoint` already records
+  the enemy as its owner at the capture, and the point cannot be retaken. The player taking it does not destroy it.
+- Tests: `CapturePointDestroyTests` (the enemy's capture destroys it, the player's does not; destroyed once, drawn dark,
+  not contested).
+
+---
+
 ## 2026-11-20: Movie_025, the Assault wave from predicted places (branch troop-facing-controls)
 
 ### SU-183 The Assault wave is judged from where the soldiers will stand once square (Decision + Assumptions, spec §4.2, §4.3, §8; amends SU-175)
