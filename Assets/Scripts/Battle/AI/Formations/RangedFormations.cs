@@ -32,6 +32,10 @@ namespace LeveragedWars.Battle.AI
                  "within the leash.")]
         public float escapeDistance = 8f;
 
+        [Tooltip("With several troops, each falls back to its own place in a line across the fallback point, this far " +
+                 "apart (units). A single troop stands on the point itself.")]
+        public float lineGap = 2f;
+
         public override Formation Create() => new SkirmishFormation(this);
     }
 
@@ -43,6 +47,8 @@ namespace LeveragedWars.Battle.AI
     /// threat (both troops' half-widths + Route Clearance Margin), the troop first moves Escape Distance away from it,
     /// inside the leash and on the side that keeps clear of it, then heads for the fallback point once the way is clear.
     /// Walking out to firing range never passes through an enemy either: the troop stands and shoots instead.
+    /// With several troops the fallback point is the centre of a line (facing the fallback facing) and each troop falls
+    /// back to its own place in it, Line Gap apart (SU-185); the leash and the targets are still measured from the point.
     /// </summary>
     public sealed class SkirmishFormation : Formation
     {
@@ -60,6 +66,8 @@ namespace LeveragedWars.Battle.AI
         readonly SkirmishDefinition def;
         readonly HashSet<AITroopAgent> fallingBack = new HashSet<AITroopAgent>();
         readonly Dictionary<AITroopAgent, Vector3> escapeSpots = new Dictionary<AITroopAgent, Vector3>();
+        readonly List<LineSlot> homeSlots = new List<LineSlot>();
+        readonly Dictionary<AITroopAgent, Vector3> homes = new Dictionary<AITroopAgent, Vector3>();
         Vector3 fallback;
         Vector3 fallbackFacing;
 
@@ -68,6 +76,9 @@ namespace LeveragedWars.Battle.AI
         public override void Tick()
         {
             def.fallbackPoint.TryResolve(Detachment, Blackboard, out fallback, out fallbackFacing);
+            FormationUtility.ComputeLine(Troops, fallback, fallbackFacing, def.lineGap, homeSlots);
+            homes.Clear();
+            foreach (LineSlot slot in homeSlots) homes[slot.Agent] = slot.Position;
             bool engaged = false, moving = false, retreating = false;
 
             foreach (AITroopAgent a in Troops)
@@ -75,7 +86,7 @@ namespace LeveragedWars.Battle.AI
                 IAITroop nearest = Blackboard.NearestOpponent(a.Position);
                 float nearestDistance = nearest != null ? AIGeometry.FlatDistance(a.Position, nearest.Position) : float.PositiveInfinity;
                 Vector3 faceEnemy = nearest != null ? AIGeometry.Direction(a.Position, nearest.Position, fallbackFacing) : fallbackFacing;
-                float toFallback = AIGeometry.FlatDistance(a.Position, fallback);
+                float toFallback = AIGeometry.FlatDistance(a.Position, Home(a));
 
                 // Melee troops, and ranged troops out of ammunition, stay at the fallback point.
                 if (!a.Troop.IsRanged || !a.Troop.HasAmmo)
@@ -150,7 +161,7 @@ namespace LeveragedWars.Battle.AI
             }
 
             bool escaping = escapeSpots.ContainsKey(agent);
-            if (threat == null || !RouteBlocked(agent, threat, fallback, escaping ? RouteReleaseMargin : 0f))
+            if (threat == null || !RouteBlocked(agent, threat, Home(agent), escaping ? RouteReleaseMargin : 0f))
             {
                 escapeSpots.Remove(agent);
                 return ReturnToFallback(agent, facing) ? Withdrawal.Travelling : Withdrawal.Holding;
@@ -175,17 +186,21 @@ namespace LeveragedWars.Battle.AI
             return Withdrawal.Travelling;
         }
 
-        /// <summary>Falls back to the safe point, or holds there once arrived. Returns true while travelling.</summary>
+        /// <summary>Falls back to the troop's place at the safe point, or holds there once arrived. Returns true while travelling.</summary>
         bool ReturnToFallback(AITroopAgent agent, Vector3 facing)
         {
-            if (AIGeometry.FlatDistance(agent.Position, fallback) > ArrivalRadius)
+            Vector3 home = Home(agent);
+            if (AIGeometry.FlatDistance(agent.Position, home) > ArrivalRadius)
             {
-                agent.FallBack(fallback);
+                agent.FallBack(home);
                 return true;
             }
-            agent.Hold(fallback, facing);
+            agent.Hold(home, facing);
             return false;
         }
+
+        /// <summary>The troop's own place at the fallback point: the point itself for a lone troop, else its place in the line.</summary>
+        Vector3 Home(AITroopAgent agent) => homes.TryGetValue(agent, out Vector3 home) ? home : fallback;
 
         /// <summary>How far (units) a route keeps from the threat: both troops' half-widths plus the margin.</summary>
         float Clearance(AITroopAgent agent, IAITroop threat) =>
@@ -214,6 +229,7 @@ namespace LeveragedWars.Battle.AI
             float bestScore = float.NegativeInfinity;
             float clearance = Clearance(agent, threat);
             Vector3 away = AIGeometry.Direction(threat.Position, agent.Position, -fallbackFacing);
+            Vector3 home = Home(agent);
 
             foreach (float turn in EscapeHeadingsDegrees)
             {
@@ -222,8 +238,8 @@ namespace LeveragedWars.Battle.AI
                 if (AIGeometry.FlatDistance(agent.Position, candidate) <= ArrivalRadius) continue;
                 if (RouteBlocked(agent, threat, candidate, 0f)) continue;
 
-                bool clear = AIGeometry.DistanceToSegment(threat.Position, candidate, fallback) >= clearance;
-                float score = clear ? -AIGeometry.FlatDistance(candidate, fallback) : AIGeometry.FlatDistance(candidate, threat.Position);
+                bool clear = AIGeometry.DistanceToSegment(threat.Position, candidate, home) >= clearance;
+                float score = clear ? -AIGeometry.FlatDistance(candidate, home) : AIGeometry.FlatDistance(candidate, threat.Position);
                 if (found && ((bestClear && !clear) || (bestClear == clear && score <= bestScore))) continue;
                 found = true;
                 bestClear = clear;
@@ -237,6 +253,7 @@ namespace LeveragedWars.Battle.AI
         {
             fallingBack.Clear();
             escapeSpots.Clear();
+            homes.Clear();
         }
 
         public override void DrawGizmos()

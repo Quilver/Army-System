@@ -32,6 +32,14 @@ the river blocks movement.
 - Tests: `CapturePointDestroyTests` (the enemy's capture destroys it, the player's does not; destroyed once, drawn dark,
   not contested).
 
+### SU-185 Several skirmishers fall back into a line (Assumption, AI README §5; AI only)
+Mission 2 has three archers in one Skirmish detachment, and Skirmish sent every troop to the fallback point itself, so
+they would have crowded onto one spot.
+- Assumption: with more than one troop the fallback point is the centre of a line (facing the fallback facing); each troop
+  falls back to, holds at and escapes towards its own place in it, **Line Gap** apart (new Skirmish setting, default 2).
+  The leash (Max Distance From Fallback) and the choice of target are still measured from the point. A single troop's
+  place is the point itself, so Mission 1's archer is unchanged.
+
 ---
 
 ## 2026-11-20: Movie_025, the Assault wave from predicted places (branch troop-facing-controls)

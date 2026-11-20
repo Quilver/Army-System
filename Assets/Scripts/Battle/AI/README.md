@@ -135,6 +135,10 @@ wall gap.
 - **Aggro and leash ranges** decide how easily detachments are baited. Test by deliberately pulling single troops away.
 - **Skirmish minimum range** must be well below the archer's range × preferred range fraction, or it will fall back as
   soon as it arrives (range 20 × 0.85 = 17, so 6 leaves room).
+- **Several skirmishers** (SU-185): with more than one troop, the fallback point is the centre of a line facing the
+  fallback facing, and each troop falls back to its own place in it, **Line Gap** (default 2) apart, so they do not crowd
+  onto one spot. The leash and the choice of target are still measured from the point itself. A single troop stands on the
+  point, as before.
 - **Skirmish fall back never goes through the threat.** A skirmisher locked in melee does not fall back: it fights back
   and morale decides. If the straight way to the fallback point passes within the clearance of the nearest enemy (half
   of each troop's frontage + **Route Clearance Margin**, default 2), it first moves **Escape Distance** (default 8) away
