@@ -86,6 +86,10 @@ All panels: UGUI overlay, title, close button, tent dimmed behind. Existing view
 ### 4.5 Court dialogue (Stub)
 - Clicking a court member plays their `DialogueScript` for this mission in the briefing dialogue box, if one is
   assigned; otherwise a built-in placeholder line (SU-146). Relationships and quests are not built.
+- Each court figure shows the portrait of its scene's **primary speaker** (the first character who talks with a
+  portrait) in place of the placeholder Tactician, Captain and Dispatch-bearer art, as tall as the figure's slot; its
+  hover name is that character's unless the mission sheet names the member. No scene: the sheet's court portrait if
+  set, else the placeholder figure (SU-187).
 
 ## 5. Rules carried over unchanged
 

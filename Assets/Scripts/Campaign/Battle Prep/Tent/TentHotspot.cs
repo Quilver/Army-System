@@ -28,6 +28,7 @@ namespace BattlePrep.Tent
         public string DisplayName => _displayName;
         public TentAction Action => _action;
         public int CourtIndex => _courtIndex;
+        protected float AlphaThreshold => _alphaThreshold;
 
         // Text shown in the tooltip. Read every frame while shown, so it can show live values (gold, readiness).
         public virtual string HoverText => _displayName;

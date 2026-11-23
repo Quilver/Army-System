@@ -21,6 +21,25 @@ namespace Cutscene
             SetWarnings(warnings);
         }
 
+        // The scene's primary speaker: the first character who talks with a portrait on stage (narration and names
+        // never given an image are skipped). The tent shows a court member as this character (SU-187).
+        public bool TryGetPrimarySpeaker(out string speaker, out Sprite portrait)
+        {
+            foreach (var line in _lines)
+            {
+                if (line == null) continue;
+                var sprite = line.SpeakerSide == DialogueSide.Left ? line.LeftPortrait
+                           : line.SpeakerSide == DialogueSide.Right ? line.RightPortrait : null;
+                if (sprite == null) continue;
+                speaker = line.Speaker;
+                portrait = sprite;
+                return true;
+            }
+            speaker = null;
+            portrait = null;
+            return false;
+        }
+
         // The scene as plain text, one paragraph per text box ("Speaker: text"); narration has no speaker.
         // Used where a scene is read rather than played, e.g. the briefing on the war map.
         public string AsText()

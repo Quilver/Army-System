@@ -20,7 +20,8 @@ namespace BattlePrep
         [Tooltip("Loan offers pinned up in War Debts, in this order. Loan Offers are made from notes in the story " +
                  "vault's 3. Loans folder.")]
         public List<LoanOffer> loans = new();
-        [Tooltip("The three court members: 0 Tactician (at the war table), 1 Captain (by the pole), 2 Dispatch-bearer (on the stool).")]
+        [Tooltip("The three court members, by where they stand in the tent: 0 behind the war table (Tactician), 1 by the " +
+                 "pole (Captain), 2 on the stool (Dispatch-bearer). The tent shows each as their scene's primary speaker.")]
         public CourtMember[] court = new CourtMember[3];
         [Tooltip("Shows the glowing sealed dispatch on the dispatch-bearer.")]
         public bool questAvailable;
@@ -51,7 +52,11 @@ namespace BattlePrep
     [System.Serializable]
     public class CourtMember
     {
+        [Tooltip("Hover name. Empty: the scene's primary speaker (the first character who talks with a portrait), " +
+                 "else the seat's title.")]
         public string name;
+        [Tooltip("Used only without a scene, or when no one in it has a portrait: the tent figure and the placeholder " +
+                 "line. With a scene the tent shows its primary speaker's portrait (SU-187).")]
         public Sprite portrait;
         [Tooltip("Played when the player talks to this member: a Dialogue Script made from a story note. Empty: a " +
                  "built-in placeholder line.")]

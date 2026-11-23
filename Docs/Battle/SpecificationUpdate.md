@@ -11,6 +11,28 @@ SU-128 refer to v0.9 and may have moved.
 
 ---
 
+## 2026-11-23: Court figures show their scene's speaker (tent hub)
+
+The designer: "For the battle prep menu, I want to use the characters portraits of the primary speaker for the court
+dialogue scene instead of the Captain, Tactician, and DispatchBearer".
+
+### SU-187 The tent's court figures are their scenes' primary speakers (Decision + Assumptions, TentHub §2 rows 5-7, §4.5)
+- Decision: each court figure in the tent (the Tactician's, Captain's and Dispatch-bearer's places) shows the portrait of
+  its scene's **primary speaker** instead of the placeholder figure, chosen per mission when the tent opens
+  (`TentHubController.ShowCourtPortraits`, `CourtHotspot.ShowPortrait`, `DialogueScript.TryGetPrimarySpeaker`).
+- Assumption: the primary speaker is the **first character who talks with a portrait on stage**; narration and names
+  never given an image are skipped. In Laurice's Court Scene that is Laurice, although Prince Julian has more lines.
+- Assumption: the portrait is drawn as tall as the figure's slot, at the portrait's own shape, keeping the slot's centre
+  and bottom edge, so a portrait can be wider than the figure it replaces (the Captain's 70-wide slot shows a 3:4
+  portrait about 180 wide, partly over the tent pole). Opaque portraits take clicks over their whole rectangle; a
+  Read/Write cut-out keeps alpha hit testing.
+- Assumption: the hover name follows: the mission sheet's court name if set, else the primary speaker's name, else the
+  seat's title (Tactician, Captain, Dispatch-bearer).
+- Assumption: a member with no scene, or whose scene has no portrait, shows the mission sheet's court portrait if one is
+  set, otherwise keeps the placeholder figure; the sheet's portrait is no longer shown when a scene has a speaker.
+- Tests: `CourtPortraitTests` (the first speaker with a portrait, either side, none in pure narration; the figure swaps
+  at the slot's height and swaps back).
+
 ## 2026-11-20 (2): Mission 2 enemy AI from the plan (branch troop-facing-controls)
 
 The designer: "Here is the plan for mission 2. Can you implement the ai". The plan (Mission_2_plan.png): a first line of

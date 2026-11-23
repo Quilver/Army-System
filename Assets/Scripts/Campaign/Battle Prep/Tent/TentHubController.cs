@@ -93,6 +93,7 @@ namespace BattlePrep.Tent
                 }
             if (_dimmer != null) _dimmer.SetActive(false);
             if (_dispatchGlow != null) _dispatchGlow.SetActive(Data != null && Data.questAvailable);
+            ShowCourtPortraits();
             PlayBriefing();
         }
 
@@ -293,7 +294,7 @@ namespace BattlePrep.Tent
             {
                 // No scene for this member on this mission: a built-in placeholder line.
                 string line = index >= 0 && index < DefaultCourtLines.Length ? DefaultCourtLines[index] : "...";
-                _dialogue.PlayLine(name, line, member?.portrait, index == 2, EnterHub);
+                _dialogue.PlayLine(name, line, CourtPortrait(index), index == 2, EnterHub);
             }
         }
 
@@ -302,11 +303,33 @@ namespace BattlePrep.Tent
 
         // --- Court info ---
 
+        // Each court figure in the tent shows its member's portrait for this mission (SU-187); members without one keep
+        // the placeholder figure.
+        void ShowCourtPortraits()
+        {
+            if (_hotspotLayer == null) return;
+            foreach (var court in _hotspotLayer.GetComponentsInChildren<CourtHotspot>(true))
+                court.ShowPortrait(CourtPortrait(court.CourtIndex));
+        }
+
+        // The member's name on the mission sheet, else their scene's primary speaker, else the seat's title.
         public string CourtName(int index)
         {
             var member = Data != null ? Data.Court(index) : null;
             if (member != null && !string.IsNullOrEmpty(member.name)) return member.name;
+            if (member != null && member.dialogue != null && member.dialogue.TryGetPrimarySpeaker(out var speaker, out _) &&
+                !string.IsNullOrEmpty(speaker)) return speaker;
             return index >= 0 && index < DefaultCourtNames.Length ? DefaultCourtNames[index] : "Courtier";
+        }
+
+        // The portrait of the member's scene's primary speaker (SU-187), else the portrait on the mission sheet, else
+        // null (the placeholder figure).
+        public Sprite CourtPortrait(int index)
+        {
+            var member = Data != null ? Data.Court(index) : null;
+            if (member == null) return null;
+            if (member.dialogue != null && member.dialogue.TryGetPrimarySpeaker(out _, out var portrait)) return portrait;
+            return member.portrait;
         }
 
         // Only the dispatch-bearer (index 2) carries the quest cue.

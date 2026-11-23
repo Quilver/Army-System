@@ -10,7 +10,7 @@ Each mission has a **Prep** sheet in Unity, at `Assets/Missions/Mxx - <name>/Pre
 | --- | --- | --- |
 | **Briefing Flow** | a dialogue note's game file | Plays when the tent opens before the battle, and is shown as text on the war map. |
 | **Loans** | loan notes' game files, one per row | The offers pinned up in War Debts, in this order. |
-| **Court** (3 members) | a dialogue note's game file per member | Plays when the player talks to them: 0 the Tactician, 1 the Captain, 2 the Dispatch-bearer. Empty: a placeholder line. |
+| **Court** (3 members) | a dialogue note's game file per member | Plays when the player talks to them: 0 the Tactician, 1 the Captain, 2 the Dispatch-bearer. In the tent the member is drawn as the first character in the note who talks with a portrait, so put the court member's heading first. Empty: a placeholder line. |
 
 Battle cutscenes: in the mission's battle scene, select the **CutScene** object and set its **Dialogue** field.
 
