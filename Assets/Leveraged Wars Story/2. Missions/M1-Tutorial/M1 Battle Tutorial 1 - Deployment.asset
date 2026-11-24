@@ -1,0 +1,204 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 09d9dd0205bab0640872e2256248d999, type: 3}
+  m_Name: M1 Battle Tutorial 1 - Deployment
+  m_EditorClassIdentifier: 
+  _source: {fileID: 4900000, guid: b82a08a4dbab71847b1e6c57d4c7d4b8, type: 3}
+  _sourcePath: Assets/Leveraged Wars Story/2. Missions/M1-Tutorial/M1 Battle Tutorial
+    1 - Deployment.md
+  _warnings: []
+  _lines:
+  - Speaker: Jagen
+    Text: A moment before the horn, my prince. Nobody has drawn steel yet.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: 
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: 0}
+  - Speaker: Jagen
+    Text: This is the only time you may choose where we stand without an enemy shoving
+      back. Spend it well.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: 
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: 0}
+  - Speaker: Prince Julian
+    Text: Then tell me, old friend. Where may I place them?
+    WordsPerMinute: 0
+    SpeakerSide: 2
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: Within the marked ground. It is as far forward as we are allowed to set
+      up.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: Take hold of a troop and set it down where you want it.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Prince Julian
+    Text: Surely I may bring every sword we have.
+    WordsPerMinute: 0
+    SpeakerSide: 2
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: No, my prince. Each battle allows only so many, and whoever stays behind
+      sits this one out.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: Choose the ones who will earn their place.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Prince Julian
+    Text: And what of the enemy?
+    WordsPerMinute: 0
+    SpeakerSide: 2
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: Look across the field. See their horsemen on the wing?
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: Horsemen do not charge a line head on. They ride round and strike from
+      behind. Mind that when you set ours.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Prince Julian
+    Text: Then where do my own riders go?
+    WordsPerMinute: 0
+    SpeakerSide: 2
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: Out on the edge, where they have room to ride. Better you ride round them
+      first than they ride round us.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: Spears in the middle, where the fighting will be. Archers behind or beside,
+      never in front. And nothing with its back to the enemy.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Prince Julian
+    Text: How will I know when I am done?
+    WordsPerMinute: 0
+    SpeakerSide: 2
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: When you stop wanting to move anyone.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: Then press Start Battle. The horn sounds, and after that you may give orders
+      and nothing more. You cannot pick a troop up and carry it.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Prince Julian
+    Text: Then let us hope I am a quick learner.
+    WordsPerMinute: 0
+    SpeakerSide: 2
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}

@@ -18,7 +18,18 @@ MonoBehaviour:
   _maxWeaponSkillsPerSoldier: 2
   _bruiseHealPerSecond: 1
   _fatigueFraction: 0.5
+  _stunAtZeroHp: 1
+  _stunRecoverHp: 5
   _accelerationPerSpeedPoint: 1.6
   _soldierAlignment: 0.5
   _soldierSeparation: 1.8
   _soldierBrownianMotion: 0.04
+  _soldierWave: 1
+  _soldierWaveSpeed: 4.5
+  _soldierWaveMaxLag: 2.4
+  _soldierWaveBunchFraction: 0.1
+  _soldierWaveCatchUpSpeedScale: 3
+  _engagedFacingTurnRateDeg: 240
+  _facingTargetRepickSeconds: 0.3
+  _facingTargetKeepScale: 1.2
+  _facingReachSlack: 0.45

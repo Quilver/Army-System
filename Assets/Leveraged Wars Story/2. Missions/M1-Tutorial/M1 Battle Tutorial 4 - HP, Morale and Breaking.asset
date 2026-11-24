@@ -1,0 +1,231 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 09d9dd0205bab0640872e2256248d999, type: 3}
+  m_Name: M1 Battle Tutorial 4 - HP, Morale and Breaking
+  m_EditorClassIdentifier: 
+  _source: {fileID: 4900000, guid: f1477f4fc5de9e94ba89a3fedb82fd35, type: 3}
+  _sourcePath: Assets/Leveraged Wars Story/2. Missions/M1-Tutorial/M1 Battle Tutorial
+    4 - HP, Morale and Breaking.md
+  _warnings: []
+  _lines:
+  - Speaker: Jagen
+    Text: Steady, my prince. There are two kinds of health in this army. Learn to
+      tell them apart.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: 
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: 0}
+  - Speaker: Prince Julian
+    Text: Go on.
+    WordsPerMinute: 0
+    SpeakerSide: 2
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: Soldiers first. Hover over one and you will see his own bar. Armour matters.
+      A blow that bounces off mail does nothing. A bruise stings and mends. A cut
+      bleeds, and bleeding is what kills.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Prince Julian
+    Text: Then I win by killing them all.
+    WordsPerMinute: 0
+    SpeakerSide: 2
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: No. Look at the banner over the troop. That is its nerve. Every living
+      soldier adds to it, and every man lost takes some away.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: See the pale fill creeping across it? That is Shock. Each hit that lands
+      piles some on, and a hit from the side or the rear piles on triple.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: The white tick is the troop's breaking point. When Shock reaches it, the
+      troop breaks.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Prince Julian
+    Text: What does breaking look like?
+    WordsPerMinute: 0
+    SpeakerSide: 2
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: It depends where you stand.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: Caught in melee with room behind you, you fall back. That is a Retreat.
+      It costs you some nerve, but you live.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: Broken while not in melee, say under arrows, you are in Disorder and cannot
+      be ordered.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: If an enemy stands where you would fall back to, you cannot. You are Surrounded.
+      That costs the most, and you do not even get to leave.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Prince Julian
+    Text: And after a break?
+    WordsPerMinute: 0
+    SpeakerSide: 2
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: You are dazed. See the stars? A few moments in which a troop cannot charge,
+      cannot be ordered and cannot hit back. It is when an enemy finishes you.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Prince Julian
+    Text: And if the nerve is gone altogether?
+    WordsPerMinute: 0
+    SpeakerSide: 2
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: If a troop has bled down to about half the nerve it started with, it routs.
+      It runs, it scatters, and it leaves the field. Nothing you say will turn it.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Prince Julian
+    Text: Even with every man alive?
+    WordsPerMinute: 0
+    SpeakerSide: 2
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: Aye. Nerve is not flesh, my prince.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Prince Julian
+    Text: Then I must watch the banners.
+    WordsPerMinute: 0
+    SpeakerSide: 2
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: Pull a troop back before the fill reaches the tick. Keep a reserve behind
+      the line so we have somewhere to fall to. And remember, you do not win by killing
+      the enemy. You win by making them break.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}

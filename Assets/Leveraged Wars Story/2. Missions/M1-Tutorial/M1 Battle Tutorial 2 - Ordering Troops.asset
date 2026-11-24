@@ -1,0 +1,218 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 09d9dd0205bab0640872e2256248d999, type: 3}
+  m_Name: M1 Battle Tutorial 2 - Ordering Troops
+  m_EditorClassIdentifier: 
+  _source: {fileID: 4900000, guid: 97850cd62848de54cb28d14606b6b28f, type: 3}
+  _sourcePath: Assets/Leveraged Wars Story/2. Missions/M1-Tutorial/M1 Battle Tutorial
+    2 - Ordering Troops.md
+  _warnings: []
+  _lines:
+  - Speaker: Jagen
+    Text: The horn has sounded, my prince. Now you tell us what to do, and we shall
+      do it. Mostly.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: 
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: 0}
+  - Speaker: Jagen
+    Text: Pause the battle first, so you can think while I talk.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: 
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: 0}
+  - Speaker: Prince Julian
+    Text: I am paused. How do I take hold of a troop?
+    WordsPerMinute: 0
+    SpeakerSide: 2
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: Click it. Its card appears. Click one of mine twice and you take the whole
+      chain of us. Drag a box round several if you prefer.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Prince Julian
+    Text: And to make them walk?
+    WordsPerMinute: 0
+    SpeakerSide: 2
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: Press on the troop and drag to where you want them. That is a plain Move.
+      We walk there and plan nothing clever on the way.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Prince Julian
+    Text: I would like a proper line.
+    WordsPerMinute: 0
+    SpeakerSide: 2
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: Right button, and drag. Where you press to where you let go is our front.
+      Drag it long and we stand wide and thin. Drag it short and we stand narrow
+      and deep.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: The direction of the drag is the way we face.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Prince Julian
+    Text: Can several troops stand in one line?
+    WordsPerMinute: 0
+    SpeakerSide: 2
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: Choose several, then drag. We stand shoulder to shoulder, and where our
+      ends meet we link into a chain. A chain holds better than strangers do.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: Hold Alt and we leave gaps and do not link.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Prince Julian
+    Text: And to attack?
+    WordsPerMinute: 0
+    SpeakerSide: 2
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: Right-click the enemy troop. A red path means we are going to hit them,
+      not walk past them. We shall pursue until it is finished, so choose your fight.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Prince Julian
+    Text: What if I only wish them to turn?
+    WordsPerMinute: 0
+    SpeakerSide: 2
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: Hold Control and right-click. We shall face that way where we stand. Use
+      it before the enemy reaches us, not after.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: One more thing. A line wheels round. We do not spin on the spot, and we
+      walk forward. Send us a long way sideways and we shall turn first and walk
+      after.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Prince Julian
+    Text: Will they always obey?
+    WordsPerMinute: 0
+    SpeakerSide: 2
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: Not if they have broken. A troop that is falling back, scattered or running
+      will not hear you. Which is the lesson after this one.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}

@@ -1,0 +1,228 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 09d9dd0205bab0640872e2256248d999, type: 3}
+  m_Name: M1 Battle Tutorial 5 - Melee, Flanking and Surrounded
+  m_EditorClassIdentifier: 
+  _source: {fileID: 4900000, guid: 3584cb9e2b438094d8b7d4c8e4dd7e5a, type: 3}
+  _sourcePath: Assets/Leveraged Wars Story/2. Missions/M1-Tutorial/M1 Battle Tutorial
+    5 - Melee, Flanking and Surrounded.md
+  _warnings: []
+  _lines:
+  - Speaker: Jagen
+    Text: Here it comes, my prince. Watch our front rank.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: 
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: 0}
+  - Speaker: Jagen
+    Text: Once we touch, the first soldiers go in all together. That is the Assault.
+      It hits hardest at the start. After that it is one man against another, duel
+      by duel.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: 
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: 0}
+  - Speaker: Prince Julian
+    Text: Why do they turn along the line of the enemy?
+    WordsPerMinute: 0
+    SpeakerSide: 2
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: To get the whole front onto them. The more of us touching, the more of
+      us fighting.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: The troop that attacks turns to meet the other along its length. The troop
+      being attacked stays as it is. Mind that.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Prince Julian
+    Text: Why does that matter?
+    WordsPerMinute: 0
+    SpeakerSide: 2
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: Because a troop has four faces. Front, two sides and back.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: Hit our front and we fight as usual. Hit our side or our back and the Shock
+      triples. That is how a few good blows break a large troop.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Prince Julian
+    Text: So my riders should go round behind them.
+    WordsPerMinute: 0
+    SpeakerSide: 2
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: That is the prince's trick, and a good one. We hold them in front, you
+      ride round behind, and a whole line folds. We call it hammer and anvil.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: The enemy knows it as well as we do. See that call-out? One of ours has
+      been hit from the side.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Prince Julian
+    Text: How do I answer a flank?
+    WordsPerMinute: 0
+    SpeakerSide: 2
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: Turn the troop on whoever is hitting it. Right-click the attacker and we
+      shall swing to face him.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: It will not undo the first blow, but it stops the rest landing on our back.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Prince Julian
+    Text: And what is Surrounded?
+    WordsPerMinute: 0
+    SpeakerSide: 2
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: Look behind us. If an enemy stands where we would fall back to, and another
+      is in front, we cannot give ground. Every break then costs us more.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: Never fight with your back to the enemy and nowhere to go.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Prince Julian
+    Text: How do I avoid it?
+    WordsPerMinute: 0
+    SpeakerSide: 2
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: Keep a reserve behind the line. Keep your chain tight so there are no open
+      sides in the middle. The ends are the weak points, so cover them or have a
+      troop ready to answer.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Prince Julian
+    Text: Hold them, old friend. I shall take the back.
+    WordsPerMinute: 0
+    SpeakerSide: 2
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}

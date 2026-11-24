@@ -2872,22 +2872,22 @@ MonoBehaviour:
   - _icon: {fileID: 21300000, guid: 6e1bf04357b15b34d91a65f7d882a9e9, type: 3}
     _title: Secondary objective
     rewards:
-    - rid: 4669917723432321025
+    - rid: 4669917714727829624
     _description: Hold the village across the river when the battle ends. The enemy
       destroys it if they take it.
     _requirement:
-      rid: 4669917723432321024
+      rid: 4669917714727829623
   _achievementsPC: []
   _CustomPcAchievements: []
   references:
     version: 2
     RefIds:
-    - rid: 4669917723432321024
+    - rid: 4669917714727829623
       type: {class: CapturedVictoryPoint, ns: AchievementSystem, asm: Assembly-CSharp}
       data:
         capturePoint: {fileID: 447314463}
         currentOwner: 0
-    - rid: 4669917723432321025
+    - rid: 4669917714727829624
       type: {class: Gold, ns: AchievementSystem, asm: Assembly-CSharp}
       data:
         GoldPerLevel: 70
@@ -5277,13 +5277,13 @@ MonoBehaviour:
     - {fileID: 1510306179}
     brokenThreshold: 0.5
     startingFormation:
-      rid: 4669917723432321026
+      rid: 4669917714727829625
   - id: FirstCavalry
     troops:
     - {fileID: 1423229806}
     brokenThreshold: 0.5
     startingFormation:
-      rid: 4669917723432321027
+      rid: 4669917714727829626
   - id: Archers
     troops:
     - {fileID: 1205626676}
@@ -5291,61 +5291,61 @@ MonoBehaviour:
     - {fileID: 190887934}
     brokenThreshold: 0.5
     startingFormation:
-      rid: 4669917723432321028
+      rid: 4669917714727829627
   - id: SecondLine
     troops:
     - {fileID: 144930592}
     - {fileID: 1561082636}
     brokenThreshold: 0.5
     startingFormation:
-      rid: 4669917723432321029
+      rid: 4669917714727829628
   - id: SecondCavalry
     troops:
     - {fileID: 210732394}
     brokenThreshold: 0.5
     startingFormation:
-      rid: 4669917723432321030
+      rid: 4669917714727829629
   - id: Bandit
     troops:
     - {fileID: 2114959869}
     brokenThreshold: 0.5
     startingFormation:
-      rid: 4669917723432321031
+      rid: 4669917714727829630
   - id: VillageGuard
     troops:
     - {fileID: 1612098961}
     brokenThreshold: 0.5
     startingFormation:
-      rid: 4669917723432321032
+      rid: 4669917714727829631
   triggers:
   - id: FirstCavalryFlank
     enabledAtStart: 1
     fireOnce: 1
     condition:
-      rid: 4669917723432321033
+      rid: 4669917714727829632
     actions:
-    - rid: 4669917723432321034
+    - rid: 4669917714727829633
   - id: SecondLineGo
     enabledAtStart: 1
     fireOnce: 1
     condition:
-      rid: 4669917723432321035
+      rid: 4669917714727829634
     actions:
-    - rid: 4669917723432321036
-    - rid: 4669917723432321037
+    - rid: 4669917714727829635
+    - rid: 4669917714727829636
   - id: Bypass
     enabledAtStart: 1
     fireOnce: 1
     condition:
-      rid: 4669917723432321038
+      rid: 4669917714727829637
     actions:
-    - rid: 4669917723432321039
-    - rid: 4669917723432321040
+    - rid: 4669917714727829638
+    - rid: 4669917714727829639
   logTriggers: 1
   references:
     version: 2
     RefIds:
-    - rid: 4669917723432321026
+    - rid: 4669917714727829625
       type: {class: AdvanceDefinition, ns: LeveragedWars.Battle.AI, asm: Assembly-CSharp}
       data:
         target: 0
@@ -5360,7 +5360,7 @@ MonoBehaviour:
         chargeDistance: 8
         keepLine: 1
         lineGap: 2
-    - rid: 4669917723432321027
+    - rid: 4669917714727829626
       type: {class: HoldDefinition, ns: LeveragedWars.Battle.AI, asm: Assembly-CSharp}
       data:
         anchor:
@@ -5373,7 +5373,7 @@ MonoBehaviour:
         aggroRange: 5
         leashRange: 8
         lineGap: 2
-    - rid: 4669917723432321028
+    - rid: 4669917714727829627
       type: {class: SkirmishDefinition, ns: LeveragedWars.Battle.AI, asm: Assembly-CSharp}
       data:
         fallbackPoint:
@@ -5390,7 +5390,7 @@ MonoBehaviour:
         routeClearanceMargin: 2
         escapeDistance: 8
         lineGap: 2
-    - rid: 4669917723432321029
+    - rid: 4669917714727829628
       type: {class: HoldDefinition, ns: LeveragedWars.Battle.AI, asm: Assembly-CSharp}
       data:
         anchor:
@@ -5403,7 +5403,7 @@ MonoBehaviour:
         aggroRange: 8
         leashRange: 13
         lineGap: 2
-    - rid: 4669917723432321030
+    - rid: 4669917714727829629
       type: {class: HoldDefinition, ns: LeveragedWars.Battle.AI, asm: Assembly-CSharp}
       data:
         anchor:
@@ -5416,13 +5416,13 @@ MonoBehaviour:
         aggroRange: 5
         leashRange: 8
         lineGap: 2
-    - rid: 4669917723432321031
+    - rid: 4669917714727829630
       type: {class: CaptureDefinition, ns: LeveragedWars.Battle.AI, asm: Assembly-CSharp}
       data:
         objectiveId: Secondary
         aggroRange: 6
         run: 0
-    - rid: 4669917723432321032
+    - rid: 4669917714727829631
       type: {class: GuardDefinition, ns: LeveragedWars.Battle.AI, asm: Assembly-CSharp}
       data:
         guarded:
@@ -5442,53 +5442,53 @@ MonoBehaviour:
         aggroRange: 6
         leashRange: 16
         lineGap: 2
-    - rid: 4669917723432321033
+    - rid: 4669917714727829632
       type: {class: DetachmentStatus, ns: LeveragedWars.Battle.AI, asm: Assembly-CSharp}
       data:
         detachmentId: FirstLine
         check: 0
-    - rid: 4669917723432321034
+    - rid: 4669917714727829633
       type: {class: SetFormationAction, ns: LeveragedWars.Battle.AI, asm: Assembly-CSharp}
       data:
         detachmentId: FirstCavalry
         formation:
-          rid: 4669917723432321041
-    - rid: 4669917723432321035
+          rid: 4669917714727829640
+    - rid: 4669917714727829634
       type: {class: AnyOf, ns: LeveragedWars.Battle.AI, asm: Assembly-CSharp}
       data:
         conditions:
-        - rid: 4669917723432321042
-        - rid: 4669917723432321043
-    - rid: 4669917723432321036
+        - rid: 4669917714727829641
+        - rid: 4669917714727829642
+    - rid: 4669917714727829635
       type: {class: SetFormationAction, ns: LeveragedWars.Battle.AI, asm: Assembly-CSharp}
       data:
         detachmentId: SecondLine
         formation:
-          rid: 4669917723432321044
-    - rid: 4669917723432321037
+          rid: 4669917714727829643
+    - rid: 4669917714727829636
       type: {class: SetFormationAction, ns: LeveragedWars.Battle.AI, asm: Assembly-CSharp}
       data:
         detachmentId: SecondCavalry
         formation:
-          rid: 4669917723432321045
-    - rid: 4669917723432321038
+          rid: 4669917714727829644
+    - rid: 4669917714727829637
       type: {class: AllOf, ns: LeveragedWars.Battle.AI, asm: Assembly-CSharp}
       data:
         conditions:
-        - rid: 4669917723432321046
-        - rid: 4669917723432321047
-    - rid: 4669917723432321039
+        - rid: 4669917714727829645
+        - rid: 4669917714727829646
+    - rid: 4669917714727829638
       type: {class: SetFormationAction, ns: LeveragedWars.Battle.AI, asm: Assembly-CSharp}
       data:
         detachmentId: SecondLine
         formation:
-          rid: 4669917723432321048
-    - rid: 4669917723432321040
+          rid: 4669917714727829647
+    - rid: 4669917714727829639
       type: {class: EnableTriggerAction, ns: LeveragedWars.Battle.AI, asm: Assembly-CSharp}
       data:
         triggerId: SecondLineGo
         enabled: 0
-    - rid: 4669917723432321041
+    - rid: 4669917714727829640
       type: {class: FlankDefinition, ns: LeveragedWars.Battle.AI, asm: Assembly-CSharp}
       data:
         target: 2
@@ -5499,17 +5499,17 @@ MonoBehaviour:
         flankDistance: 8
         chargeDistance: 12
         approachTimeout: 20
-    - rid: 4669917723432321042
+    - rid: 4669917714727829641
       type: {class: OpponentNearDetachment, ns: LeveragedWars.Battle.AI, asm: Assembly-CSharp}
       data:
         detachmentId: SecondLine
         radius: 13
-    - rid: 4669917723432321043
+    - rid: 4669917714727829642
       type: {class: DetachmentStatus, ns: LeveragedWars.Battle.AI, asm: Assembly-CSharp}
       data:
         detachmentId: FirstLine
         check: 1
-    - rid: 4669917723432321044
+    - rid: 4669917714727829643
       type: {class: AdvanceDefinition, ns: LeveragedWars.Battle.AI, asm: Assembly-CSharp}
       data:
         target: 0
@@ -5524,7 +5524,7 @@ MonoBehaviour:
         chargeDistance: 8
         keepLine: 1
         lineGap: 2
-    - rid: 4669917723432321045
+    - rid: 4669917714727829644
       type: {class: FlankDefinition, ns: LeveragedWars.Battle.AI, asm: Assembly-CSharp}
       data:
         target: 1
@@ -5535,17 +5535,17 @@ MonoBehaviour:
         flankDistance: 8
         chargeDistance: 12
         approachTimeout: 20
-    - rid: 4669917723432321046
+    - rid: 4669917714727829645
       type: {class: OpponentNearPoint, ns: LeveragedWars.Battle.AI, asm: Assembly-CSharp}
       data:
         point: {fileID: 28974367}
         radius: 13
-    - rid: 4669917723432321047
+    - rid: 4669917714727829646
       type: {class: DetachmentStatus, ns: LeveragedWars.Battle.AI, asm: Assembly-CSharp}
       data:
         detachmentId: SecondLine
         check: 3
-    - rid: 4669917723432321048
+    - rid: 4669917714727829647
       type: {class: HoldDefinition, ns: LeveragedWars.Battle.AI, asm: Assembly-CSharp}
       data:
         anchor:

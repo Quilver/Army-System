@@ -17,17 +17,83 @@ MonoBehaviour:
     Briefing.md
   _warnings: []
   _lines:
-  - Speaker: Briefing
-    Text: 'AMBUSH!!
+  - Speaker: Bard
+    Text: 'From distant roads, with but a faithful few,
 
-      As you travel along the Danube greet a troop of merry
-      men. A man named Robin comes up to you and offers his services to you as the
-      one true king.
+      Prince Julian returned
+      unto his hearth;
 
-      However, they weren''t the only man'
+      The tyranny tax farmers wrought in greed
+
+      Brought
+      great disquiet to his heavy heart.'
     WordsPerMinute: 0
-    SpeakerSide: 0
-    LeftName: 
+    SpeakerSide: 1
+    LeftName: Bard
     RightName: 
-    LeftPortrait: {fileID: 0}
+    LeftPortrait: {fileID: 7468356559241021412, guid: b23a63486994642469fcc255da0779d2,
+      type: 3}
+    RightPortrait: {fileID: 0}
+  - Speaker: Bard
+    Text: 'He wept to see a household starve for bread,
+
+      Their father called
+      away to foreign war;
+
+      Their daughter Joan, wracked with whooping cough,
+
+      He
+      healed at once with but a gentle touch.'
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Bard
+    RightName: 
+    LeftPortrait: {fileID: 7468356559241021412, guid: b23a63486994642469fcc255da0779d2,
+      type: 3}
+    RightPortrait: {fileID: 0}
+  - Speaker: Bard
+    Text: 'Yet sworn from birth unto his father''s laws,
+
+      He planned to beg
+      dear uncle Claudius
+
+      To chastise these black knights and stay their hand.'
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Bard
+    RightName: 
+    LeftPortrait: {fileID: 7468356559241021412, guid: b23a63486994642469fcc255da0779d2,
+      type: 3}
+    RightPortrait: {fileID: 0}
+  - Speaker: Bard
+    Text: 'Not till he saw the sack of Hira''s shrine
+
+      Did he perceive that
+      Pisco fooled the king.'
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Bard
+    RightName: 
+    LeftPortrait: {fileID: 7468356559241021412, guid: b23a63486994642469fcc255da0779d2,
+      type: 3}
+    RightPortrait: {fileID: 0}
+  - Speaker: Bard
+    Text: 'As loyal folk of fair Aurelliam,
+
+      Both men and women, rise at duty''s
+      call
+
+      To join Prince Julian in staunch defence
+
+      Against such wanton
+      banditry; bring down
+
+      Their reign, and cast these thieves from out our
+      town!'
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Bard
+    RightName: 
+    LeftPortrait: {fileID: 7468356559241021412, guid: b23a63486994642469fcc255da0779d2,
+      type: 3}
     RightPortrait: {fileID: 0}

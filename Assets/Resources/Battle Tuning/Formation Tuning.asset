@@ -12,12 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1e39893b0c7445a58d4933d60037c1aa, type: 3}
   m_Name: Formation Tuning
   m_EditorClassIdentifier: 
-  _sDistance: 5
+  _sDistance: 35.99
   _sDistanceExitHysteresis: 0
   _aDistance: 2
   _engagementGap: 1.5
   _engagementHoldMargin: 1
   _naturalLineRadiusScale: 1.8
+  _troopSizeScale: 1.5
   _blobRadiusScale: 0.85
   _pivotSeparationScale: 0.25
   _friendlyGap: 0.5
@@ -26,3 +27,32 @@ MonoBehaviour:
   _jointClearance: 0.45
   _jointClearanceFraction: 0.15
   _routScatterRadiusScale: 1.6
+  _outlinePadding: 0.65
+  _lineMarchSlowdown: 1
+  _lineMarchSpeedScale: 0.8
+  _lineBackwardSlowdown: 1
+  _lineBackwardSpeedScale: 0.6
+  _lineBackwardAngleDeg: 90
+  _lineWheel: 1
+  _lineWheelRateDeg: 60
+  _lineTurnSlowdown: 1
+  _lineTurnAngleDeg: 45
+  _lineNoStrafe: 1
+  _lineAdvanceAngleDeg: 15
+  _lineStrafeMaxDistance: 4
+  _lineWheelFirstMaxSeconds: 4
+  _lineWheelOnSteeringCircles: 1
+  _lineTurnRadiusScale: 1
+  _lineTurnMinRadiusShare: 0.5
+  _friendlyFillAlpha: 0
+  _enemyFillAlpha: 0
+  _hoverFillAlphaBonus: 0.4
+  _selectedFillAlphaBonus: 0.4
+  _fillEdgeFade: 0.7
+  _assaultWheel: 1
+  _assaultWheelAboutEngagedEnd: 1
+  _assaultWheelToleranceDeg: 4
+  _assaultFaceHold: 1
+  _assaultFaceHysteresisDeg: 20
+  _mutualPursuitFrontToFront: 1
+  _assaultHold: 1

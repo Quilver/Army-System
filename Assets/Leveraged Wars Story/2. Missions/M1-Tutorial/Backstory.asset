@@ -1,0 +1,132 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 09d9dd0205bab0640872e2256248d999, type: 3}
+  m_Name: Backstory
+  m_EditorClassIdentifier: 
+  _source: {fileID: 4900000, guid: 96f44f0c2089e5a489f96d2c855eece1, type: 3}
+  _sourcePath: Assets/Leveraged Wars Story/2. Missions/M1-Tutorial/Backstory.md
+  _warnings: []
+  _lines:
+  - Speaker: Bard
+    Text: Hear ye, hear ye! Attend the noble tale
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Bard
+    RightName: 
+    LeftPortrait: {fileID: 7468356559241021412, guid: b23a63486994642469fcc255da0779d2,
+      type: 3}
+    RightPortrait: {fileID: 0}
+  - Speaker: Bard
+    Text: 'Of prince Julian,
+
+      To good King Prinius and Freya born,
+
+      True
+      heir to all Aurelliam''s high throne.'
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Bard
+    RightName: 
+    LeftPortrait: {fileID: 7468356559241021412, guid: b23a63486994642469fcc255da0779d2,
+      type: 3}
+    RightPortrait: {fileID: 0}
+  - Speaker: Bard
+    Text: 'The royal hearth bestowed its richest gifts:
+
+      Their noble spirit,
+      beauty, health, and grace;
+
+      And at his very birth, the falcon sang.'
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Bard
+    RightName: 
+    LeftPortrait: {fileID: 7468356559241021412, guid: b23a63486994642469fcc255da0779d2,
+      type: 3}
+    RightPortrait: {fileID: 0}
+  - Speaker: Bard
+    Text: 'He grew in strength; all beasts within the realm
+
+      Gave heed unto
+      their prince. The fiercest boars
+
+      Of all Aurelliam came meek as lambs
+
+      Upon
+      his maiden hunt; and where he pissed,
+
+      The sweetest roses burst in sudden
+      bloom.'
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Bard
+    RightName: 
+    LeftPortrait: {fileID: 7468356559241021412, guid: b23a63486994642469fcc255da0779d2,
+      type: 3}
+    RightPortrait: {fileID: 0}
+  - Speaker: Bard
+    Text: 'He would have stayed among us, grown to rule,
+
+      A king both hale
+      and wise, whose gentle touch
+
+      Had healed the sick throughout our troubled
+      land.
+
+      We weep for Prinius and Freya slain,
+
+      Deceived, alas, by
+      black betrayal''s snare.
+
+      That poison, steeped in envy, struck them dead,
+
+      And
+      had undone young Julian as well,
+
+      Had not the Faeries whisked him safe
+      away.'
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Bard
+    RightName: 
+    LeftPortrait: {fileID: 7468356559241021412, guid: b23a63486994642469fcc255da0779d2,
+      type: 3}
+    RightPortrait: {fileID: 0}
+  - Speaker: Bard
+    Text: 'Within Queen Guenivere''s bright faery court,
+
+      With hermits of a
+      thousand years he learned,
+
+      He diced with Death, and slew with naked
+      hands
+
+      A serpent rising full a hundred feet.
+
+      Yet left the fairest
+      princess of that shore,'
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Bard
+    RightName: 
+    LeftPortrait: {fileID: 7468356559241021412, guid: b23a63486994642469fcc255da0779d2,
+      type: 3}
+    RightPortrait: {fileID: 0}
+  - Speaker: Bard
+    Text: To seek Aurelliam, his home, once more.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Bard
+    RightName: 
+    LeftPortrait: {fileID: 7468356559241021412, guid: b23a63486994642469fcc255da0779d2,
+      type: 3}
+    RightPortrait: {fileID: 0}

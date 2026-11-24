@@ -1282,17 +1282,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d53b178fa06b354e919cf60de1ef4c2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _achievementsPC: []
   _GlobalAchievements:
   - {fileID: 11400000, guid: 42e64a9a081178d4ea929ff9737b4bc9, type: 2}
   _CustomGlobalAchievements:
   - _icon: {fileID: 21300000, guid: 6e1bf04357b15b34d91a65f7d882a9e9, type: 3}
-    _requirement:
-      rid: 4568626464216317997
+    _title: 
     rewards:
     - rid: 4568626464216317995
     - rid: 4568626464216317996
     _description: Reclaimed farm
+    _requirement:
+      rid: 4568626464216317997
+  _achievementsPC: []
   _CustomPcAchievements: []
   references:
     version: 2
@@ -3667,7 +3668,17 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2930595629069799993, guid: 8114fb246603f9b418faeb7bcb0e6f63,
         type: 3}
-      propertyPath: '_deployedTroops.Array.data[0]._characters.Array.size'
+      propertyPath: _deployedTroops.Array.data[0]._characters.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2930595629069799993, guid: 8114fb246603f9b418faeb7bcb0e6f63,
+        type: 3}
+      propertyPath: _deployedTroops.Array.data[1]._characters.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2930595629069799993, guid: 8114fb246603f9b418faeb7bcb0e6f63,
+        type: 3}
+      propertyPath: _deployedTroops.Array.data[2]._characters.Array.size
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2930595629069799993, guid: 8114fb246603f9b418faeb7bcb0e6f63,
@@ -3678,20 +3689,10 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 2930595629069799993, guid: 8114fb246603f9b418faeb7bcb0e6f63,
         type: 3}
-      propertyPath: '_deployedTroops.Array.data[1]._characters.Array.size'
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2930595629069799993, guid: 8114fb246603f9b418faeb7bcb0e6f63,
-        type: 3}
       propertyPath: '_deployedTroops.Array.data[1]._characters.Array.data[0]'
       value: 
       objectReference: {fileID: 11400000, guid: 0b9ac2bbc37b387468d7593aec30a531,
         type: 2}
-    - target: {fileID: 2930595629069799993, guid: 8114fb246603f9b418faeb7bcb0e6f63,
-        type: 3}
-      propertyPath: '_deployedTroops.Array.data[2]._characters.Array.size'
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 2930595629069799993, guid: 8114fb246603f9b418faeb7bcb0e6f63,
         type: 3}
       propertyPath: '_deployedTroops.Array.data[2]._characters.Array.data[0]'
@@ -4429,6 +4430,9 @@ MonoBehaviour:
         minimumRange: 7
         resumeMultiplier: 1.5
         maxDistanceFromFallback: 30
+        routeClearanceMargin: 2
+        escapeDistance: 8
+        lineGap: 2
     - rid: 4669917351540424818
       type: {class: GuardDefinition, ns: LeveragedWars.Battle.AI, asm: Assembly-CSharp}
       data:
@@ -4535,6 +4539,8 @@ MonoBehaviour:
     chargeSpeedFraction: 0.6
     holdArrivalRadius: 1.5
     targetStickiness: 1.05
+    goRoundFriends: 1
+    friendClearance: 1.5
 --- !u!114 &2069887056
 MonoBehaviour:
   m_ObjectHideFlags: 0

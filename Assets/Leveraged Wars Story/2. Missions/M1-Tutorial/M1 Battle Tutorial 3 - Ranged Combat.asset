@@ -1,0 +1,196 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 09d9dd0205bab0640872e2256248d999, type: 3}
+  m_Name: M1 Battle Tutorial 3 - Ranged Combat
+  m_EditorClassIdentifier: 
+  _source: {fileID: 4900000, guid: ba8d9edc178d35341ac2158926ca1d6a, type: 3}
+  _sourcePath: Assets/Leveraged Wars Story/2. Missions/M1-Tutorial/M1 Battle Tutorial
+    3 - Ranged Combat.md
+  _warnings: []
+  _lines:
+  - Speaker: Jagen
+    Text: Hear that, my prince? Bows.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: 
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: 0}
+  - Speaker: Prince Julian
+    Text: Their archers have found us. Are we losing men already?
+    WordsPerMinute: 0
+    SpeakerSide: 2
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: Some, but that is not what the arrows are for. Most of what archers do
+      is frighten.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: Every arrow that lands piles on Shock. A troop that marches in under fire
+      arrives half broken before the lines even meet.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Prince Julian
+    Text: Do arrows always wound?
+    WordsPerMinute: 0
+    SpeakerSide: 2
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: No. Mail and shields turn them. Against men in plain cloth they bleed.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Prince Julian
+    Text: Can I use archers too?
+    WordsPerMinute: 0
+    SpeakerSide: 2
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: See the green cone? That is where they can reach. Inside it they shoot
+      without being told. Outside it they will not. Order them forward and they will
+      walk into range before they loose. CHECK
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Prince Julian
+    Text: Is there a place they cannot shoot?
+    WordsPerMinute: 0
+    SpeakerSide: 2
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: Too close. They need room, like a swordsman. An enemy on top of them is
+      a problem a bow cannot solve, and in melee an archer is no better than a farmer.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Prince Julian
+    Text: Can they shoot over our own men?
+    WordsPerMinute: 0
+    SpeakerSide: 2
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: Arrows climb and come down. Flat shots do not. Keep your own troops out
+      of the line of fire where you can. CHECK
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: Javelins run dry, too, so do not waste them.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Prince Julian
+    Text: Then where should they stand?
+    WordsPerMinute: 0
+    SpeakerSide: 2
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: Behind a line of spears that will hold, or to the side where they have
+      a clear view. Keep them away from horsemen. And once the lines meet, turn them
+      on something else.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Prince Julian
+    Text: Then I know what to do about theirs. Ride them down.
+    WordsPerMinute: 0
+    SpeakerSide: 2
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
+  - Speaker: Jagen
+    Text: Quickly, my prince. Archers hate being caught.
+    WordsPerMinute: 0
+    SpeakerSide: 1
+    LeftName: Jagen
+    RightName: Prince Julian
+    LeftPortrait: {fileID: 4202274659027958708, guid: 15508f085842ca0428c16482db0b7e16,
+      type: 3}
+    RightPortrait: {fileID: -2861679652154964632, guid: 0747003b8d5cd804da0e2241c6efb15e,
+      type: 3}
